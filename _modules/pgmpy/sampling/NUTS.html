@@ -1,33 +1,21 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>pgmpy.sampling.NUTS &#8212; pgmpy 0.1.2 documentation</title>
-    
+    <meta charset="utf-8" />
+    <title>pgmpy.sampling.NUTS &#8212; pgmpy 0.1.9 documentation</title>
     <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../../',
-        VERSION:     '0.1.2',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
-  </head>
-  <body role="document">
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -37,7 +25,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.2 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>
@@ -47,13 +35,13 @@
               <img class="logo" src="../../../_static/logo.png" alt="Logo"/>
             </a></p>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -70,6 +58,7 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.sampling</span> <span class="k">import</span> <span class="n">HamiltonianMCDA</span><span class="p">,</span> <span class="n">LeapFrog</span><span class="p">,</span> <span class="n">_return_samples</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="k">import</span> <span class="n">_check_1d_array_object</span><span class="p">,</span> <span class="n">_check_length_equal</span>
@@ -80,8 +69,8 @@
 <span class="sd">    Class for performing sampling in Continuous model</span>
 <span class="sd">    using No U Turn Sampler (a variant of Hamiltonian Monte Carlo)</span>
 
-<span class="sd">    Parameters:</span>
-<span class="sd">    -----------</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
 <span class="sd">    model: An instance pgmpy.models</span>
 <span class="sd">        Model from which sampling has to be done</span>
 
@@ -92,13 +81,13 @@
 <span class="sd">        Class to propose future states of position and momentum in time by simulating</span>
 <span class="sd">        HamiltonianDynamics</span>
 
-<span class="sd">    Public Methods:</span>
-<span class="sd">    ---------------</span>
+<span class="sd">    Public Methods</span>
+<span class="sd">    --------------</span>
 <span class="sd">    sample()</span>
 <span class="sd">    generate_sample()</span>
 
-<span class="sd">    Example:</span>
-<span class="sd">    --------</span>
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.sampling import NoUTurnSampler as NUTS, LeapFrog, GradLogPDFGaussian</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.factors.continuous import GaussianDistribution as JGD</span>
 <span class="sd">    &gt;&gt;&gt; import numpy as np</span>
@@ -127,16 +116,18 @@
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="p">,</span> <span class="n">simulate_dynamics</span><span class="o">=</span><span class="n">LeapFrog</span><span class="p">):</span>
 
-        <span class="nb">super</span><span class="p">(</span><span class="n">NoUTurnSampler</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="o">=</span><span class="n">grad_log_pdf</span><span class="p">,</span>
-                                             <span class="n">simulate_dynamics</span><span class="o">=</span><span class="n">simulate_dynamics</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NoUTurnSampler</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="o">=</span><span class="n">grad_log_pdf</span><span class="p">,</span> <span class="n">simulate_dynamics</span><span class="o">=</span><span class="n">simulate_dynamics</span>
+        <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_initalize_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initalizes root node of the tree, i.e depth = 0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulate_dynamics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">,</span>
-                                                               <span class="bp">self</span><span class="o">.</span><span class="n">grad_log_pdf</span><span class="p">)</span><span class="o">.</span><span class="n">get_proposed_values</span><span class="p">()</span>
+        <span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulate_dynamics</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_log_pdf</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">get_proposed_values</span><span class="p">()</span>
 
         <span class="n">_</span><span class="p">,</span> <span class="n">logp_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_log_pdf</span><span class="p">(</span><span class="n">position_bar</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_gradient_log_pdf</span><span class="p">()</span>
 
@@ -147,14 +138,26 @@
 
         <span class="k">return</span> <span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">,</span> <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">accept_set_bool</span>
 
-    <span class="k">def</span> <span class="nf">_update_acceptance_criteria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position_forward</span><span class="p">,</span> <span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span>
-                                    <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">candidate_set_size2</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_update_acceptance_criteria</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">position_forward</span><span class="p">,</span>
+        <span class="n">position_backward</span><span class="p">,</span>
+        <span class="n">momentum_forward</span><span class="p">,</span>
+        <span class="n">momentum_backward</span><span class="p">,</span>
+        <span class="n">accept_set_bool</span><span class="p">,</span>
+        <span class="n">candidate_set_size</span><span class="p">,</span>
+        <span class="n">candidate_set_size2</span><span class="p">,</span>
+    <span class="p">):</span>
 
         <span class="c1"># criteria1 = I[(θ+ − θ−)·r− ≥ 0]</span>
-        <span class="n">criteria1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">((</span><span class="n">position_forward</span> <span class="o">-</span> <span class="n">position_backward</span><span class="p">),</span> <span class="n">momentum_backward</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+        <span class="n">criteria1</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">((</span><span class="n">position_forward</span> <span class="o">-</span> <span class="n">position_backward</span><span class="p">),</span> <span class="n">momentum_backward</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+        <span class="p">)</span>
 
         <span class="c1"># criteira2 = I[(θ+ − θ− )·r+ ≥ 0]</span>
-        <span class="n">criteria2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">((</span><span class="n">position_forward</span> <span class="o">-</span> <span class="n">position_backward</span><span class="p">),</span> <span class="n">momentum_forward</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+        <span class="n">criteria2</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">((</span><span class="n">position_forward</span> <span class="o">-</span> <span class="n">position_backward</span><span class="p">),</span> <span class="n">momentum_forward</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+        <span class="p">)</span>
 
         <span class="n">accept_set_bool</span> <span class="o">=</span> <span class="n">accept_set_bool</span> <span class="ow">and</span> <span class="n">criteria1</span> <span class="ow">and</span> <span class="n">criteria2</span>
         <span class="n">candidate_set_size</span> <span class="o">+=</span> <span class="n">candidate_set_size2</span>
@@ -171,39 +174,95 @@
         <span class="c1"># candidate_set_size -&gt; n, accept_set_bool -&gt; s</span>
         <span class="k">if</span> <span class="n">depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># Take single leapfrog step in the given direction (direction * stepsize)</span>
-            <span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">,</span> <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">accept_set_bool</span> <span class="o">=</span>\
-                <span class="bp">self</span><span class="o">.</span><span class="n">_initalize_tree</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span> <span class="o">*</span> <span class="n">stepsize</span><span class="p">)</span>
+            <span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">,</span> <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">accept_set_bool</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initalize_tree</span><span class="p">(</span>
+                <span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span> <span class="o">*</span> <span class="n">stepsize</span>
+            <span class="p">)</span>
 
-            <span class="k">return</span> <span class="p">(</span><span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span>
-                    <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">accept_set_bool</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">position_bar</span><span class="p">,</span>
+                <span class="n">momentum_bar</span><span class="p">,</span>
+                <span class="n">position_bar</span><span class="p">,</span>
+                <span class="n">momentum_bar</span><span class="p">,</span>
+                <span class="n">position_bar</span><span class="p">,</span>
+                <span class="n">candidate_set_size</span><span class="p">,</span>
+                <span class="n">accept_set_bool</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Build left and right subtrees</span>
-            <span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span>
-             <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">accept_set_bool</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span>
-                                                                     <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span>
+            <span class="p">(</span>
+                <span class="n">position_backward</span><span class="p">,</span>
+                <span class="n">momentum_backward</span><span class="p">,</span>
+                <span class="n">position_forward</span><span class="p">,</span>
+                <span class="n">momentum_forward</span><span class="p">,</span>
+                <span class="n">position_bar</span><span class="p">,</span>
+                <span class="n">candidate_set_size</span><span class="p">,</span>
+                <span class="n">accept_set_bool</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span>
+                <span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">stepsize</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">accept_set_bool</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
                     <span class="c1"># Build tree in backward direction</span>
-                    <span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">position_bar2</span><span class="p">,</span> <span class="n">candidate_set_size2</span><span class="p">,</span>
-                     <span class="n">accept_set_bool2</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span>
-                                                          <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span>
+                    <span class="p">(</span>
+                        <span class="n">position_backward</span><span class="p">,</span>
+                        <span class="n">momentum_backward</span><span class="p">,</span>
+                        <span class="n">_</span><span class="p">,</span>
+                        <span class="n">_</span><span class="p">,</span>
+                        <span class="n">position_bar2</span><span class="p">,</span>
+                        <span class="n">candidate_set_size2</span><span class="p">,</span>
+                        <span class="n">accept_set_bool2</span><span class="p">,</span>
+                    <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span>
+                        <span class="n">position_backward</span><span class="p">,</span>
+                        <span class="n">momentum_backward</span><span class="p">,</span>
+                        <span class="n">slice_var</span><span class="p">,</span>
+                        <span class="n">direction</span><span class="p">,</span>
+                        <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="n">stepsize</span><span class="p">,</span>
+                    <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Build tree in forward direction</span>
-                    <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">position_bar2</span><span class="p">,</span> <span class="n">candidate_set_size2</span><span class="p">,</span>
-                     <span class="n">accept_set_bool2</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span><span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span>
-                                                          <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span>
+                    <span class="p">(</span>
+                        <span class="n">_</span><span class="p">,</span>
+                        <span class="n">_</span><span class="p">,</span>
+                        <span class="n">position_forward</span><span class="p">,</span>
+                        <span class="n">momentum_forward</span><span class="p">,</span>
+                        <span class="n">position_bar2</span><span class="p">,</span>
+                        <span class="n">candidate_set_size2</span><span class="p">,</span>
+                        <span class="n">accept_set_bool2</span><span class="p">,</span>
+                    <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span>
+                        <span class="n">position_forward</span><span class="p">,</span>
+                        <span class="n">momentum_forward</span><span class="p">,</span>
+                        <span class="n">slice_var</span><span class="p">,</span>
+                        <span class="n">direction</span><span class="p">,</span>
+                        <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="n">stepsize</span><span class="p">,</span>
+                    <span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">candidate_set_size2</span> <span class="o">/</span> <span class="p">(</span><span class="n">candidate_set_size2</span> <span class="o">+</span> <span class="n">candidate_set_size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">candidate_set_size2</span> <span class="o">/</span> <span class="p">(</span>
+                    <span class="n">candidate_set_size2</span> <span class="o">+</span> <span class="n">candidate_set_size</span>
+                <span class="p">):</span>
                     <span class="n">position_bar</span> <span class="o">=</span> <span class="n">position_bar2</span>
 
-                <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">candidate_set_size</span> <span class="o">=</span>\
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_update_acceptance_criteria</span><span class="p">(</span><span class="n">position_forward</span><span class="p">,</span> <span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span>
-                                                     <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">accept_set_bool2</span><span class="p">,</span> <span class="n">candidate_set_size</span><span class="p">,</span>
-                                                     <span class="n">candidate_set_size2</span><span class="p">)</span>
+                <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">candidate_set_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_acceptance_criteria</span><span class="p">(</span>
+                    <span class="n">position_forward</span><span class="p">,</span>
+                    <span class="n">position_backward</span><span class="p">,</span>
+                    <span class="n">momentum_forward</span><span class="p">,</span>
+                    <span class="n">momentum_backward</span><span class="p">,</span>
+                    <span class="n">accept_set_bool2</span><span class="p">,</span>
+                    <span class="n">candidate_set_size</span><span class="p">,</span>
+                    <span class="n">candidate_set_size2</span><span class="p">,</span>
+                <span class="p">)</span>
 
-            <span class="k">return</span> <span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span>
-                    <span class="n">position_bar</span><span class="p">,</span> <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">accept_set_bool</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">position_backward</span><span class="p">,</span>
+                <span class="n">momentum_backward</span><span class="p">,</span>
+                <span class="n">position_forward</span><span class="p">,</span>
+                <span class="n">momentum_forward</span><span class="p">,</span>
+                <span class="n">position_bar</span><span class="p">,</span>
+                <span class="n">candidate_set_size</span><span class="p">,</span>
+                <span class="n">accept_set_bool</span><span class="p">,</span>
+            <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -221,33 +280,66 @@
         <span class="n">_</span><span class="p">,</span> <span class="n">log_pdf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_log_pdf</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_gradient_log_pdf</span><span class="p">()</span>
 
         <span class="c1"># Resample slice variable `u`</span>
-        <span class="n">slice_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_pdf</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">momentum</span><span class="p">,</span> <span class="n">momentum</span><span class="p">)))</span>
+        <span class="n">slice_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_pdf</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">momentum</span><span class="p">,</span> <span class="n">momentum</span><span class="p">))</span>
+        <span class="p">)</span>
 
         <span class="k">while</span> <span class="n">accept_set_bool</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">direction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
                 <span class="c1"># Build a tree in backward direction</span>
-                <span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span>
-                 <span class="n">candidate_set_size2</span><span class="p">,</span> <span class="n">accept_set_bool2</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span>
-                                                                           <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span>
+                <span class="p">(</span>
+                    <span class="n">position_backward</span><span class="p">,</span>
+                    <span class="n">momentum_backward</span><span class="p">,</span>
+                    <span class="n">_</span><span class="p">,</span>
+                    <span class="n">_</span><span class="p">,</span>
+                    <span class="n">position_bar</span><span class="p">,</span>
+                    <span class="n">candidate_set_size2</span><span class="p">,</span>
+                    <span class="n">accept_set_bool2</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span>
+                    <span class="n">position_backward</span><span class="p">,</span>
+                    <span class="n">momentum_backward</span><span class="p">,</span>
+                    <span class="n">slice_var</span><span class="p">,</span>
+                    <span class="n">direction</span><span class="p">,</span>
+                    <span class="n">depth</span><span class="p">,</span>
+                    <span class="n">stepsize</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Build tree in forward direction</span>
-                <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span>
-                 <span class="n">candidate_set_size2</span><span class="p">,</span> <span class="n">accept_set_bool2</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span><span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span>
-                                                                           <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span>
+                <span class="p">(</span>
+                    <span class="n">_</span><span class="p">,</span>
+                    <span class="n">_</span><span class="p">,</span>
+                    <span class="n">position_forward</span><span class="p">,</span>
+                    <span class="n">momentum_forward</span><span class="p">,</span>
+                    <span class="n">position_bar</span><span class="p">,</span>
+                    <span class="n">candidate_set_size2</span><span class="p">,</span>
+                    <span class="n">accept_set_bool2</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span>
+                    <span class="n">position_forward</span><span class="p">,</span>
+                    <span class="n">momentum_forward</span><span class="p">,</span>
+                    <span class="n">slice_var</span><span class="p">,</span>
+                    <span class="n">direction</span><span class="p">,</span>
+                    <span class="n">depth</span><span class="p">,</span>
+                    <span class="n">stepsize</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="k">if</span> <span class="n">accept_set_bool2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">candidate_set_size2</span> <span class="o">/</span> <span class="n">candidate_set_size</span><span class="p">:</span>
                     <span class="n">position</span> <span class="o">=</span> <span class="n">position_bar</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
-            <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">candidate_set_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_acceptance_criteria</span><span class="p">(</span><span class="n">position_forward</span><span class="p">,</span> <span class="n">position_backward</span><span class="p">,</span>
-                                                                                   <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span>
-                                                                                   <span class="n">accept_set_bool2</span><span class="p">,</span> <span class="n">candidate_set_size</span><span class="p">,</span>
-                                                                                   <span class="n">candidate_set_size2</span><span class="p">)</span>
+            <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">candidate_set_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_acceptance_criteria</span><span class="p">(</span>
+                <span class="n">position_forward</span><span class="p">,</span>
+                <span class="n">position_backward</span><span class="p">,</span>
+                <span class="n">momentum_forward</span><span class="p">,</span>
+                <span class="n">momentum_backward</span><span class="p">,</span>
+                <span class="n">accept_set_bool2</span><span class="p">,</span>
+                <span class="n">candidate_set_size</span><span class="p">,</span>
+                <span class="n">candidate_set_size2</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="n">depth</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">return</span> <span class="n">position</span>
 
-<div class="viewcode-block" id="NoUTurnSampler.sample"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.NUTS.NoUTurnSampler.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_pos</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">stepsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s1">&#39;dataframe&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="NoUTurnSampler.sample"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.NUTS.NoUTurnSampler.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_pos</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">stepsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dataframe&quot;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to return samples using No U Turn Sampler</span>
 
@@ -297,22 +389,24 @@
 <span class="sd">        8  1.484520 -1.349247  0.768599</span>
 <span class="sd">        9  0.934942 -1.894589  0.471772</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">initial_pos</span> <span class="o">=</span> <span class="n">_check_1d_array_object</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="s1">&#39;initial_pos&#39;</span><span class="p">)</span>
-        <span class="n">_check_length_equal</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="s1">&#39;initial_pos&#39;</span><span class="p">,</span> <span class="s1">&#39;model.variables&#39;</span><span class="p">)</span>
+        <span class="n">initial_pos</span> <span class="o">=</span> <span class="n">_check_1d_array_object</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="s2">&quot;initial_pos&quot;</span><span class="p">)</span>
+        <span class="n">_check_length_equal</span><span class="p">(</span>
+            <span class="n">initial_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="s2">&quot;initial_pos&quot;</span><span class="p">,</span> <span class="s2">&quot;model.variables&quot;</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">stepsize</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">stepsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_reasonable_stepsize</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">)</span>
 
-        <span class="n">types</span> <span class="o">=</span> <span class="p">[(</span><span class="n">var_name</span><span class="p">,</span> <span class="s1">&#39;float&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
+        <span class="n">types</span> <span class="o">=</span> <span class="p">[(</span><span class="n">var_name</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">types</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">recarray</span><span class="p">)</span>
 
         <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">)</span>
         <span class="n">position_m</span> <span class="o">=</span> <span class="n">initial_pos</span>
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">)):</span>
             <span class="c1"># Genrating sample</span>
             <span class="n">position_m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">(</span><span class="n">position_m</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span>
-            <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">position_m</span>
+            <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">position_m</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">_return_samples</span><span class="p">(</span><span class="n">return_type</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span></div>
 
@@ -360,8 +454,10 @@
 <span class="sd">               [ 11.31892143,  -8.5873259 ],</span>
 <span class="sd">               [ 11.29008667,  -0.43809674]])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">initial_pos</span> <span class="o">=</span> <span class="n">_check_1d_array_object</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="s1">&#39;initial_pos&#39;</span><span class="p">)</span>
-        <span class="n">_check_length_equal</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="s1">&#39;initial_pos&#39;</span><span class="p">,</span> <span class="s1">&#39;model.variables&#39;</span><span class="p">)</span>
+        <span class="n">initial_pos</span> <span class="o">=</span> <span class="n">_check_1d_array_object</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="s2">&quot;initial_pos&quot;</span><span class="p">)</span>
+        <span class="n">_check_length_equal</span><span class="p">(</span>
+            <span class="n">initial_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="s2">&quot;initial_pos&quot;</span><span class="p">,</span> <span class="s2">&quot;model.variables&quot;</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">stepsize</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">stepsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_reasonable_stepsize</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">)</span>
@@ -381,8 +477,8 @@
 <span class="sd">    using No U Turn sampler with dual averaging for</span>
 <span class="sd">    adaptation of parameter stepsize.</span>
 
-<span class="sd">    Parameters:</span>
-<span class="sd">    -----------</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
 <span class="sd">    model: An instance pgmpy.models</span>
 <span class="sd">        Model from which sampling has to be done</span>
 
@@ -396,13 +492,8 @@
 <span class="sd">    delta: float (in between 0 and 1), defaults to 0.65</span>
 <span class="sd">        The target HMC acceptance probability</span>
 
-<span class="sd">    Public Methods:</span>
-<span class="sd">    ---------------</span>
-<span class="sd">    sample()</span>
-<span class="sd">    generate_sample()</span>
-
-<span class="sd">    Example:</span>
-<span class="sd">    --------</span>
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.sampling import NoUTurnSamplerDA as NUTSda, GradLogPDFGaussian</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.factors.continuous import GaussianDistribution as JGD</span>
 <span class="sd">    &gt;&gt;&gt; import numpy as np</span>
@@ -436,58 +527,146 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="p">,</span> <span class="n">simulate_dynamics</span><span class="o">=</span><span class="n">LeapFrog</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mf">0.65</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="n">delta</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="ow">or</span> <span class="n">delta</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;delta should be a floating value in between 0 and 1&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;delta should be a floating value in between 0 and 1&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">delta</span> <span class="o">=</span> <span class="n">delta</span>
 
-        <span class="nb">super</span><span class="p">(</span><span class="n">NoUTurnSamplerDA</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="o">=</span><span class="n">grad_log_pdf</span><span class="p">,</span>
-                                               <span class="n">simulate_dynamics</span><span class="o">=</span><span class="n">simulate_dynamics</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NoUTurnSamplerDA</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="o">=</span><span class="n">grad_log_pdf</span><span class="p">,</span> <span class="n">simulate_dynamics</span><span class="o">=</span><span class="n">simulate_dynamics</span>
+        <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_build_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">,</span> <span class="n">position0</span><span class="p">,</span> <span class="n">momentum0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_build_tree</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">position</span><span class="p">,</span>
+        <span class="n">momentum</span><span class="p">,</span>
+        <span class="n">slice_var</span><span class="p">,</span>
+        <span class="n">direction</span><span class="p">,</span>
+        <span class="n">depth</span><span class="p">,</span>
+        <span class="n">stepsize</span><span class="p">,</span>
+        <span class="n">position0</span><span class="p">,</span>
+        <span class="n">momentum0</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Recursively builds a tree for proposing new position and momentum</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">depth</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
 
-            <span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">,</span> <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">accept_set_bool</span> <span class="o">=</span>\
-                <span class="bp">self</span><span class="o">.</span><span class="n">_initalize_tree</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span> <span class="o">*</span> <span class="n">stepsize</span><span class="p">)</span>
+            <span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">,</span> <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">accept_set_bool</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initalize_tree</span><span class="p">(</span>
+                <span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span> <span class="o">*</span> <span class="n">stepsize</span>
+            <span class="p">)</span>
 
-            <span class="n">alpha</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_acceptance_prob</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">))</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_acceptance_prob</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">)</span>
+            <span class="p">)</span>
 
-            <span class="k">return</span> <span class="p">(</span><span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span> <span class="n">momentum_bar</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span>
-                    <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">position_bar</span><span class="p">,</span>
+                <span class="n">momentum_bar</span><span class="p">,</span>
+                <span class="n">position_bar</span><span class="p">,</span>
+                <span class="n">momentum_bar</span><span class="p">,</span>
+                <span class="n">position_bar</span><span class="p">,</span>
+                <span class="n">candidate_set_size</span><span class="p">,</span>
+                <span class="n">accept_set_bool</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="p">,</span>
+                <span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span>
-             <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">n_alpha</span><span class="p">)</span> <span class="o">=</span>\
-                <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span>
-                                 <span class="n">direction</span><span class="p">,</span> <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">,</span> <span class="n">position0</span><span class="p">,</span> <span class="n">momentum0</span><span class="p">)</span>
+            <span class="p">(</span>
+                <span class="n">position_backward</span><span class="p">,</span>
+                <span class="n">momentum_backward</span><span class="p">,</span>
+                <span class="n">position_forward</span><span class="p">,</span>
+                <span class="n">momentum_forward</span><span class="p">,</span>
+                <span class="n">position_bar</span><span class="p">,</span>
+                <span class="n">candidate_set_size</span><span class="p">,</span>
+                <span class="n">accept_set_bool</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="p">,</span>
+                <span class="n">n_alpha</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span>
+                <span class="n">position</span><span class="p">,</span>
+                <span class="n">momentum</span><span class="p">,</span>
+                <span class="n">slice_var</span><span class="p">,</span>
+                <span class="n">direction</span><span class="p">,</span>
+                <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">stepsize</span><span class="p">,</span>
+                <span class="n">position0</span><span class="p">,</span>
+                <span class="n">momentum0</span><span class="p">,</span>
+            <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">accept_set_bool</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
                     <span class="c1"># Build tree in backward direction</span>
-                    <span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">position_bar2</span><span class="p">,</span> <span class="n">candidate_set_size2</span><span class="p">,</span> <span class="n">accept_set_bool2</span><span class="p">,</span>
-                     <span class="n">alpha2</span><span class="p">,</span> <span class="n">n_alpha2</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span>
-                                                          <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">,</span> <span class="n">position0</span><span class="p">,</span> <span class="n">momentum0</span><span class="p">)</span>
+                    <span class="p">(</span>
+                        <span class="n">position_backward</span><span class="p">,</span>
+                        <span class="n">momentum_backward</span><span class="p">,</span>
+                        <span class="n">_</span><span class="p">,</span>
+                        <span class="n">_</span><span class="p">,</span>
+                        <span class="n">position_bar2</span><span class="p">,</span>
+                        <span class="n">candidate_set_size2</span><span class="p">,</span>
+                        <span class="n">accept_set_bool2</span><span class="p">,</span>
+                        <span class="n">alpha2</span><span class="p">,</span>
+                        <span class="n">n_alpha2</span><span class="p">,</span>
+                    <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span>
+                        <span class="n">position_backward</span><span class="p">,</span>
+                        <span class="n">momentum_backward</span><span class="p">,</span>
+                        <span class="n">slice_var</span><span class="p">,</span>
+                        <span class="n">direction</span><span class="p">,</span>
+                        <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="n">stepsize</span><span class="p">,</span>
+                        <span class="n">position0</span><span class="p">,</span>
+                        <span class="n">momentum0</span><span class="p">,</span>
+                    <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># Build tree in forward direction</span>
-                    <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">position_bar2</span><span class="p">,</span> <span class="n">candidate_set_size2</span><span class="p">,</span> <span class="n">accept_set_bool2</span><span class="p">,</span>
-                     <span class="n">alpha2</span><span class="p">,</span> <span class="n">n_alpha2</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span><span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span>
-                                                          <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">,</span> <span class="n">position0</span><span class="p">,</span> <span class="n">momentum0</span><span class="p">)</span>
+                    <span class="p">(</span>
+                        <span class="n">_</span><span class="p">,</span>
+                        <span class="n">_</span><span class="p">,</span>
+                        <span class="n">position_forward</span><span class="p">,</span>
+                        <span class="n">momentum_forward</span><span class="p">,</span>
+                        <span class="n">position_bar2</span><span class="p">,</span>
+                        <span class="n">candidate_set_size2</span><span class="p">,</span>
+                        <span class="n">accept_set_bool2</span><span class="p">,</span>
+                        <span class="n">alpha2</span><span class="p">,</span>
+                        <span class="n">n_alpha2</span><span class="p">,</span>
+                    <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span>
+                        <span class="n">position_forward</span><span class="p">,</span>
+                        <span class="n">momentum_forward</span><span class="p">,</span>
+                        <span class="n">slice_var</span><span class="p">,</span>
+                        <span class="n">direction</span><span class="p">,</span>
+                        <span class="n">depth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="n">stepsize</span><span class="p">,</span>
+                        <span class="n">position0</span><span class="p">,</span>
+                        <span class="n">momentum0</span><span class="p">,</span>
+                    <span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">candidate_set_size2</span> <span class="o">/</span> <span class="p">(</span><span class="n">candidate_set_size2</span> <span class="o">+</span> <span class="n">candidate_set_size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">candidate_set_size2</span> <span class="o">/</span> <span class="p">(</span>
+                    <span class="n">candidate_set_size2</span> <span class="o">+</span> <span class="n">candidate_set_size</span>
+                <span class="p">):</span>
                     <span class="n">position_bar</span> <span class="o">=</span> <span class="n">position_bar2</span>
 
                 <span class="n">alpha</span> <span class="o">+=</span> <span class="n">alpha2</span>
                 <span class="n">n_alpha</span> <span class="o">+=</span> <span class="n">n_alpha2</span>
-                <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">candidate_set_size</span> <span class="o">=</span>\
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_update_acceptance_criteria</span><span class="p">(</span><span class="n">position_forward</span><span class="p">,</span> <span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span>
-                                                     <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">accept_set_bool2</span><span class="p">,</span> <span class="n">candidate_set_size</span><span class="p">,</span>
-                                                     <span class="n">candidate_set_size2</span><span class="p">)</span>
+                <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">candidate_set_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_acceptance_criteria</span><span class="p">(</span>
+                    <span class="n">position_forward</span><span class="p">,</span>
+                    <span class="n">position_backward</span><span class="p">,</span>
+                    <span class="n">momentum_forward</span><span class="p">,</span>
+                    <span class="n">momentum_backward</span><span class="p">,</span>
+                    <span class="n">accept_set_bool2</span><span class="p">,</span>
+                    <span class="n">candidate_set_size</span><span class="p">,</span>
+                    <span class="n">candidate_set_size2</span><span class="p">,</span>
+                <span class="p">)</span>
 
-            <span class="k">return</span> <span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span>
-                    <span class="n">candidate_set_size</span><span class="p">,</span> <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">n_alpha</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">position_backward</span><span class="p">,</span>
+                <span class="n">momentum_backward</span><span class="p">,</span>
+                <span class="n">position_forward</span><span class="p">,</span>
+                <span class="n">momentum_forward</span><span class="p">,</span>
+                <span class="n">position_bar</span><span class="p">,</span>
+                <span class="n">candidate_set_size</span><span class="p">,</span>
+                <span class="n">accept_set_bool</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="p">,</span>
+                <span class="n">n_alpha</span><span class="p">,</span>
+            <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -506,35 +685,83 @@
         <span class="n">_</span><span class="p">,</span> <span class="n">log_pdf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_log_pdf</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_gradient_log_pdf</span><span class="p">()</span>
 
         <span class="c1"># Resample slice variable `u`</span>
-        <span class="n">slice_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_pdf</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">momentum</span><span class="p">,</span> <span class="n">momentum</span><span class="p">)))</span>
+        <span class="n">slice_var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_pdf</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">momentum</span><span class="p">,</span> <span class="n">momentum</span><span class="p">))</span>
+        <span class="p">)</span>
 
         <span class="k">while</span> <span class="n">accept_set_bool</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">direction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
                 <span class="c1"># Build a tree in backward direction</span>
-                <span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span> <span class="n">candidate_set_size2</span><span class="p">,</span> <span class="n">accept_set_bool2</span><span class="p">,</span>
-                 <span class="n">alpha</span><span class="p">,</span> <span class="n">n_alpha</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span><span class="n">position_backward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span>
-                                                    <span class="n">depth</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">,</span> <span class="n">position_m_1</span><span class="p">,</span> <span class="n">momentum</span><span class="p">)</span>
+                <span class="p">(</span>
+                    <span class="n">position_backward</span><span class="p">,</span>
+                    <span class="n">momentum_backward</span><span class="p">,</span>
+                    <span class="n">_</span><span class="p">,</span>
+                    <span class="n">_</span><span class="p">,</span>
+                    <span class="n">position_bar</span><span class="p">,</span>
+                    <span class="n">candidate_set_size2</span><span class="p">,</span>
+                    <span class="n">accept_set_bool2</span><span class="p">,</span>
+                    <span class="n">alpha</span><span class="p">,</span>
+                    <span class="n">n_alpha</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span>
+                    <span class="n">position_backward</span><span class="p">,</span>
+                    <span class="n">momentum_backward</span><span class="p">,</span>
+                    <span class="n">slice_var</span><span class="p">,</span>
+                    <span class="n">direction</span><span class="p">,</span>
+                    <span class="n">depth</span><span class="p">,</span>
+                    <span class="n">stepsize</span><span class="p">,</span>
+                    <span class="n">position_m_1</span><span class="p">,</span>
+                    <span class="n">momentum</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Build tree in forward direction</span>
-                <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">position_bar</span><span class="p">,</span> <span class="n">candidate_set_size2</span><span class="p">,</span> <span class="n">accept_set_bool2</span><span class="p">,</span>
-                 <span class="n">alpha</span><span class="p">,</span> <span class="n">n_alpha</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span><span class="n">position_forward</span><span class="p">,</span> <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">slice_var</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span>
-                                                    <span class="n">depth</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">,</span> <span class="n">position_m_1</span><span class="p">,</span> <span class="n">momentum</span><span class="p">)</span>
+                <span class="p">(</span>
+                    <span class="n">_</span><span class="p">,</span>
+                    <span class="n">_</span><span class="p">,</span>
+                    <span class="n">position_forward</span><span class="p">,</span>
+                    <span class="n">momentum_forward</span><span class="p">,</span>
+                    <span class="n">position_bar</span><span class="p">,</span>
+                    <span class="n">candidate_set_size2</span><span class="p">,</span>
+                    <span class="n">accept_set_bool2</span><span class="p">,</span>
+                    <span class="n">alpha</span><span class="p">,</span>
+                    <span class="n">n_alpha</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_tree</span><span class="p">(</span>
+                    <span class="n">position_forward</span><span class="p">,</span>
+                    <span class="n">momentum_forward</span><span class="p">,</span>
+                    <span class="n">slice_var</span><span class="p">,</span>
+                    <span class="n">direction</span><span class="p">,</span>
+                    <span class="n">depth</span><span class="p">,</span>
+                    <span class="n">stepsize</span><span class="p">,</span>
+                    <span class="n">position_m_1</span><span class="p">,</span>
+                    <span class="n">momentum</span><span class="p">,</span>
+                <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">accept_set_bool2</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">candidate_set_size2</span> <span class="o">/</span> <span class="n">candidate_set_size</span><span class="p">:</span>
                     <span class="n">position</span> <span class="o">=</span> <span class="n">position_bar</span>
 
-            <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">candidate_set_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_acceptance_criteria</span><span class="p">(</span><span class="n">position_forward</span><span class="p">,</span> <span class="n">position_backward</span><span class="p">,</span>
-                                                                                   <span class="n">momentum_forward</span><span class="p">,</span> <span class="n">momentum_backward</span><span class="p">,</span>
-                                                                                   <span class="n">accept_set_bool2</span><span class="p">,</span> <span class="n">candidate_set_size</span><span class="p">,</span>
-                                                                                   <span class="n">candidate_set_size2</span><span class="p">)</span>
+            <span class="n">accept_set_bool</span><span class="p">,</span> <span class="n">candidate_set_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_acceptance_criteria</span><span class="p">(</span>
+                <span class="n">position_forward</span><span class="p">,</span>
+                <span class="n">position_backward</span><span class="p">,</span>
+                <span class="n">momentum_forward</span><span class="p">,</span>
+                <span class="n">momentum_backward</span><span class="p">,</span>
+                <span class="n">accept_set_bool2</span><span class="p">,</span>
+                <span class="n">candidate_set_size</span><span class="p">,</span>
+                <span class="n">candidate_set_size2</span><span class="p">,</span>
+            <span class="p">)</span>
 
             <span class="n">depth</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="k">return</span> <span class="n">position</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">n_alpha</span>
 
-<div class="viewcode-block" id="NoUTurnSamplerDA.sample"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.NUTS.NoUTurnSamplerDA.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_pos</span><span class="p">,</span> <span class="n">num_adapt</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">stepsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s1">&#39;dataframe&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="NoUTurnSamplerDA.sample"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.NUTS.NoUTurnSamplerDA.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">initial_pos</span><span class="p">,</span>
+        <span class="n">num_adapt</span><span class="p">,</span>
+        <span class="n">num_samples</span><span class="p">,</span>
+        <span class="n">stepsize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dataframe&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns samples using No U Turn Sampler with dual averaging</span>
 
@@ -587,33 +814,37 @@
 <span class="sd">        8  13.253336 -20.169492</span>
 <span class="sd">        9  11.295901  -7.665058</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">initial_pos</span> <span class="o">=</span> <span class="n">_check_1d_array_object</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="s1">&#39;initial_pos&#39;</span><span class="p">)</span>
-        <span class="n">_check_length_equal</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="s1">&#39;initial_pos&#39;</span><span class="p">,</span> <span class="s1">&#39;model.variables&#39;</span><span class="p">)</span>
+        <span class="n">initial_pos</span> <span class="o">=</span> <span class="n">_check_1d_array_object</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="s2">&quot;initial_pos&quot;</span><span class="p">)</span>
+        <span class="n">_check_length_equal</span><span class="p">(</span>
+            <span class="n">initial_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="s2">&quot;initial_pos&quot;</span><span class="p">,</span> <span class="s2">&quot;model.variables&quot;</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">stepsize</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">stepsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_reasonable_stepsize</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">num_adapt</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">NoUTurnSampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_log_pdf</span><span class="p">,</span>
-                                  <span class="bp">self</span><span class="o">.</span><span class="n">simulate_dynamics</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">NoUTurnSampler</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_log_pdf</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulate_dynamics</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span>
 
         <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">10.0</span> <span class="o">*</span> <span class="n">stepsize</span><span class="p">)</span>
         <span class="n">stepsize_bar</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="n">h_bar</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-        <span class="n">types</span> <span class="o">=</span> <span class="p">[(</span><span class="n">var_name</span><span class="p">,</span> <span class="s1">&#39;float&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
+        <span class="n">types</span> <span class="o">=</span> <span class="p">[(</span><span class="n">var_name</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">types</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">recarray</span><span class="p">)</span>
         <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">)</span>
         <span class="n">position_m</span> <span class="o">=</span> <span class="n">initial_pos</span>
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">)):</span>
 
             <span class="n">position_m</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">n_alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">(</span><span class="n">position_m</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span>
-            <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">position_m</span>
+            <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">position_m</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">num_adapt</span><span class="p">:</span>
-                <span class="n">stepsize</span><span class="p">,</span> <span class="n">stepsize_bar</span><span class="p">,</span> <span class="n">h_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapt_params</span><span class="p">(</span><span class="n">stepsize</span><span class="p">,</span> <span class="n">stepsize_bar</span><span class="p">,</span> <span class="n">h_bar</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span>
-                                                                   <span class="n">i</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">n_alpha</span><span class="p">)</span>
+                <span class="n">stepsize</span><span class="p">,</span> <span class="n">stepsize_bar</span><span class="p">,</span> <span class="n">h_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapt_params</span><span class="p">(</span>
+                    <span class="n">stepsize</span><span class="p">,</span> <span class="n">stepsize_bar</span><span class="p">,</span> <span class="n">h_bar</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">n_alpha</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">stepsize</span> <span class="o">=</span> <span class="n">stepsize_bar</span>
 
@@ -669,15 +900,18 @@
 <span class="sd">               [-56.63440044, -16.03309364],</span>
 <span class="sd">               [-63.880094  , -19.19981944]])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">initial_pos</span> <span class="o">=</span> <span class="n">_check_1d_array_object</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="s1">&#39;initial_pos&#39;</span><span class="p">)</span>
-        <span class="n">_check_length_equal</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="s1">&#39;initial_pos&#39;</span><span class="p">,</span> <span class="s1">&#39;model.variables&#39;</span><span class="p">)</span>
+        <span class="n">initial_pos</span> <span class="o">=</span> <span class="n">_check_1d_array_object</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="s2">&quot;initial_pos&quot;</span><span class="p">)</span>
+        <span class="n">_check_length_equal</span><span class="p">(</span>
+            <span class="n">initial_pos</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="s2">&quot;initial_pos&quot;</span><span class="p">,</span> <span class="s2">&quot;model.variables&quot;</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">stepsize</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">stepsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_reasonable_stepsize</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">num_adapt</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># return sample generated using Simple HMC algorithm</span>
-            <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">NoUTurnSampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_log_pdf</span><span class="p">,</span>
-                                         <span class="bp">self</span><span class="o">.</span><span class="n">simulate_dynamics</span><span class="p">)</span><span class="o">.</span><span class="n">generate_sample</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">NoUTurnSampler</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_log_pdf</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulate_dynamics</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">generate_sample</span><span class="p">(</span><span class="n">initial_pos</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="n">sample</span>
             <span class="k">return</span>
         <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">10.0</span> <span class="o">*</span> <span class="n">stepsize</span><span class="p">)</span>
@@ -693,8 +927,9 @@
             <span class="n">position_m</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">n_alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample</span><span class="p">(</span><span class="n">position_m</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">num_adapt</span><span class="p">:</span>
-                <span class="n">stepsize</span><span class="p">,</span> <span class="n">stepsize_bar</span><span class="p">,</span> <span class="n">h_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapt_params</span><span class="p">(</span><span class="n">stepsize</span><span class="p">,</span> <span class="n">stepsize_bar</span><span class="p">,</span> <span class="n">h_bar</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span>
-                                                                   <span class="n">i</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">n_alpha</span><span class="p">)</span>
+                <span class="n">stepsize</span><span class="p">,</span> <span class="n">stepsize_bar</span><span class="p">,</span> <span class="n">h_bar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adapt_params</span><span class="p">(</span>
+                    <span class="n">stepsize</span><span class="p">,</span> <span class="n">stepsize_bar</span><span class="p">,</span> <span class="n">h_bar</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">n_alpha</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">stepsize</span> <span class="o">=</span> <span class="n">stepsize_bar</span>
 
@@ -715,13 +950,13 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.2 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2016, Ankur Ankan.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+        &#169; Copyright 2019, Ankur Ankan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.1.
     </div>
   </body>
 </html>

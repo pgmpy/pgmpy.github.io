@@ -1,33 +1,21 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>pgmpy.inference.ExactInference &#8212; pgmpy 0.1.2 documentation</title>
-    
+    <meta charset="utf-8" />
+    <title>pgmpy.inference.ExactInference &#8212; pgmpy 0.1.9 documentation</title>
     <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../../',
-        VERSION:     '0.1.2',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
-  </head>
-  <body role="document">
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -37,7 +25,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.2 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>
@@ -47,13 +35,13 @@
               <img class="logo" src="../../../_static/logo.png" alt="Logo"/>
             </a></p>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -71,19 +59,119 @@
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
 <span class="kn">from</span> <span class="nn">pgmpy.extern.six.moves</span> <span class="k">import</span> <span class="nb">filter</span><span class="p">,</span> <span class="nb">range</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.extern.six</span> <span class="k">import</span> <span class="n">string_types</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="k">import</span> <span class="n">factor_product</span>
 <span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="k">import</span> <span class="n">Inference</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="k">import</span> <span class="n">JunctionTree</span>
-<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="k">import</span> <span class="n">StateNameDecorator</span>
+<span class="kn">from</span> <span class="nn">pgmpy.inference.EliminationOrder</span> <span class="k">import</span> <span class="p">(</span>
+    <span class="n">WeightedMinFill</span><span class="p">,</span>
+    <span class="n">MinNeighbors</span><span class="p">,</span>
+    <span class="n">MinFill</span><span class="p">,</span>
+    <span class="n">MinWeight</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="k">import</span> <span class="n">JunctionTree</span><span class="p">,</span> <span class="n">BayesianModel</span>
 
 
 <div class="viewcode-block" id="VariableElimination"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination">[docs]</a><span class="k">class</span> <span class="nc">VariableElimination</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_working_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evidence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uses the evidence given to the query methods to modify the factors before running</span>
+<span class="sd">        the variable elimination algorithm.</span>
 
-    <span class="nd">@StateNameDecorator</span><span class="p">(</span><span class="n">argument</span><span class="o">=</span><span class="s1">&#39;evidence&#39;</span><span class="p">,</span> <span class="n">return_val</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">_variable_elimination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">elimination_order</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        evidence: dict</span>
+<span class="sd">            Dict of the form {variable: state}</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict: Modified working factors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">working_factors</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">node</span><span class="p">:</span> <span class="p">{</span><span class="n">factor</span> <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="n">node</span><span class="p">]}</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Dealing with evidence. Reducing factors over it before VE is run.</span>
+        <span class="k">if</span> <span class="n">evidence</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">evidence_var</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">evidence_var</span><span class="p">]:</span>
+                    <span class="n">factor_reduced</span> <span class="o">=</span> <span class="n">factor</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span>
+                        <span class="p">[(</span><span class="n">evidence_var</span><span class="p">,</span> <span class="n">evidence</span><span class="p">[</span><span class="n">evidence_var</span><span class="p">])],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">factor_reduced</span><span class="o">.</span><span class="n">scope</span><span class="p">():</span>
+                        <span class="n">working_factors</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+                        <span class="n">working_factors</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">factor_reduced</span><span class="p">)</span>
+                <span class="k">del</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">evidence_var</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">working_factors</span>
+
+    <span class="k">def</span> <span class="nf">_get_elimination_order</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deals with all elimination order parameters given to _variable_elimination method</span>
+<span class="sd">        and returns a list of variables that are to be eliminated</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        elimination_order: str or list</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list: A list of variables names in the order they need to be eliminated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">to_eliminate</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>
+            <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+            <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">evidence</span> <span class="k">else</span> <span class="p">[])</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Step 1: If elimination_order is a list, verify it&#39;s correct and return.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
+                <span class="n">var</span> <span class="ow">in</span> <span class="n">elimination_order</span>
+                <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
+                    <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">evidence</span> <span class="k">else</span> <span class="p">[])</span>
+                <span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Elimination order contains variables which are in&quot;</span>
+                    <span class="s2">&quot; variables or evidence args&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">elimination_order</span>
+
+        <span class="c1"># Step 2: If elimination order is None or a Markov model, return a random order.</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">elimination_order</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">to_eliminate</span>
+
+        <span class="c1"># Step 3: If elimination order is a str, compute the order using the specified heuristic.</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span>
+        <span class="p">):</span>
+            <span class="n">heuristic_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;weightedminfill&quot;</span><span class="p">:</span> <span class="n">WeightedMinFill</span><span class="p">,</span>
+                <span class="s2">&quot;minneighbors&quot;</span><span class="p">:</span> <span class="n">MinNeighbors</span><span class="p">,</span>
+                <span class="s2">&quot;minweight&quot;</span><span class="p">:</span> <span class="n">MinWeight</span><span class="p">,</span>
+                <span class="s2">&quot;minfill&quot;</span><span class="p">:</span> <span class="n">MinFill</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">elimination_order</span> <span class="o">=</span> <span class="n">heuristic_dict</span><span class="p">[</span><span class="n">elimination_order</span><span class="o">.</span><span class="n">lower</span><span class="p">()](</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">get_elimination_order</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="n">to_eliminate</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">elimination_order</span>
+
+    <span class="k">def</span> <span class="nf">_variable_elimination</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">variables</span><span class="p">,</span>
+        <span class="n">operation</span><span class="p">,</span>
+        <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">elimination_order</span><span class="o">=</span><span class="s2">&quot;MinFill&quot;</span><span class="p">,</span>
+        <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Implementation of a generalized variable elimination.</span>
 
@@ -91,15 +179,20 @@
 <span class="sd">        ----------</span>
 <span class="sd">        variables: list, array-like</span>
 <span class="sd">            variables that are not to be eliminated.</span>
+
 <span class="sd">        operation: str (&#39;marginalize&#39; | &#39;maximize&#39;)</span>
 <span class="sd">            The operation to do for eliminating the variable.</span>
+
 <span class="sd">        evidence: dict</span>
 <span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
 <span class="sd">            None if no evidence</span>
-<span class="sd">        elimination_order: list, array-like</span>
-<span class="sd">            list of variables representing the order in which they</span>
-<span class="sd">            are to be eliminated. If None order is computed automatically.</span>
+
+<span class="sd">        elimination_order: str or list (array-like)</span>
+<span class="sd">            If str: Heuristic to use to find the elimination order.</span>
+<span class="sd">            If array-like: The elimination order to use.</span>
+<span class="sd">            If None: A random elimination order is used.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Step 1: Deal with the input arguments.</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;variables must be a list of strings&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">evidence</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
@@ -110,38 +203,35 @@
             <span class="n">all_factors</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">factor_li</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
                 <span class="n">all_factors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">factor_li</span><span class="p">)</span>
-            <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">all_factors</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">joint</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">factor_product</span><span class="p">(</span><span class="o">*</span><span class="nb">set</span><span class="p">(</span><span class="n">all_factors</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">all_factors</span><span class="p">)</span>
 
+        <span class="c1"># Step 2: Prepare data structures to run the algorithm.</span>
         <span class="n">eliminated_variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="n">working_factors</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="p">{</span><span class="n">factor</span> <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="n">node</span><span class="p">]}</span>
-                           <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">}</span>
+        <span class="c1"># Get working factors and elimination order</span>
+        <span class="n">working_factors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_working_factors</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span>
+        <span class="n">elimination_order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_elimination_order</span><span class="p">(</span>
+            <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span>
+        <span class="p">)</span>
 
-        <span class="c1"># Dealing with evidence. Reducing factors over it before VE is run.</span>
-        <span class="k">if</span> <span class="n">evidence</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">evidence_var</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">evidence_var</span><span class="p">]:</span>
-                    <span class="n">factor_reduced</span> <span class="o">=</span> <span class="n">factor</span><span class="o">.</span><span class="n">reduce</span><span class="p">([(</span><span class="n">evidence_var</span><span class="p">,</span> <span class="n">evidence</span><span class="p">[</span><span class="n">evidence_var</span><span class="p">])],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">factor_reduced</span><span class="o">.</span><span class="n">scope</span><span class="p">():</span>
-                        <span class="n">working_factors</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
-                        <span class="n">working_factors</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">factor_reduced</span><span class="p">)</span>
-                <span class="k">del</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">evidence_var</span><span class="p">]</span>
+        <span class="c1"># Step 3: Run variable elimination</span>
+        <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+            <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pbar</span> <span class="o">=</span> <span class="n">elimination_order</span>
 
-        <span class="c1"># TODO: Modify it to find the optimal elimination order</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">elimination_order</span><span class="p">:</span>
-            <span class="n">elimination_order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">-</span>
-                                     <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">-</span>
-                                     <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">evidence</span> <span class="k">else</span> <span class="p">[]))</span>
-
-        <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">var</span> <span class="ow">in</span> <span class="n">elimination_order</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span>
-                 <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">evidence</span> <span class="k">else</span> <span class="p">[]))):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Elimination order contains variables which are in&quot;</span>
-                             <span class="s2">&quot; variables or evidence args&quot;</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">elimination_order</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">pbar</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+                <span class="n">pbar</span><span class="o">.</span><span class="n">set_description</span><span class="p">(</span><span class="s2">&quot;Eliminating: </span><span class="si">{var}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">var</span><span class="o">=</span><span class="n">var</span><span class="p">))</span>
             <span class="c1"># Removing all the factors containing the variables which are</span>
             <span class="c1"># eliminated (as all the factors should be considered only once)</span>
-            <span class="n">factors</span> <span class="o">=</span> <span class="p">[</span><span class="n">factor</span> <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
-                       <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">eliminated_variables</span><span class="p">)]</span>
+            <span class="n">factors</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">factor</span>
+                <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">eliminated_variables</span><span class="p">)</span>
+            <span class="p">]</span>
             <span class="n">phi</span> <span class="o">=</span> <span class="n">factor_product</span><span class="p">(</span><span class="o">*</span><span class="n">factors</span><span class="p">)</span>
             <span class="n">phi</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">operation</span><span class="p">)([</span><span class="n">var</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="k">del</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
@@ -149,6 +239,7 @@
                 <span class="n">working_factors</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
             <span class="n">eliminated_variables</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
 
+        <span class="c1"># Step 4: Prepare variables to be returned.</span>
         <span class="n">final_distribution</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">working_factors</span><span class="p">:</span>
             <span class="n">factors</span> <span class="o">=</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
@@ -156,26 +247,45 @@
                 <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">eliminated_variables</span><span class="p">):</span>
                     <span class="n">final_distribution</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
 
-        <span class="n">query_var_factor</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">query_var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
-            <span class="n">phi</span> <span class="o">=</span> <span class="n">factor_product</span><span class="p">(</span><span class="o">*</span><span class="n">final_distribution</span><span class="p">)</span>
-            <span class="n">query_var_factor</span><span class="p">[</span><span class="n">query_var</span><span class="p">]</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">marginalize</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">-</span>
-                                                               <span class="nb">set</span><span class="p">([</span><span class="n">query_var</span><span class="p">])),</span>
-                                                          <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">query_var_factor</span>
+        <span class="k">if</span> <span class="n">joint</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">factor_product</span><span class="p">(</span><span class="o">*</span><span class="n">final_distribution</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">factor_product</span><span class="p">(</span><span class="o">*</span><span class="n">final_distribution</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">query_var_factor</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">query_var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                <span class="n">phi</span> <span class="o">=</span> <span class="n">factor_product</span><span class="p">(</span><span class="o">*</span><span class="n">final_distribution</span><span class="p">)</span>
+                <span class="n">query_var_factor</span><span class="p">[</span><span class="n">query_var</span><span class="p">]</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">marginalize</span><span class="p">(</span>
+                    <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">query_var</span><span class="p">])),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">query_var_factor</span>
 
-<div class="viewcode-block" id="VariableElimination.query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">elimination_order</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="VariableElimination.query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">variables</span><span class="p">,</span>
+        <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">elimination_order</span><span class="o">=</span><span class="s2">&quot;MinFill&quot;</span><span class="p">,</span>
+        <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        variables: list</span>
 <span class="sd">            list of variables for which you want to compute the probability</span>
+
 <span class="sd">        evidence: dict</span>
 <span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
 <span class="sd">            None if no evidence</span>
+
 <span class="sd">        elimination_order: list</span>
 <span class="sd">            order of variable eliminations (if nothing is provided) order is</span>
 <span class="sd">            computed automatically</span>
+
+<span class="sd">        joint: boolean (default: True)</span>
+<span class="sd">            If True, returns a Joint Distribution over `variables`.</span>
+<span class="sd">            If False, returns a dict of distributions over each of the `variables`.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -190,10 +300,22 @@
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; phi_query = inference.query([&#39;A&#39;, &#39;B&#39;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="s1">&#39;marginalize&#39;</span><span class="p">,</span>
-                                          <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">elimination_order</span><span class="o">=</span><span class="n">elimination_order</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
+            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+            <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
+            <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+            <span class="n">elimination_order</span><span class="o">=</span><span class="n">elimination_order</span><span class="p">,</span>
+            <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
+            <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
-<div class="viewcode-block" id="VariableElimination.max_marginal"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.max_marginal">[docs]</a>    <span class="k">def</span> <span class="nf">max_marginal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">elimination_order</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="VariableElimination.max_marginal"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.max_marginal">[docs]</a>    <span class="k">def</span> <span class="nf">max_marginal</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">elimination_order</span><span class="o">=</span><span class="s2">&quot;MinFill&quot;</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the max-marginal over the variables given the evidence.</span>
 
@@ -223,20 +345,28 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">variables</span><span class="p">:</span>
             <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="s1">&#39;maximize&#39;</span><span class="p">,</span>
-                                                        <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
-                                                        <span class="n">elimination_order</span><span class="o">=</span><span class="n">elimination_order</span><span class="p">)</span>
+        <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
+            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+            <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;maximize&quot;</span><span class="p">,</span>
+            <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+            <span class="n">elimination_order</span><span class="o">=</span><span class="n">elimination_order</span><span class="p">,</span>
+            <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+        <span class="p">)</span>
 
-        <span class="c1"># To handle the case when no argument is passed then</span>
-        <span class="c1"># _variable_elimination returns a dict.</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">final_distribution</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">final_distribution</span> <span class="o">=</span> <span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">factor_product</span><span class="p">(</span><span class="o">*</span><span class="n">final_distribution</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">)</span></div>
 
-    <span class="nd">@StateNameDecorator</span><span class="p">(</span><span class="n">argument</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_val</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<div class="viewcode-block" id="VariableElimination.map_query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">elimination_order</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="VariableElimination.map_query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">elimination_order</span><span class="o">=</span><span class="s2">&quot;MinFill&quot;</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the MAP Query over the variables given the evidence.</span>
+
+<span class="sd">        Note: When multiple variables are passed, it returns the map_query for each</span>
+<span class="sd">        of them individually.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -262,17 +392,17 @@
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; phi_query = inference.map_query([&#39;A&#39;, &#39;B&#39;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">elimination_variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">if</span> <span class="n">evidence</span> <span class="k">else</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span><span class="n">elimination_variables</span><span class="p">,</span> <span class="s1">&#39;maximize&#39;</span><span class="p">,</span>
-                                                        <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
-                                                        <span class="n">elimination_order</span><span class="o">=</span><span class="n">elimination_order</span><span class="p">)</span>
-        <span class="c1"># To handle the case when no argument is passed then</span>
-        <span class="c1"># _variable_elimination returns a dict.</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">final_distribution</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">final_distribution</span> <span class="o">=</span> <span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
-        <span class="n">distribution</span> <span class="o">=</span> <span class="n">factor_product</span><span class="p">(</span><span class="o">*</span><span class="n">final_distribution</span><span class="p">)</span>
-        <span class="n">argmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">distribution</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-        <span class="n">assignment</span> <span class="o">=</span> <span class="n">distribution</span><span class="o">.</span><span class="n">assignment</span><span class="p">([</span><span class="n">argmax</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># TODO:Check the note in docstring. Change that behavior to return the joint MAP</span>
+        <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
+            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+            <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
+            <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+            <span class="n">elimination_order</span><span class="o">=</span><span class="n">elimination_order</span><span class="p">,</span>
+            <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">argmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">final_distribution</span><span class="o">.</span><span class="n">assignment</span><span class="p">([</span><span class="n">argmax</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="n">map_query_results</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">var_assignment</span> <span class="ow">in</span> <span class="n">assignment</span><span class="p">:</span>
@@ -312,12 +442,16 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># If the elimination order does not contain the same variables as the model</span>
         <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Set of variables in elimination order&quot;</span>
-                             <span class="s2">&quot; different from variables in model&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Set of variables in elimination order&quot;</span>
+                <span class="s2">&quot; different from variables in model&quot;</span>
+            <span class="p">)</span>
 
         <span class="n">eliminated_variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="n">working_factors</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="p">[</span><span class="n">factor</span><span class="o">.</span><span class="n">scope</span><span class="p">()</span> <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="n">node</span><span class="p">]]</span>
-                           <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">}</span>
+        <span class="n">working_factors</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">node</span><span class="p">:</span> <span class="p">[</span><span class="n">factor</span><span class="o">.</span><span class="n">scope</span><span class="p">()</span> <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="n">node</span><span class="p">]]</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span>
+        <span class="p">}</span>
 
         <span class="c1"># The set of cliques that should be in the induced graph</span>
         <span class="n">cliques</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -328,8 +462,11 @@
         <span class="c1"># Removing all the factors containing the variables which are</span>
         <span class="c1"># eliminated (as all the factors should be considered only once)</span>
         <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">elimination_order</span><span class="p">:</span>
-            <span class="n">factors</span> <span class="o">=</span> <span class="p">[</span><span class="n">factor</span> <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
-                       <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">eliminated_variables</span><span class="p">)]</span>
+            <span class="n">factors</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">factor</span>
+                <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">eliminated_variables</span><span class="p">)</span>
+            <span class="p">]</span>
             <span class="n">phi</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">factors</span><span class="p">))</span><span class="o">.</span><span class="n">difference</span><span class="p">({</span><span class="n">var</span><span class="p">})</span>
             <span class="n">cliques</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span>
             <span class="k">del</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
@@ -337,8 +474,9 @@
                 <span class="n">working_factors</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span>
             <span class="n">eliminated_variables</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
 
-        <span class="n">edges_comb</span> <span class="o">=</span> <span class="p">[</span><span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-                      <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="n">cliques</span><span class="p">)]</span>
+        <span class="n">edges_comb</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">,</span> <span class="n">cliques</span><span class="p">)</span>
+        <span class="p">]</span>
         <span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">edges_comb</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="VariableElimination.induced_width"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.induced_width">[docs]</a>    <span class="k">def</span> <span class="nf">induced_width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">):</span>
@@ -384,7 +522,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">BeliefPropagation</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BeliefPropagation</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">JunctionTree</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_junction_tree</span><span class="p">()</span>
@@ -435,12 +573,16 @@
 
         <span class="c1"># \sigma_{i \rightarrow j} = \sum_{C_i - S_{i, j}} \beta_i</span>
         <span class="c1"># marginalize the clique over the sepset</span>
-        <span class="n">sigma</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">sending_clique</span><span class="p">],</span> <span class="n">operation</span><span class="p">)(</span><span class="nb">list</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">sending_clique</span><span class="p">)</span> <span class="o">-</span> <span class="n">sepset</span><span class="p">),</span>
-                                                                        <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">sending_clique</span><span class="p">],</span> <span class="n">operation</span><span class="p">)(</span>
+            <span class="nb">list</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">sending_clique</span><span class="p">)</span> <span class="o">-</span> <span class="n">sepset</span><span class="p">),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
 
         <span class="c1"># \beta_j = \beta_j * \frac{\sigma_{i \rightarrow j}}{\mu_{i, j}}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">recieving_clique</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span>
-                                                  <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span> <span class="k">else</span> <span class="n">sigma</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">recieving_clique</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span>
+            <span class="n">sigma</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span>
+            <span class="k">else</span> <span class="n">sigma</span>
+        <span class="p">)</span>
 
         <span class="c1"># \mu_{i, j} = \sigma_{i \rightarrow j}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigma</span>
@@ -472,15 +614,23 @@
         <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
             <span class="n">sepset</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
             <span class="n">sepset_key</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span> <span class="ow">or</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span> <span class="ow">or</span>
-                    <span class="n">sepset_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span>
+                <span class="ow">or</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span>
+                <span class="ow">or</span> <span class="n">sepset_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span>
+            <span class="p">):</span>
                 <span class="k">return</span> <span class="kc">False</span>
 
-            <span class="n">marginal_1</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">operation</span><span class="p">)(</span><span class="nb">list</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">sepset</span><span class="p">),</span>
-                                                                          <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">marginal_2</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">operation</span><span class="p">)(</span><span class="nb">list</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">sepset</span><span class="p">),</span>
-                                                                          <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">marginal_1</span> <span class="o">!=</span> <span class="n">marginal_2</span> <span class="ow">or</span> <span class="n">marginal_1</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]:</span>
+            <span class="n">marginal_1</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">operation</span><span class="p">)(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">sepset</span><span class="p">),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+            <span class="n">marginal_2</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="n">operation</span><span class="p">)(</span>
+                <span class="nb">list</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">sepset</span><span class="p">),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">marginal_1</span> <span class="o">!=</span> <span class="n">marginal_2</span>
+                <span class="ow">or</span> <span class="n">marginal_1</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span>
+            <span class="p">):</span>
                 <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="kc">True</span>
 
@@ -502,9 +652,13 @@
 <span class="sd">        Daphne Koller and Nir Friedman.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Initialize clique beliefs as well as sepset beliefs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span> <span class="o">=</span> <span class="p">{</span><span class="n">clique</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">get_factors</span><span class="p">(</span><span class="n">clique</span><span class="p">)</span>
-                               <span class="k">for</span> <span class="n">clique</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span> <span class="o">=</span> <span class="p">{</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">):</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">edges</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">clique</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">get_factors</span><span class="p">(</span><span class="n">clique</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">clique</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">):</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+        <span class="p">}</span>
 
         <span class="k">for</span> <span class="n">clique</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_converged</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="n">operation</span><span class="p">):</span>
@@ -513,7 +667,9 @@
                 <span class="c1"># upward pass</span>
                 <span class="k">for</span> <span class="n">neighbor_clique</span> <span class="ow">in</span> <span class="n">neighbors</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_update_beliefs</span><span class="p">(</span><span class="n">neighbor_clique</span><span class="p">,</span> <span class="n">clique</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="n">operation</span><span class="p">)</span>
-                <span class="n">bfs_edges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">breadth_first_search</span><span class="o">.</span><span class="n">bfs_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="p">,</span> <span class="n">clique</span><span class="p">)</span>
+                <span class="n">bfs_edges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">breadth_first_search</span><span class="o">.</span><span class="n">bfs_edges</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="p">,</span> <span class="n">clique</span>
+                <span class="p">)</span>
                 <span class="c1"># update the beliefs of all the nodes starting from the root to leaves using root&#39;s belief</span>
                 <span class="c1"># downward pass</span>
                 <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">bfs_edges</span><span class="p">:</span>
@@ -552,7 +708,7 @@
 <span class="sd">        &gt;&gt;&gt; bp = BeliefPropagation(G)</span>
 <span class="sd">        &gt;&gt;&gt; bp.calibrate()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate_junction_tree</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s1">&#39;marginalize&#39;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate_junction_tree</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BeliefPropagation.max_calibrate"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.max_calibrate">[docs]</a>    <span class="k">def</span> <span class="nf">max_calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -585,9 +741,9 @@
 <span class="sd">        &gt;&gt;&gt; bp = BeliefPropagation(G)</span>
 <span class="sd">        &gt;&gt;&gt; bp.max_calibrate()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate_junction_tree</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s1">&#39;maximize&#39;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate_junction_tree</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;maximize&quot;</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a generalized query method that can be used for both query and map query.</span>
 
@@ -634,7 +790,9 @@
         <span class="c1"># Find a tree T&#39; such that query_variables are a subset of scope(T&#39;)</span>
         <span class="n">nodes_with_query_variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">query_variables</span><span class="p">:</span>
-            <span class="n">nodes_with_query_variables</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
+            <span class="n">nodes_with_query_variables</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+            <span class="p">)</span>
         <span class="n">subtree_nodes</span> <span class="o">=</span> <span class="n">nodes_with_query_variables</span>
 
         <span class="c1"># Conversion of set to tuple just for indexing</span>
@@ -642,8 +800,13 @@
         <span class="c1"># As junction tree is a tree, that means that there would be only path between any two nodes in the tree</span>
         <span class="c1"># thus we can just take the path between any two nodes; no matter there order is</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes_with_query_variables</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">subtree_nodes</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="p">,</span> <span class="n">nodes_with_query_variables</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                                  <span class="n">nodes_with_query_variables</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]))</span>
+            <span class="n">subtree_nodes</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="n">nx</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="p">,</span>
+                    <span class="n">nodes_with_query_variables</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                    <span class="n">nodes_with_query_variables</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
         <span class="n">subtree_undirected_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">subtree_nodes</span><span class="p">)</span>
         <span class="c1"># Converting subtree into a junction tree</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">subtree_nodes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -654,9 +817,11 @@
 
         <span class="c1"># Selecting a node is root node. Root node would be having only one neighbor</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">subtree</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">root_node</span> <span class="o">=</span> <span class="n">subtree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">root_node</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">subtree</span><span class="o">.</span><span class="n">nodes</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">root_node</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">subtree</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subtree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">root_node</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">subtree</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subtree</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">clique_potential_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">root_node</span><span class="p">]]</span>
 
         <span class="c1"># For other nodes in the subtree compute the clique potentials as follows</span>
@@ -668,8 +833,10 @@
         <span class="k">while</span> <span class="n">parent_nodes</span><span class="p">:</span>
             <span class="n">parent_node</span> <span class="o">=</span> <span class="n">parent_nodes</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">child_node</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">subtree</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">parent_node</span><span class="p">))</span> <span class="o">-</span> <span class="n">nodes_traversed</span><span class="p">:</span>
-                <span class="n">clique_potential_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">child_node</span><span class="p">]</span> <span class="o">/</span>
-                                             <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">([</span><span class="n">parent_node</span><span class="p">,</span> <span class="n">child_node</span><span class="p">])])</span>
+                <span class="n">clique_potential_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">child_node</span><span class="p">]</span>
+                    <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">([</span><span class="n">parent_node</span><span class="p">,</span> <span class="n">child_node</span><span class="p">])]</span>
+                <span class="p">)</span>
                 <span class="n">parent_nodes</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="n">child_node</span><span class="p">])</span>
             <span class="n">nodes_traversed</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="n">parent_node</span><span class="p">])</span>
 
@@ -678,12 +845,16 @@
 
         <span class="c1"># Sum product variable elimination on the subtree</span>
         <span class="n">variable_elimination</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">subtree</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">operation</span> <span class="o">==</span> <span class="s1">&#39;marginalize&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">variable_elimination</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="s1">&#39;maximize&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">variable_elimination</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">&quot;marginalize&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">variable_elimination</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="n">joint</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">&quot;maximize&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">variable_elimination</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span>
+                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span>
+            <span class="p">)</span>
 
-<div class="viewcode-block" id="BeliefPropagation.query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="BeliefPropagation.query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Query method using belief propagation.</span>
 
@@ -691,9 +862,14 @@
 <span class="sd">        ----------</span>
 <span class="sd">        variables: list</span>
 <span class="sd">            list of variables for which you want to compute the probability</span>
+
 <span class="sd">        evidence: dict</span>
 <span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
 <span class="sd">            None if no evidence</span>
+
+<span class="sd">        joint: boolean</span>
+<span class="sd">            If True, returns a Joint Distribution over `variables`.</span>
+<span class="sd">            If False, returns a dict of distributions over each of the `variables`.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -722,11 +898,16 @@
 <span class="sd">        &gt;&gt;&gt; belief_propagation.query(variables=[&#39;J&#39;, &#39;Q&#39;],</span>
 <span class="sd">        ...                          evidence={&#39;A&#39;: 0, &#39;R&#39;: 0, &#39;G&#39;: 0, &#39;L&#39;: 1})</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s1">&#39;marginalize&#39;</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span>
+            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="n">joint</span>
+        <span class="p">)</span></div>
 
 <div class="viewcode-block" id="BeliefPropagation.map_query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        MAP Query method using belief propagation.</span>
+
+<span class="sd">        Note: When multiple variables are passed, it returns the map_query for each</span>
+<span class="sd">        of them individually.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -763,11 +944,31 @@
 <span class="sd">        &gt;&gt;&gt; belief_propagation.map_query(variables=[&#39;J&#39;, &#39;Q&#39;],</span>
 <span class="sd">        ...                              evidence={&#39;A&#39;: 0, &#39;R&#39;: 0, &#39;G&#39;: 0, &#39;L&#39;: 1})</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># If no variables are specified then run the MAP query for all the variables present in the model</span>
-        <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># TODO:Check the note in docstring. Change that behavior to return the joint MAP</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">variables</span><span class="p">:</span>
             <span class="n">variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s1">&#39;maximize&#39;</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">)</span></div></div>
+        <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span>
+            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span>
+        <span class="p">)</span>
+
+        <span class="c1"># To handle the case when no argument is passed then</span>
+        <span class="c1"># _variable_elimination returns a dict.</span>
+        <span class="n">argmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">assignment</span> <span class="o">=</span> <span class="n">final_distribution</span><span class="o">.</span><span class="n">assignment</span><span class="p">([</span><span class="n">argmax</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">map_query_results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">var_assignment</span> <span class="ow">in</span> <span class="n">assignment</span><span class="p">:</span>
+            <span class="n">var</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">var_assignment</span>
+            <span class="n">map_query_results</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">variables</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">map_query_results</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">return_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                <span class="n">return_dict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">map_query_results</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">return_dict</span></div></div>
 </pre></div>
 
           </div>
@@ -784,13 +985,13 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.2 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2016, Ankur Ankan.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+        &#169; Copyright 2019, Ankur Ankan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.1.
     </div>
   </body>
 </html>

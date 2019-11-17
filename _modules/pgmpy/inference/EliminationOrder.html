@@ -1,33 +1,21 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>pgmpy.inference.EliminationOrder &#8212; pgmpy 0.1.2 documentation</title>
-    
+    <meta charset="utf-8" />
+    <title>pgmpy.inference.EliminationOrder &#8212; pgmpy 0.1.9 documentation</title>
     <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../../../',
-        VERSION:     '0.1.2',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
-  </head>
-  <body role="document">
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -37,7 +25,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.2 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
       </ul>
     </div>
@@ -47,13 +35,13 @@
               <img class="logo" src="../../../_static/logo.png" alt="Logo"/>
             </a></p>
 <div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../../../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -67,6 +55,7 @@
   <h1>Source code for pgmpy.inference.EliminationOrder</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">combinations</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -77,6 +66,7 @@
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for finding elimination orders.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Init method for the base class of Elimination Orders.</span>
@@ -88,11 +78,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model should be a BayesianModel instance&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">moralize</span><span class="p">()</span>
 
-    <span class="nd">@abstractmethod</span>
-<div class="viewcode-block" id="BaseEliminationOrder.cost"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.BaseEliminationOrder.cost">[docs]</a>    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="viewcode-block" id="BaseEliminationOrder.cost"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.BaseEliminationOrder.cost">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The cost function to compute the cost of elimination of each node.</span>
 <span class="sd">        This method is just a dummy and returns 0 for all the nodes. Actual cost functions</span>
@@ -105,7 +95,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="mi">0</span></div>
 
-<div class="viewcode-block" id="BaseEliminationOrder.get_elimination_order"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.BaseEliminationOrder.get_elimination_order">[docs]</a>    <span class="k">def</span> <span class="nf">get_elimination_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="BaseEliminationOrder.get_elimination_order"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.BaseEliminationOrder.get_elimination_order">[docs]</a>    <span class="k">def</span> <span class="nf">get_elimination_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the optimal elimination order based on the cost function.</span>
 <span class="sd">        The node having the least cost is removed first.</span>
@@ -147,15 +137,25 @@
 <span class="sd">        &gt;&gt;&gt; WeightedMinFill(model).get_elimination_order([&#39;c&#39;, &#39;d&#39;, &#39;g&#39;, &#39;l&#39;, &#39;s&#39;])</span>
 <span class="sd">        [&#39;c&#39;, &#39;s&#39;, &#39;l&#39;, &#39;d&#39;, &#39;g&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">nodes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
 
         <span class="n">ordering</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+            <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">))</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">set_description</span><span class="p">(</span><span class="s2">&quot;Finding Elimination Order: &quot;</span><span class="p">)</span>
+
         <span class="k">while</span> <span class="n">nodes</span><span class="p">:</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">}</span>
             <span class="n">min_score_node</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
             <span class="n">ordering</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">min_score_node</span><span class="p">)</span>
             <span class="n">nodes</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">min_score_node</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">min_score_node</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">min_score_node</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">show_progress</span><span class="p">:</span>
+                <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ordering</span></div>
 
 <div class="viewcode-block" id="BaseEliminationOrder.fill_in_edges"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.BaseEliminationOrder.fill_in_edges">[docs]</a>    <span class="k">def</span> <span class="nf">fill_in_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
@@ -170,8 +170,8 @@
         <span class="k">return</span> <span class="n">combinations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span></div></div>
 
 
-<span class="k">class</span> <span class="nc">WeightedMinFill</span><span class="p">(</span><span class="n">BaseEliminationOrder</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="viewcode-block" id="WeightedMinFill"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.WeightedMinFill">[docs]</a><span class="k">class</span> <span class="nc">WeightedMinFill</span><span class="p">(</span><span class="n">BaseEliminationOrder</span><span class="p">):</span>
+<div class="viewcode-block" id="WeightedMinFill.cost"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.WeightedMinFill.cost">[docs]</a>    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Cost function for WeightedMinFill.</span>
 <span class="sd">        The cost of eliminating a node is the sum of weights of the edges that need to</span>
@@ -179,36 +179,45 @@
 <span class="sd">        product of the weights, domain cardinality, of its constituent vertices.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">edges</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">sum</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">])</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span>
+            <span class="p">]</span>
+        <span class="p">)</span></div></div>
 
 
-<span class="k">class</span> <span class="nc">MinNeighbours</span><span class="p">(</span><span class="n">BaseEliminationOrder</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="viewcode-block" id="MinNeighbors"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.MinNeighbors">[docs]</a><span class="k">class</span> <span class="nc">MinNeighbors</span><span class="p">(</span><span class="n">BaseEliminationOrder</span><span class="p">):</span>
+<div class="viewcode-block" id="MinNeighbors.cost"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.MinNeighbors.cost">[docs]</a>    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The cost of a eliminating a node is the number of neighbors it has in the</span>
 <span class="sd">        current graph.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">)))</span></div></div>
 
 
-<span class="k">class</span> <span class="nc">MinWeight</span><span class="p">(</span><span class="n">BaseEliminationOrder</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="viewcode-block" id="MinWeight"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.MinWeight">[docs]</a><span class="k">class</span> <span class="nc">MinWeight</span><span class="p">(</span><span class="n">BaseEliminationOrder</span><span class="p">):</span>
+<div class="viewcode-block" id="MinWeight.cost"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.MinWeight.cost">[docs]</a>    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The cost of a eliminating a node is the product of weights, domain cardinality,</span>
 <span class="sd">        of its neighbors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="n">neig_node</span><span class="p">)</span> <span class="k">for</span> <span class="n">neig_node</span> <span class="ow">in</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="n">neig_node</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">neig_node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span></div></div>
 
 
-<span class="k">class</span> <span class="nc">MinFill</span><span class="p">(</span><span class="n">BaseEliminationOrder</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="viewcode-block" id="MinFill"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.MinFill">[docs]</a><span class="k">class</span> <span class="nc">MinFill</span><span class="p">(</span><span class="n">BaseEliminationOrder</span><span class="p">):</span>
+<div class="viewcode-block" id="MinFill.cost"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.EliminationOrder.MinFill.cost">[docs]</a>    <span class="k">def</span> <span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The cost of a eliminating a node is the number of edges that need to be added</span>
 <span class="sd">        (fill in edges) to the graph due to its elimination</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fill_in_edges</span><span class="p">(</span><span class="n">node</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fill_in_edges</span><span class="p">(</span><span class="n">node</span><span class="p">)))</span></div></div>
 </pre></div>
 
           </div>
@@ -225,13 +234,13 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.2 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2016, Ankur Ankan.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+        &#169; Copyright 2019, Ankur Ankan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.1.
     </div>
   </body>
 </html>
