@@ -12,7 +12,6 @@
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/language_data.js"></script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" /> 
   </head><body>
@@ -55,13 +54,12 @@
   <h1>Source code for pgmpy.factors.discrete.JointProbabilityDistribution</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">from</span> <span class="nn">operator</span> <span class="k">import</span> <span class="n">mul</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">reduce</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="k">import</span> <span class="n">DiscreteFactor</span>
 <span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="k">import</span> <span class="n">Independencies</span>
-<span class="kn">from</span> <span class="nn">pgmpy.extern.six.moves</span> <span class="k">import</span> <span class="nb">range</span><span class="p">,</span> <span class="nb">zip</span>
-<span class="kn">from</span> <span class="nn">pgmpy.extern</span> <span class="k">import</span> <span class="n">six</span>
 
 
 <div class="viewcode-block" id="JointProbabilityDistribution"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.JointProbabilityDistribution.JointProbabilityDistribution">[docs]</a><span class="k">class</span> <span class="nc">JointProbabilityDistribution</span><span class="p">(</span><span class="n">DiscreteFactor</span><span class="p">):</span>
@@ -145,10 +143,7 @@
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">six</span><span class="o">.</span><span class="n">PY2</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_str</span><span class="p">(</span><span class="n">phi_or_p</span><span class="o">=</span><span class="s2">&quot;P&quot;</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;pqsl&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_str</span><span class="p">(</span><span class="n">phi_or_p</span><span class="o">=</span><span class="s2">&quot;P&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_str</span><span class="p">(</span><span class="n">phi_or_p</span><span class="o">=</span><span class="s2">&quot;P&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="JointProbabilityDistribution.marginal_distribution"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.JointProbabilityDistribution.JointProbabilityDistribution.marginal_distribution">[docs]</a>    <span class="k">def</span> <span class="nf">marginal_distribution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -229,18 +224,18 @@
 <span class="sd">        False</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">JPD</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event1</span><span class="p">,</span> <span class="n">six</span><span class="o">.</span><span class="n">string_types</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event1</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Event 1 should be a list or array-like structure&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event2</span><span class="p">,</span> <span class="n">six</span><span class="o">.</span><span class="n">string_types</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event2</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Event 2 should be a list or array-like structure&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">event3</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event3</span><span class="p">,</span> <span class="n">six</span><span class="o">.</span><span class="n">string_types</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event3</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Event 3 cannot of type string&quot;</span><span class="p">)</span>
 
             <span class="k">elif</span> <span class="n">condition_random_variable</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">six</span><span class="o">.</span><span class="n">string_types</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">event3</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">event3</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Event3 should be a 1d list of strings&quot;</span><span class="p">)</span>
                 <span class="n">event3</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">event3</span><span class="p">)</span>
                 <span class="c1"># Using the definition of conditional independence</span>
@@ -442,7 +437,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;model must be an instance of BayesianModel&quot;</span><span class="p">)</span>
         <span class="n">factors</span> <span class="o">=</span> <span class="p">[</span><span class="n">cpd</span><span class="o">.</span><span class="n">to_factor</span><span class="p">()</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">()]</span>
-        <span class="n">factor_prod</span> <span class="o">=</span> <span class="n">six</span><span class="o">.</span><span class="n">moves</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">mul</span><span class="p">,</span> <span class="n">factors</span><span class="p">)</span>
+        <span class="n">factor_prod</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="n">mul</span><span class="p">,</span> <span class="n">factors</span><span class="p">)</span>
         <span class="n">JPD_fact</span> <span class="o">=</span> <span class="n">DiscreteFactor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">JPD_fact</span> <span class="o">==</span> <span class="n">factor_prod</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
@@ -488,7 +483,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, Ankur Ankan.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
     </div>
   </body>
 </html>

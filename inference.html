@@ -12,7 +12,6 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/language_data.js"></script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Reading and Writing from files" href="readwrite.html" />
@@ -44,6 +43,7 @@
   <h3><a href="index.html">Table of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Algorithms for Inference</a><ul>
+<li><a class="reference internal" href="#causal-inference">Causal Inference</a></li>
 <li><a class="reference internal" href="#variable-elimination">Variable Elimination</a></li>
 <li><a class="reference internal" href="#belief-propagation">Belief Propagation</a></li>
 <li><a class="reference internal" href="#module-pgmpy.inference.mplp">MPLP</a></li>
@@ -86,6 +86,257 @@
             
   <div class="section" id="algorithms-for-inference">
 <h1>Algorithms for Inference<a class="headerlink" href="#algorithms-for-inference" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="causal-inference">
+<h2>Causal Inference<a class="headerlink" href="#causal-inference" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pgmpy.inference.CausalInference.CausalInference">
+<em class="property">class </em><code class="sig-prename descclassname">pgmpy.inference.CausalInference.</code><code class="sig-name descname">CausalInference</code><span class="sig-paren">(</span><em class="sig-param">model</em>, <em class="sig-param">latent_vars=None</em>, <em class="sig-param">set_nodes=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/CausalInference.html#CausalInference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.CausalInference.CausalInference" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is an inference class for performing Causal Inference over Bayesian Networks or Strucural Equation Models.</p>
+<dl class="simple">
+<dt>This class will accept queries of the form: P(Y | do(X)) and utilize it’s methods to provide an estimand which:</dt><dd><ul class="simple">
+<li><p>Identifies adjustment variables</p></li>
+<li><p>Backdoor Adjustment</p></li>
+<li><p>Front Door Adjustment</p></li>
+<li><p>Instrumental Variable Adjustment</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>CausalGraph</em>) – The model that we’ll perform inference over.</p></li>
+<li><p><strong>set_nodes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.8)"><em>list</em></a><em>[</em><em>node:str</em><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.8)"><em>None</em></a>) – A list (or set/tuple) of nodes in the Bayesian Network which have been set to a specific value per the
+do-operator.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Create a small Bayesian Network.
+&gt;&gt;&gt; from pgmpy.models.BayesianModel import BayesianModel
+&gt;&gt;&gt; game = CausalGraph([(‘X’, ‘A’),</p>
+<blockquote>
+<div><p>(‘A’, ‘Y’),
+(‘A’, ‘B’)])</p>
+</div></blockquote>
+<p>Load the graph into the CausalInference object to make causal queries.
+&gt;&gt;&gt; from pgmpy.inference.causal_inferece import CausalInference
+&gt;&gt;&gt; inference = CausalInference(game)
+&gt;&gt;&gt; inference.get_all_backdoor_adjustment_sets(X=”X”, Y=”Y”)
+&gt;&gt;&gt; inference.get_all_frontdoor_adjustment_sets(X=”X”, Y=”Y”)</p>
+<p class="rubric">References</p>
+<p>‘Causality: Models, Reasoning, and Inference’ - Judea Pearl (2000)</p>
+<p>Many thanks to &#64;ijmbarr for their implementation of Causal Graphical models available. It served as an invaluable
+reference. Available on GitHub: <a class="reference external" href="https://github.com/ijmbarr/causalgraphicalmodels">https://github.com/ijmbarr/causalgraphicalmodels</a></p>
+<dl class="method">
+<dt id="pgmpy.inference.CausalInference.CausalInference.estimate_ate">
+<code class="sig-name descname">estimate_ate</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">data</em>, <em class="sig-param">estimand_strategy='smallest'</em>, <em class="sig-param">estimator_type='linear'</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/CausalInference.html#CausalInference.estimate_ate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.CausalInference.CausalInference.estimate_ate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the average treatment effect (ATE) of X on Y.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Intervention Variable</p></li>
+<li><p><strong>Y</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Target Variable</p></li>
+<li><p><strong>data</strong> (<em>pandas DataFrame</em>) – All observed data for this Bayesian Network.</p></li>
+<li><p><strong>estimand_strategy</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#frozenset" title="(in Python v3.8)"><em>frozenset</em></a>) – <dl class="simple">
+<dt>Either specify a specific backdoor adjustment set or a strategy.  The available options are:</dt><dd><dl class="simple">
+<dt>smallest:</dt><dd><p>Use the smallest estimand of observed variables</p>
+</dd>
+<dt>all:</dt><dd><p>Estimate the ATE from each identified estimand</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>estimator_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – <p>The type of model to be used to estimate the ATE.
+All of the linear regression classes in statsmodels are available including:</p>
+<blockquote>
+<div><ul>
+<li><p>GLS: generalized least squares for arbitrary covariance</p></li>
+<li><p>OLS: ordinary least square of i.i.d. errors</p></li>
+<li><p>WLS: weighted least squares for heteroskedastic error</p></li>
+</ul>
+</div></blockquote>
+<p>Specify them with their acronym (e.g. “OLS”) or simple “linear” as an alias for OLS.</p>
+</p></li>
+<li><p><strong>**kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.8)"><em>dict</em></a>) – <p>Keyward arguments specific to the selected estimator.
+linear:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>missing: str</dt><dd><p>Available options are “none”, “drop”, or “raise”</p>
+</dd>
+</dl>
+</div></blockquote>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>float</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>The average treatment effect</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">game1</span> <span class="o">=</span> <span class="n">BayesianModel</span><span class="p">([(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">),</span>
+<span class="go">                           (&#39;A&#39;, &#39;Y&#39;),</span>
+<span class="go">                           (&#39;A&#39;, &#39;B&#39;)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">game1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span><span class="o">.</span><span class="n">estimate_ate</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">estimator_type</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pgmpy.inference.CausalInference.CausalInference.get_all_backdoor_adjustment_sets">
+<code class="sig-name descname">get_all_backdoor_adjustment_sets</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/CausalInference.html#CausalInference.get_all_backdoor_adjustment_sets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.CausalInference.CausalInference.get_all_backdoor_adjustment_sets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of all adjustment sets per the back-door criterion.</p>
+<dl class="simple">
+<dt>A set of variables Z satisfies the back-door criterion relative to an ordered pair ofvariabies (Xi, Xj) in a DAG G if:</dt><dd><ol class="lowerroman simple">
+<li><p>no node in Z is a descendant of Xi; and</p></li>
+<li><p>Z blocks every path between Xi and Xj that contains an arrow into Xi.</p></li>
+</ol>
+</dd>
+</dl>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>Backdoors are great, but the most general things we could implement would be Ilya Shpitser’s ID and
+IDC algorithms. See [his Ph.D. thesis for a full explanation]
+(<a class="reference external" href="https://ftp.cs.ucla.edu/pub/stat_ser/shpitser-thesis.pdf">https://ftp.cs.ucla.edu/pub/stat_ser/shpitser-thesis.pdf</a>). After doing a little reading it is clear
+that we do not need to immediatly implement this.  However, in order for us to truly account for
+unobserved variables, we will need not only these algorithms, but a more general implementation of a DAG.
+Most DAGs do not allow for bidirected edges, but it is an important piece of notation which Pearl and
+Shpitser use to denote graphs with latent variables.</p></li>
+</ul>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Intervention Variable</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>frozenset</strong> (<em>A frozenset of frozensets</em>)</p></li>
+<li><p><strong>Y</strong> (<em>str</em>) – Target Variable</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">game1</span> <span class="o">=</span> <span class="n">BayesianModel</span><span class="p">([(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">),</span>
+<span class="go">                           (&#39;A&#39;, &#39;Y&#39;),</span>
+<span class="go">                           (&#39;A&#39;, &#39;B&#39;)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">game1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="go">frozenset([])</span>
+</pre></div>
+</div>
+<p class="rubric">References</p>
+<p>“Causality: Models, Reasoning, and Inference”, Judea Pearl (2000). p.79.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pgmpy.inference.CausalInference.CausalInference.get_all_frontdoor_adjustment_sets">
+<code class="sig-name descname">get_all_frontdoor_adjustment_sets</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/CausalInference.html#CausalInference.get_all_frontdoor_adjustment_sets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.CausalInference.CausalInference.get_all_frontdoor_adjustment_sets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identify possible sets of variables, Z, which satisify the front-door criterion relative to given X and Y.</p>
+<dl class="simple">
+<dt>Z satisifies the front-door critierion if:</dt><dd><ol class="lowerroman simple">
+<li><p>Z intercepts all directed paths from X to Y</p></li>
+<li><p>there is no backdoor path from X to Z</p></li>
+<li><p>all back-door paths from Z to Y are blocked by X</p></li>
+</ol>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>frozenset</strong></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>a frozenset of frozensets</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<p>Causality: Models, Reasoning, and Inference, Judea Pearl (2000). p.82.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pgmpy.inference.CausalInference.CausalInference.get_distribution">
+<code class="sig-name descname">get_distribution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/CausalInference.html#CausalInference.get_distribution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.CausalInference.CausalInference.get_distribution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string representing the factorized distribution implied by the CGM.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pgmpy.inference.CausalInference.CausalInference.is_valid_backdoor_adjustment_set">
+<code class="sig-name descname">is_valid_backdoor_adjustment_set</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">Z=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/CausalInference.html#CausalInference.is_valid_backdoor_adjustment_set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.CausalInference.CausalInference.is_valid_backdoor_adjustment_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether Z is a valid backdoor adjustment set for estimating the causal impact of X on Y.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Intervention Variable</p></li>
+<li><p><strong>Y</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Target Variable</p></li>
+<li><p><strong>Z</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.8)"><em>set</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a><em>]</em>) – Adjustment variables</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>boolean</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>True if Z is a valid backdoor adjustment set.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">game1</span> <span class="o">=</span> <span class="n">BayesianModel</span><span class="p">([(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">),</span>
+<span class="go">                           (&#39;A&#39;, &#39;Y&#39;),</span>
+<span class="go">                           (&#39;A&#39;, &#39;B&#39;)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">game1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pgmpy.inference.CausalInference.CausalInference.is_valid_frontdoor_adjustment_set">
+<code class="sig-name descname">is_valid_frontdoor_adjustment_set</code><span class="sig-paren">(</span><em class="sig-param">X</em>, <em class="sig-param">Y</em>, <em class="sig-param">Z=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/CausalInference.html#CausalInference.is_valid_frontdoor_adjustment_set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.CausalInference.CausalInference.is_valid_frontdoor_adjustment_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test whether Z is a valid frontdoor adjustment set for estimating the causal impact of X on Y via the frontdoor
+adjustment formula.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Intervention Variable</p></li>
+<li><p><strong>Y</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Target Variable</p></li>
+<li><p><strong>Z</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#set" title="(in Python v3.8)"><em>set</em></a>) – Adjustment variables</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>boolean</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>True if Z is a valid frontdoor adjustment set.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pgmpy.inference.CausalInference.CausalInference.simple_decision">
+<code class="sig-name descname">simple_decision</code><span class="sig-paren">(</span><em class="sig-param">adjustment_sets=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/CausalInference.html#CausalInference.simple_decision"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.CausalInference.CausalInference.simple_decision" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selects the smallest set from provided adjustment sets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>adjustment_sets</strong> (<em>iterable</em>) – A frozenset or list of valid adjustment sets</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#frozenset" title="(in Python v3.8)">frozenset</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="variable-elimination">
 <h2>Variable Elimination<a class="headerlink" href="#variable-elimination" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -307,7 +558,7 @@ tree) is calibrated.</p>
 
 <dl class="method">
 <dt id="pgmpy.inference.ExactInference.BeliefPropagation.map_query">
-<code class="sig-name descname">map_query</code><span class="sig-paren">(</span><em class="sig-param">variables=None</em>, <em class="sig-param">evidence=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/ExactInference.html#BeliefPropagation.map_query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.ExactInference.BeliefPropagation.map_query" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">map_query</code><span class="sig-paren">(</span><em class="sig-param">variables=None</em>, <em class="sig-param">evidence=None</em>, <em class="sig-param">show_progress=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/ExactInference.html#BeliefPropagation.map_query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.ExactInference.BeliefPropagation.map_query" title="Permalink to this definition">¶</a></dt>
 <dd><p>MAP Query method using belief propagation.</p>
 <p>Note: When multiple variables are passed, it returns the map_query for each
 of them individually.</p>
@@ -384,7 +635,7 @@ None if no evidence</p></li>
 
 <dl class="method">
 <dt id="pgmpy.inference.ExactInference.BeliefPropagation.query">
-<code class="sig-name descname">query</code><span class="sig-paren">(</span><em class="sig-param">variables</em>, <em class="sig-param">evidence=None</em>, <em class="sig-param">joint=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/ExactInference.html#BeliefPropagation.query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.ExactInference.BeliefPropagation.query" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">query</code><span class="sig-paren">(</span><em class="sig-param">variables</em>, <em class="sig-param">evidence=None</em>, <em class="sig-param">joint=True</em>, <em class="sig-param">show_progress=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/inference/ExactInference.html#BeliefPropagation.query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.inference.ExactInference.BeliefPropagation.query" title="Permalink to this definition">¶</a></dt>
 <dd><p>Query method using belief propagation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -877,7 +1128,7 @@ product of the weights, domain cardinality, of its constituent vertices.</p>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, Ankur Ankan.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
     </div>
   </body>
 </html>

@@ -12,7 +12,6 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -60,9 +59,7 @@
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
-<span class="kn">from</span> <span class="nn">pgmpy.extern.six.moves</span> <span class="k">import</span> <span class="nb">filter</span><span class="p">,</span> <span class="nb">range</span>
 
-<span class="kn">from</span> <span class="nn">pgmpy.extern.six</span> <span class="k">import</span> <span class="n">string_types</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="k">import</span> <span class="n">factor_product</span>
 <span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="k">import</span> <span class="n">Inference</span>
 <span class="kn">from</span> <span class="nn">pgmpy.inference.EliminationOrder</span> <span class="k">import</span> <span class="p">(</span>
@@ -193,9 +190,9 @@
 <span class="sd">            If None: A random elimination order is used.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Step 1: Deal with the input arguments.</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;variables must be a list of strings&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">evidence</span><span class="p">,</span> <span class="n">string_types</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">evidence</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;evidence must be a list of strings&quot;</span><span class="p">)</span>
 
         <span class="c1"># Dealing with the case when variables is not provided.</span>
@@ -300,6 +297,14 @@
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; phi_query = inference.query([&#39;A&#39;, &#39;B&#39;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">common_vars</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{common_vars}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
@@ -345,6 +350,15 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">variables</span><span class="p">:</span>
             <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="n">variables</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">common_vars</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{common_vars}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
         <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;maximize&quot;</span><span class="p">,</span>
@@ -392,6 +406,14 @@
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; phi_query = inference.map_query([&#39;A&#39;, &#39;B&#39;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="n">variables</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">common_vars</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{common_vars}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
         <span class="c1"># TODO:Check the note in docstring. Change that behavior to return the joint MAP</span>
         <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
@@ -743,7 +765,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate_junction_tree</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;maximize&quot;</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_query</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a generalized query method that can be used for both query and map query.</span>
 
@@ -847,14 +871,17 @@
         <span class="n">variable_elimination</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">subtree</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">&quot;marginalize&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">variable_elimination</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
-                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="n">joint</span>
+                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+                <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+                <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">&quot;maximize&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">variable_elimination</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span>
-                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span>
+                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span>
             <span class="p">)</span>
 
-<div class="viewcode-block" id="BeliefPropagation.query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="BeliefPropagation.query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Query method using belief propagation.</span>
 
@@ -898,11 +925,23 @@
 <span class="sd">        &gt;&gt;&gt; belief_propagation.query(variables=[&#39;J&#39;, &#39;Q&#39;],</span>
 <span class="sd">        ...                          evidence={&#39;A&#39;: 0, &#39;R&#39;: 0, &#39;G&#39;: 0, &#39;L&#39;: 1})</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">common_vars</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{common_vars}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span>
-            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="n">joint</span>
+            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+            <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
+            <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+            <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
+            <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="BeliefPropagation.map_query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="BeliefPropagation.map_query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        MAP Query method using belief propagation.</span>
 
@@ -944,12 +983,23 @@
 <span class="sd">        &gt;&gt;&gt; belief_propagation.map_query(variables=[&#39;J&#39;, &#39;Q&#39;],</span>
 <span class="sd">        ...                              evidence={&#39;A&#39;: 0, &#39;R&#39;: 0, &#39;G&#39;: 0, &#39;L&#39;: 1})</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="n">variables</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">common_vars</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="n">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{common_vars}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
         <span class="c1"># TODO:Check the note in docstring. Change that behavior to return the joint MAP</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">variables</span><span class="p">:</span>
             <span class="n">variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>
 
         <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span>
-            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span>
+            <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+            <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
+            <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+            <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># To handle the case when no argument is passed then</span>
@@ -991,7 +1041,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, Ankur Ankan.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
     </div>
   </body>
 </html>

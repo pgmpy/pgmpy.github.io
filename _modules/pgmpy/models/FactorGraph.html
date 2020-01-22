@@ -12,7 +12,6 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -65,7 +64,6 @@
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="k">import</span> <span class="n">UndirectedGraph</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="k">import</span> <span class="n">DiscreteFactor</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="k">import</span> <span class="n">factor_product</span>
-<span class="kn">from</span> <span class="nn">pgmpy.extern.six.moves</span> <span class="k">import</span> <span class="nb">filter</span><span class="p">,</span> <span class="nb">range</span><span class="p">,</span> <span class="nb">zip</span>
 
 
 <div class="viewcode-block" id="FactorGraph"><a class="viewcode-back" href="../../../models.html#pgmpy.models.FactorGraph.FactorGraph">[docs]</a><span class="k">class</span> <span class="nc">FactorGraph</span><span class="p">(</span><span class="n">UndirectedGraph</span><span class="p">):</span>
@@ -147,7 +145,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Self loops are not allowed&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="FactorGraph.add_factors"><a class="viewcode-back" href="../../../models.html#pgmpy.models.FactorGraph.FactorGraph.add_factors">[docs]</a>    <span class="k">def</span> <span class="nf">add_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">factors</span><span class="p">):</span>
+<div class="viewcode-block" id="FactorGraph.add_factors"><a class="viewcode-back" href="../../../models.html#pgmpy.models.FactorGraph.FactorGraph.add_factors">[docs]</a>    <span class="k">def</span> <span class="nf">add_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">factors</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Associate a factor to the graph.</span>
 <span class="sd">        See factors class for the order of potential values.</span>
@@ -174,9 +172,21 @@
             <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
                 <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
             <span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Factors defined on variable not in the model&quot;</span><span class="p">,</span> <span class="n">factor</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Factors defined on variable not in the model&quot;</span><span class="p">,</span> <span class="n">factor</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+                <span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span></div>
+            <span class="k">if</span> <span class="n">replace</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">fa</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">fa</span><span class="o">.</span><span class="n">variables</span><span class="p">):</span>
+                        <span class="n">neighbors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">fa</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">remove_factors</span><span class="p">(</span><span class="n">fa</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">factor</span><span class="p">,</span> <span class="n">neigh</span><span class="p">)</span> <span class="k">for</span> <span class="n">neigh</span> <span class="ow">in</span> <span class="n">neighbors</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="FactorGraph.remove_factors"><a class="viewcode-back" href="../../../models.html#pgmpy.models.FactorGraph.FactorGraph.remove_factors">[docs]</a>    <span class="k">def</span> <span class="nf">remove_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">factors</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -193,7 +203,10 @@
 <span class="sd">        &gt;&gt;&gt; G.remove_factors(phi1)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">factors</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>
+            <span class="c1"># If factor is also in the graph, remove the node and corresponding edges.</span>
+            <span class="k">if</span> <span class="n">factor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="FactorGraph.get_cardinality"><a class="viewcode-back" href="../../../models.html#pgmpy.models.FactorGraph.FactorGraph.get_cardinality">[docs]</a>    <span class="k">def</span> <span class="nf">get_cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -535,7 +548,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, Ankur Ankan.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
     </div>
   </body>
 </html>
