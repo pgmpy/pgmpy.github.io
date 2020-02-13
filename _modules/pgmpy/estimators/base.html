@@ -1,0 +1,378 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>pgmpy.estimators.base &#8212; pgmpy 0.1.9 documentation</title>
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pgmpy.estimators.base</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="k">import</span> <span class="n">warn</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">lru_cache</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">chisquare</span>
+
+<span class="kn">from</span> <span class="nn">pgmpy.utils.decorators</span> <span class="k">import</span> <span class="n">convert_args_tuple</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="k">import</span> <span class="n">chi_square</span><span class="p">,</span> <span class="n">pearsonr</span>
+
+
+<div class="viewcode-block" id="BaseEstimator"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.base.BaseEstimator">[docs]</a><span class="k">class</span> <span class="nc">BaseEstimator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">complete_samples_only</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Base class for estimators in pgmpy; `ParameterEstimator`,</span>
+<span class="sd">        `StructureEstimator` and `StructureScore` derive from this class.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        data: pandas DataFrame object</span>
+<span class="sd">            datafame object where each column represents one variable.</span>
+<span class="sd">            (If some values in the data are missing the data cells should be set to `numpy.NaN`.</span>
+<span class="sd">            Note that pandas converts each column containing `numpy.NaN`s to dtype `float`.)</span>
+
+<span class="sd">        state_names: dict (optional)</span>
+<span class="sd">            A dict indicating, for each variable, the discrete set of states (or values)</span>
+<span class="sd">            that the variable can take. If unspecified, the observed values in the data set</span>
+<span class="sd">            are taken to be the only possible states.</span>
+
+<span class="sd">        complete_samples_only: bool (optional, default `True`)</span>
+<span class="sd">            Specifies how to deal with missing data, if present. If set to `True` all rows</span>
+<span class="sd">            that contain `np.Nan` somewhere are ignored. If `False` then, for each variable,</span>
+<span class="sd">            every row where neither the variable nor its parents are `np.NaN` is used.</span>
+<span class="sd">            This sets the behavior of the `state_count`-method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">complete_samples_only</span> <span class="o">=</span> <span class="n">complete_samples_only</span>
+
+        <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_names</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_state_names</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">state_names</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_collect_state_names</span><span class="p">(</span><span class="n">var</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]):</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="s2">&quot;Data contains unexpected states for variable &#39;</span><span class="si">{0}</span><span class="s2">&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_state_names</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_collect_state_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">):</span>
+        <span class="s2">&quot;Return a list of states that the variable takes in the data&quot;</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">unique</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="n">states</span>
+
+    <span class="nd">@convert_args_tuple</span>
+    <span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">2048</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">state_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="p">[],</span> <span class="n">complete_samples_only</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return counts how often each state of &#39;variable&#39; occured in the data.</span>
+<span class="sd">        If a list of parents is provided, counting is done conditionally</span>
+<span class="sd">        for each state configuration of the parents.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        variable: string</span>
+<span class="sd">            Name of the variable for which the state count is to be done.</span>
+
+<span class="sd">        parents: list</span>
+<span class="sd">            Optional list of variable parents, if conditional counting is desired.</span>
+<span class="sd">            Order of parents in list is reflected in the returned DataFrame</span>
+
+<span class="sd">        complete_samples_only: bool</span>
+<span class="sd">            Specifies how to deal with missing data, if present. If set to `True` all rows</span>
+<span class="sd">            that contain `np.NaN` somewhere are ignored. If `False` then</span>
+<span class="sd">            every row where neither the variable nor its parents are `np.NaN` is used.</span>
+<span class="sd">            Desired default behavior can be passed to the class constructor.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        state_counts: pandas.DataFrame</span>
+<span class="sd">            Table with state counts for &#39;variable&#39;</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import BaseEstimator</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(data={&#39;A&#39;: [&#39;a1&#39;, &#39;a1&#39;, &#39;a2&#39;],</span>
+<span class="sd">                                      &#39;B&#39;: [&#39;b1&#39;, &#39;b2&#39;, &#39;b1&#39;],</span>
+<span class="sd">                                      &#39;C&#39;: [&#39;c1&#39;, &#39;c1&#39;, &#39;c2&#39;]})</span>
+<span class="sd">        &gt;&gt;&gt; estimator = BaseEstimator(data)</span>
+<span class="sd">        &gt;&gt;&gt; estimator.state_counts(&#39;A&#39;)</span>
+<span class="sd">            A</span>
+<span class="sd">        a1  2</span>
+<span class="sd">        a2  1</span>
+<span class="sd">        &gt;&gt;&gt; estimator.state_counts(&#39;C&#39;, parents=[&#39;A&#39;, &#39;B&#39;])</span>
+<span class="sd">        A  a1      a2</span>
+<span class="sd">        B  b1  b2  b1  b2</span>
+<span class="sd">        C</span>
+<span class="sd">        c1  1   1   0   0</span>
+<span class="sd">        c2  0   0   1   0</span>
+<span class="sd">        &gt;&gt;&gt; estimator.state_counts(&#39;C&#39;, parents=[&#39;A&#39;])</span>
+<span class="sd">        A    a1   a2</span>
+<span class="sd">        C</span>
+<span class="sd">        c1  2.0  0.0</span>
+<span class="sd">        c2  0.0  1.0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span>
+
+        <span class="c1"># default for how to deal with missing data can be set in class constructor</span>
+        <span class="k">if</span> <span class="n">complete_samples_only</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">complete_samples_only</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">complete_samples_only</span>
+        <span class="c1"># ignores either any row containing NaN, or only those where the variable or its parents is NaN</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">complete_samples_only</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">parents</span><span class="p">:</span>
+            <span class="c1"># count how often each state of &#39;variable&#39; occured</span>
+            <span class="n">state_count_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span>
+            <span class="n">state_counts</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">state_count_data</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parents_states</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">parent</span><span class="p">]</span> <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">]</span>
+            <span class="c1"># count how often each state of &#39;variable&#39; occured, conditional on parents&#39; states</span>
+            <span class="n">state_count_data</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">variable</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_count_data</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">):</span>
+                <span class="n">state_count_data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_arrays</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">state_count_data</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+                <span class="p">)</span>
+
+            <span class="c1"># reindex rows &amp; columns to sort them and to add missing ones</span>
+            <span class="c1"># missing row    = some state of &#39;variable&#39; did not occur in data</span>
+            <span class="c1"># missing column = some state configuration of current &#39;variable&#39;s parents</span>
+            <span class="c1">#                  did not occur in data</span>
+            <span class="n">row_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
+            <span class="n">column_index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_product</span><span class="p">(</span><span class="n">parents_states</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+            <span class="n">state_counts</span> <span class="o">=</span> <span class="n">state_count_data</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span>
+                <span class="n">index</span><span class="o">=</span><span class="n">row_index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">column_index</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">state_counts</span>
+
+    <span class="k">def</span> <span class="nf">test_conditional_independence</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Zs</span><span class="o">=</span><span class="p">[],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;chi_square&quot;</span><span class="p">:</span>
+            <span class="n">param</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">chi_square</span><span class="p">(</span>
+                <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Zs</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">p_value</span> <span class="o">&gt;=</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;pearsonr&quot;</span><span class="p">:</span>
+            <span class="n">param</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">pearsonr</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Zs</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">param</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="ParameterEstimator"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.base.ParameterEstimator">[docs]</a><span class="k">class</span> <span class="nc">ParameterEstimator</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Base class for parameter estimators in pgmpy.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model: pgmpy.models.BayesianModel or pgmpy.models.MarkovModel or pgmpy.models.NoisyOrModel</span>
+<span class="sd">            model for which parameter estimation is to be done</span>
+
+<span class="sd">        data: pandas DataFrame object</span>
+<span class="sd">            datafame object with column names identical to the variable names of the model.</span>
+<span class="sd">            (If some values in the data are missing the data cells should be set to `numpy.NaN`.</span>
+<span class="sd">            Note that pandas converts each column containing `numpy.NaN`s to dtype `float`.)</span>
+
+<span class="sd">        state_names: dict (optional)</span>
+<span class="sd">            A dict indicating, for each variable, the discrete set of states (or values)</span>
+<span class="sd">            that the variable can take. If unspecified, the observed values in the data set</span>
+<span class="sd">            are taken to be the only possible states.</span>
+
+<span class="sd">        complete_samples_only: bool (optional, default `True`)</span>
+<span class="sd">            Specifies how to deal with missing data, if present. If set to `True` all rows</span>
+<span class="sd">            that contain `np.Nan` somewhere are ignored. If `False` then, for each variable,</span>
+<span class="sd">            every row where neither the variable nor its parents are `np.NaN` is used.</span>
+<span class="sd">            This sets the behavior of the `state_count`-method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;variable names of the model must be identical to column names in data&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">ParameterEstimator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ParameterEstimator.state_counts"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.base.ParameterEstimator.state_counts">[docs]</a>    <span class="k">def</span> <span class="nf">state_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return counts how often each state of &#39;variable&#39; occured in the data.</span>
+<span class="sd">        If the variable has parents, counting is done conditionally</span>
+<span class="sd">        for each state configuration of the parents.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        variable: string</span>
+<span class="sd">            Name of the variable for which the state count is to be done.</span>
+
+<span class="sd">        complete_samples_only: bool</span>
+<span class="sd">            Specifies how to deal with missing data, if present. If set to `True` all rows</span>
+<span class="sd">            that contain `np.NaN` somewhere are ignored. If `False` then</span>
+<span class="sd">            every row where neither the variable nor its parents are `np.NaN` is used.</span>
+<span class="sd">            Desired default behavior can be passed to the class constructor.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        state_counts: pandas.DataFrame</span>
+<span class="sd">            Table with state counts for &#39;variable&#39;</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ParameterEstimator</span>
+<span class="sd">        &gt;&gt;&gt; model = BayesianModel([(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(data={&#39;A&#39;: [&#39;a1&#39;, &#39;a1&#39;, &#39;a2&#39;],</span>
+<span class="sd">                                      &#39;B&#39;: [&#39;b1&#39;, &#39;b2&#39;, &#39;b1&#39;],</span>
+<span class="sd">                                      &#39;C&#39;: [&#39;c1&#39;, &#39;c1&#39;, &#39;c2&#39;]})</span>
+<span class="sd">        &gt;&gt;&gt; estimator = ParameterEstimator(model, data)</span>
+<span class="sd">        &gt;&gt;&gt; estimator.state_counts(&#39;A&#39;)</span>
+<span class="sd">            A</span>
+<span class="sd">        a1  2</span>
+<span class="sd">        a2  1</span>
+<span class="sd">        &gt;&gt;&gt; estimator.state_counts(&#39;C&#39;)</span>
+<span class="sd">        A  a1      a2</span>
+<span class="sd">        B  b1  b2  b1  b2</span>
+<span class="sd">        C</span>
+<span class="sd">        c1  1   1   0   0</span>
+<span class="sd">        c2  0   0   1   0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">parents</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">variable</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">ParameterEstimator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span>
+            <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="StructureEstimator"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.base.StructureEstimator">[docs]</a><span class="k">class</span> <span class="nc">StructureEstimator</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Base class for structure estimators in pgmpy.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data: pandas DataFrame object</span>
+<span class="sd">            datafame object where each column represents one variable.</span>
+<span class="sd">            (If some values in the data are missing the data cells should be set to `numpy.NaN`.</span>
+<span class="sd">            Note that pandas converts each column containing `numpy.NaN`s to dtype `float`.)</span>
+
+<span class="sd">        state_names: dict (optional)</span>
+<span class="sd">            A dict indicating, for each variable, the discrete set of states (or values)</span>
+<span class="sd">            that the variable can take. If unspecified, the observed values in the data set</span>
+<span class="sd">            are taken to be the only possible states.</span>
+
+<span class="sd">        complete_samples_only: bool (optional, default `True`)</span>
+<span class="sd">            Specifies how to deal with missing data, if present. If set to `True` all rows</span>
+<span class="sd">            that contain `np.Nan` somewhere are ignored. If `False` then, for each variable,</span>
+<span class="sd">            every row where neither the variable nor its parents are `np.NaN` is used.</span>
+<span class="sd">            This sets the behavior of the `state_count`-method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Ankur Ankan.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
+    </div>
+  </body>
+</html>
