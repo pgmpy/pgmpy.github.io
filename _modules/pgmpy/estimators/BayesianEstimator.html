@@ -1,17 +1,17 @@
 
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
     <meta charset="utf-8" />
     <title>pgmpy.estimators.BayesianEstimator &#8212; pgmpy 0.1.9 documentation</title>
     <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -42,7 +42,7 @@
     </form>
     </div>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
 
@@ -54,17 +54,18 @@
   <h1>Source code for pgmpy.estimators.BayesianEstimator</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numbers</span>
 
-<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="k">import</span> <span class="n">ParameterEstimator</span>
-<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="k">import</span> <span class="n">TabularCPD</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="k">import</span> <span class="n">BayesianModel</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">ParameterEstimator</span>
+<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianModel</span>
 
 
 <div class="viewcode-block" id="BayesianEstimator"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.BayesianEstimator.BayesianEstimator">[docs]</a><span class="k">class</span> <span class="nc">BayesianEstimator</span><span class="p">(</span><span class="n">ParameterEstimator</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Class used to compute parameters for a model using Bayesian Parameter Estimation.</span>
 <span class="sd">        See `MaximumLikelihoodEstimator` for constructor parameters.</span>
@@ -87,9 +88,9 @@
 <span class="sd">        prior_type: &#39;dirichlet&#39;, &#39;BDeu&#39;, or &#39;K2&#39;</span>
 <span class="sd">            string indicting which type of prior to use for the model parameters.</span>
 <span class="sd">            - If &#39;prior_type&#39; is &#39;dirichlet&#39;, the following must be provided:</span>
-<span class="sd">                &#39;pseudo_counts&#39; = dirichlet hyperparameters; a dict containing, for each variable, a 2-D</span>
-<span class="sd">                 array of the shape (node_card, product of parents_card) with a &quot;virtual&quot; count for each</span>
-<span class="sd">                 variable state in the CPD, that is added to the state counts.</span>
+<span class="sd">                &#39;pseudo_counts&#39; = dirichlet hyperparameters; a single number or a dict containing, for each</span>
+<span class="sd">                 variable, a 2-D array of the shape (node_card, product of parents_card) with a &quot;virtual&quot;</span>
+<span class="sd">                 count for each variable state in the CPD, that is added to the state counts.</span>
 <span class="sd">                 (lexicographic ordering of states assumed)</span>
 <span class="sd">            - If &#39;prior_type&#39; is &#39;BDeu&#39;, then an &#39;equivalent_sample_size&#39;</span>
 <span class="sd">                must be specified instead of &#39;pseudo_counts&#39;. This is equivalent to</span>
@@ -128,7 +129,10 @@
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">equivalent_sample_size</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
                 <span class="k">else</span> <span class="n">equivalent_sample_size</span>
             <span class="p">)</span>
-            <span class="n">_pseudo_counts</span> <span class="o">=</span> <span class="n">pseudo_counts</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="k">if</span> <span class="n">pseudo_counts</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+                <span class="n">_pseudo_counts</span> <span class="o">=</span> <span class="n">pseudo_counts</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_pseudo_counts</span> <span class="o">=</span> <span class="n">pseudo_counts</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="k">if</span> <span class="n">pseudo_counts</span> <span class="k">else</span> <span class="kc">None</span>
 
             <span class="n">cpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">(</span>
                 <span class="n">node</span><span class="p">,</span>
@@ -154,7 +158,7 @@
 <span class="sd">        prior_type: &#39;dirichlet&#39;, &#39;BDeu&#39;, &#39;K2&#39;,</span>
 <span class="sd">            string indicting which type of prior to use for the model parameters.</span>
 <span class="sd">            - If &#39;prior_type&#39; is &#39;dirichlet&#39;, the following must be provided:</span>
-<span class="sd">                &#39;pseudo_counts&#39; = dirichlet hyperparameters; 2-D array of shape</span>
+<span class="sd">                &#39;pseudo_counts&#39; = dirichlet hyperparameters; a single number or 2-D array of shape</span>
 <span class="sd">                 (node_card, product of parents_card) with a &quot;virtual&quot; count for</span>
 <span class="sd">                 each variable state in the CPD.</span>
 <span class="sd">                 The virtual counts are added to the actual state counts found in the data.</span>
@@ -204,13 +208,17 @@
             <span class="p">)</span>
             <span class="n">pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">*</span> <span class="n">alpha</span>
         <span class="k">elif</span> <span class="n">prior_type</span> <span class="o">==</span> <span class="s2">&quot;dirichlet&quot;</span><span class="p">:</span>
-            <span class="n">pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">pseudo_counts</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">cpd_shape</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;The shape of pseudo_counts for the node: </span><span class="si">{node}</span><span class="s2"> must be of shape: </span><span class="si">{shape}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                        <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+                <span class="n">pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> <span class="o">*</span> <span class="n">pseudo_counts</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">pseudo_counts</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">cpd_shape</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s2">&quot;The shape of pseudo_counts for the node: </span><span class="si">{node}</span><span class="s2"> must be of shape: </span><span class="si">{shape}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">)</span>
+                        <span class="p">)</span>
                     <span class="p">)</span>
-                <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;prior_type&#39; not specified&quot;</span><span class="p">)</span>
 
@@ -249,7 +257,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, Ankur Ankan.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.0.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
     </div>
   </body>
 </html>
