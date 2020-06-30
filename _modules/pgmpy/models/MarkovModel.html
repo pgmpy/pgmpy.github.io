@@ -4,7 +4,8 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>pgmpy.models.MarkovModel &#8212; pgmpy 0.1.9 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pgmpy.models.MarkovModel &#8212; pgmpy 0.1.11 documentation</title>
     <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -12,6 +13,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -24,27 +26,11 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.11 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pgmpy.models.MarkovModel</a></li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-            <p class="logo"><a href="../../../index.html">
-              <img class="logo" src="../../../_static/logo.png" alt="Logo"/>
-            </a></p>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -58,6 +44,7 @@
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">networkx.algorithms.components</span> <span class="kn">import</span> <span class="n">connected_components</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">UndirectedGraph</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">DiscreteFactor</span>
@@ -300,9 +287,7 @@
             <span class="k">for</span> <span class="n">variable</span><span class="p">,</span> <span class="n">cardinality</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">scope</span><span class="p">(),</span> <span class="n">factor</span><span class="o">.</span><span class="n">cardinality</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">cardinalities</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">!=</span> <span class="n">cardinality</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="s2">&quot;Cardinality of variable </span><span class="si">{var}</span><span class="s2"> not matching among factors&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                            <span class="n">var</span><span class="o">=</span><span class="n">variable</span>
-                        <span class="p">)</span>
+                        <span class="sa">f</span><span class="s2">&quot;Cardinality of variable </span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2"> not matching among factors&quot;</span>
                     <span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cardinalities</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Factors for all the variables not defined&quot;</span><span class="p">)</span>
@@ -685,7 +670,8 @@
 
 <span class="sd">        The ordering of parents may not remain constant. It would depend on the</span>
 <span class="sd">        ordering of variable in the junction tree (which is not constant) all the</span>
-<span class="sd">        time.</span>
+<span class="sd">        time. Also, if the model is not connected, the connected components are</span>
+<span class="sd">        treated as separate models, converted, and then joined together.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -702,39 +688,51 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianModel</span>
 
-        <span class="n">bm</span> <span class="o">=</span> <span class="n">BayesianModel</span><span class="p">()</span>
-        <span class="n">var_clique_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">tuple</span><span class="p">)</span>
-        <span class="n">var_order</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># If the graph is not connected, treat them as separate models and join them together in the end.</span>
+        <span class="n">bms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">node_set</span> <span class="ow">in</span> <span class="n">connected_components</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">bm</span> <span class="o">=</span> <span class="n">BayesianModel</span><span class="p">()</span>
+            <span class="n">var_clique_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">tuple</span><span class="p">)</span>
+            <span class="n">var_order</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="c1"># Create a junction tree from the markov model.</span>
-        <span class="c1"># Creation of clique tree involves triangulation, finding maximal cliques</span>
-        <span class="c1"># and creating a tree from these cliques</span>
-        <span class="n">junction_tree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_junction_tree</span><span class="p">()</span>
+            <span class="n">subgraph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">node_set</span><span class="p">)</span>
 
-        <span class="c1"># create an ordering of the nodes based on the ordering of the clique</span>
-        <span class="c1"># in which it appeared first</span>
-        <span class="n">root_node</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
-        <span class="n">bfs_edges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">bfs_edges</span><span class="p">(</span><span class="n">junction_tree</span><span class="p">,</span> <span class="n">root_node</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">root_node</span><span class="p">:</span>
-            <span class="n">var_clique_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">root_node</span>
-            <span class="n">var_order</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">bfs_edges</span><span class="p">:</span>
-            <span class="n">clique_node</span> <span class="o">=</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">clique_node</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">var_clique_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]:</span>
-                    <span class="n">var_clique_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">clique_node</span>
-                    <span class="n">var_order</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="c1"># Create a junction tree from the markov model.</span>
+            <span class="c1"># Creation of clique tree involves triangulation, finding maximal cliques</span>
+            <span class="c1"># and creating a tree from these cliques</span>
+            <span class="n">junction_tree</span> <span class="o">=</span> <span class="n">MarkovModel</span><span class="p">(</span><span class="n">subgraph</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span><span class="o">.</span><span class="n">to_junction_tree</span><span class="p">()</span>
 
-        <span class="c1"># create a bayesian model by adding edges from parent of node to node as</span>
-        <span class="c1"># par(x_i) = (var(c_k) - x_i) \cap {x_1, ..., x_{i-1}}</span>
-        <span class="k">for</span> <span class="n">node_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">var_order</span><span class="p">)):</span>
-            <span class="n">node</span> <span class="o">=</span> <span class="n">var_order</span><span class="p">[</span><span class="n">node_index</span><span class="p">]</span>
-            <span class="n">node_parents</span> <span class="o">=</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">var_clique_dict</span><span class="p">[</span><span class="n">node</span><span class="p">])</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">node</span><span class="p">]))</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
-                <span class="nb">set</span><span class="p">(</span><span class="n">var_order</span><span class="p">[:</span><span class="n">node_index</span><span class="p">])</span>
-            <span class="p">)</span>
-            <span class="n">bm</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">parent</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">node_parents</span><span class="p">])</span>
-            <span class="c1"># TODO : Convert factor into CPDs</span>
-        <span class="k">return</span> <span class="n">bm</span></div>
+            <span class="c1"># create an ordering of the nodes based on the ordering of the clique</span>
+            <span class="c1"># in which it appeared first</span>
+            <span class="n">root_node</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
+            <span class="n">bfs_edges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">bfs_edges</span><span class="p">(</span><span class="n">junction_tree</span><span class="p">,</span> <span class="n">root_node</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">root_node</span><span class="p">:</span>
+                <span class="n">var_clique_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">root_node</span>
+                <span class="n">var_order</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">bfs_edges</span><span class="p">:</span>
+                <span class="n">clique_node</span> <span class="o">=</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">clique_node</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">var_clique_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]:</span>
+                        <span class="n">var_clique_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">clique_node</span>
+                        <span class="n">var_order</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+            <span class="c1"># create a bayesian model by adding edges from parent of node to node as</span>
+            <span class="c1"># par(x_i) = (var(c_k) - x_i) \cap {x_1, ..., x_{i-1}}</span>
+            <span class="k">for</span> <span class="n">node_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">var_order</span><span class="p">)):</span>
+                <span class="n">node</span> <span class="o">=</span> <span class="n">var_order</span><span class="p">[</span><span class="n">node_index</span><span class="p">]</span>
+                <span class="n">node_parents</span> <span class="o">=</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">var_clique_dict</span><span class="p">[</span><span class="n">node</span><span class="p">])</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">node</span><span class="p">]))</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+                    <span class="nb">set</span><span class="p">(</span><span class="n">var_order</span><span class="p">[:</span><span class="n">node_index</span><span class="p">])</span>
+                <span class="p">)</span>
+                <span class="n">bm</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">parent</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">node_parents</span><span class="p">])</span>
+                <span class="c1"># TODO : Convert factor into CPDs</span>
+            <span class="n">bms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bm</span><span class="p">)</span>
+
+        <span class="c1"># Join the bms in a single model.</span>
+        <span class="n">final_bm</span> <span class="o">=</span> <span class="n">BayesianModel</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">bm</span> <span class="ow">in</span> <span class="n">bms</span><span class="p">:</span>
+            <span class="n">final_bm</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">bm</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+            <span class="n">final_bm</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">bm</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">final_bm</span></div>
 
 <div class="viewcode-block" id="MarkovModel.get_partition_function"><a class="viewcode-back" href="../../../models.html#pgmpy.models.MarkovModel.MarkovModel.get_partition_function">[docs]</a>    <span class="k">def</span> <span class="nf">get_partition_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -809,7 +807,25 @@
         <span class="k">return</span> <span class="n">clone_graph</span></div></div>
 </pre></div>
 
+            <div class="clearer"></div>
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -823,13 +839,14 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.11 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pgmpy.models.MarkovModel</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, Ankur Ankan.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.1.
     </div>
   </body>
 </html>
