@@ -4,7 +4,8 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>pgmpy.estimators.ExhaustiveSearch &#8212; pgmpy 0.1.9 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pgmpy.estimators.ExhaustiveSearch &#8212; pgmpy 0.1.11 documentation</title>
     <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -12,6 +13,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -24,27 +26,11 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.11 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pgmpy.estimators.ExhaustiveSearch</a></li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-            <p class="logo"><a href="../../../index.html">
-              <img class="logo" src="../../../_static/logo.png" alt="Logo"/>
-            </a></p>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -59,14 +45,14 @@
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 
-<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">StructureEstimator</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">StructureEstimator</span><span class="p">,</span> <span class="n">ScoreCache</span>
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">K2Score</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils.mathext</span> <span class="kn">import</span> <span class="n">powerset</span>
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 
 
-<div class="viewcode-block" id="ExhaustiveSearch"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.ExhaustiveSearch.ExhaustiveSearch">[docs]</a><span class="k">class</span> <span class="nc">ExhaustiveSearch</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">scoring_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="ExhaustiveSearch"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.ExhaustiveSearch">[docs]</a><span class="k">class</span> <span class="nc">ExhaustiveSearch</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">scoring_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Search class for exhaustive searches over all DAGs with a given set of variables.</span>
 <span class="sd">        Takes a `StructureScore`-Instance as parameter; `estimate` finds the model with maximal score.</span>
@@ -87,6 +73,11 @@
 <span class="sd">            that the variable can take. If unspecified, the observed values in the data set</span>
 <span class="sd">            are taken to be the only possible states.</span>
 
+<span class="sd">        use_caching: boolean</span>
+<span class="sd">            If True, uses caching of score for faster computation.</span>
+<span class="sd">            Note: Caching only works for scoring methods which are decomposible. Can</span>
+<span class="sd">            give wrong results in case of custom scoring methods.</span>
+
 <span class="sd">        complete_samples_only: bool (optional, default `True`)</span>
 <span class="sd">            Specifies how to deal with missing data, if present. If set to `True` all rows</span>
 <span class="sd">            that contain `np.Nan` somewhere are ignored. If `False` then, for each variable,</span>
@@ -94,13 +85,16 @@
 <span class="sd">            This sets the behavior of the `state_count`-method.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">scoring_method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">scoring_method</span>
+            <span class="k">if</span> <span class="n">use_cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">ScoreCache</span><span class="o">.</span><span class="n">ScoreCache</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">scoring_method</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">K2Score</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">ScoreCache</span><span class="o">.</span><span class="n">ScoreCache</span><span class="p">(</span><span class="n">K2Score</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">ExhaustiveSearch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="ExhaustiveSearch.all_dags"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.ExhaustiveSearch.ExhaustiveSearch.all_dags">[docs]</a>    <span class="k">def</span> <span class="nf">all_dags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="ExhaustiveSearch.all_dags"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.ExhaustiveSearch.all_dags">[docs]</a>    <span class="k">def</span> <span class="nf">all_dags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes all possible directed acyclic graphs with a given set of nodes,</span>
 <span class="sd">        sparse ones first. `2**(n*(n-1))` graphs need to be searched, given `n` nodes,</span>
@@ -140,8 +134,8 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">6</span><span class="p">:</span>
             <span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Generating all DAGs of n nodes likely not feasible for n&gt;6!&quot;</span><span class="p">)</span>
             <span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;Attempting to search through </span><span class="si">{0}</span><span class="s2"> graphs&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                    <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="s2">&quot;Attempting to search through </span><span class="si">{n}</span><span class="s2"> graphs&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">n</span><span class="o">=</span><span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
                 <span class="p">)</span>
             <span class="p">)</span>
 
@@ -156,7 +150,7 @@
             <span class="k">if</span> <span class="n">nx</span><span class="o">.</span><span class="n">is_directed_acyclic_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">):</span>
                 <span class="k">yield</span> <span class="n">graph</span></div>
 
-<div class="viewcode-block" id="ExhaustiveSearch.all_scores"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.ExhaustiveSearch.ExhaustiveSearch.all_scores">[docs]</a>    <span class="k">def</span> <span class="nf">all_scores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ExhaustiveSearch.all_scores"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.ExhaustiveSearch.all_scores">[docs]</a>    <span class="k">def</span> <span class="nf">all_scores</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes a list of DAGs and their structure scores, ordered by score.</span>
 
@@ -210,7 +204,7 @@
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">scored_dags</span></div>
 
-<div class="viewcode-block" id="ExhaustiveSearch.estimate"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.ExhaustiveSearch.ExhaustiveSearch.estimate">[docs]</a>    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ExhaustiveSearch.estimate"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.ExhaustiveSearch.estimate">[docs]</a>    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Estimates the `DAG` structure that fits best to the given data set,</span>
 <span class="sd">        according to the scoring method supplied in the constructor.</span>
@@ -245,7 +239,25 @@
         <span class="k">return</span> <span class="n">best_model</span></div></div>
 </pre></div>
 
+            <div class="clearer"></div>
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -259,13 +271,14 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.11 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pgmpy.estimators.ExhaustiveSearch</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, Ankur Ankan.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
     </div>
   </body>
 </html>

@@ -4,7 +4,8 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>pgmpy.estimators.HillClimbSearch &#8212; pgmpy 0.1.9 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pgmpy.estimators.HillClimbSearch &#8212; pgmpy 0.1.11 documentation</title>
     <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -12,6 +13,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script src="../../../_static/language_data.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -24,27 +26,11 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.11 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pgmpy.estimators.HillClimbSearch</a></li> 
       </ul>
-    </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-            <p class="logo"><a href="../../../index.html">
-              <img class="logo" src="../../../_static/logo.png" alt="Logo"/>
-            </a></p>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
-        </div>
-      </div>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -57,12 +43,12 @@
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 
-<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">StructureEstimator</span><span class="p">,</span> <span class="n">K2Score</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">StructureEstimator</span><span class="p">,</span> <span class="n">K2Score</span><span class="p">,</span> <span class="n">ScoreCache</span>
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 
 
-<div class="viewcode-block" id="HillClimbSearch"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.HillClimbSearch.HillClimbSearch">[docs]</a><span class="k">class</span> <span class="nc">HillClimbSearch</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">scoring_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="HillClimbSearch"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.HillClimbSearch">[docs]</a><span class="k">class</span> <span class="nc">HillClimbSearch</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">scoring_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Class for heuristic hill climb searches for DAGs, to learn</span>
 <span class="sd">        network structure from data. `estimate` attempts to find a model with optimal score.</span>
@@ -89,15 +75,23 @@
 <span class="sd">            every row where neither the variable nor its parents are `np.NaN` is used.</span>
 <span class="sd">            This sets the behavior of the `state_count`-method.</span>
 
+<span class="sd">        use_caching: boolean</span>
+<span class="sd">            If True, uses caching of score for faster computation.</span>
+<span class="sd">            Note: Caching only works for scoring methods which are decomposible. Can</span>
+<span class="sd">            give wrong results in case of custom scoring methods.</span>
+
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
 <span class="sd">        Koller &amp; Friedman, Probabilistic Graphical Models - Principles and Techniques, 2009</span>
 <span class="sd">        Section 18.4.3 (page 811ff)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">scoring_method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">scoring_method</span>
+            <span class="k">if</span> <span class="n">use_cache</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">ScoreCache</span><span class="o">.</span><span class="n">ScoreCache</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">scoring_method</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">K2Score</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">ScoreCache</span><span class="o">.</span><span class="n">ScoreCache</span><span class="p">(</span><span class="n">K2Score</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">HillClimbSearch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -172,7 +166,7 @@
                         <span class="p">)</span>
                         <span class="k">yield</span> <span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">score_delta</span><span class="p">)</span>
 
-<div class="viewcode-block" id="HillClimbSearch.estimate"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.HillClimbSearch.HillClimbSearch.estimate">[docs]</a>    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span>
+<div class="viewcode-block" id="HillClimbSearch.estimate"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.HillClimbSearch.estimate">[docs]</a>    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">tabu_length</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -284,7 +278,25 @@
         <span class="k">return</span> <span class="n">current_model</span></div></div>
 </pre></div>
 
+            <div class="clearer"></div>
           </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/logo.png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -298,13 +310,14 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.9 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+        <li class="nav-item nav-item-0"><a href="../../../index.html">pgmpy 0.1.11 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">pgmpy.estimators.HillClimbSearch</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2019, Ankur Ankan.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.0.3.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.1.2.
     </div>
   </body>
 </html>
