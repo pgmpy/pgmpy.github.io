@@ -47,11 +47,10 @@
 <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">chisquare</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.utils.decorators</span> <span class="kn">import</span> <span class="n">convert_args_tuple</span>
-<span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="kn">import</span> <span class="n">chi_square</span><span class="p">,</span> <span class="n">pearsonr</span>
 
 
 <div class="viewcode-block" id="BaseEstimator"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.base.BaseEstimator">[docs]</a><span class="k">class</span> <span class="nc">BaseEstimator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">complete_samples_only</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">complete_samples_only</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Base class for estimators in pgmpy; `ParameterEstimator`,</span>
 <span class="sd">        `StructureEstimator` and `StructureScore` derive from this class.</span>
@@ -76,25 +75,30 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">complete_samples_only</span> <span class="o">=</span> <span class="n">complete_samples_only</span>
+        <span class="c1"># data can be None in the case when learning structre from</span>
+        <span class="c1"># independence conditions. Look into PC.py.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">complete_samples_only</span> <span class="o">=</span> <span class="n">complete_samples_only</span>
 
-        <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_names</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_state_names</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span>
-            <span class="p">}</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">state_names</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_collect_state_names</span><span class="p">(</span><span class="n">var</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]):</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Data contains unexpected states for variable: </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">.&quot;</span>
-                        <span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_state_names</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_names</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_state_names</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span>
+                <span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">state_names</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_collect_state_names</span><span class="p">(</span><span class="n">var</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span>
+                            <span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+                        <span class="p">):</span>
+                            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;Data contains unexpected states for variable: </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">.&quot;</span>
+                            <span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_state_names</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_collect_state_names</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">):</span>
         <span class="s2">&quot;Return a list of states that the variable takes in the data&quot;</span>
@@ -195,26 +199,7 @@
                 <span class="n">index</span><span class="o">=</span><span class="n">row_index</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">column_index</span>
             <span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">state_counts</span>
-
-    <span class="k">def</span> <span class="nf">test_conditional_independence</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Zs</span><span class="o">=</span><span class="p">[],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">):</span>
-        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;chi_square&quot;</span><span class="p">:</span>
-            <span class="n">param</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">chi_square</span><span class="p">(</span>
-                <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Zs</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="n">p_value</span> <span class="o">&gt;=</span> <span class="n">tol</span><span class="p">:</span>
-                <span class="k">return</span> <span class="kc">True</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="kc">False</span>
-
-        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;pearsonr&quot;</span><span class="p">:</span>
-            <span class="n">param</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">pearsonr</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Zs</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">param</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">:</span>
-                <span class="k">return</span> <span class="kc">True</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="kc">False</span></div>
+        <span class="k">return</span> <span class="n">state_counts</span></div>
 
 
 <div class="viewcode-block" id="ParameterEstimator"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.base.ParameterEstimator">[docs]</a><span class="k">class</span> <span class="nc">ParameterEstimator</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">):</span>
@@ -306,7 +291,7 @@
 
 
 <div class="viewcode-block" id="StructureEstimator"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.base.StructureEstimator">[docs]</a><span class="k">class</span> <span class="nc">StructureEstimator</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">independencies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Base class for structure estimators in pgmpy.</span>
 
@@ -329,7 +314,11 @@
 <span class="sd">            This sets the behavior of the `state_count`-method.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="nb">super</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">independencies</span> <span class="o">=</span> <span class="n">independencies</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">independencies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">independencies</span><span class="o">.</span><span class="n">get_all_variables</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span></div>
