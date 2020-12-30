@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pgmpy.estimators.PC &mdash; pgmpy 0.1.11 documentation</title>
+  <title>pgmpy.estimators.PC &mdash; pgmpy 0.1.13 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                0.1.11
+                0.1.13
               </div>
             
           
@@ -185,7 +185,7 @@
 <span></span><span class="ch">#!/usr/bin/env python</span>
 
 <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span><span class="p">,</span> <span class="n">permutations</span>
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
@@ -421,7 +421,7 @@
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import PC </span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import PC</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DAG</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.independencies import Independencies</span>
 <span class="sd">        &gt;&gt;&gt; # build skeleton from list of independencies:</span>
@@ -606,11 +606,12 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">pdag</span> <span class="o">=</span> <span class="n">skeleton</span><span class="o">.</span><span class="n">to_directed</span><span class="p">()</span>
-        <span class="n">node_pairs</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">node_pairs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">permutations</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="mi">2</span><span class="p">))</span>
 
         <span class="c1"># 1) for each X-Z-Y, if Z not in the separating set of X,Y, then orient edges as X-&gt;Z&lt;-Y</span>
         <span class="c1"># (Algorithm 3.4 in Koller &amp; Friedman PGM, page 86)</span>
-        <span class="k">for</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">pair</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">skeleton</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">skeleton</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">skeleton</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">Y</span><span class="p">)):</span>
                     <span class="k">if</span> <span class="n">Z</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">separating_sets</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">))]:</span>
@@ -621,25 +622,31 @@
             <span class="n">num_edges</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()</span>
 
             <span class="c1"># 2) for each X-&gt;Z-Y, orient edges to Z-&gt;Y</span>
-            <span class="k">for</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">X</span><span class="p">)))</span> <span class="o">&amp;</span> <span class="p">(</span>
-                    <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span>
-                <span class="p">):</span>
-                    <span class="n">pdag</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
+            <span class="c1"># (Explanation in Koller &amp; Friedman PGM, page 88)</span>
+            <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
+                <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">pair</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">X</span><span class="p">)))</span> <span class="o">&amp;</span> <span class="p">(</span>
+                        <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span>
+                    <span class="p">):</span>
+                        <span class="n">pdag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
 
             <span class="c1"># 3) for each X-Y with a directed path from X to Y, orient edges to X-&gt;Y</span>
-            <span class="k">for</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">all_simple_paths</span><span class="p">(</span><span class="n">pdag</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
-                    <span class="n">is_directed</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">dst</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
-                            <span class="n">is_directed</span> <span class="o">=</span> <span class="kc">False</span>
-                    <span class="k">if</span> <span class="n">is_directed</span><span class="p">:</span>
-                        <span class="n">pdag</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
-                        <span class="k">break</span>
+            <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
+                <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">pair</span>
+                <span class="k">if</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">all_simple_paths</span><span class="p">(</span><span class="n">pdag</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+                        <span class="n">is_directed</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">dst</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:])):</span>
+                            <span class="k">if</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
+                                <span class="n">is_directed</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">if</span> <span class="n">is_directed</span><span class="p">:</span>
+                            <span class="n">pdag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+                            <span class="k">break</span>
 
             <span class="c1"># 4) for each X-Z-Y with X-&gt;W, Y-&gt;W, and Z-W, orient edges to Z-&gt;W</span>
-            <span class="k">for</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
+                <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">pair</span>
                 <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="p">(</span>
                     <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
                     <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
@@ -651,7 +658,7 @@
                         <span class="o">&amp;</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">Y</span><span class="p">)))</span>
                         <span class="o">&amp;</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">Z</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">Z</span><span class="p">)))</span>
                     <span class="p">):</span>
-                        <span class="n">pdag</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
+                        <span class="n">pdag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
 
             <span class="n">progress</span> <span class="o">=</span> <span class="n">num_edges</span> <span class="o">&gt;</span> <span class="n">pdag</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()</span>
 
