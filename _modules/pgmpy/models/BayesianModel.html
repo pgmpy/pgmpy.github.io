@@ -530,14 +530,14 @@
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
 <span class="sd">        &gt;&gt;&gt; student = BayesianModel([(&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_diff = TabularCPD(&#39;diff&#39;,2,[[0.6,0.4]]);</span>
-<span class="sd">        &gt;&gt;&gt; cpd_intel = TabularCPD(&#39;intel&#39;,2,[[0.7,0.3]]);</span>
+<span class="sd">        &gt;&gt;&gt; cpd_diff = TabularCPD(&#39;diff&#39;, 2, [[0.6], [0.4]]);</span>
+<span class="sd">        &gt;&gt;&gt; cpd_intel = TabularCPD(&#39;intel&#39;, 2, [[0.7], [0.3]]);</span>
 <span class="sd">        &gt;&gt;&gt; cpd_grade = TabularCPD(&#39;grade&#39;, 2, [[0.1, 0.9, 0.2, 0.7],</span>
 <span class="sd">        ...                                     [0.9, 0.1, 0.8, 0.3]],</span>
 <span class="sd">        ...                                 [&#39;intel&#39;, &#39;diff&#39;], [2, 2])</span>
 <span class="sd">        &gt;&gt;&gt; student.add_cpds(cpd_diff,cpd_intel,cpd_grade)</span>
 <span class="sd">        &gt;&gt;&gt; student.get_cardinality()</span>
-<span class="sd">        defaultdict(int, {&#39;diff&#39;: 2, &#39;grade&#39;: 2, &#39;intel&#39;: 2})</span>
+<span class="sd">        defaultdict(&lt;class &#39;int&#39;&gt;, {&#39;diff&#39;: 2, &#39;intel&#39;: 2, &#39;grade&#39;: 2})</span>
 
 <span class="sd">        &gt;&gt;&gt; student.get_cardinality(&#39;intel&#39;)</span>
 <span class="sd">        2</span>
@@ -594,10 +594,9 @@
 <span class="sd">        ...                    (&#39;intel&#39;, &#39;SAT&#39;), (&#39;grade&#39;, &#39;letter&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; mm = G.to_markov_model()</span>
 <span class="sd">        &gt;&gt;&gt; mm.nodes()</span>
-<span class="sd">        [&#39;diff&#39;, &#39;grade&#39;, &#39;intel&#39;, &#39;SAT&#39;, &#39;letter&#39;]</span>
+<span class="sd">        NodeView((&#39;diff&#39;, &#39;grade&#39;, &#39;intel&#39;, &#39;letter&#39;, &#39;SAT&#39;))</span>
 <span class="sd">        &gt;&gt;&gt; mm.edges()</span>
-<span class="sd">        [(&#39;diff&#39;, &#39;intel&#39;), (&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;),</span>
-<span class="sd">        (&#39;intel&#39;, &#39;SAT&#39;), (&#39;grade&#39;, &#39;letter&#39;)]</span>
+<span class="sd">        EdgeView([(&#39;diff&#39;, &#39;grade&#39;), (&#39;diff&#39;, &#39;intel&#39;), (&#39;grade&#39;, &#39;letter&#39;), (&#39;grade&#39;, &#39;intel&#39;), (&#39;intel&#39;, &#39;SAT&#39;)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">moral_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">moralize</span><span class="p">()</span>
         <span class="n">mm</span> <span class="o">=</span> <span class="n">MarkovModel</span><span class="p">(</span><span class="n">moral_graph</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
@@ -914,21 +913,19 @@
 <span class="sd">        &gt;&gt;&gt; model = BayesianModel([(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; cpd_a = TabularCPD(&#39;A&#39;, 2, [[0.2], [0.8]])</span>
 <span class="sd">        &gt;&gt;&gt; cpd_b = TabularCPD(&#39;B&#39;, 2, [[0.3, 0.7], [0.7, 0.3]],</span>
-<span class="sd">                               evidence=[&#39;A&#39;],</span>
-<span class="sd">                               evidence_card=[2])</span>
+<span class="sd">        ...                    evidence=[&#39;A&#39;],</span>
+<span class="sd">        ...                    evidence_card=[2])</span>
 <span class="sd">        &gt;&gt;&gt; cpd_c = TabularCPD(&#39;C&#39;, 2, [[0.1, 0.9], [0.9, 0.1]],</span>
-<span class="sd">                               evidence=[&#39;B&#39;],</span>
-<span class="sd">                               evidence_card=[2])</span>
+<span class="sd">        ...                    evidence=[&#39;B&#39;],</span>
+<span class="sd">        ...                    evidence_card=[2])</span>
 <span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd_a, cpd_b, cpd_c)</span>
 <span class="sd">        &gt;&gt;&gt; copy_model = model.copy()</span>
 <span class="sd">        &gt;&gt;&gt; copy_model.nodes()</span>
-<span class="sd">        [&#39;C&#39;, &#39;A&#39;, &#39;B&#39;]</span>
+<span class="sd">        NodeView((&#39;A&#39;, &#39;B&#39;, &#39;C&#39;))</span>
 <span class="sd">        &gt;&gt;&gt; copy_model.edges()</span>
-<span class="sd">        [(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;)]</span>
-<span class="sd">        &gt;&gt;&gt; copy_model.get_cpds()</span>
-<span class="sd">        [&lt;TabularCPD representing P(A:2) at 0x7f2824930a58&gt;,</span>
-<span class="sd">         &lt;TabularCPD representing P(B:2 | A:2) at 0x7f2824930a90&gt;,</span>
-<span class="sd">         &lt;TabularCPD representing P(C:2 | B:2) at 0x7f2824944240&gt;]</span>
+<span class="sd">        OutEdgeView([(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; len(copy_model.get_cpds())</span>
+<span class="sd">        3</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">model_copy</span> <span class="o">=</span> <span class="n">BayesianModel</span><span class="p">()</span>
         <span class="n">model_copy</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
@@ -958,8 +955,8 @@
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
 <span class="sd">        &gt;&gt;&gt; G = BayesianModel([(&#39;x&#39;, &#39;y&#39;), (&#39;z&#39;, &#39;y&#39;), (&#39;y&#39;, &#39;w&#39;), (&#39;y&#39;, &#39;v&#39;), (&#39;u&#39;, &#39;w&#39;),</span>
 <span class="sd">        ...                    (&#39;s&#39;, &#39;v&#39;), (&#39;w&#39;, &#39;t&#39;), (&#39;w&#39;, &#39;m&#39;), (&#39;v&#39;, &#39;n&#39;), (&#39;v&#39;, &#39;q&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; bayes_model.get_markov_blanket(&#39;y&#39;)</span>
-<span class="sd">        [&#39;s&#39;, &#39;w&#39;, &#39;x&#39;, &#39;u&#39;, &#39;z&#39;, &#39;v&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; G.get_markov_blanket(&#39;y&#39;)</span>
+<span class="sd">        [&#39;s&#39;, &#39;u&#39;, &#39;w&#39;, &#39;v&#39;, &#39;z&#39;, &#39;x&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_children</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
         <span class="n">parents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>

@@ -422,14 +422,14 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import PC</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import DAG</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.independencies import Independencies</span>
 <span class="sd">        &gt;&gt;&gt; # build skeleton from list of independencies:</span>
 <span class="sd">        ... ind = Independencies([&#39;B&#39;, &#39;C&#39;], [&#39;A&#39;, [&#39;B&#39;, &#39;C&#39;], &#39;D&#39;])</span>
 <span class="sd">        &gt;&gt;&gt; # we need to compute closure, otherwise this set of independencies doesn&#39;t</span>
 <span class="sd">        ... # admit a faithful representation:</span>
 <span class="sd">        ... ind = ind.closure()</span>
-<span class="sd">        &gt;&gt;&gt; skel, sep_sets = PC.build_skeleton(&quot;ABCD&quot;, ind)</span>
+<span class="sd">        &gt;&gt;&gt; skel, sep_sets = PC(independencies=ind).build_skeleton(&quot;ABCD&quot;, ind)</span>
 <span class="sd">        &gt;&gt;&gt; print(skel.edges())</span>
 <span class="sd">        [(&#39;A&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;D&#39;), (&#39;C&#39;, &#39;D&#39;)]</span>
 <span class="sd">        &gt;&gt;&gt; # build skeleton from d-seperations of DAG:</span>
@@ -595,12 +595,12 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ConstraintBasedEstimator</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import PC</span>
 <span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 4, size=(5000, 3)), columns=list(&#39;ABD&#39;))</span>
 <span class="sd">        &gt;&gt;&gt; data[&#39;C&#39;] = data[&#39;A&#39;] - data[&#39;B&#39;]</span>
 <span class="sd">        &gt;&gt;&gt; data[&#39;D&#39;] += data[&#39;A&#39;]</span>
-<span class="sd">        &gt;&gt;&gt; c = ConstraintBasedEstimator(data)</span>
-<span class="sd">        &gt;&gt;&gt; pdag = c.skeleton_to_pdag(*c.estimate_skeleton())</span>
+<span class="sd">        &gt;&gt;&gt; c = PC(data)</span>
+<span class="sd">        &gt;&gt;&gt; pdag = c.skeleton_to_pdag(*c.build_skeleton())</span>
 <span class="sd">        &gt;&gt;&gt; pdag.edges() # edges: A-&gt;C, B-&gt;C, A--D (not directed)</span>
 <span class="sd">        [(&#39;B&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;D&#39;), (&#39;D&#39;, &#39;A&#39;)]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
