@@ -29,7 +29,6 @@
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
-        <script src="../../../../_static/language_data.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
@@ -110,11 +109,13 @@
 <li class="toctree-l1"><a class="reference external" href="https://github.com/pgmpy/pgmpy_notebook/blob/master/notebooks/8.%20Reading%20and%20Writing%20from%20pgmpy%20file%20formats.ipynb">Reading and writing files using pgmpy</a></li>
 </ul>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../base.html">Base Structure Classes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../models.html">Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../factors.html">Factor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../sampling.html">Sampling Methods</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">Algorithms for Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../inference.html#module-pgmpy.inference.EliminationOrder">Elimination Ordering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html#model-testing">Model Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../readwrite.html">Reading and Writing from files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../estimators.html">Estimators for Parameter and Structure Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../citests.html">Conditional Independence Tests for PC algorithm</a></li>
@@ -188,6 +189,7 @@
 <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.factors.base</span> <span class="kn">import</span> <span class="n">BaseFactor</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">StateNameMixin</span>
@@ -203,7 +205,7 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">cardinality</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{}):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize a factor class.</span>
+<span class="sd">        Initialize a `DiscreteFactor` class.</span>
 
 <span class="sd">        Defined above, we have the following mapping from variable</span>
 <span class="sd">        assignments to the index of the row vector in the value field:</span>
@@ -230,17 +232,19 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        variables: list, array-like</span>
-<span class="sd">            List of variables in the scope of the factor.</span>
+<span class="sd">            List of variables on which the factor is to be defined i.e. scope of the factor.</span>
 
 <span class="sd">        cardinality: list, array_like</span>
-<span class="sd">            List of cardinalities of each variable. `cardinality` array must have a value</span>
-<span class="sd">            corresponding to each variable in `variables`.</span>
+<span class="sd">            List of cardinalities/no.of states of each variable. `cardinality`</span>
+<span class="sd">            array must have a value corresponding to each variable in</span>
+<span class="sd">            `variables`.</span>
 
 <span class="sd">        values: list, array_like</span>
 <span class="sd">            List of values of factor.</span>
 <span class="sd">            A DiscreteFactor&#39;s values are stored in a row vector in the value</span>
 <span class="sd">            using an ordering such that the left-most variables as defined in</span>
-<span class="sd">            `variables` cycle through their values the fastest.</span>
+<span class="sd">            `variables` cycle through their values the fastest. Please refer</span>
+<span class="sd">            to examples for usage examples.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -290,7 +294,7 @@
 
 <div class="viewcode-block" id="DiscreteFactor.scope"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.scope">[docs]</a>    <span class="k">def</span> <span class="nf">scope</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the scope of the factor.</span>
+<span class="sd">        Returns the scope of the factor i.e. the variables on which the factor is defined.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -307,7 +311,7 @@
 
 <div class="viewcode-block" id="DiscreteFactor.get_cardinality"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.get_cardinality">[docs]</a>    <span class="k">def</span> <span class="nf">get_cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns cardinality of a given variable</span>
+<span class="sd">        Returns the cardinality/no.of states of each variable in `variables`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -343,11 +347,11 @@
 <span class="sd">        ----------</span>
 <span class="sd">        kwargs: named arguments of the form variable=state_name</span>
 <span class="sd">            Spcifies the state of each of the variable for which to get</span>
-<span class="sd">            the probability value.</span>
+<span class="sd">            the value.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        float: The probability value of states.</span>
+<span class="sd">        float: The value of states.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -374,7 +378,7 @@
 
 <div class="viewcode-block" id="DiscreteFactor.set_value"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.set_value">[docs]</a>    <span class="k">def</span> <span class="nf">set_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sets the probability values of the given variable states.</span>
+<span class="sd">        Sets the probability value of the given variable states.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -419,7 +423,7 @@
 
 <div class="viewcode-block" id="DiscreteFactor.assignment"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.assignment">[docs]</a>    <span class="k">def</span> <span class="nf">assignment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a list of assignments for the corresponding index.</span>
+<span class="sd">        Returns a list of assignments (variable and state) for the corresponding index.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -648,7 +652,8 @@
 
 <div class="viewcode-block" id="DiscreteFactor.reduce"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.reduce">[docs]</a>    <span class="k">def</span> <span class="nf">reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Reduces the factor to the context of given variable values.</span>
+<span class="sd">        Reduces the factor to the context of given variable values. The variables which</span>
+<span class="sd">        are reduced would be removed from the factor.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -713,7 +718,7 @@
         <span class="n">var_index_to_keep</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
             <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">)))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">var_index_to_del</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="c1"># set difference is not gaurenteed to maintain ordering</span>
+        <span class="c1"># set difference is not guaranteed to maintain ordering</span>
         <span class="n">phi</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">var_index_to_keep</span><span class="p">]</span>
         <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">var_index_to_keep</span><span class="p">]</span>
         <span class="n">phi</span><span class="o">.</span><span class="n">del_state_names</span><span class="p">([</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">values</span><span class="p">])</span>
@@ -729,7 +734,8 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        phi1: `DiscreteFactor` instance.</span>
+<span class="sd">        phi1: float or `DiscreteFactor` instance.</span>
+<span class="sd">            If float: the value is added to each value in the factor.</span>
 <span class="sd">            DiscreteFactor to be added.</span>
 
 <span class="sd">        inplace: boolean</span>
@@ -752,18 +758,18 @@
 <span class="sd">        &gt;&gt;&gt; phi1.cardinality</span>
 <span class="sd">        array([2, 3, 2, 2])</span>
 <span class="sd">        &gt;&gt;&gt; phi1.values</span>
-<span class="sd">        array([[[[ 0,  0],</span>
-<span class="sd">                 [ 4,  6]],</span>
-<span class="sd">                [[ 0,  4],</span>
-<span class="sd">                 [12, 18]],</span>
-<span class="sd">                [[ 0,  8],</span>
-<span class="sd">                 [20, 30]]],</span>
-<span class="sd">               [[[ 6, 18],</span>
-<span class="sd">                 [35, 49]],</span>
-<span class="sd">                [[ 8, 24],</span>
-<span class="sd">                 [45, 63]],</span>
-<span class="sd">                [[10, 30],</span>
-<span class="sd">                 [55, 77]]]])</span>
+<span class="sd">        array([[[[ 0.,  2.],</span>
+<span class="sd">                 [ 5.,  7.]],</span>
+<span class="sd">                [[ 2.,  4.],</span>
+<span class="sd">                 [ 7.,  9.]],</span>
+<span class="sd">                [[ 4.,  6.],</span>
+<span class="sd">                 [ 9., 11.]]],</span>
+<span class="sd">               [[[ 7., 9.],</span>
+<span class="sd">                 [12., 14.]],</span>
+<span class="sd">                [[ 9., 11.],</span>
+<span class="sd">                 [14., 16.]],</span>
+<span class="sd">                [[11., 13.],</span>
+<span class="sd">                 [16., 18.]]]])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">phi</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">inplace</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phi1</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
@@ -784,6 +790,7 @@
                 <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">,</span> <span class="p">[</span><span class="n">new_var_card</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">extra_vars</span><span class="p">]</span>
                 <span class="p">)</span>
+                <span class="n">phi</span><span class="o">.</span><span class="n">add_state_names</span><span class="p">(</span><span class="n">phi1</span><span class="p">)</span>
 
             <span class="c1"># modifying phi1 to add new variables</span>
             <span class="n">extra_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">phi1</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>
@@ -815,8 +822,9 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        phi1: `DiscreteFactor` instance</span>
-<span class="sd">            DiscreteFactor to be multiplied.</span>
+<span class="sd">        phi1: float or `DiscreteFactor` instance</span>
+<span class="sd">            If float, all the values are multiplied with `phi1`.</span>
+<span class="sd">            else if `DiscreteFactor` instance, mutliply based on matching rows.</span>
 
 <span class="sd">        inplace: boolean</span>
 <span class="sd">            If inplace=True it will modify the factor itself, else would return</span>
@@ -965,6 +973,42 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">phi</span></div>
 
+<div class="viewcode-block" id="DiscreteFactor.sample"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Normalizes the factor and samples state combinations from it.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n: int</span>
+<span class="sd">            No. of samples to return</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import DiscreteFactor</span>
+<span class="sd">        &gt;&gt;&gt; phi1 = DiscreteFactor([&#39;x1&#39;, &#39;x2&#39;, &#39;x3&#39;], [2, 3, 2], range(12))</span>
+<span class="sd">        &gt;&gt;&gt; phi1.sample(5)</span>
+<span class="sd">            x1  x2  x3</span>
+<span class="sd">        0    1   0   0</span>
+<span class="sd">        1    0   2   0</span>
+<span class="sd">        2    1   2   0</span>
+<span class="sd">        3    1   1   1</span>
+<span class="sd">        4    1   1   1</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)),</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">index_to_state</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">indexes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">index_to_state</span><span class="p">:</span>
+                <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index_to_state</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">assignment</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assignment</span><span class="p">([</span><span class="n">index</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">assignment</span><span class="p">)</span>
+                <span class="n">index_to_state</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">assignment</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">s</span><span class="p">}</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">])</span></div>
+
 <div class="viewcode-block" id="DiscreteFactor.copy"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a copy of the factor.</span>
@@ -1000,14 +1044,17 @@
             <span class="n">state_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
         <span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">is_valid_cpd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DiscreteFactor.is_valid_cpd"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.is_valid_cpd">[docs]</a>    <span class="k">def</span> <span class="nf">is_valid_cpd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if the factor&#39;s values can be used for a valid CPD.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">to_factor</span><span class="p">()</span>
             <span class="o">.</span><span class="n">marginalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="p">()[:</span><span class="mi">1</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">),</span>
             <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])),</span>
             <span class="n">atol</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_str</span><span class="p">(</span><span class="n">phi_or_p</span><span class="o">=</span><span class="s2">&quot;phi&quot;</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;grid&quot;</span><span class="p">)</span>

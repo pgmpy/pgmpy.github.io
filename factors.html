@@ -29,7 +29,6 @@
         <script src="_static/jquery.js"></script>
         <script src="_static/underscore.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/language_data.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
@@ -132,6 +131,7 @@
 <li class="toctree-l1"><a class="reference internal" href="sampling.html">Sampling Methods</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inference.html">Algorithms for Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="inference.html#module-pgmpy.inference.EliminationOrder">Elimination Ordering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference.html#model-testing">Model Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="readwrite.html">Reading and Writing from files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="estimators.html">Estimators for Parameter and Structure Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="citests.html">Conditional Independence Tests for PC algorithm</a></li>
@@ -235,15 +235,16 @@
 <dl class="py class">
 <dt id="pgmpy.factors.discrete.CPD.TabularCPD">
 <em class="property">class </em><code class="sig-prename descclassname">pgmpy.factors.discrete.CPD.</code><code class="sig-name descname">TabularCPD</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">variable</span></em>, <em class="sig-param"><span class="n">variable_card</span></em>, <em class="sig-param"><span class="n">values</span></em>, <em class="sig-param"><span class="n">evidence</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">evidence_card</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">state_names</span><span class="o">=</span><span class="default_value">{}</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/CPD.html#TabularCPD"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.CPD.TabularCPD" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines the conditional probability distribution table (cpd table)</p>
+<dd><p>Defines the conditional probability distribution table (CPD table)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>variable</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>string</em><em> (</em><em>any hashable python object</em><em>)</em>) – The variable whose CPD is defined.</p></li>
-<li><p><strong>variable_card</strong> (<em>integer</em>) – cardinality of variable</p></li>
-<li><p><strong>values</strong> (<em>2d array</em><em>, </em><em>2d list</em><em> or </em><em>2d tuple</em>) – values of the cpd table</p></li>
-<li><p><strong>evidence</strong> (<em>array-like</em>) – evidences(if any) w.r.t. which cpd is defined</p></li>
-<li><p><strong>evidence_card</strong> (<em>integer</em><em>, </em><em>array-like</em>) – cardinality of evidences (if any)</p></li>
+<li><p><strong>variable_card</strong> (<em>integer</em>) – Cardinality/no. of states of <cite>variable</cite></p></li>
+<li><p><strong>values</strong> (<em>2D array</em><em>, </em><em>2D list</em><em> or </em><em>2D tuple</em>) – Values for the CPD table. Please refer the example for the
+exact format needed.</p></li>
+<li><p><strong>evidence</strong> (<em>array-like</em>) – List of variables in evidences(if any) w.r.t. which CPD is defined.</p></li>
+<li><p><strong>evidence_card</strong> (<em>array-like</em>) – cardinality/no. of states of variables in <a href="#id1"><span class="problematic" id="id2">`</span></a>evidence`(if any)</p></li>
 </ul>
 </dd>
 </dl>
@@ -338,7 +339,7 @@
 <dl class="py method">
 <dt id="pgmpy.factors.discrete.CPD.TabularCPD.copy">
 <code class="sig-name descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/CPD.html#TabularCPD.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.CPD.TabularCPD.copy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a copy of the TabularCPD object.</p>
+<dd><p>Returns a copy of the <cite>TabularCPD</cite> object.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;grade&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span>
@@ -361,9 +362,16 @@
 </dd></dl>
 
 <dl class="py method">
+<dt id="pgmpy.factors.discrete.CPD.TabularCPD.get_evidence">
+<code class="sig-name descname">get_evidence</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/CPD.html#TabularCPD.get_evidence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.CPD.TabularCPD.get_evidence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the evidence variables of the CPD.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="pgmpy.factors.discrete.CPD.TabularCPD.get_values">
 <code class="sig-name descname">get_values</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/CPD.html#TabularCPD.get_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.CPD.TabularCPD.get_values" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the cpd</p>
+<dd><p>Returns the values of the CPD as a 2-D array. The order of the
+parents is the same as provided in evidence.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;grade&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
@@ -381,7 +389,9 @@
 <dl class="py method">
 <dt id="pgmpy.factors.discrete.CPD.TabularCPD.marginalize">
 <code class="sig-name descname">marginalize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">variables</span></em>, <em class="sig-param"><span class="n">inplace</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/CPD.html#TabularCPD.marginalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.CPD.TabularCPD.marginalize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Modifies the cpd table with marginalized values.</p>
+<dd><p>Modifies the CPD table with marginalized values. Marginalization refers to
+summing out variables, hence that variable would no longer appear in the
+CPD.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -407,7 +417,8 @@ a new CPD</p></li>
 <dl class="py method">
 <dt id="pgmpy.factors.discrete.CPD.TabularCPD.normalize">
 <code class="sig-name descname">normalize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">inplace</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/CPD.html#TabularCPD.normalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.CPD.TabularCPD.normalize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Normalizes the cpd table.</p>
+<dd><p>Normalizes the cpd table. The method modifies each column of values such
+that it sums to 1 without changing the proportion between states.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>inplace</strong> (<em>boolean</em>) – If inplace=True it will modify the CPD itself, else would return
@@ -430,7 +441,9 @@ a new CPD</p>
 <dl class="py method">
 <dt id="pgmpy.factors.discrete.CPD.TabularCPD.reduce">
 <code class="sig-name descname">reduce</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">values</span></em>, <em class="sig-param"><span class="n">inplace</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/CPD.html#TabularCPD.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.CPD.TabularCPD.reduce" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reduces the cpd table to the context of given variable values.</p>
+<dd><p>Reduces the cpd table to the context of given variable values. Reduce fixes the
+state of given variable to specified value. The reduced variables will no longer
+appear in the CPD.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -456,7 +469,7 @@ a new factor.</p></li>
 <dl class="py method">
 <dt id="pgmpy.factors.discrete.CPD.TabularCPD.reorder_parents">
 <code class="sig-name descname">reorder_parents</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">new_order</span></em>, <em class="sig-param"><span class="n">inplace</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/CPD.html#TabularCPD.reorder_parents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.CPD.TabularCPD.reorder_parents" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a new cpd table according to provided order.</p>
+<dd><p>Returns a new cpd table according to provided parent/evidence order.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -540,7 +553,9 @@ otherwise new value will be returned without affecting old values</p></li>
 <dl class="py method">
 <dt id="pgmpy.factors.discrete.CPD.TabularCPD.to_factor">
 <code class="sig-name descname">to_factor</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/CPD.html#TabularCPD.to_factor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.CPD.TabularCPD.to_factor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns an equivalent factor with the same variables, cardinality, values as that of the cpd</p>
+<dd><p>Returns an equivalent factor with the same variables, cardinality, values as that of the CPD.
+Since factor doesn’t distinguish between conditional and non-conditional distributions,
+evidence information will be lost.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;grade&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
@@ -566,7 +581,7 @@ otherwise new value will be returned without affecting old values</p></li>
 <dl class="py method">
 <dt id="pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.assignment">
 <code class="sig-name descname">assignment</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">index</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/DiscreteFactor.html#DiscreteFactor.assignment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.assignment" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of assignments for the corresponding index.</p>
+<dd><p>Returns a list of assignments (variable and state) for the corresponding index.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em>, </em><em>array-like</em>) – List of indices whose assignment is to be computed</p>
@@ -662,7 +677,7 @@ a new factor.</p></li>
 <dl class="py method">
 <dt id="pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.get_cardinality">
 <code class="sig-name descname">get_cardinality</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">variables</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/DiscreteFactor.html#DiscreteFactor.get_cardinality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.get_cardinality" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns cardinality of a given variable</p>
+<dd><p>Returns the cardinality/no.of states of each variable in <cite>variables</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.9)"><em>list</em></a><em>, </em><em>array-like</em>) – A list of variable names.</p>
@@ -692,13 +707,13 @@ a new factor.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>kwargs</strong> (<em>named arguments of the form variable=state_name</em>) – Spcifies the state of each of the variable for which to get
-the probability value.</p>
+the value.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>float</strong></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>The probability value of states.</p>
+<dd class="field-odd"><p>The value of states.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
@@ -743,6 +758,12 @@ the factor it returns the factor itself.</p>
 <span class="go">        [ 1.,  1.]]])</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.is_valid_cpd">
+<code class="sig-name descname">is_valid_cpd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/DiscreteFactor.html#DiscreteFactor.is_valid_cpd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.is_valid_cpd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the factor’s values can be used for a valid CPD.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -863,7 +884,8 @@ a new factor</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>phi1</strong> (<cite>DiscreteFactor</cite> instance) – DiscreteFactor to be multiplied.</p></li>
+<li><p><strong>phi1</strong> (float or <cite>DiscreteFactor</cite> instance) – If float, all the values are multiplied with <cite>phi1</cite>.
+else if <cite>DiscreteFactor</cite> instance, mutliply based on matching rows.</p></li>
 <li><p><strong>inplace</strong> (<em>boolean</em>) – If inplace=True it will modify the factor itself, else would return
 a new factor.</p></li>
 </ul>
@@ -904,7 +926,8 @@ a new factor.</p></li>
 <dl class="py method">
 <dt id="pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.reduce">
 <code class="sig-name descname">reduce</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">values</span></em>, <em class="sig-param"><span class="n">inplace</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/DiscreteFactor.html#DiscreteFactor.reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.reduce" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reduces the factor to the context of given variable values.</p>
+<dd><p>Reduces the factor to the context of given variable values. The variables which
+are reduced would be removed from the factor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -935,9 +958,32 @@ a new factor.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt id="pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.sample">
+<code class="sig-name descname">sample</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/DiscreteFactor.html#DiscreteFactor.sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalizes the factor and samples state combinations from it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – No. of samples to return</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">DiscreteFactor</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phi1</span> <span class="o">=</span> <span class="n">DiscreteFactor</span><span class="p">([</span><span class="s1">&#39;x1&#39;</span><span class="p">,</span> <span class="s1">&#39;x2&#39;</span><span class="p">,</span> <span class="s1">&#39;x3&#39;</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phi1</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">    x1  x2  x3</span>
+<span class="go">0    1   0   0</span>
+<span class="go">1    0   2   0</span>
+<span class="go">2    1   2   0</span>
+<span class="go">3    1   1   1</span>
+<span class="go">4    1   1   1</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt id="pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.scope">
 <code class="sig-name descname">scope</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/DiscreteFactor.html#DiscreteFactor.scope"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.scope" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the scope of the factor.</p>
+<dd><p>Returns the scope of the factor i.e. the variables on which the factor is defined.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p><strong>list</strong></p>
@@ -958,7 +1004,7 @@ a new factor.</p></li>
 <dl class="py method">
 <dt id="pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.set_value">
 <code class="sig-name descname">set_value</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/factors/discrete/DiscreteFactor.html#DiscreteFactor.set_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.set_value" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the probability values of the given variable states.</p>
+<dd><p>Sets the probability value of the given variable states.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -992,7 +1038,8 @@ the probability value.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>phi1</strong> (<cite>DiscreteFactor</cite> instance.) – DiscreteFactor to be added.</p></li>
+<li><p><strong>phi1</strong> (float or <cite>DiscreteFactor</cite> instance.) – If float: the value is added to each value in the factor.
+DiscreteFactor to be added.</p></li>
 <li><p><strong>inplace</strong> (<em>boolean</em>) – If inplace=True it will modify the factor itself, else would return
 a new factor.</p></li>
 </ul>
@@ -1014,18 +1061,18 @@ a new factor.</p></li>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">phi1</span><span class="o">.</span><span class="n">cardinality</span>
 <span class="go">array([2, 3, 2, 2])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">phi1</span><span class="o">.</span><span class="n">values</span>
-<span class="go">array([[[[ 0,  0],</span>
-<span class="go">         [ 4,  6]],</span>
-<span class="go">        [[ 0,  4],</span>
-<span class="go">         [12, 18]],</span>
-<span class="go">        [[ 0,  8],</span>
-<span class="go">         [20, 30]]],</span>
-<span class="go">       [[[ 6, 18],</span>
-<span class="go">         [35, 49]],</span>
-<span class="go">        [[ 8, 24],</span>
-<span class="go">         [45, 63]],</span>
-<span class="go">        [[10, 30],</span>
-<span class="go">         [55, 77]]]])</span>
+<span class="go">array([[[[ 0.,  2.],</span>
+<span class="go">         [ 5.,  7.]],</span>
+<span class="go">        [[ 2.,  4.],</span>
+<span class="go">         [ 7.,  9.]],</span>
+<span class="go">        [[ 4.,  6.],</span>
+<span class="go">         [ 9., 11.]]],</span>
+<span class="go">       [[[ 7., 9.],</span>
+<span class="go">         [12., 14.]],</span>
+<span class="go">        [[ 9., 11.],</span>
+<span class="go">         [14., 16.]],</span>
+<span class="go">        [[11., 13.],</span>
+<span class="go">         [16., 18.]]]])</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1069,7 +1116,9 @@ a new factor.</p></li>
 A 1D list or array-like to condition over randome variables (condition_random_variable must be True)
 The values on which to condition the Joint Probability Distribution.</p></li>
 <li><p><strong>condition_random_variable</strong> (<em>Boolean</em><em> (</em><em>Default false</em><em>)</em>) – If true and event3 is not None than will check independence condition over random variable.</p></li>
-<li><p><strong>random variables say X</strong><strong>, </strong><strong>Y</strong><strong>, </strong><strong>Z to check if X is independent of Y given Z.</strong> (<em>For</em>) – </p></li>
+<li><p><strong>random variables say X</strong> (<em>For</em>) – </p></li>
+<li><p><strong>Y</strong> – </p></li>
+<li><p><strong>to check if X is independent of Y given Z.</strong> (<em>Z</em>) – </p></li>
 <li><p><strong>should be either X</strong><strong> or </strong><strong>Y.</strong> (<em>event1</em>) – </p></li>
 <li><p><strong>should be either Y</strong><strong> or </strong><strong>X.</strong> (<em>event2</em>) – </p></li>
 <li><p><strong>should Z.</strong> (<em>event3</em>) – </p></li>
@@ -1357,8 +1406,8 @@ probability masses using various methods.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>method</strong> (<em>A Discretizer Class from pgmpy.discretize</em>) – </p></li>
-<li><p><strong>**kwargs</strong> (<em>*args</em><em>,</em>) – <p>The parameters to be given to the Discretizer Class.</p>
-</p></li>
+<li><p><strong>*args</strong> – The parameters to be given to the Discretizer Class.</p></li>
+<li><p><strong>**kwargs</strong> – The parameters to be given to the Discretizer Class.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -1620,12 +1669,12 @@ and <img class="math" src="_images/math/14976a69e5ef37d2826dd87f647e5b82242b9221
 </span>)</p>
 <p>latex exited with error
 [stdout]
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=latex)
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Debian) (preloaded format=latex)
  restricted \write18 enabled.
 entering extended mode
 (./math.tex
-LaTeX2e &lt;2020-02-02&gt; patch level 2
-L3 programming layer &lt;2020-02-14&gt;
+LaTeX2e &lt;2020-02-02&gt; patch level 5
+L3 programming layer &lt;2020-07-17&gt;
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2019/12/20 v1.4l Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/base/size12.clo))
@@ -1642,7 +1691,8 @@ For additional information on amsmath, use the `?' option.
 (/usr/share/texlive/texmf-dist/tex/latex/anyfontsize/anyfontsize.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/tools/bm.sty)
 (/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-dvips.def)
-(./math.aux) (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
+No file math.aux.
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd)
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd)
 
 ! Package inputenc Error: Unicode character ; (U+037E)
@@ -1666,7 +1716,7 @@ l.14 ........ + xk*\beta_k ; \sigma_2)\end{split}
                                                   
 [1] (./math.aux) )
 (see the transcript file for additional information)
-Output written on math.dvi (1 page, 588 bytes).
+Output written on math.dvi (1 page, 580 bytes).
 Transcript written on math.log.
 </p>
 </div>
@@ -1677,12 +1727,12 @@ Transcript written on math.log.
 </span>)</p>
 <p>latex exited with error
 [stdout]
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=latex)
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020/Debian) (preloaded format=latex)
  restricted \write18 enabled.
 entering extended mode
 (./math.tex
-LaTeX2e &lt;2020-02-02&gt; patch level 2
-L3 programming layer &lt;2020-02-14&gt;
+LaTeX2e &lt;2020-02-02&gt; patch level 5
+L3 programming layer &lt;2020-07-17&gt;
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2019/12/20 v1.4l Standard LaTeX document class
 (/usr/share/texlive/texmf-dist/tex/latex/base/size12.clo))
@@ -1771,7 +1821,7 @@ l.14 ...}.T * \boldmath{x} ; \sigma_2)\end{split}
                                                   
 [1] (./math.aux) )
 (see the transcript file for additional information)
-Output written on math.dvi (1 page, 472 bytes).
+Output written on math.dvi (1 page, 464 bytes).
 Transcript written on math.log.
 </p>
 </div>
@@ -1858,7 +1908,8 @@ distribution into discrete probability masses.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>factor</strong> (<em>A ContinuousNode</em><em> or </em><em>a ContinuousFactor object</em>) – the continuous node or factor representing the distribution
 to be discretized.</p></li>
-<li><p><strong>high</strong> (<em>low</em><em>,</em>) – the range over which the function will be discretized.</p></li>
+<li><p><strong>low</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – the range over which the function will be discretized.</p></li>
+<li><p><strong>high</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.9)"><em>float</em></a>) – the range over which the function will be discretized.</p></li>
 <li><p><strong>cardinality</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – the number of states required in the discretized output.</p></li>
 </ul>
 </dd>

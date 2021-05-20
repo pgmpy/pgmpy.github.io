@@ -29,7 +29,6 @@
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/language_data.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -110,11 +109,13 @@
 <li class="toctree-l1"><a class="reference external" href="https://github.com/pgmpy/pgmpy_notebook/blob/master/notebooks/8.%20Reading%20and%20Writing%20from%20pgmpy%20file%20formats.ipynb">Reading and writing files using pgmpy</a></li>
 </ul>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../base.html">Base Structure Classes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../models.html">Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../factors.html">Factor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../sampling.html">Sampling Methods</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../inference.html">Algorithms for Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../inference.html#module-pgmpy.inference.EliminationOrder">Elimination Ordering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html#model-testing">Model Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite.html">Reading and Writing from files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../estimators.html">Estimators for Parameter and Structure Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../citests.html">Conditional Independence Tests for PC algorithm</a></li>
@@ -259,6 +260,7 @@
         <span class="p">)</span>
 
         <span class="c1"># Step 1: If elimination_order is a list, verify it&#39;s correct and return.</span>
+        <span class="c1"># Step 1.1: Check that not of the `variables` and `evidence` is in the elimination_order.</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
             <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
         <span class="p">):</span>
@@ -272,8 +274,21 @@
                     <span class="s2">&quot;Elimination order contains variables which are in&quot;</span>
                     <span class="s2">&quot; variables or evidence args&quot;</span>
                 <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">elimination_order</span>
+            <span class="c1"># Step 1.2: Check if elimination_order has variables which are not in the model.</span>
+            <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">elimination_order</span><span class="p">):</span>
+                <span class="n">elimination_order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+                    <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="n">elimination_order</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Step 1.3: Check if the elimination_order has all the variables that need to be eliminated.</span>
+            <span class="k">elif</span> <span class="n">to_eliminate</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Elimination order doesn&#39;t contain all the variables&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;which need to be eliminated. The variables which need to&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;be eliminated are </span><span class="si">{</span><span class="n">to_eliminate</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">elimination_order</span>
 
         <span class="c1"># Step 2: If elimination order is None or a Markov model, return a random order.</span>
         <span class="k">elif</span> <span class="p">(</span><span class="n">elimination_order</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">)):</span>
@@ -439,14 +454,23 @@
                 <span class="sa">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
+        <span class="c1"># Make a copy of the original model as it will be replaced during pruning.</span>
+        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
             <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
             <span class="n">elimination_order</span><span class="o">=</span><span class="n">elimination_order</span><span class="p">,</span>
             <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
-        <span class="p">)</span></div>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">orig_model</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
 
 <div class="viewcode-block" id="VariableElimination.max_marginal"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.max_marginal">[docs]</a>    <span class="k">def</span> <span class="nf">max_marginal</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -462,9 +486,11 @@
 <span class="sd">        ----------</span>
 <span class="sd">        variables: list</span>
 <span class="sd">            list of variables over which we want to compute the max-marginal.</span>
+
 <span class="sd">        evidence: dict</span>
 <span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
 <span class="sd">            None if no evidence</span>
+
 <span class="sd">        elimination_order: list</span>
 <span class="sd">            order of variable eliminations (if nothing is provided) order is</span>
 <span class="sd">            computed automatically</span>
@@ -493,6 +519,12 @@
                 <span class="sa">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
+        <span class="c1"># Make a copy of the original model and replace self.model with it later.</span>
+        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
+
         <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;maximize&quot;</span><span class="p">,</span>
@@ -501,6 +533,7 @@
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">orig_model</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="VariableElimination.map_query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span>
@@ -540,13 +573,21 @@
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; phi_query = inference.map_query([&#39;A&#39;, &#39;B&#39;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">variables</span>
         <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
-            <span class="nb">set</span><span class="p">(</span><span class="n">variables</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span>
+            <span class="n">variables</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">common_vars</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
+
+        <span class="c1"># Make a copy of the original model and replace self.model with it later</span>
+        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 
         <span class="c1"># TODO:Check the note in docstring. Change that behavior to return the joint MAP</span>
         <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
@@ -557,6 +598,8 @@
             <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">orig_model</span>
+
         <span class="n">argmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
         <span class="n">assignment</span> <span class="o">=</span> <span class="n">final_distribution</span><span class="o">.</span><span class="n">assignment</span><span class="p">([</span><span class="n">argmax</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
 
@@ -595,6 +638,8 @@
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; inference.induced_graph([&#39;C&#39;, &#39;D&#39;, &#39;A&#39;, &#39;B&#39;, &#39;E&#39;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
+
         <span class="c1"># If the elimination order does not contain the same variables as the model</span>
         <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -1066,6 +1111,11 @@
                 <span class="sa">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
+        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
+
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
@@ -1073,6 +1123,8 @@
             <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">orig_model</span>
+
         <span class="k">if</span> <span class="n">joint</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1120,9 +1172,11 @@
 <span class="sd">        &gt;&gt;&gt; belief_propagation.map_query(variables=[&#39;J&#39;, &#39;Q&#39;],</span>
 <span class="sd">        ...                              evidence={&#39;A&#39;: 0, &#39;R&#39;: 0, &#39;G&#39;: 0, &#39;L&#39;: 1})</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">variables</span>
         <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
-            <span class="nb">set</span><span class="p">(</span><span class="n">variables</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span>
+            <span class="n">variables</span>
         <span class="p">)</span>
+
         <span class="k">if</span> <span class="n">common_vars</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -1130,7 +1184,13 @@
 
         <span class="c1"># TODO:Check the note in docstring. Change that behavior to return the joint MAP</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">variables</span><span class="p">:</span>
-            <span class="n">variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>
+            <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+
+        <span class="c1"># Make a copy of the original model and then replace self.model with it later.</span>
+        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 
         <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
@@ -1138,6 +1198,8 @@
             <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">orig_model</span>
 
         <span class="c1"># To handle the case when no argument is passed then</span>
         <span class="c1"># _variable_elimination returns a dict.</span>

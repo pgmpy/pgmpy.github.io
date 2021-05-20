@@ -29,7 +29,6 @@
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/language_data.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -110,11 +109,13 @@
 <li class="toctree-l1"><a class="reference external" href="https://github.com/pgmpy/pgmpy_notebook/blob/master/notebooks/8.%20Reading%20and%20Writing%20from%20pgmpy%20file%20formats.ipynb">Reading and writing files using pgmpy</a></li>
 </ul>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../base.html">Base Structure Classes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../models.html">Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../factors.html">Factor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../sampling.html">Sampling Methods</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../inference.html">Algorithms for Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../inference.html#module-pgmpy.inference.EliminationOrder">Elimination Ordering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html#model-testing">Model Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite.html">Reading and Writing from files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../estimators.html">Estimators for Parameter and Structure Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../citests.html">Conditional Independence Tests for PC algorithm</a></li>
@@ -186,14 +187,14 @@
 <span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
 
-<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="kn">import</span> <span class="n">factor_product</span>
-<span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">Inference</span>
+<span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">BayesianModelInference</span>
 <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianModel</span><span class="p">,</span> <span class="n">MarkovChain</span><span class="p">,</span> <span class="n">MarkovModel</span>
-<span class="kn">from</span> <span class="nn">pgmpy.utils.mathext</span> <span class="kn">import</span> <span class="n">sample_discrete</span>
+<span class="kn">from</span> <span class="nn">pgmpy.utils.mathext</span> <span class="kn">import</span> <span class="n">sample_discrete</span><span class="p">,</span> <span class="n">sample_discrete_maps</span>
 <span class="kn">from</span> <span class="nn">pgmpy.sampling</span> <span class="kn">import</span> <span class="n">_return_samples</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">SHOW_PROGRESS</span>
 
@@ -201,7 +202,7 @@
 <span class="n">State</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;State&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;var&quot;</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">])</span>
 
 
-<div class="viewcode-block" id="BayesianModelSampling"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.Sampling.BayesianModelSampling">[docs]</a><span class="k">class</span> <span class="nc">BayesianModelSampling</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
+<div class="viewcode-block" id="BayesianModelSampling"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.Sampling.BayesianModelSampling">[docs]</a><span class="k">class</span> <span class="nc">BayesianModelSampling</span><span class="p">(</span><span class="n">BayesianModelInference</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for sampling methods specific to Bayesian Models</span>
 
@@ -212,16 +213,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;Model expected type: BayesianModel, got type: &quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-            <span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">topological_order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="n">model</span><span class="p">))</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BayesianModelSampling</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BayesianModelSampling.forward_sample"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.Sampling.BayesianModelSampling.forward_sample">[docs]</a>    <span class="k">def</span> <span class="nf">forward_sample</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dataframe&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generates sample(s) from joint distribution of the bayesian network.</span>
@@ -231,15 +226,19 @@
 <span class="sd">        size: int</span>
 <span class="sd">            size of sample to be generated</span>
 
-<span class="sd">        return_type: string (dataframe | recarray)</span>
-<span class="sd">            Return type for samples, either of &#39;dataframe&#39; or &#39;recarray&#39;.</span>
-<span class="sd">            Defaults to &#39;dataframe&#39;</span>
+<span class="sd">        include_latents: boolean</span>
+<span class="sd">            Whether to include the latent variable values in the generated samples.</span>
+
+<span class="sd">        seed: int (default: None)</span>
+<span class="sd">            If a value is provided, sets the seed for numpy.random.</span>
+
+<span class="sd">        show_progress: boolean</span>
+<span class="sd">            Whether to show a progress bar of samples getting generated.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        sampled: A pandas.DataFrame or a numpy.recarray object depending upon return_type argument</span>
-<span class="sd">            the generated samples</span>
-
+<span class="sd">        sampled: pandas.DataFrame</span>
+<span class="sd">            The generated samples</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -254,17 +253,19 @@
 <span class="sd">        ...                [&#39;intel&#39;, &#39;diff&#39;], [2, 2])</span>
 <span class="sd">        &gt;&gt;&gt; student.add_cpds(cpd_d, cpd_i, cpd_g)</span>
 <span class="sd">        &gt;&gt;&gt; inference = BayesianModelSampling(student)</span>
-<span class="sd">        &gt;&gt;&gt; inference.forward_sample(size=2, return_type=&#39;recarray&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; inference.forward_sample(size=2)</span>
 <span class="sd">        rec.array([(0, 0, 1), (1, 0, 2)], dtype=</span>
 <span class="sd">                  [(&#39;diff&#39;, &#39;&lt;i8&#39;), (&#39;intel&#39;, &#39;&lt;i8&#39;), (&#39;grade&#39;, &#39;&lt;i8&#39;)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">types</span> <span class="o">=</span> <span class="p">[(</span><span class="n">var_name</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">topological_order</span><span class="p">]</span>
-        <span class="n">sampled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">types</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">recarray</span><span class="p">)</span>
+        <span class="n">sampled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
 
         <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">SHOW_PROGRESS</span><span class="p">:</span>
             <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topological_order</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">pbar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">topological_order</span>
+
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">pbar</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">SHOW_PROGRESS</span><span class="p">:</span>
@@ -274,35 +275,34 @@
             <span class="n">states</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
             <span class="n">evidence</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">evidence</span><span class="p">:</span>
-                <span class="n">cached_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_compute_reduce</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
-                <span class="n">evidence</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">sampled</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">])</span>
-                <span class="n">weights</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">cached_values</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">t</span><span class="p">)],</span> <span class="n">evidence</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+                <span class="n">evidence_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">sampled</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">])</span>
+
+                <span class="n">state_to_index</span><span class="p">,</span> <span class="n">index_to_weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_compute_reduce_maps</span><span class="p">(</span>
+                    <span class="n">variable</span><span class="o">=</span><span class="n">node</span>
+                <span class="p">)</span>
+                <span class="n">unique</span><span class="p">,</span> <span class="n">inverse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+                    <span class="n">evidence_values</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="n">weight_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">state_to_index</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">u</span><span class="p">)]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">unique</span><span class="p">])[</span>
+                    <span class="n">inverse</span>
+                <span class="p">]</span>
+                <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete_maps</span><span class="p">(</span>
+                    <span class="n">states</span><span class="p">,</span> <span class="n">weight_index</span><span class="p">,</span> <span class="n">index_to_weight</span><span class="p">,</span> <span class="n">size</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">weights</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">values</span>
-            <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+                <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">_return_samples</span><span class="p">(</span><span class="n">return_type</span><span class="p">,</span> <span class="n">sampled</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names_map</span><span class="p">)</span></div>
-
-    <span class="k">def</span> <span class="nf">pre_compute_reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">):</span>
-        <span class="n">variable_cpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">variable</span><span class="p">)</span>
-        <span class="n">variable_evid</span> <span class="o">=</span> <span class="n">variable_cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">cached_values</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="k">for</span> <span class="n">state_combination</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span>
-            <span class="o">*</span><span class="p">[</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">var</span><span class="p">])</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variable_evid</span><span class="p">]</span>
-        <span class="p">):</span>
-            <span class="n">states</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">variable_evid</span><span class="p">,</span> <span class="n">state_combination</span><span class="p">))</span>
-            <span class="n">cached_values</span><span class="p">[</span><span class="n">state_combination</span><span class="p">]</span> <span class="o">=</span> <span class="n">variable_cpd</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span>
-                <span class="n">states</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">values</span>
-
-        <span class="k">return</span> <span class="n">cached_values</span>
+        <span class="n">samples_df</span> <span class="o">=</span> <span class="n">_return_samples</span><span class="p">(</span><span class="n">sampled</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names_map</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
+            <span class="n">samples_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">samples_df</span></div>
 
 <div class="viewcode-block" id="BayesianModelSampling.rejection_sample"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.Sampling.BayesianModelSampling.rejection_sample">[docs]</a>    <span class="k">def</span> <span class="nf">rejection_sample</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">evidence</span><span class="o">=</span><span class="p">[],</span>
         <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dataframe&quot;</span><span class="p">,</span>
+        <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
@@ -314,16 +314,23 @@
 <span class="sd">        ----------</span>
 <span class="sd">        evidence: list of `pgmpy.factor.State` namedtuples</span>
 <span class="sd">            None if no evidence</span>
+
 <span class="sd">        size: int</span>
 <span class="sd">            size of sample to be generated</span>
-<span class="sd">        return_type: string (dataframe | recarray)</span>
-<span class="sd">            Return type for samples, either of &#39;dataframe&#39; or &#39;recarray&#39;.</span>
-<span class="sd">            Defaults to &#39;dataframe&#39;</span>
+
+<span class="sd">        include_latents: boolean</span>
+<span class="sd">            Whether to include the latent variable values in the generated samples.</span>
+
+<span class="sd">        seed: int (default: None)</span>
+<span class="sd">            If a value is provided, sets the seed for numpy.random.</span>
+
+<span class="sd">        show_progress: boolean</span>
+<span class="sd">            Whether to show a progress bar of samples getting generated.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        sampled: A pandas.DataFrame or a numpy.recarray object depending upon return_type argument</span>
-<span class="sd">            the generated samples</span>
+<span class="sd">        sampled: pandas.DataFrame</span>
+<span class="sd">            The generated samples</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -345,19 +352,16 @@
 <span class="sd">        0         0          0          1</span>
 <span class="sd">        1         0          0          1</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Covert evidence state names to number</span>
-        <span class="n">evidence</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">get_state_no</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">state</span><span class="p">))</span>
-            <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence</span>
-        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
         <span class="c1"># If no evidence is given, it is equivalent to forward sampling.</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_sample</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="n">include_latents</span><span class="p">)</span>
 
         <span class="c1"># Setup array to be returned</span>
-        <span class="n">types</span> <span class="o">=</span> <span class="p">[(</span><span class="n">var_name</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">topological_order</span><span class="p">]</span>
-        <span class="n">sampled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">types</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">recarray</span><span class="p">)</span>
+        <span class="n">sampled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
         <span class="n">prob</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -369,27 +373,32 @@
 
         <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">size</span><span class="p">:</span>
             <span class="n">_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(((</span><span class="n">size</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="n">prob</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">)</span>
-            <span class="n">_sampled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_sample</span><span class="p">(</span><span class="n">_size</span><span class="p">,</span> <span class="s2">&quot;recarray&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+            <span class="n">_sampled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_sample</span><span class="p">(</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">_size</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
 
-            <span class="k">for</span> <span class="n">evid</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">:</span>
-                <span class="n">_sampled</span> <span class="o">=</span> <span class="n">_sampled</span><span class="p">[</span><span class="n">_sampled</span><span class="p">[</span><span class="n">evid</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">==</span> <span class="n">evid</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">:</span>
+                <span class="n">_sampled</span> <span class="o">=</span> <span class="n">_sampled</span><span class="p">[</span><span class="n">_sampled</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">==</span> <span class="n">state</span><span class="p">]</span>
 
             <span class="n">prob</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">_sampled</span><span class="p">)</span> <span class="o">/</span> <span class="n">_size</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">)</span>
-            <span class="n">sampled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sampled</span><span class="p">,</span> <span class="n">_sampled</span><span class="p">)[:</span><span class="n">size</span><span class="p">]</span>
-
-            <span class="n">i</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_sampled</span><span class="p">)</span>
+            <span class="n">sampled</span> <span class="o">=</span> <span class="n">sampled</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_sampled</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="n">size</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="n">_sampled</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">SHOW_PROGRESS</span><span class="p">:</span>
-                <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">_sampled</span><span class="p">))</span>
+                <span class="c1"># Update at maximum to `size`</span>
+                <span class="n">comp</span> <span class="o">=</span> <span class="n">_sampled</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">size</span> <span class="k">else</span> <span class="n">size</span> <span class="o">-</span> <span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">_sampled</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">SHOW_PROGRESS</span><span class="p">:</span>
             <span class="n">pbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
-        <span class="c1"># Post process: Correct return type and replace state numbers with names.</span>
-        <span class="k">return</span> <span class="n">_return_samples</span><span class="p">(</span><span class="n">return_type</span><span class="p">,</span> <span class="n">sampled</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names_map</span><span class="p">)</span></div>
+        <span class="n">sampled</span> <span class="o">=</span> <span class="n">sampled</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
+            <span class="n">sampled</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sampled</span></div>
 
 <div class="viewcode-block" id="BayesianModelSampling.likelihood_weighted_sample"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.Sampling.BayesianModelSampling.likelihood_weighted_sample">[docs]</a>    <span class="k">def</span> <span class="nf">likelihood_weighted_sample</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[],</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dataframe&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[],</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generates weighted sample(s) from joint distribution of the bayesian</span>
@@ -405,14 +414,19 @@
 <span class="sd">        size: int</span>
 <span class="sd">            size of sample to be generated</span>
 
-<span class="sd">        return_type: string (dataframe | recarray)</span>
-<span class="sd">            Return type for samples, either of &#39;dataframe&#39; or &#39;recarray&#39;.</span>
-<span class="sd">            Defaults to &#39;dataframe&#39;</span>
+<span class="sd">        include_latents: boolean</span>
+<span class="sd">            Whether to include the latent variable values in the generated samples.</span>
+
+<span class="sd">        seed: int (default: None)</span>
+<span class="sd">            If a value is provided, sets the seed for numpy.random.</span>
+
+<span class="sd">        show_progress: boolean</span>
+<span class="sd">            Whether to show a progress bar of samples getting generated.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        sampled: A pandas.DataFrame or a numpy.recarray object depending upon return_type argument</span>
-<span class="sd">            the generated samples with corresponding weights</span>
+<span class="sd">        sampled: A pandas.DataFrame</span>
+<span class="sd">            The generated samples with corresponding weights</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -433,47 +447,80 @@
 <span class="sd">        rec.array([(0, 0, 1, 0.6), (0, 0, 2, 0.6)], dtype=</span>
 <span class="sd">                  [(&#39;diff&#39;, &#39;&lt;i8&#39;), (&#39;intel&#39;, &#39;&lt;i8&#39;), (&#39;grade&#39;, &#39;&lt;i8&#39;), (&#39;_weight&#39;, &#39;&lt;f8&#39;)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Covert evidence state names to number</span>
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="c1"># Convert evidence state names to number</span>
         <span class="n">evidence</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">get_state_no</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">state</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence</span>
         <span class="p">]</span>
 
-        <span class="c1"># Prepare the return array</span>
-        <span class="n">types</span> <span class="o">=</span> <span class="p">[(</span><span class="n">var_name</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">topological_order</span><span class="p">]</span>
-        <span class="n">types</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">&quot;_weight&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">))</span>
-        <span class="n">sampled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">types</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">recarray</span><span class="p">)</span>
+        <span class="c1"># Prepare the return dataframe</span>
+        <span class="n">sampled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
         <span class="n">sampled</span><span class="p">[</span><span class="s2">&quot;_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
-        <span class="n">evidence_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">st</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">st</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">}</span>
+        <span class="n">evidence_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">SHOW_PROGRESS</span><span class="p">:</span>
+            <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">topological_order</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pbar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">topological_order</span>
 
         <span class="c1"># Do the sampling</span>
-        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">topological_order</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">pbar</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">SHOW_PROGRESS</span><span class="p">:</span>
+                <span class="n">pbar</span><span class="o">.</span><span class="n">set_description</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generating for node: </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
             <span class="n">cpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
             <span class="n">states</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
             <span class="n">evidence</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">get_evidence</span><span class="p">()</span>
 
             <span class="k">if</span> <span class="n">evidence</span><span class="p">:</span>
                 <span class="n">evidence_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">sampled</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">])</span>
-                <span class="n">cached_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_compute_reduce</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-                <span class="n">weights</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
-                    <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">cached_values</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">t</span><span class="p">)],</span> <span class="n">evidence_values</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+                <span class="n">state_to_index</span><span class="p">,</span> <span class="n">index_to_weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_compute_reduce_maps</span><span class="p">(</span>
+                    <span class="n">variable</span><span class="o">=</span><span class="n">node</span>
                 <span class="p">)</span>
+                <span class="n">unique</span><span class="p">,</span> <span class="n">inverse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+                    <span class="n">evidence_values</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="n">weight_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">state_to_index</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">u</span><span class="p">)]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">unique</span><span class="p">])[</span>
+                    <span class="n">inverse</span>
+                <span class="p">]</span>
+
                 <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">evidence_dict</span><span class="p">:</span>
-                    <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">evidence_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
-                        <span class="n">sampled</span><span class="p">[</span><span class="s2">&quot;_weight&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">evidence_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]]</span>
+                    <span class="n">evidence_value</span> <span class="o">=</span> <span class="n">evidence_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+                    <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">evidence_value</span>
+                    <span class="n">sampled</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s2">&quot;_weight&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="nb">list</span><span class="p">(</span>
+                            <span class="nb">map</span><span class="p">(</span>
+                                <span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">index_to_weight</span><span class="p">[</span><span class="n">weight_index</span><span class="p">[</span><span class="n">i</span><span class="p">]][</span>
+                                    <span class="n">evidence_value</span>
+                                <span class="p">],</span>
+                                <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">),</span>
+                            <span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+                    <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete_maps</span><span class="p">(</span>
+                        <span class="n">states</span><span class="p">,</span> <span class="n">weight_index</span><span class="p">,</span> <span class="n">index_to_weight</span><span class="p">,</span> <span class="n">size</span>
+                    <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">evidence_dict</span><span class="p">:</span>
                     <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">evidence_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
-                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">):</span>
-                        <span class="n">sampled</span><span class="p">[</span><span class="s2">&quot;_weight&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">*=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">evidence_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]]</span>
+                    <span class="n">sampled</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s2">&quot;_weight&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                        <span class="nb">list</span><span class="p">(</span>
+                            <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">cpd</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">evidence_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]],</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">cpd</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+                    <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">cpd</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
 
-        <span class="c1"># Postprocess the samples: Correct return type and change state numbers to names</span>
-        <span class="k">return</span> <span class="n">_return_samples</span><span class="p">(</span><span class="n">return_type</span><span class="p">,</span> <span class="n">sampled</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names_map</span><span class="p">)</span></div></div>
+        <span class="c1"># Postprocess the samples: Change state numbers to names, remove latents.</span>
+        <span class="n">samples_df</span> <span class="o">=</span> <span class="n">_return_samples</span><span class="p">(</span><span class="n">sampled</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names_map</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
+            <span class="n">samples_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">samples_df</span></div></div>
 
 
 <div class="viewcode-block" id="GibbsSampling"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.Sampling.GibbsSampling">[docs]</a><span class="k">class</span> <span class="nc">GibbsSampling</span><span class="p">(</span><span class="n">MarkovChain</span><span class="p">):</span>
@@ -525,6 +572,7 @@
 <span class="sd">            The model from which probabilities will be computed.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">latents</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cardinalities</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">var</span><span class="p">:</span> <span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">variable_card</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span>
         <span class="p">}</span>
@@ -554,6 +602,7 @@
 <span class="sd">            The model from which probabilities will be computed.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">latents</span>
         <span class="n">factors_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">}</span>
         <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">get_factors</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">factor</span><span class="o">.</span><span class="n">scope</span><span class="p">():</span>
@@ -584,7 +633,7 @@
                 <span class="n">kernel</span><span class="p">[</span><span class="n">tup</span><span class="p">]</span> <span class="o">=</span> <span class="n">reduced_factor</span><span class="o">.</span><span class="n">values</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reduced_factor</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">transition_models</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">kernel</span>
 
-<div class="viewcode-block" id="GibbsSampling.sample"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.Sampling.GibbsSampling.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dataframe&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="GibbsSampling.sample"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.Sampling.GibbsSampling.sample">[docs]</a>    <span class="k">def</span> <span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Sample from the Markov Chain.</span>
 
@@ -592,16 +641,20 @@
 <span class="sd">        ----------</span>
 <span class="sd">        start_state: dict or array-like iterable</span>
 <span class="sd">            Representing the starting states of the variables. If None is passed, a random start_state is chosen.</span>
+
 <span class="sd">        size: int</span>
 <span class="sd">            Number of samples to be generated.</span>
-<span class="sd">        return_type: string (dataframe | recarray)</span>
-<span class="sd">            Return type for samples, either of &#39;dataframe&#39; or &#39;recarray&#39;.</span>
-<span class="sd">            Defaults to &#39;dataframe&#39;</span>
+
+<span class="sd">        seed: int (default: None)</span>
+<span class="sd">            If a value is provided, sets the seed for numpy.random.</span>
+
+<span class="sd">        include_latents: boolean</span>
+<span class="sd">            Whether to include the latent variable values in the generated samples.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        sampled: A pandas.DataFrame or a numpy.recarray object depending upon return_type argument</span>
-<span class="sd">            the generated samples</span>
+<span class="sd">        sampled: pandas.DataFrame</span>
+<span class="sd">            The generated samples</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -625,6 +678,9 @@
         <span class="k">elif</span> <span class="n">start_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_start_state</span><span class="p">(</span><span class="n">start_state</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
         <span class="n">types</span> <span class="o">=</span> <span class="p">[(</span><span class="n">var_name</span><span class="p">,</span> <span class="s2">&quot;int&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">var_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
         <span class="n">sampled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">types</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">recarray</span><span class="p">)</span>
         <span class="n">sampled</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">st</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">st</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
@@ -634,14 +690,18 @@
                 <span class="n">next_st</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span>
                     <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinalities</span><span class="p">[</span><span class="n">var</span><span class="p">])),</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">transition_models</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">other_st</span><span class="p">],</span>
-                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
                 <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">next_st</span><span class="p">)</span>
             <span class="n">sampled</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">st</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">st</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">_return_samples</span><span class="p">(</span><span class="n">return_type</span><span class="p">,</span> <span class="n">sampled</span><span class="p">)</span></div>
+        <span class="n">samples_df</span> <span class="o">=</span> <span class="n">_return_samples</span><span class="p">(</span><span class="n">sampled</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
+            <span class="n">samples_df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">samples_df</span></div>
 
-<div class="viewcode-block" id="GibbsSampling.generate_sample"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.Sampling.GibbsSampling.generate_sample">[docs]</a>    <span class="k">def</span> <span class="nf">generate_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="GibbsSampling.generate_sample"><a class="viewcode-back" href="../../../sampling.html#pgmpy.sampling.Sampling.GibbsSampling.generate_sample">[docs]</a>    <span class="k">def</span> <span class="nf">generate_sample</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">start_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generator version of self.sample</span>
 
@@ -664,6 +724,8 @@
 <span class="sd">        [[State(var=&#39;C&#39;, state=1), State(var=&#39;B&#39;, state=1), State(var=&#39;A&#39;, state=0)],</span>
 <span class="sd">         [State(var=&#39;C&#39;, state=0), State(var=&#39;B&#39;, state=1), State(var=&#39;A&#39;, state=1)]]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">start_state</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">()</span>
@@ -676,10 +738,12 @@
                 <span class="n">next_st</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span>
                     <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinalities</span><span class="p">[</span><span class="n">var</span><span class="p">])),</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">transition_models</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">other_st</span><span class="p">],</span>
-                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
                 <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">next_st</span><span class="p">)</span>
-            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[:]</span></div></div>
+            <span class="k">if</span> <span class="n">include_latents</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[:]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">]</span></div></div>
 </pre></div>
 
            </div>

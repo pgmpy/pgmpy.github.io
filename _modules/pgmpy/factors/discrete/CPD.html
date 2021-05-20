@@ -29,7 +29,6 @@
         <script src="../../../../_static/jquery.js"></script>
         <script src="../../../../_static/underscore.js"></script>
         <script src="../../../../_static/doctools.js"></script>
-        <script src="../../../../_static/language_data.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
@@ -110,11 +109,13 @@
 <li class="toctree-l1"><a class="reference external" href="https://github.com/pgmpy/pgmpy_notebook/blob/master/notebooks/8.%20Reading%20and%20Writing%20from%20pgmpy%20file%20formats.ipynb">Reading and writing files using pgmpy</a></li>
 </ul>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../base.html">Base Structure Classes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../models.html">Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../factors.html">Factor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../sampling.html">Sampling Methods</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../inference.html">Algorithms for Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../inference.html#module-pgmpy.inference.EliminationOrder">Elimination Ordering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../inference.html#model-testing">Model Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../readwrite.html">Reading and Writing from files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../estimators.html">Estimators for Parameter and Structure Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../citests.html">Conditional Independence Tests for PC algorithm</a></li>
@@ -197,7 +198,7 @@
 
 <div class="viewcode-block" id="TabularCPD"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.CPD.TabularCPD">[docs]</a><span class="k">class</span> <span class="nc">TabularCPD</span><span class="p">(</span><span class="n">DiscreteFactor</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Defines the conditional probability distribution table (cpd table)</span>
+<span class="sd">    Defines the conditional probability distribution table (CPD table)</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -205,16 +206,17 @@
 <span class="sd">        The variable whose CPD is defined.</span>
 
 <span class="sd">    variable_card: integer</span>
-<span class="sd">        cardinality of variable</span>
+<span class="sd">        Cardinality/no. of states of `variable`</span>
 
-<span class="sd">    values: 2d array, 2d list or 2d tuple</span>
-<span class="sd">        values of the cpd table</span>
+<span class="sd">    values: 2D array, 2D list or 2D tuple</span>
+<span class="sd">        Values for the CPD table. Please refer the example for the</span>
+<span class="sd">        exact format needed.</span>
 
 <span class="sd">    evidence: array-like</span>
-<span class="sd">        evidences(if any) w.r.t. which cpd is defined</span>
+<span class="sd">        List of variables in evidences(if any) w.r.t. which CPD is defined.</span>
 
-<span class="sd">    evidence_card: integer, array-like</span>
-<span class="sd">        cardinality of evidences (if any)</span>
+<span class="sd">    evidence_card: array-like</span>
+<span class="sd">        cardinality/no. of states of variables in `evidence`(if any)</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
@@ -337,7 +339,8 @@
 
 <div class="viewcode-block" id="TabularCPD.get_values"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.CPD.TabularCPD.get_values">[docs]</a>    <span class="k">def</span> <span class="nf">get_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the cpd</span>
+<span class="sd">        Returns the values of the CPD as a 2-D array. The order of the</span>
+<span class="sd">        parents is the same as provided in evidence.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -412,7 +415,7 @@
 
 <div class="viewcode-block" id="TabularCPD.copy"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.CPD.TabularCPD.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a copy of the TabularCPD object.</span>
+<span class="sd">        Returns a copy of the `TabularCPD` object.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -446,7 +449,8 @@
 
 <div class="viewcode-block" id="TabularCPD.normalize"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.CPD.TabularCPD.normalize">[docs]</a>    <span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Normalizes the cpd table.</span>
+<span class="sd">        Normalizes the cpd table. The method modifies each column of values such</span>
+<span class="sd">        that it sums to 1 without changing the proportion between states.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -473,7 +477,9 @@
 
 <div class="viewcode-block" id="TabularCPD.marginalize"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.CPD.TabularCPD.marginalize">[docs]</a>    <span class="k">def</span> <span class="nf">marginalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Modifies the cpd table with marginalized values.</span>
+<span class="sd">        Modifies the CPD table with marginalized values. Marginalization refers to</span>
+<span class="sd">        summing out variables, hence that variable would no longer appear in the</span>
+<span class="sd">        CPD.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -510,7 +516,9 @@
 
 <div class="viewcode-block" id="TabularCPD.reduce"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.CPD.TabularCPD.reduce">[docs]</a>    <span class="k">def</span> <span class="nf">reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Reduces the cpd table to the context of given variable values.</span>
+<span class="sd">        Reduces the cpd table to the context of given variable values. Reduce fixes the</span>
+<span class="sd">        state of given variable to specified value. The reduced variables will no longer</span>
+<span class="sd">        appear in the CPD.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -547,7 +555,9 @@
 
 <div class="viewcode-block" id="TabularCPD.to_factor"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.CPD.TabularCPD.to_factor">[docs]</a>    <span class="k">def</span> <span class="nf">to_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns an equivalent factor with the same variables, cardinality, values as that of the cpd</span>
+<span class="sd">        Returns an equivalent factor with the same variables, cardinality, values as that of the CPD.</span>
+<span class="sd">        Since factor doesn&#39;t distinguish between conditional and non-conditional distributions,</span>
+<span class="sd">        evidence information will be lost.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -569,7 +579,7 @@
 
 <div class="viewcode-block" id="TabularCPD.reorder_parents"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.CPD.TabularCPD.reorder_parents">[docs]</a>    <span class="k">def</span> <span class="nf">reorder_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_order</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a new cpd table according to provided order.</span>
+<span class="sd">        Returns a new cpd table according to provided parent/evidence order.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -684,8 +694,11 @@
                 <span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Same ordering provided as current&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_values</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">get_evidence</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+<div class="viewcode-block" id="TabularCPD.get_evidence"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.CPD.TabularCPD.get_evidence">[docs]</a>    <span class="k">def</span> <span class="nf">get_evidence</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the evidence variables of the CPD.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div></div>
 </pre></div>
 
            </div>

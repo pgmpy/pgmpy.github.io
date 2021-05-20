@@ -29,7 +29,6 @@
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
-        <script src="../../../_static/language_data.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
@@ -110,11 +109,13 @@
 <li class="toctree-l1"><a class="reference external" href="https://github.com/pgmpy/pgmpy_notebook/blob/master/notebooks/8.%20Reading%20and%20Writing%20from%20pgmpy%20file%20formats.ipynb">Reading and writing files using pgmpy</a></li>
 </ul>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../base.html">Base Structure Classes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../models.html">Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../factors.html">Factor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../sampling.html">Sampling Methods</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../inference.html">Algorithms for Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../inference.html#module-pgmpy.inference.EliminationOrder">Elimination Ordering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html#model-testing">Model Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite.html">Reading and Writing from files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../estimators.html">Estimators for Parameter and Structure Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../citests.html">Conditional Independence Tests for PC algorithm</a></li>
@@ -189,12 +190,13 @@
 <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">UndirectedGraph</span>
 <span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="kn">import</span> <span class="n">Independencies</span>
 
 
-<span class="k">class</span> <span class="nc">DAG</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG">[docs]</a><span class="k">class</span> <span class="nc">DAG</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for all Directed Graphical Models.</span>
 
@@ -254,8 +256,9 @@
 <span class="sd">    3</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="nb">set</span><span class="p">()):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ebunch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">latents</span><span class="p">)</span>
         <span class="n">cycles</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">cycles</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">find_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
@@ -267,7 +270,7 @@
             <span class="n">out_str</span> <span class="o">+=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">) &quot;</span> <span class="k">for</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">cycles</span><span class="p">])</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">out_str</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.add_node"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.add_node">[docs]</a>    <span class="k">def</span> <span class="nf">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latent</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds a single node to the Graph.</span>
 
@@ -278,6 +281,9 @@
 
 <span class="sd">        weight: int, float</span>
 <span class="sd">            The weight of the node.</span>
+
+<span class="sd">        latent: boolean (default: False)</span>
+<span class="sd">            Specifies whether the variable is latent or not.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -305,9 +311,12 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">attrs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="n">weight</span><span class="p">}</span>
 
-        <span class="nb">super</span><span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">latent</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DAG.add_nodes_from"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.add_nodes_from">[docs]</a>    <span class="k">def</span> <span class="nf">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latent</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add multiple nodes to the Graph.</span>
 
@@ -322,6 +331,10 @@
 <span class="sd">        weights: list, tuple (default=None)</span>
 <span class="sd">            A container of weights (int, float). The weight value at index i</span>
 <span class="sd">            is associated with the variable at index i.</span>
+
+<span class="sd">        latent: list, tuple (default=False)</span>
+<span class="sd">            A container of boolean. The value at index i tells whether the</span>
+<span class="sd">            node at index i is latent or not.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -342,18 +355,23 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">latent</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">latent</span> <span class="o">=</span> <span class="p">[</span><span class="n">latent</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">weights</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="s2">&quot;The number of elements in nodes and weights&quot;</span> <span class="s2">&quot;should be equal.&quot;</span>
                 <span class="p">)</span>
             <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="n">nodes</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">weight</span><span class="o">=</span><span class="n">weights</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span>
+                    <span class="n">node</span><span class="o">=</span><span class="n">nodes</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">weight</span><span class="o">=</span><span class="n">weights</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">latent</span><span class="o">=</span><span class="n">latent</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+                <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="n">nodes</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="n">latent</span><span class="o">=</span><span class="n">latent</span><span class="p">[</span><span class="n">index</span><span class="p">])</span></div>
 
-    <span class="k">def</span> <span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.add_edge"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.add_edge">[docs]</a>    <span class="k">def</span> <span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add an edge between u and v.</span>
 
@@ -391,9 +409,9 @@
 <span class="sd">        &gt;&gt;&gt; G.edge[&#39;Ankur&#39;][&#39;Maria&#39;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.1}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">add_edges_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.add_edges_from"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.add_edges_from">[docs]</a>    <span class="k">def</span> <span class="nf">add_edges_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add all the edges in ebunch.</span>
 
@@ -450,9 +468,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">ebunch</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">ebunch</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">weight</span><span class="o">=</span><span class="n">weights</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">ebunch</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
 
-    <span class="k">def</span> <span class="nf">get_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.get_parents"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.get_parents">[docs]</a>    <span class="k">def</span> <span class="nf">get_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a list of parents of node.</span>
 
@@ -470,9 +488,9 @@
 <span class="sd">        &gt;&gt;&gt; G.get_parents(node=&#39;grade&#39;)</span>
 <span class="sd">        [&#39;diff&#39;, &#39;intel&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">moralize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.moralize"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.moralize">[docs]</a>    <span class="k">def</span> <span class="nf">moralize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Removes all the immoralities in the DAG and creates a moral</span>
 <span class="sd">        graph (UndirectedGraph).</span>
@@ -497,9 +515,9 @@
                 <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">node</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
             <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">moral_graph</span>
+        <span class="k">return</span> <span class="n">moral_graph</span></div>
 
-    <span class="k">def</span> <span class="nf">get_leaves</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.get_leaves"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.get_leaves">[docs]</a>    <span class="k">def</span> <span class="nf">get_leaves</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a list of leaves of the graph.</span>
 
@@ -510,21 +528,21 @@
 <span class="sd">        &gt;&gt;&gt; graph.get_leaves()</span>
 <span class="sd">        [&#39;C&#39;, &#39;D&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">out_degree</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_degree_iter</span><span class="p">()</span> <span class="k">if</span> <span class="n">out_degree</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">out_degree</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_degree_iter</span><span class="p">()</span> <span class="k">if</span> <span class="n">out_degree</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span></div>
 
-    <span class="k">def</span> <span class="nf">out_degree_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.out_degree_iter"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.out_degree_iter">[docs]</a>    <span class="k">def</span> <span class="nf">out_degree_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">nx</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">out_degree_iter</span><span class="p">(</span><span class="n">nbunch</span><span class="p">,</span> <span class="n">weight</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">nbunch</span><span class="p">,</span> <span class="n">weight</span><span class="p">))</span>
+            <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">nbunch</span><span class="p">,</span> <span class="n">weight</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">in_degree_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.in_degree_iter"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.in_degree_iter">[docs]</a>    <span class="k">def</span> <span class="nf">in_degree_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nbunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">nx</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">in_degree_iter</span><span class="p">(</span><span class="n">nbunch</span><span class="p">,</span> <span class="n">weight</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">nbunch</span><span class="p">,</span> <span class="n">weight</span><span class="p">))</span>
+            <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">in_degree</span><span class="p">(</span><span class="n">nbunch</span><span class="p">,</span> <span class="n">weight</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">get_roots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.get_roots"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.get_roots">[docs]</a>    <span class="k">def</span> <span class="nf">get_roots</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a list of roots of the graph.</span>
 
@@ -537,9 +555,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="n">node</span> <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">in_degree</span> <span class="ow">in</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">in_degree</span><span class="p">())</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">in_degree</span> <span class="o">==</span> <span class="mi">0</span>
-        <span class="p">]</span>
+        <span class="p">]</span></div>
 
-    <span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.get_children"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.get_children">[docs]</a>    <span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a list of children of node.</span>
 <span class="sd">        Throws an error if the node is not present in the graph.</span>
@@ -557,9 +575,9 @@
 <span class="sd">        &gt;&gt;&gt; g.get_children(node=&#39;B&#39;)</span>
 <span class="sd">        [&#39;D&#39;, &#39;E&#39;, &#39;F&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span></div>
 
-    <span class="k">def</span> <span class="nf">get_independencies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.get_independencies"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.get_independencies">[docs]</a>    <span class="k">def</span> <span class="nf">get_independencies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes independencies in the DAG, by checking d-seperation.</span>
 
@@ -569,6 +587,10 @@
 <span class="sd">            If latex=True then latex string of the independence assertion</span>
 <span class="sd">            would be created.</span>
 
+<span class="sd">        include_latents: boolean</span>
+<span class="sd">            If True, includes latent variables in the independencies. Otherwise,</span>
+<span class="sd">            only generates independencies on observed variables.</span>
+
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
@@ -577,15 +599,29 @@
 <span class="sd">        (X \u27C2 Z | Y)</span>
 <span class="sd">        (Z \u27C2 X | Y)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span>
+
         <span class="n">independencies</span> <span class="o">=</span> <span class="n">Independencies</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
-            <span class="n">rest</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="p">{</span><span class="n">start</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
+                <span class="n">rest</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="p">{</span><span class="n">start</span><span class="p">}</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rest</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="p">{</span><span class="n">start</span><span class="p">}</span>
+
             <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rest</span><span class="p">)):</span>
                 <span class="k">for</span> <span class="n">observed</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">rest</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
                     <span class="n">d_seperated_variables</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="n">rest</span>
                         <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">observed</span><span class="p">)</span>
-                        <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">observed</span><span class="p">)[</span><span class="n">start</span><span class="p">])</span>
+                        <span class="o">-</span> <span class="nb">set</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">(</span>
+                                <span class="n">start</span><span class="p">,</span>
+                                <span class="n">observed</span><span class="o">=</span><span class="n">observed</span><span class="p">,</span>
+                                <span class="n">include_latents</span><span class="o">=</span><span class="n">include_latents</span><span class="p">,</span>
+                            <span class="p">)[</span><span class="n">start</span><span class="p">]</span>
+                        <span class="p">)</span>
                     <span class="p">)</span>
                     <span class="k">if</span> <span class="n">d_seperated_variables</span><span class="p">:</span>
                         <span class="n">independencies</span><span class="o">.</span><span class="n">add_assertions</span><span class="p">(</span>
@@ -596,9 +632,9 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">latex</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">independencies</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">independencies</span><span class="o">.</span><span class="n">latex_string</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">independencies</span><span class="o">.</span><span class="n">latex_string</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">local_independencies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.local_independencies"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.local_independencies">[docs]</a>    <span class="k">def</span> <span class="nf">local_independencies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns an instance of Independencies containing the local independencies</span>
 <span class="sd">        of each of the variables.</span>
@@ -633,9 +669,9 @@
                 <span class="n">independencies</span><span class="o">.</span><span class="n">add_assertions</span><span class="p">(</span>
                     <span class="p">[</span><span class="n">variable</span><span class="p">,</span> <span class="n">non_descendents</span> <span class="o">-</span> <span class="n">parents</span><span class="p">,</span> <span class="n">parents</span><span class="p">]</span>
                 <span class="p">)</span>
-        <span class="k">return</span> <span class="n">independencies</span>
+        <span class="k">return</span> <span class="n">independencies</span></div>
 
-    <span class="k">def</span> <span class="nf">is_iequivalent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.is_iequivalent"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.is_iequivalent">[docs]</a>    <span class="k">def</span> <span class="nf">is_iequivalent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Checks whether the given model is I-equivalent</span>
 
@@ -676,9 +712,9 @@
             <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_immoralities</span><span class="p">()</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">get_immoralities</span><span class="p">()</span>
         <span class="p">):</span>
             <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
 
-    <span class="k">def</span> <span class="nf">get_immoralities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.get_immoralities"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.get_immoralities">[docs]</a>    <span class="k">def</span> <span class="nf">get_immoralities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Finds all the immoralities in the model</span>
 <span class="sd">        A v-structure X -&gt; Z &lt;- Y is an immorality if there is no direct edge between X and Y .</span>
@@ -703,20 +739,22 @@
                     <span class="n">parents</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="p">):</span>
                     <span class="n">immoralities</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">parents</span><span class="p">)))</span>
-        <span class="k">return</span> <span class="n">immoralities</span>
+        <span class="k">return</span> <span class="n">immoralities</span></div>
 
-    <span class="k">def</span> <span class="nf">is_active_trail</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.is_dconnected"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.is_dconnected">[docs]</a>    <span class="k">def</span> <span class="nf">is_dconnected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns True if there is any active trail between start and end node</span>
+<span class="sd">        Returns True if there is an active trail (i.e. d-connection) between</span>
+<span class="sd">        `start` and `end` node given that `observed` is observed.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        start : Graph Node</span>
-<span class="sd">        end : Graph Node</span>
-<span class="sd">        observed : List of nodes (optional)</span>
-<span class="sd">            If given the active trail would be computed assuming these nodes to be observed.</span>
-<span class="sd">        additional_observed : List of nodes (optional)</span>
-<span class="sd">            If given the active trail would be computed assuming these nodes to be observed along with</span>
-<span class="sd">            the nodes marked as observed in the model.</span>
+<span class="sd">        start, end : int, str, any hashable python object.</span>
+<span class="sd">            The nodes in the DAG between which to check the d-connection/active trail.</span>
+
+<span class="sd">        observed : list, array-like (optional)</span>
+<span class="sd">            If given the active trail would be computed assuming these nodes to</span>
+<span class="sd">            be observed.</span>
+
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
@@ -724,17 +762,17 @@
 <span class="sd">        &gt;&gt;&gt; student.add_nodes_from([&#39;diff&#39;, &#39;intel&#39;, &#39;grades&#39;, &#39;letter&#39;, &#39;sat&#39;])</span>
 <span class="sd">        &gt;&gt;&gt; student.add_edges_from([(&#39;diff&#39;, &#39;grades&#39;), (&#39;intel&#39;, &#39;grades&#39;), (&#39;grades&#39;, &#39;letter&#39;),</span>
 <span class="sd">        ...                         (&#39;intel&#39;, &#39;sat&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; student.is_active_trail(&#39;diff&#39;, &#39;intel&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; student.is_dconnected(&#39;diff&#39;, &#39;intel&#39;)</span>
 <span class="sd">        False</span>
-<span class="sd">        &gt;&gt;&gt; student.is_active_trail(&#39;grades&#39;, &#39;sat&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; student.is_dconnected(&#39;grades&#39;, &#39;sat&#39;)</span>
 <span class="sd">        True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">end</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">observed</span><span class="p">)[</span><span class="n">start</span><span class="p">]:</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
 
-    <span class="k">def</span> <span class="nf">get_markov_blanket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.get_markov_blanket"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.get_markov_blanket">[docs]</a>    <span class="k">def</span> <span class="nf">get_markov_blanket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a markov blanket for a random variable. In the case</span>
 <span class="sd">        of Bayesian Networks, the markov blanket is the set of</span>
@@ -765,18 +803,25 @@
             <span class="n">blanket_nodes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">child_node</span><span class="p">))</span>
         <span class="n">blanket_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">blanket_nodes</span><span class="p">)</span>
         <span class="n">blanket_nodes</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">blanket_nodes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">blanket_nodes</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">active_trail_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.active_trail_nodes"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.active_trail_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">active_trail_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a dictionary with the given variables as keys and all the nodes reachable</span>
 <span class="sd">        from that respective variable as values.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        variables: str or array like</span>
 <span class="sd">            variables whose active trails are to be found.</span>
+
 <span class="sd">        observed : List of nodes (optional)</span>
-<span class="sd">            If given the active trails would be computed assuming these nodes to be observed.</span>
+<span class="sd">            If given the active trails would be computed assuming these nodes to be</span>
+<span class="sd">            observed.</span>
+
+<span class="sd">        include_latents: boolean (default: False)</span>
+<span class="sd">            Whether to include the latent variables in the returned active trail nodes.</span>
+
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
@@ -830,8 +875,12 @@
                         <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">ancestors_list</span><span class="p">:</span>
                             <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
                                 <span class="n">visit_list</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">parent</span><span class="p">,</span> <span class="s2">&quot;up&quot;</span><span class="p">))</span>
-            <span class="n">active_trails</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">active_nodes</span>
-        <span class="k">return</span> <span class="n">active_trails</span>
+            <span class="k">if</span> <span class="n">include_latents</span><span class="p">:</span>
+                <span class="n">active_trails</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">active_nodes</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">active_trails</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="n">active_nodes</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span>
+
+        <span class="k">return</span> <span class="n">active_trails</span></div>
 
     <span class="k">def</span> <span class="nf">_get_ancestors_of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -869,7 +918,7 @@
             <span class="n">ancestors_list</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ancestors_list</span>
 
-    <span class="k">def</span> <span class="nf">to_pdag</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.to_pdag"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.to_pdag">[docs]</a>    <span class="k">def</span> <span class="nf">to_pdag</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the PDAG (the equivalence class of DAG; also known as CPDAG) of the DAG.</span>
 
@@ -881,23 +930,28 @@
 <span class="sd">        --------</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
+        <span class="k">pass</span></div>
 
-    <span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="viewcode-block" id="DAG.do"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.do">[docs]</a>    <span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Applies the do operator to the graph and returns a new DAG with the transformed graph.</span>
+<span class="sd">        Applies the do operator to the graph and returns a new DAG with the</span>
+<span class="sd">        transformed graph.</span>
 
-<span class="sd">        The do-operator, do(X = x) has the effect of removing all edges from the parents of X and setting X to the</span>
-<span class="sd">        given value x.</span>
+<span class="sd">        The do-operator, do(X = x) has the effect of removing all edges from</span>
+<span class="sd">        the parents of X and setting X to the given value x.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        node : string</span>
-<span class="sd">            The name of the node to apply the do-operator to.</span>
+<span class="sd">        nodes : list, array-like</span>
+<span class="sd">            The names of the nodes to apply the do-operator for.</span>
+
+<span class="sd">        inplace: boolean (default: False)</span>
+<span class="sd">            If inplace=True, makes the changes to the current object,</span>
+<span class="sd">            otherwise returns a new instance.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        DAG: A new instance of DAG modified by the do-operator</span>
+<span class="sd">        pgmpy.base.DAG: A new instance of DAG modified by the do-operator</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -916,14 +970,25 @@
 <span class="sd">        ----------</span>
 <span class="sd">        Causality: Models, Reasoning, and Inference, Judea Pearl (2000). p.70.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
-        <span class="n">dag_do_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dag_do_x</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">:</span>
-            <span class="n">dag_do_x</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">dag_do_x</span>
+        <span class="n">dag</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">inplace</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">get_ancestral_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodes</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Nodes not found in the model: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+            <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">:</span>
+                <span class="n">dag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dag</span></div>
+
+<div class="viewcode-block" id="DAG.get_ancestral_graph"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.get_ancestral_graph">[docs]</a>    <span class="k">def</span> <span class="nf">get_ancestral_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the ancestral graph of the given `nodes`. The ancestral graph only</span>
 <span class="sd">        contains the nodes which are ancestors of atleast one of the variables in</span>
@@ -946,10 +1011,184 @@
 <span class="sd">        &gt;&gt;&gt; anc_dag.edges()</span>
 <span class="sd">        OutEdgeView([(&#39;D&#39;, &#39;A&#39;), (&#39;D&#39;, &#39;B&#39;)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_ancestors_of</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="n">nodes</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_ancestors_of</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="n">nodes</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DAG.to_daft"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.to_daft">[docs]</a>    <span class="k">def</span> <span class="nf">to_daft</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">node_pos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pgm_params</span><span class="o">=</span><span class="p">{},</span> <span class="n">edge_params</span><span class="o">=</span><span class="p">{},</span> <span class="n">node_params</span><span class="o">=</span><span class="p">{}</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a daft (https://docs.daft-pgm.org/en/latest/) object which can be rendered for</span>
+<span class="sd">        publication quality plots. The returned object&#39;s render method can be called to see the plots.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node_pos: str or dict (optional)</span>
+<span class="sd">            If str: Must be one of the following: circular, kamada_kawai, planar, random, shell, sprint,</span>
+<span class="sd">                spectral, spiral. Please refer: https://networkx.org/documentation/stable//reference/drawing.html#module-networkx.drawing.layout for details on these layouts.</span>
+
+<span class="sd">            If dict should be of the form {node: (x coordinate, y coordinate)} describing the x and y coordinate of each</span>
+<span class="sd">            node.</span>
+
+<span class="sd">            If no argument is provided uses random layout.</span>
+
+<span class="sd">        latex: boolean</span>
+<span class="sd">            Whether to use latex for rendering the node names.</span>
+
+<span class="sd">        pgm_params: dict (optional)</span>
+<span class="sd">            Any additional parameters that need to be passed to `daft.PGM` initializer.</span>
+<span class="sd">            Should be of the form: {param_name: param_value}</span>
+
+<span class="sd">        edge_params: dict (optional)</span>
+<span class="sd">            Any additional edge parameters that need to be passed to `daft.add_edge` method.</span>
+<span class="sd">            Should be of the form: {(u1, v1): {param_name: param_value}, (u2, v2): {...} }</span>
+
+<span class="sd">        node_params: dict (optional)</span>
+<span class="sd">            Any additional node parameters that need to be passed to `daft.add_node` method.</span>
+<span class="sd">            Should be of the form: {node1: {param_name: param_value}, node2: {...} }</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        daft.PGM object: A plot of the DAG.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
+<span class="sd">        &gt;&gt;&gt; dag = DAG([(&#39;a&#39;, &#39;b&#39;), (&#39;b&#39;, &#39;c&#39;), (&#39;d&#39;, &#39;c&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; dag.to_daft(node_pos={&#39;a&#39;: (0, 0), &#39;b&#39;: (1, 0), &#39;c&#39;: (2, 0), &#39;d&#39;: (1, 1)})</span>
+<span class="sd">        &lt;daft.PGM at 0x7fc756e936d0&gt;</span>
+<span class="sd">        &gt;&gt;&gt; dag.to_daft(node_pos=&quot;circular&quot;)</span>
+<span class="sd">        &lt;daft.PGM at 0x7f9bb48c5eb0&gt;</span>
+<span class="sd">        &gt;&gt;&gt; dag.to_daft(node_pos=&quot;circular&quot;, pgm_params={&#39;observed_style&#39;: &#39;inner&#39;})</span>
+<span class="sd">        &lt;daft.PGM at 0x7f9bb48b0bb0&gt;</span>
+<span class="sd">        &gt;&gt;&gt; dag.to_daft(node_pos=&quot;circular&quot;,</span>
+<span class="sd">        ...             edge_params={(&#39;a&#39;, &#39;b&#39;): {&#39;label&#39;: 2}},</span>
+<span class="sd">        ...             node_params={&#39;a&#39;: {&#39;shape&#39;: &#39;rectangle&#39;}})</span>
+<span class="sd">        &lt;daft.PGM at 0x7f9bb48b0bb0&gt;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">daft</span> <span class="kn">import</span> <span class="n">PGM</span>
+        <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">&quot;Package daft required. Please visit: https://docs.daft-pgm.org/en/latest/ for installation instructions.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">node_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">node_pos</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">random_layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node_pos</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">supported_layouts</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;circular&quot;</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">circular_layout</span><span class="p">,</span>
+                <span class="s2">&quot;kamada_kawai&quot;</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">kamada_kawai_layout</span><span class="p">,</span>
+                <span class="s2">&quot;planar&quot;</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">planar_layout</span><span class="p">,</span>
+                <span class="s2">&quot;random&quot;</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">random_layout</span><span class="p">,</span>
+                <span class="s2">&quot;shell&quot;</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">shell_layout</span><span class="p">,</span>
+                <span class="s2">&quot;spring&quot;</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">spring_layout</span><span class="p">,</span>
+                <span class="s2">&quot;spectral&quot;</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">spectral_layout</span><span class="p">,</span>
+                <span class="s2">&quot;spiral&quot;</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">spiral_layout</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">node_pos</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported_layouts</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Unknown node_pos argument. Please refer docstring for accepted values&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">node_pos</span> <span class="o">=</span> <span class="n">supported_layouts</span><span class="p">[</span><span class="n">node_pos</span><span class="p">](</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node_pos</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">node_pos</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No position specified for </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Argument node_pos not valid. Please refer to the docstring.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">daft_pgm</span> <span class="o">=</span> <span class="n">PGM</span><span class="p">(</span><span class="o">**</span><span class="n">pgm_params</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">extra_params</span> <span class="o">=</span> <span class="n">node_params</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">extra_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">latex</span><span class="p">:</span>
+                <span class="n">daft_pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span>
+                    <span class="n">node</span><span class="p">,</span>
+                    <span class="sa">fr</span><span class="s2">&quot;$</span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">,</span>
+                    <span class="n">node_pos</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">node_pos</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">extra_params</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">daft_pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span>
+                    <span class="n">node</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">node_pos</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">node_pos</span><span class="p">[</span><span class="n">node</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">extra_params</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">extra_params</span> <span class="o">=</span> <span class="n">edge_params</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">extra_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="n">daft_pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="o">**</span><span class="n">extra_params</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">daft_pgm</span></div>
+
+<div class="viewcode-block" id="DAG.get_random"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.DAG.get_random">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">edge_prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a randomly generated DAG with `n_nodes` number of nodes with</span>
+<span class="sd">        edge probability being `edge_prob`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_nodes: int</span>
+<span class="sd">            The number of nodes in the randomly generated DAG.</span>
+
+<span class="sd">        edge_prob: float</span>
+<span class="sd">            The probability of edge between any two nodes in the topologically</span>
+<span class="sd">            sorted DAG.</span>
+
+<span class="sd">        latents: bool (default: False)</span>
+<span class="sd">            If True, includes latent variables in the generated DAG.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pgmpy.base.DAG instance: The randomly generated DAG.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
+<span class="sd">        &gt;&gt;&gt; random_dag = DAG.get_random(n_nodes=10, edge_prob=0.3)</span>
+<span class="sd">        &gt;&gt;&gt; random_dag.nodes()</span>
+<span class="sd">        NodeView((0, 1, 2, 3, 4, 5, 6, 7, 8, 9))</span>
+<span class="sd">        &gt;&gt;&gt; random_dag.edges()</span>
+<span class="sd">        OutEdgeView([(0, 6), (1, 6), (1, 7), (7, 9), (2, 5), (2, 7), (2, 8), (5, 9), (3, 7)])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Step 1: Generate a matrix of 0 and 1. Prob of choosing 1 = edge_prob</span>
+        <span class="n">adj_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span> <span class="o">-</span> <span class="n">edge_prob</span><span class="p">,</span> <span class="n">edge_prob</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Step 2: Use the upper triangular part of the matrix as adjacency.</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">))</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">convert_matrix</span><span class="o">.</span><span class="n">from_numpy_matrix</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">adj_mat</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">create_using</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+
+        <span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
+        <span class="n">dag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">latents</span><span class="p">:</span>
+            <span class="n">dag</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+                    <span class="n">dag</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">dag</span></div></div>
 
 
-<span class="k">class</span> <span class="nc">PDAG</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">):</span>
+<div class="viewcode-block" id="PDAG"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.PDAG">[docs]</a><span class="k">class</span> <span class="nc">PDAG</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for representing PDAGs (also known as CPDAG). PDAGs are the equivance classes of</span>
 <span class="sd">    DAGs and contain both directed and undirected edges.</span>
@@ -958,7 +1197,7 @@
 <span class="sd">    an undirected edge between X - Y is represented using X -&gt; Y and X &lt;- Y.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[],</span> <span class="n">undirected_ebunch</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[],</span> <span class="n">undirected_ebunch</span><span class="o">=</span><span class="p">[],</span> <span class="n">latents</span><span class="o">=</span><span class="p">[]):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes a PDAG class.</span>
 
@@ -969,6 +1208,9 @@
 
 <span class="sd">        undirected_ebunch: list, array-like of 2-tuples</span>
 <span class="sd">            List of undirected edges in the PDAG.</span>
+
+<span class="sd">        latents: list, array-like</span>
+<span class="sd">            List of nodes which are latent variables.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -982,6 +1224,7 @@
             <span class="o">+</span> <span class="n">undirected_ebunch</span>
             <span class="o">+</span> <span class="p">[(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">undirected_ebunch</span><span class="p">]</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">latents</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">undirected_edges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">undirected_ebunch</span><span class="p">)</span>
         <span class="c1"># TODO: Fix the cycle issue</span>
@@ -998,7 +1241,7 @@
         <span class="c1"># except nx.NetworkXNoCycle:</span>
         <span class="c1">#     pass</span>
 
-    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="PDAG.copy"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.PDAG.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a copy of the object instance.</span>
 
@@ -1009,9 +1252,10 @@
         <span class="k">return</span> <span class="n">PDAG</span><span class="p">(</span>
             <span class="n">directed_ebunch</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span><span class="o">.</span><span class="n">copy</span><span class="p">()),</span>
             <span class="n">undirected_ebunch</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">undirected_edges</span><span class="o">.</span><span class="n">copy</span><span class="p">()),</span>
-        <span class="p">)</span>
+            <span class="n">latents</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">to_dag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">required_edges</span><span class="o">=</span><span class="p">[]):</span>
+<div class="viewcode-block" id="PDAG.to_dag"><a class="viewcode-back" href="../../../base.html#pgmpy.models.DynamicBayesianNetwork.PDAG.to_dag">[docs]</a>    <span class="k">def</span> <span class="nf">to_dag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">required_edges</span><span class="o">=</span><span class="p">[]):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns one possible DAG which is represented using the PDAG.</span>
 
@@ -1034,6 +1278,7 @@
         <span class="c1"># Add all the nodes and the directed edges</span>
         <span class="n">dag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
         <span class="n">dag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span><span class="p">)</span>
+        <span class="n">dag</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span>
 
         <span class="n">pdag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">while</span> <span class="n">pdag</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -1080,7 +1325,7 @@
                         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                             <span class="k">pass</span>
                 <span class="k">break</span>
-        <span class="k">return</span> <span class="n">dag</span>
+        <span class="k">return</span> <span class="n">dag</span></div></div>
 </pre></div>
 
            </div>
