@@ -1074,28 +1074,57 @@
         <span class="n">cpds</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">bn_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
             <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">bn_model</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_states_dict</span><span class="p">[</span><span class="n">node</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-                <span class="n">values</span> <span class="o">=</span> <span class="n">values</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-                <span class="n">node_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
-                    <span class="n">variable</span><span class="o">=</span><span class="n">node</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="n">n_states_dict</span><span class="p">[</span><span class="n">node</span><span class="p">],</span> <span class="n">values</span><span class="o">=</span><span class="n">values</span>
+            <span class="n">cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">TabularCPD</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span>
+                    <span class="n">variable</span><span class="o">=</span><span class="n">node</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span> <span class="n">cardinality</span><span class="o">=</span><span class="n">n_states_dict</span>
                 <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">parent_card</span> <span class="o">=</span> <span class="p">[</span><span class="n">n_states_dict</span><span class="p">[</span><span class="n">pa</span><span class="p">]</span> <span class="k">for</span> <span class="n">pa</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">]</span>
-                <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_states_dict</span><span class="p">[</span><span class="n">node</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">parent_card</span><span class="p">))</span>
-                <span class="n">values</span> <span class="o">=</span> <span class="n">values</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-                <span class="n">node_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
-                    <span class="n">variable</span><span class="o">=</span><span class="n">node</span><span class="p">,</span>
-                    <span class="n">variable_card</span><span class="o">=</span><span class="n">n_states_dict</span><span class="p">[</span><span class="n">node</span><span class="p">],</span>
-                    <span class="n">values</span><span class="o">=</span><span class="n">values</span><span class="p">,</span>
-                    <span class="n">evidence</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span>
-                    <span class="n">evidence_card</span><span class="o">=</span><span class="n">parent_card</span><span class="p">,</span>
-                <span class="p">)</span>
-
-            <span class="n">cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_cpd</span><span class="p">)</span>
+            <span class="p">)</span>
 
         <span class="n">bn_model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">bn_model</span></div></div>
+        <span class="k">return</span> <span class="n">bn_model</span></div>
+
+<div class="viewcode-block" id="BayesianModel.do"><a class="viewcode-back" href="../../../models.html#pgmpy.models.BayesianModel.BayesianModel.do">[docs]</a>    <span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the do operation. The do operation removes all incoming edges</span>
+<span class="sd">        to variables in `nodes` and marginalizes their CPDs to only contain the</span>
+<span class="sd">        variable itself.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nodes : list, array-like</span>
+<span class="sd">            The names of the nodes to apply the do-operator for.</span>
+
+<span class="sd">        inplace: boolean (default: False)</span>
+<span class="sd">            If inplace=True, makes the changes to the current object,</span>
+<span class="sd">            otherwise returns a new instance.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pgmpy.models.BayesianModel: Instance of BayesianModel modified by the</span>
+<span class="sd">            do operation</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodes</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Nodes not found in the model: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">inplace</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">adj_model</span> <span class="o">=</span> <span class="n">DAG</span><span class="o">.</span><span class="n">do</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">adj_model</span><span class="o">.</span><span class="n">cpds</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+                <span class="n">cpd</span> <span class="o">=</span> <span class="n">adj_model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
+                <span class="n">cpd</span><span class="o">.</span><span class="n">marginalize</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">adj_model</span></div></div>
 </pre></div>
 
            </div>

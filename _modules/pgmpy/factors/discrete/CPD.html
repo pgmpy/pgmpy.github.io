@@ -186,7 +186,7 @@
   <h1>Source code for pgmpy.factors.discrete.CPD</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
 <span class="sd">&quot;&quot;&quot;Contains the different formats of CPDs used in PGM&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span><span class="p">,</span> <span class="n">chain</span>
 <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
 <span class="kn">import</span> <span class="nn">numbers</span>
 
@@ -698,7 +698,83 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the evidence variables of the CPD.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="TabularCPD.get_random"><a class="viewcode-back" href="../../../../factors.html#pgmpy.factors.discrete.CPD.TabularCPD.get_random">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cardinality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates a TabularCPD instance with random values on `variable` with</span>
+<span class="sd">        parents/evidence `evidence` with cardinality/number of states as given</span>
+<span class="sd">        in `cardinality`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        variable: str, int or any hashable python object.</span>
+<span class="sd">            The variable on which to define the TabularCPD.</span>
+
+<span class="sd">        evidence: list, array-like</span>
+<span class="sd">            A list of variable names which are the parents/evidence of `variable`.</span>
+
+<span class="sd">        cardinality: dict (default: None)</span>
+<span class="sd">            A dict of the form {var_name: card} specifying the number of states/</span>
+<span class="sd">            cardinality of each of the variables. If None, assigns each variable</span>
+<span class="sd">            2 states.</span>
+
+<span class="sd">        state_names: dict (default: None)</span>
+<span class="sd">            A dict of the form {var_name: list of states} to specify the state names</span>
+<span class="sd">            for the variables in the CPD. If state_names=None, integral state names</span>
+<span class="sd">            starting from 0 is assigned.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pgmpy.factors.discrete.TabularCPD: A TabularCPD object on `variable` with</span>
+<span class="sd">            evidence as `evidence` with random values.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
+<span class="sd">        &gt;&gt;&gt; TabularCPD(variable=&#39;A&#39;, evidence=[&#39;C&#39;, &#39;D&#39;],</span>
+<span class="sd">        ...            cardinality={&#39;A&#39;: 3, &#39;B&#39;: 2, &#39;C&#39;: 4})</span>
+<span class="sd">        &lt;TabularCPD representing P(A:3 | C:4, B:2) at 0x7f95e22b8040&gt;</span>
+<span class="sd">        &gt;&gt;&gt; TabularCPD(variable=&#39;A&#39;, evidence=[&#39;C&#39;, &#39;D&#39;],</span>
+<span class="sd">        ...            cardinality={&#39;A&#39;: 2, &#39;B&#39;: 2, &#39;C&#39;: 2},</span>
+<span class="sd">        ...            state_names={&#39;A&#39;: [&#39;a1&#39;, &#39;a2&#39;],</span>
+<span class="sd">        ...                         &#39;B&#39;: [&#39;b1&#39;, &#39;b2&#39;],</span>
+<span class="sd">        ...                         &#39;C&#39;: [&#39;c1&#39;, &#39;c2&#39;]})</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">evidence</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">cardinality</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cardinality</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">([</span><span class="n">variable</span><span class="p">],</span> <span class="n">evidence</span><span class="p">)}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">([</span><span class="n">variable</span><span class="p">],</span> <span class="n">evidence</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cardinality</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cardinality for variable: </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> not specified.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">cardinality</span><span class="p">[</span><span class="n">variable</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">values</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">node_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+                <span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span>
+                <span class="n">variable_card</span><span class="o">=</span><span class="n">cardinality</span><span class="p">[</span><span class="n">variable</span><span class="p">],</span>
+                <span class="n">values</span><span class="o">=</span><span class="n">values</span><span class="p">,</span>
+                <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">parent_card</span> <span class="o">=</span> <span class="p">[</span><span class="n">cardinality</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">]</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">cardinality</span><span class="p">[</span><span class="n">variable</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">parent_card</span><span class="p">))</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">values</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">node_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+                <span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span>
+                <span class="n">variable_card</span><span class="o">=</span><span class="n">cardinality</span><span class="p">[</span><span class="n">variable</span><span class="p">],</span>
+                <span class="n">values</span><span class="o">=</span><span class="n">values</span><span class="p">,</span>
+                <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+                <span class="n">evidence_card</span><span class="o">=</span><span class="n">parent_card</span><span class="p">,</span>
+                <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">node_cpd</span></div></div>
 </pre></div>
 
            </div>

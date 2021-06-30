@@ -1122,7 +1122,15 @@
 
     <span class="n">__div__</span> <span class="o">=</span> <span class="fm">__truediv__</span>
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-08</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method for checking if two factors are equal.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        atol: float</span>
+<span class="sd">            The maximum allowed difference in values to be considered equal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">DiscreteFactor</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">DiscreteFactor</span><span class="p">)):</span>
             <span class="k">return</span> <span class="kc">False</span>
 
@@ -1130,26 +1138,39 @@
             <span class="k">return</span> <span class="kc">False</span>
 
         <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Change the axis so that the variables are in the same order.</span>
             <span class="n">phi</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ndim</span><span class="p">):</span>
-                <span class="n">exchange_index</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">axis</span><span class="p">])</span>
-                <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span> <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">exchange_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">exchange_index</span><span class="p">],</span>
-                    <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span>
-                <span class="p">)</span>
-                <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span> <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">exchange_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">exchange_index</span><span class="p">],</span>
-                    <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span>
-                <span class="p">)</span>
-                <span class="n">phi</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">exchange_index</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">!=</span> <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ndim</span><span class="p">):</span>
+                    <span class="n">exchange_index</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">axis</span><span class="p">])</span>
+                    <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span> <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">exchange_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">exchange_index</span><span class="p">],</span>
+                        <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span>
+                    <span class="p">)</span>
+                    <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span> <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">exchange_index</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">exchange_index</span><span class="p">],</span>
+                        <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span>
+                    <span class="p">)</span>
+                    <span class="n">phi</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">exchange_index</span><span class="p">)</span>
+
+            <span class="c1"># Check the state names order and match them</span>
+            <span class="k">for</span> <span class="n">axis</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]):</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">!=</span> <span class="n">phi</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]:</span>
+                    <span class="n">ref_index</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">state_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]:</span>
+                        <span class="n">ref_index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">state_name</span><span class="p">))</span>
+
+                    <span class="n">slice_</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>
+                    <span class="n">slice_</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">ref_index</span>
+                    <span class="n">phi</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">slice_</span><span class="p">)]</span>
 
             <span class="k">if</span> <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">False</span>
-            <span class="k">elif</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">):</span>
                 <span class="k">return</span> <span class="kc">False</span>
             <span class="k">elif</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">==</span> <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">):</span>
-                <span class="k">return</span> <span class="kc">False</span>
-            <span class="k">elif</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span> <span class="o">==</span> <span class="n">phi</span><span class="o">.</span><span class="n">state_names</span><span class="p">):</span>
                 <span class="k">return</span> <span class="kc">False</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">True</span>

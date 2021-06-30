@@ -111,6 +111,7 @@
 <li class="toctree-l1"><a class="reference external" href="https://github.com/pgmpy/pgmpy_notebook/blob/master/notebooks/8.%20Reading%20and%20Writing%20from%20pgmpy%20file%20formats.ipynb">Reading and writing files using pgmpy</a></li>
 </ul>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="base.html">Base Structure Classes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="factors.html">Factor</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sampling.html">Sampling Methods</a></li>
@@ -121,6 +122,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Estimators for Parameter and Structure Learning</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#base-estimator-classes">Base Estimator Classes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#bayesian-estimator">Bayesian Estimator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#expectation-maximization-em">Expectation Maximization (EM)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#bdeu-score">BDeu Score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#bic-score">Bic Score</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#contraint-based-estimator">Contraint Based Estimator</a></li>
@@ -239,7 +241,7 @@
 <em class="property">class </em><code class="sig-prename descclassname">pgmpy.estimators.base.</code><code class="sig-name descname">ParameterEstimator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/base.html#ParameterEstimator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.base.ParameterEstimator" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt id="pgmpy.estimators.base.ParameterEstimator.state_counts">
-<code class="sig-name descname">state_counts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">variable</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/base.html#ParameterEstimator.state_counts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.base.ParameterEstimator.state_counts" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">state_counts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">variable</span></em>, <em class="sig-param"><span class="n">weighted</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/base.html#ParameterEstimator.state_counts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.base.ParameterEstimator.state_counts" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return counts how often each state of ‘variable’ occurred in the data.
 If the variable has parents, counting is done conditionally
 for each state configuration of the parents.</p>
@@ -413,6 +415,58 @@ the size for each variable separately.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">estimator</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span><span class="n">prior_type</span><span class="o">=</span><span class="s1">&#39;BDeu&#39;</span><span class="p">,</span> <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 <span class="go">[&lt;TabularCPD representing P(C:2) at 0x7f7b534251d0&gt;,</span>
 <span class="go">&lt;TabularCPD representing P(B:2 | C:2, A:2) at 0x7f7b4dfd4da0&gt;,</span>
+<span class="go">&lt;TabularCPD representing P(A:2) at 0x7f7b4dfd4fd0&gt;,</span>
+<span class="go">&lt;TabularCPD representing P(D:2 | C:2) at 0x7f7b4df822b0&gt;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="expectation-maximization-em">
+<h2>Expectation Maximization (EM)<a class="headerlink" href="#expectation-maximization-em" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="pgmpy.estimators.ExpectationMaximization">
+<em class="property">class </em><code class="sig-prename descclassname">pgmpy.estimators.</code><code class="sig-name descname">ExpectationMaximization</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/EM.html#ExpectationMaximization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.ExpectationMaximization" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt id="pgmpy.estimators.ExpectationMaximization.get_parameters">
+<code class="sig-name descname">get_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">latent_card</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">max_iter</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">atol</span><span class="o">=</span><span class="default_value">1e-08</span></em>, <em class="sig-param"><span class="n">n_jobs</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">seed</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">show_progress</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/EM.html#ExpectationMaximization.get_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.ExpectationMaximization.get_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to estimate all model parameters (CPDs) using Expecation Maximization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>latent_card</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.9)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – A dictionary of the form {latent_var: cardinality} specifying the
+cardinality (number of states) of each latent variable. If None,
+assumes <cite>2</cite> states for each latent variable.</p></li>
+<li><p><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> (</em><em>default: 100</em><em>)</em>) – The maximum number of iterations the algorithm is allowed to run for.
+If max_iter is reached, return the last value of parameters.</p></li>
+<li><p><strong>atol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> (</em><em>default: 1e-08</em><em>)</em>) – The absolute accepted tolerance for checking convergence. If the parameters
+change is less than atol in an iteration, the algorithm will exit.</p></li>
+<li><p><strong>n_jobs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> (</em><em>default: -1</em><em>)</em>) – Number of jobs to run in parallel. Default: -1 uses all the processors.</p></li>
+<li><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a>) – The random seed to use for generating the intial values.</p></li>
+<li><p><strong>show_progress</strong> (<em>boolean</em><em> (</em><em>default: True</em><em>)</em>) – Whether to show a progress bar for iterations.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>list</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>A list of estimated CPDs for the model.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianModel</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">ExpectationMaximization</span> <span class="k">as</span> <span class="n">EM</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span>
+<span class="gp">... </span>                      <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">BayesianModel</span><span class="p">([(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">)],</span> <span class="n">latents</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;B&#39;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">estimator</span> <span class="o">=</span> <span class="n">EM</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">estimator</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span><span class="n">latent_card</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span>
+<span class="go">[&lt;TabularCPD representing P(C:2) at 0x7f7b534251d0&gt;,</span>
+<span class="go">&lt;TabularCPD representing P(B:3 | C:2, A:2) at 0x7f7b4dfd4da0&gt;,</span>
 <span class="go">&lt;TabularCPD representing P(A:2) at 0x7f7b4dfd4fd0&gt;,</span>
 <span class="go">&lt;TabularCPD representing P(D:2 | C:2) at 0x7f7b4df822b0&gt;]</span>
 </pre></div>
@@ -647,7 +701,7 @@ Any completion by (removing one of the both-way edges for each such
 pair) results in a I-equivalent Bayesian network DAG.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>DAG</p>
+<dd class="field-odd"><p><a class="reference internal" href="base.html#pgmpy.base.DAG.DAG" title="pgmpy.base.DAG.DAG">DAG</a></p>
 </dd>
 </dl>
 <p class="rubric">References</p>
@@ -803,7 +857,7 @@ Exhaustively searches through all models. Only estimates network structure, no p
 <h2>Hill Climb Search<a class="headerlink" href="#hill-climb-search" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="pgmpy.estimators.HillClimbSearch">
-<em class="property">class </em><code class="sig-prename descclassname">pgmpy.estimators.</code><code class="sig-name descname">HillClimbSearch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">scoring_method</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">use_cache</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/HillClimbSearch.html#HillClimbSearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.HillClimbSearch" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pgmpy.estimators.</code><code class="sig-name descname">HillClimbSearch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">use_cache</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/HillClimbSearch.html#HillClimbSearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.HillClimbSearch" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt id="pgmpy.estimators.HillClimbSearch.estimate">
 <code class="sig-name descname">estimate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">scoring_method</span><span class="o">=</span><span class="default_value">'k2score'</span></em>, <em class="sig-param"><span class="n">start_dag</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fixed_edges</span><span class="o">=</span><span class="default_value">{}</span></em>, <em class="sig-param"><span class="n">tabu_length</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">max_indegree</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">black_list</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">white_list</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">epsilon</span><span class="o">=</span><span class="default_value">0.0001</span></em>, <em class="sig-param"><span class="n">max_iter</span><span class="o">=</span><span class="default_value">1000000.0</span></em>, <em class="sig-param"><span class="n">show_progress</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/HillClimbSearch.html#HillClimbSearch.estimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.HillClimbSearch.estimate" title="Permalink to this definition">¶</a></dt>
@@ -816,7 +870,7 @@ parametrization.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>scoring_method</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><em>StructureScore instance</em>) – The score to be optimized during structure estimation.  Supported
-structure scores: k2score, bdeuscore, bicscore. Also accepts a
+structure scores: k2score, bdeuscore, bdsscore, bicscore. Also accepts a
 custom score but it should be an instance of <cite>StructureScore</cite>.</p></li>
 <li><p><strong>start_dag</strong> (<em>DAG instance</em>) – The starting point for the local search. By default a completely
 disconnected network is used.</p></li>
@@ -891,11 +945,16 @@ number of iterations is greater than <cite>max_iter</cite>.</p></li>
 <em class="property">class </em><code class="sig-prename descclassname">pgmpy.estimators.MLE.</code><code class="sig-name descname">MaximumLikelihoodEstimator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em>, <em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/MLE.html#MaximumLikelihoodEstimator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.MLE.MaximumLikelihoodEstimator" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt id="pgmpy.estimators.MLE.MaximumLikelihoodEstimator.estimate_cpd">
-<code class="sig-name descname">estimate_cpd</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/MLE.html#MaximumLikelihoodEstimator.estimate_cpd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.MLE.MaximumLikelihoodEstimator.estimate_cpd" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">estimate_cpd</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">node</span></em>, <em class="sig-param"><span class="n">weighted</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/MLE.html#MaximumLikelihoodEstimator.estimate_cpd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.MLE.MaximumLikelihoodEstimator.estimate_cpd" title="Permalink to this definition">¶</a></dt>
 <dd><p>Method to estimate the CPD for a given variable.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>node</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>string</em><em> (</em><em>any hashable python object</em><em>)</em>) – The name of the variable for which the CPD is to be estimated.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em>, </em><em>string</em><em> (</em><em>any hashable python object</em><em>)</em>) – The name of the variable for which the CPD is to be estimated.</p></li>
+<li><p><strong>weighted</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If weighted=True, the data must contain a <cite>_weight</cite> column specifying the
+weight of each datapoint (row). If False, assigns an equal weight to each
+datapoint.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p><strong>CPD</strong></p>
@@ -934,11 +993,20 @@ number of iterations is greater than <cite>max_iter</cite>.</p></li>
 
 <dl class="py method">
 <dt id="pgmpy.estimators.MLE.MaximumLikelihoodEstimator.get_parameters">
-<code class="sig-name descname">get_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n_jobs</span><span class="o">=</span><span class="default_value">- 1</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/MLE.html#MaximumLikelihoodEstimator.get_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.MLE.MaximumLikelihoodEstimator.get_parameters" title="Permalink to this definition">¶</a></dt>
-<dd><p>Method to estimate the model parameters (CPDs) using Maximum Likelihood Estimation.</p>
+<code class="sig-name descname">get_parameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n_jobs</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">weighted</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/MLE.html#MaximumLikelihoodEstimator.get_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.MLE.MaximumLikelihoodEstimator.get_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to estimate the model parameters (CPDs) using Maximum Likelihood
+Estimation.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><ul class="simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_jobs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> (</em><em>default: -1</em><em>)</em>) – Number of jobs to run in parallel. Default: -1 uses all the processors.</p></li>
+<li><p><strong>weighted</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.9)"><em>bool</em></a>) – If weighted=True, the data must contain a <cite>_weight</cite> column specifying the
+weight of each datapoint (row). If False, assigns an equal weight to each
+datapoint.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
 <li><p><strong>parameters</strong> (<em>list</em>) – List of TabularCPDs, one for each variable of the model</p></li>
 <li><p><strong>n_jobs</strong> (<em>int</em>) – Number of processes to spawn</p></li>
 </ul>
@@ -1008,6 +1076,13 @@ with column names of data set.</p>
 <dt id="pgmpy.estimators.StructureScore.structure_prior">
 <code class="sig-name descname">structure_prior</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/StructureScore.html#StructureScore.structure_prior"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.StructureScore.structure_prior" title="Permalink to this definition">¶</a></dt>
 <dd><p>A (log) prior distribution over models. Currently unused (= uniform).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pgmpy.estimators.StructureScore.structure_prior_ratio">
+<code class="sig-name descname">structure_prior_ratio</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">operation</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/StructureScore.html#StructureScore.structure_prior_ratio"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.StructureScore.structure_prior_ratio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the log ratio of the prior probabilities for a given proposed change to the DAG.
+Currently unused (=uniform).</p>
 </dd></dl>
 
 </dd></dl>
@@ -1295,7 +1370,7 @@ learning algorithm (2005), Algorithm 1 &amp; 2
 <h2>Tree Search<a class="headerlink" href="#tree-search" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
 <dt id="pgmpy.estimators.TreeSearch">
-<em class="property">class </em><code class="sig-prename descclassname">pgmpy.estimators.</code><code class="sig-name descname">TreeSearch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">root_node</span></em>, <em class="sig-param"><span class="n">n_jobs</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/TreeSearch.html#TreeSearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.TreeSearch" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pgmpy.estimators.</code><code class="sig-name descname">TreeSearch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">root_node</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">n_jobs</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/TreeSearch.html#TreeSearch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.TreeSearch" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="py method">
 <dt id="pgmpy.estimators.TreeSearch.chow_liu">
 <em class="property">static </em><code class="sig-name descname">chow_liu</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">root_node</span></em>, <em class="sig-param"><span class="n">edge_weights_fn</span><span class="o">=</span><span class="default_value">'mutual_info'</span></em>, <em class="sig-param"><span class="n">n_jobs</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">show_progress</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pgmpy/estimators/TreeSearch.html#TreeSearch.chow_liu"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pgmpy.estimators.TreeSearch.chow_liu" title="Permalink to this definition">¶</a></dt>
@@ -1348,7 +1423,8 @@ parametrization.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>estimator_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> (</em><em>chow-liu | tan</em><em>)</em>) – The algorithm to use for estimating the DAG.</p></li>
-<li><p><strong>class_node</strong> (<em>string</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>any hashable python object.</em><em> (</em><em>optional</em><em>)</em>) – Required if estimator_type = ‘tan’.</p></li>
+<li><p><strong>class_node</strong> (<em>string</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.9)"><em>int</em></a><em> or </em><em>any hashable python object.</em><em> (</em><em>optional</em><em>)</em>) – Optional if estimator_type = ‘tan’. If None then class node is auto-picked
+as the node with the second highest sum of edge weights.</p></li>
 <li><p><strong>edge_weights_fn</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.9)"><em>str</em></a><em> or </em><em>function</em><em> (</em><em>default: mutual info</em><em>)</em>) – Method to use for computing edge weights. By default Mutual Info Score is
 used.</p></li>
 <li><p><strong>show_progress</strong> (<em>boolean</em>) – If True, shows a progress bar for the running algorithm.</p></li>
@@ -1374,8 +1450,18 @@ used.</p></li>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nx</span><span class="o">.</span><span class="n">draw_circular</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">with_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">arrowsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">arrowstyle</span><span class="o">=</span><span class="s1">&#39;fancy&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                 <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">est</span> <span class="o">=</span> <span class="n">TreeSearch</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">est</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">estimator_type</span><span class="o">=</span><span class="s1">&#39;chow-liu&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nx</span><span class="o">.</span><span class="n">draw_circular</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">with_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">arrowsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">arrowstyle</span><span class="o">=</span><span class="s1">&#39;fancy&#39;</span><span class="p">,</span>
+<span class="gp">... </span>                 <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">est</span> <span class="o">=</span> <span class="n">TreeSearch</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">root_node</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">est</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">estimator_type</span><span class="o">=</span><span class="s1">&#39;tan&#39;</span><span class="p">,</span> <span class="n">class_node</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nx</span><span class="o">.</span><span class="n">draw_circular</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">with_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">arrowsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">arrowstyle</span><span class="o">=</span><span class="s1">&#39;fancy&#39;</span><span class="p">,</span>
+<span class="gp">... </span>                 <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">est</span> <span class="o">=</span> <span class="n">TreeSearch</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">est</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">estimator_type</span><span class="o">=</span><span class="s1">&#39;tan&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">nx</span><span class="o">.</span><span class="n">draw_circular</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">with_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">arrowsize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">arrowstyle</span><span class="o">=</span><span class="s1">&#39;fancy&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                 <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>

@@ -231,21 +231,31 @@
 <span class="sd">        &gt;&gt;&gt; model = BayesianModel([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; estimator = MaximumLikelihoodEstimator(model, data)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
                 <span class="s2">&quot;Maximum Likelihood Estimate is only implemented for BayesianModel&quot;</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">&gt;</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Maximum Likelihood Estimator works only for models with all observed variables. Found latent variables: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Maximum Likelihood Estimator works only for models with all observed variables. Found latent variables: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="si">}</span><span class="s2">.&quot;</span>
             <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">MaximumLikelihoodEstimator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="MaximumLikelihoodEstimator.get_parameters"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.MLE.MaximumLikelihoodEstimator.get_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="MaximumLikelihoodEstimator.get_parameters"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.MLE.MaximumLikelihoodEstimator.get_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">weighted</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Method to estimate the model parameters (CPDs) using Maximum Likelihood Estimation.</span>
+<span class="sd">        Method to estimate the model parameters (CPDs) using Maximum Likelihood</span>
+<span class="sd">        Estimation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_jobs: int (default: -1)</span>
+<span class="sd">            Number of jobs to run in parallel. Default: -1 uses all the processors.</span>
+
+<span class="sd">        weighted: bool</span>
+<span class="sd">            If weighted=True, the data must contain a `_weight` column specifying the</span>
+<span class="sd">            weight of each datapoint (row). If False, assigns an equal weight to each</span>
+<span class="sd">            datapoint.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -273,12 +283,12 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">parameters</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">prefer</span><span class="o">=</span><span class="s2">&quot;threads&quot;</span><span class="p">)(</span>
-            <span class="n">delayed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">)(</span><span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+            <span class="n">delayed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">)(</span><span class="n">node</span><span class="p">,</span> <span class="n">weighted</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">parameters</span></div>
 
-<div class="viewcode-block" id="MaximumLikelihoodEstimator.estimate_cpd"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.MLE.MaximumLikelihoodEstimator.estimate_cpd">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_cpd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="viewcode-block" id="MaximumLikelihoodEstimator.estimate_cpd"><a class="viewcode-back" href="../../../estimators.html#pgmpy.estimators.MLE.MaximumLikelihoodEstimator.estimate_cpd">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_cpd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">weighted</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to estimate the CPD for a given variable.</span>
 
@@ -286,6 +296,11 @@
 <span class="sd">        ----------</span>
 <span class="sd">        node: int, string (any hashable python object)</span>
 <span class="sd">            The name of the variable for which the CPD is to be estimated.</span>
+
+<span class="sd">        weighted: bool</span>
+<span class="sd">            If weighted=True, the data must contain a `_weight` column specifying the</span>
+<span class="sd">            weight of each datapoint (row). If False, assigns an equal weight to each</span>
+<span class="sd">            datapoint.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -318,7 +333,7 @@
 <span class="sd">        ╘══════╧══════╧══════╧══════╧══════╛</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">weighted</span><span class="o">=</span><span class="n">weighted</span><span class="p">)</span>
 
         <span class="c1"># if a column contains only `0`s (no states observed for some configuration</span>
         <span class="c1"># of parents&#39; states) fill that column uniformly instead</span>

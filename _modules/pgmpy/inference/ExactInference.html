@@ -411,6 +411,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">,</span>
         <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">elimination_order</span><span class="o">=</span><span class="s2">&quot;MinFill&quot;</span><span class="p">,</span>
         <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -425,13 +426,20 @@
 <span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
 <span class="sd">            None if no evidence</span>
 
-<span class="sd">        elimination_order: list</span>
+<span class="sd">        virtual_evidence: list (default:None)</span>
+<span class="sd">            A list of pgmpy.factors.discrete.TabularCPD representing the virtual</span>
+<span class="sd">            evidences.</span>
+
+<span class="sd">        elimination_order: str or list</span>
 <span class="sd">            order of variable eliminations (if nothing is provided) order is</span>
-<span class="sd">            computed automatically</span>
+<span class="sd">            computed automatically.</span>
 
 <span class="sd">        joint: boolean (default: True)</span>
 <span class="sd">            If True, returns a Joint Distribution over `variables`.</span>
 <span class="sd">            If False, returns a dict of distributions over each of the `variables`.</span>
+
+<span class="sd">        show_progress: boolean</span>
+<span class="sd">            If True, shows a progress bar.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -446,6 +454,10 @@
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; phi_query = inference.query([&#39;A&#39;, &#39;B&#39;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Step 1: Parameter Checks</span>
         <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
             <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
         <span class="p">)</span>
@@ -454,12 +466,26 @@
                 <span class="sa">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
+        <span class="c1"># Step 2: If virtual_evidence is provided, modify the network and query.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_virtual_evidence</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
+            <span class="n">virt_evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">}</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+                <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">evidence</span><span class="p">,</span> <span class="o">**</span><span class="n">virt_evidence</span><span class="p">},</span>
+                <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">elimination_order</span><span class="o">=</span><span class="n">elimination_order</span><span class="p">,</span>
+                <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Step 3: Prune the network based on variables and evidence.</span>
         <span class="c1"># Make a copy of the original model as it will be replaced during pruning.</span>
-        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 
+        <span class="c1"># Step 4: Do the actual variable elimination</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
@@ -468,7 +494,7 @@
             <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">orig_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">orig_model</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
 
@@ -520,7 +546,7 @@
             <span class="p">)</span>
 
         <span class="c1"># Make a copy of the original model and replace self.model with it later.</span>
-        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
@@ -533,13 +559,14 @@
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">orig_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">orig_model</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="VariableElimination.map_query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">elimination_order</span><span class="o">=</span><span class="s2">&quot;MinFill&quot;</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
@@ -553,12 +580,21 @@
 <span class="sd">        ----------</span>
 <span class="sd">        variables: list</span>
 <span class="sd">            list of variables over which we want to compute the max-marginal.</span>
+
 <span class="sd">        evidence: dict</span>
 <span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
 <span class="sd">            None if no evidence</span>
+
+<span class="sd">        virtual_evidence: list (default:None)</span>
+<span class="sd">            A list of pgmpy.factors.discrete.TabularCPD representing the virtual</span>
+<span class="sd">            evidences.</span>
+
 <span class="sd">        elimination_order: list</span>
 <span class="sd">            order of variable eliminations (if nothing is provided) order is</span>
 <span class="sd">            computed automatically</span>
+
+<span class="sd">        show_progress: boolean</span>
+<span class="sd">            If True, shows a progress bar.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -574,6 +610,7 @@
 <span class="sd">        &gt;&gt;&gt; phi_query = inference.map_query([&#39;A&#39;, &#39;B&#39;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">variables</span>
+        <span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
             <span class="n">variables</span>
         <span class="p">)</span>
@@ -583,7 +620,18 @@
             <span class="p">)</span>
 
         <span class="c1"># Make a copy of the original model and replace self.model with it later</span>
-        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_virtual_evidence</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
+            <span class="n">virt_evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">}</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span>
+                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+                <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">evidence</span><span class="p">,</span> <span class="o">**</span><span class="n">virt_evidence</span><span class="p">},</span>
+                <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">elimination_order</span><span class="o">=</span><span class="n">elimination_order</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
@@ -598,7 +646,7 @@
             <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">orig_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">orig_model</span><span class="p">)</span>
 
         <span class="n">argmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
         <span class="n">assignment</span> <span class="o">=</span> <span class="n">final_distribution</span><span class="o">.</span><span class="n">assignment</span><span class="p">([</span><span class="n">argmax</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
@@ -1059,7 +1107,14 @@
                 <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span>
             <span class="p">)</span>
 
-<div class="viewcode-block" id="BeliefPropagation.query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="BeliefPropagation.query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">variables</span><span class="p">,</span>
+        <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Query method using belief propagation.</span>
 
@@ -1072,9 +1127,16 @@
 <span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
 <span class="sd">            None if no evidence</span>
 
+<span class="sd">        virtual_evidence: list (default:None)</span>
+<span class="sd">            A list of pgmpy.factors.discrete.TabularCPD representing the virtual</span>
+<span class="sd">            evidences.</span>
+
 <span class="sd">        joint: boolean</span>
 <span class="sd">            If True, returns a Joint Distribution over `variables`.</span>
 <span class="sd">            If False, returns a dict of distributions over each of the `variables`.</span>
+
+<span class="sd">        show_progress: boolean</span>
+<span class="sd">            If True shows a progress bar.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1103,6 +1165,10 @@
 <span class="sd">        &gt;&gt;&gt; belief_propagation.query(variables=[&#39;J&#39;, &#39;Q&#39;],</span>
 <span class="sd">        ...                          evidence={&#39;A&#39;: 0, &#39;R&#39;: 0, &#39;G&#39;: 0, &#39;L&#39;: 1})</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Step 1: Parameter Checks</span>
         <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
             <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
         <span class="p">)</span>
@@ -1111,11 +1177,24 @@
                 <span class="sa">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="c1"># Step 2: If virtual_evidence is provided, modify model and evidence.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_virtual_evidence</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
+            <span class="n">virt_evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">}</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+                <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">evidence</span><span class="p">,</span> <span class="o">**</span><span class="n">virt_evidence</span><span class="p">},</span>
+                <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Step 3: Do network pruning.</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 
+        <span class="c1"># Step 4: Run inference.</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
@@ -1123,14 +1202,16 @@
             <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">orig_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">orig_model</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">joint</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">result</span></div>
 
-<div class="viewcode-block" id="BeliefPropagation.map_query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="BeliefPropagation.map_query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        MAP Query method using belief propagation.</span>
 
@@ -1141,9 +1222,17 @@
 <span class="sd">        ----------</span>
 <span class="sd">        variables: list</span>
 <span class="sd">            list of variables for which you want to compute the probability</span>
+
+<span class="sd">        virtual_evidence: list (default:None)</span>
+<span class="sd">            A list of pgmpy.factors.discrete.TabularCPD representing the virtual</span>
+<span class="sd">            evidences.</span>
+
 <span class="sd">        evidence: dict</span>
 <span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
 <span class="sd">            None if no evidence</span>
+
+<span class="sd">        show_progress: boolean</span>
+<span class="sd">            If True, shows a progress bar.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1173,6 +1262,7 @@
 <span class="sd">        ...                              evidence={&#39;A&#39;: 0, &#39;R&#39;: 0, &#39;G&#39;: 0, &#39;L&#39;: 1})</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">variables</span>
+        <span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
             <span class="n">variables</span>
         <span class="p">)</span>
@@ -1187,7 +1277,18 @@
             <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
 
         <span class="c1"># Make a copy of the original model and then replace self.model with it later.</span>
-        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_virtual_evidence</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
+            <span class="n">virt_evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">}</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span>
+                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+                <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">evidence</span><span class="p">,</span> <span class="o">**</span><span class="n">virt_evidence</span><span class="p">},</span>
+                <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+            <span class="p">)</span>
+
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
@@ -1199,7 +1300,7 @@
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">orig_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">orig_model</span><span class="p">)</span>
 
         <span class="c1"># To handle the case when no argument is passed then</span>
         <span class="c1"># _variable_elimination returns a dict.</span>
