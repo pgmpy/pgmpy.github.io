@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>pgmpy.inference.ExactInference &mdash; pgmpy 0.1.15 documentation</title>
   
@@ -13,15 +13,10 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
 
   
   
-
   
-  
-
   
 
   
@@ -31,7 +26,6 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
@@ -55,7 +49,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> pgmpy
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> pgmpy
           
 
           
@@ -65,7 +59,7 @@
             
             
               <div class="version">
-                0.1.15
+                dev branch
               </div>
             
           
@@ -94,6 +88,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../started/install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../started/contributing.html">Contributing to pgmpy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../started/license.html">License</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Base Structures</span></p>
 <ul>
@@ -122,7 +117,7 @@
 <p class="caption"><span class="caption-text">Exact Inference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/ve.html">Variable Elimination</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/ve.html#module-pgmpy.inference.EliminationOrder">Elimination Ordering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/ve.html#elimination-ordering">Elimination Ordering</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/bp.html">Belief Propagation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/causal.html">Causal Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/mplp.html">MPLP</a></li>
@@ -144,11 +139,16 @@
 <p class="caption"><span class="caption-text">Structure Learning</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/pc.html">PC (Constraint-Based Estimator)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/pc.html#module-pgmpy.estimators.CITests">Conditional Independence Tests for PC algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/pc.html#conditional-independence-tests-for-pc-algorithm">Conditional Independence Tests for PC algorithm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/hill.html">Hill Climb Search</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/hill.html#structure-score">Structure Score</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/tree.html">Tree Search</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/mmhc.html">Mmhc Estimator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/exhaustive.html">Exhaustive Search</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Metrics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Correlation Score</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Input/Output</span></p>
 <ul>
@@ -197,8 +197,6 @@
 
 
 
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -229,7 +227,7 @@
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="kn">import</span> <span class="n">factor_product</span>
 <span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">Inference</span>
@@ -239,11 +237,11 @@
     <span class="n">MinFill</span><span class="p">,</span>
     <span class="n">MinWeight</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">JunctionTree</span><span class="p">,</span> <span class="n">BayesianNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">JunctionTree</span><span class="p">,</span> <span class="n">BayesianModel</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">SHOW_PROGRESS</span>
 
 
-<div class="viewcode-block" id="VariableElimination"><a class="viewcode-back" href="../../../exact_infer/ve.html#pgmpy.inference.ExactInference.VariableElimination">[docs]</a><span class="k">class</span> <span class="nc">VariableElimination</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
+<div class="viewcode-block" id="VariableElimination"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination">[docs]</a><span class="k">class</span> <span class="nc">VariableElimination</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">_get_working_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evidence</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Uses the evidence given to the query methods to modify the factors before running</span>
@@ -330,14 +328,12 @@
             <span class="k">return</span> <span class="n">elimination_order</span>
 
         <span class="c1"># Step 2: If elimination order is None or a Markov model, return a random order.</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="n">elimination_order</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
-            <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">)</span>
-        <span class="p">):</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">elimination_order</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">)):</span>
             <span class="k">return</span> <span class="n">to_eliminate</span>
 
         <span class="c1"># Step 3: If elimination order is a str, compute the order using the specified heuristic.</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span>
         <span class="p">):</span>
             <span class="n">heuristic_dict</span> <span class="o">=</span> <span class="p">{</span>
                 <span class="s2">&quot;weightedminfill&quot;</span><span class="p">:</span> <span class="n">WeightedMinFill</span><span class="p">,</span>
@@ -435,7 +431,7 @@
         <span class="n">final_distribution</span> <span class="o">=</span> <span class="p">[</span><span class="n">factor</span> <span class="k">for</span> <span class="n">factor</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">final_distribution</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">joint</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">factor_product</span><span class="p">(</span><span class="o">*</span><span class="n">final_distribution</span><span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">factor_product</span><span class="p">(</span><span class="o">*</span><span class="n">final_distribution</span><span class="p">)</span>
@@ -448,7 +444,7 @@
                 <span class="p">)</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">query_var_factor</span>
 
-<div class="viewcode-block" id="VariableElimination.query"><a class="viewcode-back" href="../../../exact_infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
+<div class="viewcode-block" id="VariableElimination.query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">,</span>
         <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -485,12 +481,12 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import VariableElimination</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
 <span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = BayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; model = BayesianModel([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; phi_query = inference.query([&#39;A&#39;, &#39;B&#39;])</span>
@@ -508,7 +504,7 @@
             <span class="p">)</span>
 
         <span class="c1"># Step 2: If virtual_evidence is provided, modify the network and query.</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_virtual_evidence</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
             <span class="n">virt_evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">}</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
@@ -522,7 +518,7 @@
 
         <span class="c1"># Step 3: Prune the network based on variables and evidence.</span>
         <span class="c1"># Make a copy of the original model as it will be replaced during pruning.</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 
@@ -539,7 +535,7 @@
 
         <span class="k">return</span> <span class="n">result</span></div>
 
-<div class="viewcode-block" id="VariableElimination.max_marginal"><a class="viewcode-back" href="../../../exact_infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.max_marginal">[docs]</a>    <span class="k">def</span> <span class="nf">max_marginal</span><span class="p">(</span>
+<div class="viewcode-block" id="VariableElimination.max_marginal"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.max_marginal">[docs]</a>    <span class="k">def</span> <span class="nf">max_marginal</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -566,11 +562,11 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import VariableElimination</span>
 <span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
 <span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = BayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; model = BayesianModel([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; phi_query = inference.max_marginal([&#39;A&#39;, &#39;B&#39;])</span>
@@ -588,7 +584,7 @@
 
         <span class="c1"># Make a copy of the original model and replace self.model with it later.</span>
         <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 
@@ -603,7 +599,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">orig_model</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="VariableElimination.map_query"><a class="viewcode-back" href="../../../exact_infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span>
+<div class="viewcode-block" id="VariableElimination.map_query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -640,12 +636,12 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import VariableElimination</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
 <span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = BayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; model = BayesianModel([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; phi_query = inference.map_query([&#39;A&#39;, &#39;B&#39;])</span>
@@ -663,7 +659,7 @@
         <span class="c1"># Make a copy of the original model and replace self.model with it later</span>
         <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_virtual_evidence</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
             <span class="n">virt_evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">}</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span>
@@ -674,7 +670,7 @@
                 <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 
@@ -705,7 +701,7 @@
                 <span class="n">return_dict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">map_query_results</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
             <span class="k">return</span> <span class="n">return_dict</span></div>
 
-<div class="viewcode-block" id="VariableElimination.induced_graph"><a class="viewcode-back" href="../../../exact_infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.induced_graph">[docs]</a>    <span class="k">def</span> <span class="nf">induced_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">):</span>
+<div class="viewcode-block" id="VariableElimination.induced_graph"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.induced_graph">[docs]</a>    <span class="k">def</span> <span class="nf">induced_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the induced graph formed by running Variable Elimination on the network.</span>
 
@@ -718,11 +714,11 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import VariableElimination</span>
 <span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
 <span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = BayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; model = BayesianModel([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; inference.induced_graph([&#39;C&#39;, &#39;D&#39;, &#39;A&#39;, &#39;B&#39;, &#39;E&#39;])</span>
@@ -768,7 +764,7 @@
         <span class="p">]</span>
         <span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">edges_comb</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="VariableElimination.induced_width"><a class="viewcode-back" href="../../../exact_infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.induced_width">[docs]</a>    <span class="k">def</span> <span class="nf">induced_width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">):</span>
+<div class="viewcode-block" id="VariableElimination.induced_width"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.VariableElimination.induced_width">[docs]</a>    <span class="k">def</span> <span class="nf">induced_width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the width (integer) of the induced graph formed by running Variable Elimination on the network.</span>
 <span class="sd">        The width is the defined as the number of nodes in the largest clique in the graph minus 1.</span>
@@ -782,11 +778,11 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import VariableElimination</span>
 <span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
 <span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = BayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; model = BayesianModel([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
 <span class="sd">        &gt;&gt;&gt; inference.induced_width([&#39;C&#39;, &#39;D&#39;, &#39;A&#39;, &#39;B&#39;, &#39;E&#39;])</span>
@@ -796,7 +792,7 @@
         <span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">graph_clique_number</span><span class="p">(</span><span class="n">induced_graph</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span></div></div>
 
 
-<div class="viewcode-block" id="BeliefPropagation"><a class="viewcode-back" href="../../../exact_infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation">[docs]</a><span class="k">class</span> <span class="nc">BeliefPropagation</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
+<div class="viewcode-block" id="BeliefPropagation"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation">[docs]</a><span class="k">class</span> <span class="nc">BeliefPropagation</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for performing inference using Belief Propagation method.</span>
 
@@ -806,7 +802,7 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    model: BayesianNetwork, MarkovNetwork, FactorGraph, JunctionTree</span>
+<span class="sd">    model: BayesianModel, MarkovModel, FactorGraph, JunctionTree</span>
 <span class="sd">        model for which inference is to performed</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -821,20 +817,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span> <span class="o">=</span> <span class="p">{}</span>
 
-<div class="viewcode-block" id="BeliefPropagation.get_cliques"><a class="viewcode-back" href="../../../exact_infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.get_cliques">[docs]</a>    <span class="k">def</span> <span class="nf">get_cliques</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BeliefPropagation.get_cliques"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.get_cliques">[docs]</a>    <span class="k">def</span> <span class="nf">get_cliques</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns cliques used for belief propagation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="BeliefPropagation.get_clique_beliefs"><a class="viewcode-back" href="../../../exact_infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.get_clique_beliefs">[docs]</a>    <span class="k">def</span> <span class="nf">get_clique_beliefs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BeliefPropagation.get_clique_beliefs"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.get_clique_beliefs">[docs]</a>    <span class="k">def</span> <span class="nf">get_clique_beliefs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns clique beliefs. Should be called after the clique tree (or</span>
 <span class="sd">        junction tree) is calibrated.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span></div>
 
-<div class="viewcode-block" id="BeliefPropagation.get_sepset_beliefs"><a class="viewcode-back" href="../../../exact_infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.get_sepset_beliefs">[docs]</a>    <span class="k">def</span> <span class="nf">get_sepset_beliefs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BeliefPropagation.get_sepset_beliefs"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.get_sepset_beliefs">[docs]</a>    <span class="k">def</span> <span class="nf">get_sepset_beliefs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns sepset beliefs. Should be called after clique tree (or junction</span>
 <span class="sd">        tree) is calibrated.</span>
@@ -966,16 +962,16 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">break</span>
 
-<div class="viewcode-block" id="BeliefPropagation.calibrate"><a class="viewcode-back" href="../../../exact_infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.calibrate">[docs]</a>    <span class="k">def</span> <span class="nf">calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BeliefPropagation.calibrate"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.calibrate">[docs]</a>    <span class="k">def</span> <span class="nf">calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calibration using belief propagation in junction tree or clique tree.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import BeliefPropagation</span>
-<span class="sd">        &gt;&gt;&gt; G = BayesianNetwork([(&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;),</span>
+<span class="sd">        &gt;&gt;&gt; G = BayesianModel([(&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;),</span>
 <span class="sd">        ...                    (&#39;intel&#39;, &#39;SAT&#39;), (&#39;grade&#39;, &#39;letter&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; diff_cpd = TabularCPD(&#39;diff&#39;, 2, [[0.2], [0.8]])</span>
 <span class="sd">        &gt;&gt;&gt; intel_cpd = TabularCPD(&#39;intel&#39;, 3, [[0.5], [0.3], [0.2]])</span>
@@ -999,16 +995,16 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate_junction_tree</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BeliefPropagation.max_calibrate"><a class="viewcode-back" href="../../../exact_infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.max_calibrate">[docs]</a>    <span class="k">def</span> <span class="nf">max_calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BeliefPropagation.max_calibrate"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.max_calibrate">[docs]</a>    <span class="k">def</span> <span class="nf">max_calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Max-calibration of the junction tree using belief propagation.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import BeliefPropagation</span>
-<span class="sd">        &gt;&gt;&gt; G = BayesianNetwork([(&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;),</span>
+<span class="sd">        &gt;&gt;&gt; G = BayesianModel([(&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;),</span>
 <span class="sd">        ...                    (&#39;intel&#39;, &#39;SAT&#39;), (&#39;grade&#39;, &#39;letter&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; diff_cpd = TabularCPD(&#39;diff&#39;, 2, [[0.2], [0.8]])</span>
 <span class="sd">        &gt;&gt;&gt; intel_cpd = TabularCPD(&#39;intel&#39;, 3, [[0.5], [0.3], [0.2]])</span>
@@ -1051,12 +1047,12 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import BeliefPropagation</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
 <span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = BayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; model = BayesianModel([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = BeliefPropagation(model)</span>
 <span class="sd">        &gt;&gt;&gt; phi_query = inference.query([&#39;A&#39;, &#39;B&#39;])</span>
@@ -1148,7 +1144,7 @@
                 <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span>
             <span class="p">)</span>
 
-<div class="viewcode-block" id="BeliefPropagation.query"><a class="viewcode-back" href="../../../exact_infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
+<div class="viewcode-block" id="BeliefPropagation.query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">,</span>
         <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -1182,9 +1178,9 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import BeliefPropagation</span>
-<span class="sd">        &gt;&gt;&gt; bayesian_model = BayesianNetwork([(&#39;A&#39;, &#39;J&#39;), (&#39;R&#39;, &#39;J&#39;), (&#39;J&#39;, &#39;Q&#39;),</span>
+<span class="sd">        &gt;&gt;&gt; bayesian_model = BayesianModel([(&#39;A&#39;, &#39;J&#39;), (&#39;R&#39;, &#39;J&#39;), (&#39;J&#39;, &#39;Q&#39;),</span>
 <span class="sd">        ...                                 (&#39;J&#39;, &#39;L&#39;), (&#39;G&#39;, &#39;L&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; cpd_a = TabularCPD(&#39;A&#39;, 2, [[0.2], [0.8]])</span>
 <span class="sd">        &gt;&gt;&gt; cpd_r = TabularCPD(&#39;R&#39;, 2, [[0.4], [0.6]])</span>
@@ -1219,7 +1215,7 @@
             <span class="p">)</span>
 
         <span class="c1"># Step 2: If virtual_evidence is provided, modify model and evidence.</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_virtual_evidence</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
             <span class="n">virt_evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">}</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
@@ -1231,7 +1227,7 @@
             <span class="p">)</span>
 
         <span class="c1"># Step 3: Do network pruning.</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 
@@ -1250,7 +1246,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">result</span></div>
 
-<div class="viewcode-block" id="BeliefPropagation.map_query"><a class="viewcode-back" href="../../../exact_infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span>
+<div class="viewcode-block" id="BeliefPropagation.map_query"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.ExactInference.BeliefPropagation.map_query">[docs]</a>    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1278,9 +1274,9 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianModel</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import BeliefPropagation</span>
-<span class="sd">        &gt;&gt;&gt; bayesian_model = BayesianNetwork([(&#39;A&#39;, &#39;J&#39;), (&#39;R&#39;, &#39;J&#39;), (&#39;J&#39;, &#39;Q&#39;),</span>
+<span class="sd">        &gt;&gt;&gt; bayesian_model = BayesianModel([(&#39;A&#39;, &#39;J&#39;), (&#39;R&#39;, &#39;J&#39;), (&#39;J&#39;, &#39;Q&#39;),</span>
 <span class="sd">        ...                                 (&#39;J&#39;, &#39;L&#39;), (&#39;G&#39;, &#39;L&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; cpd_a = TabularCPD(&#39;A&#39;, 2, [[0.2], [0.8]])</span>
 <span class="sd">        &gt;&gt;&gt; cpd_r = TabularCPD(&#39;R&#39;, 2, [[0.4], [0.6]])</span>
@@ -1320,7 +1316,7 @@
         <span class="c1"># Make a copy of the original model and then replace self.model with it later.</span>
         <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_virtual_evidence</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
             <span class="n">virt_evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;__&quot;</span> <span class="o">+</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">}</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span>
@@ -1330,7 +1326,7 @@
                 <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 
@@ -1366,25 +1362,28 @@
            
           </div>
           <footer>
+  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, Ankur Ankan.
+        
+        &copy; Copyright 2021, Ankur Ankan
 
     </p>
   </div>
     
     
     
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
+
         </div>
       </div>
 
@@ -1410,7 +1409,6 @@
     })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
     ga('create', 'UA-177825880-1', 'auto');
-    
     ga('send', 'pageview');
     </script>
 

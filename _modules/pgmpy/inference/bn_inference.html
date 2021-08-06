@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>pgmpy.inference.bn_inference &mdash; pgmpy 0.1.15 documentation</title>
   
@@ -13,15 +13,10 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
 
   
   
-
   
-  
-
   
 
   
@@ -31,7 +26,6 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
@@ -55,7 +49,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> pgmpy
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> pgmpy
           
 
           
@@ -65,7 +59,7 @@
             
             
               <div class="version">
-                0.1.15
+                dev branch
               </div>
             
           
@@ -94,6 +88,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../started/install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../started/contributing.html">Contributing to pgmpy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../started/license.html">License</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Base Structures</span></p>
 <ul>
@@ -122,7 +117,7 @@
 <p class="caption"><span class="caption-text">Exact Inference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/ve.html">Variable Elimination</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/ve.html#module-pgmpy.inference.EliminationOrder">Elimination Ordering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/ve.html#elimination-ordering">Elimination Ordering</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/bp.html">Belief Propagation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/causal.html">Causal Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/mplp.html">MPLP</a></li>
@@ -144,11 +139,16 @@
 <p class="caption"><span class="caption-text">Structure Learning</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/pc.html">PC (Constraint-Based Estimator)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/pc.html#module-pgmpy.estimators.CITests">Conditional Independence Tests for PC algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/pc.html#conditional-independence-tests-for-pc-algorithm">Conditional Independence Tests for PC algorithm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/hill.html">Hill Climb Search</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/hill.html#structure-score">Structure Score</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/tree.html">Tree Search</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/mmhc.html">Mmhc Estimator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/exhaustive.html">Exhaustive Search</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Metrics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Correlation Score</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Input/Output</span></p>
 <ul>
@@ -197,8 +197,6 @@
 
 
 
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -224,7 +222,7 @@
             
   <h1>Source code for pgmpy.inference.bn_inference</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">Inference</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianModel</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
@@ -245,9 +243,9 @@
 <span class="sd">        model: Bayesian Model</span>
 <span class="sd">            model on which inference queries will be computed</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianModel</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;Model expected type: BayesianNetwork, got type: &quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+                <span class="s2">&quot;Model expected type: BayesianModel, got type: &quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
             <span class="p">)</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BayesianModelInference</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
@@ -280,7 +278,7 @@
         <span class="p">):</span>
             <span class="n">states</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">variable_evid</span><span class="p">,</span> <span class="n">state_combination</span><span class="p">))</span>
             <span class="n">cached_values</span><span class="p">[</span><span class="n">state_combination</span><span class="p">]</span> <span class="o">=</span> <span class="n">variable_cpd</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span>
-                <span class="n">states</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_warnings</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">states</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span>
             <span class="p">)</span><span class="o">.</span><span class="n">values</span>
 
         <span class="k">return</span> <span class="n">cached_values</span>
@@ -313,9 +311,7 @@
         <span class="p">]</span>
         <span class="n">weights_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span>
-                <span class="n">variable_cpd</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span>
-                    <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">variable_evid</span><span class="p">,</span> <span class="n">sc</span><span class="p">)),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">show_warnings</span><span class="o">=</span><span class="kc">False</span>
-                <span class="p">)</span><span class="o">.</span><span class="n">values</span>
+                <span class="n">variable_cpd</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">variable_evid</span><span class="p">,</span> <span class="n">sc</span><span class="p">)),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
                 <span class="k">for</span> <span class="n">sc</span> <span class="ow">in</span> <span class="n">state_combinations</span>
             <span class="p">]</span>
         <span class="p">)</span>
@@ -334,7 +330,7 @@
         <span class="k">return</span> <span class="n">state_to_index</span><span class="p">,</span> <span class="n">index_to_weight</span>
 
 
-<div class="viewcode-block" id="BayesianModelProbability"><a class="viewcode-back" href="../../../exact_infer/model_testing.html#pgmpy.inference.bn_inference.BayesianModelProbability">[docs]</a><span class="k">class</span> <span class="nc">BayesianModelProbability</span><span class="p">(</span><span class="n">BayesianModelInference</span><span class="p">):</span>
+<div class="viewcode-block" id="BayesianModelProbability"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.bn_inference.BayesianModelProbability">[docs]</a><span class="k">class</span> <span class="nc">BayesianModelProbability</span><span class="p">(</span><span class="n">BayesianModelInference</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class to calculate probability (pmf) values specific to Bayesian Models</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -420,7 +416,7 @@
 
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">probability_node</span><span class="p">)</span>
 
-<div class="viewcode-block" id="BayesianModelProbability.log_probability"><a class="viewcode-back" href="../../../exact_infer/model_testing.html#pgmpy.inference.bn_inference.BayesianModelProbability.log_probability">[docs]</a>    <span class="k">def</span> <span class="nf">log_probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">ordering</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="BayesianModelProbability.log_probability"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.bn_inference.BayesianModelProbability.log_probability">[docs]</a>    <span class="k">def</span> <span class="nf">log_probability</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">ordering</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Evaluate the logarithmic probability of each point in a data set.</span>
 
@@ -447,14 +443,16 @@
             <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">values</span>
         <span class="k">if</span> <span class="n">ordering</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">ordering</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">topological_order</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">ordering</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
 
         <span class="n">logp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_log_probability_node</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ordering</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">ordering</span><span class="p">]</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_log_probability_node</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">ordering</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">topological_order</span>
+            <span class="p">]</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">logp</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BayesianModelProbability.score"><a class="viewcode-back" href="../../../exact_infer/model_testing.html#pgmpy.inference.bn_inference.BayesianModelProbability.score">[docs]</a>    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">ordering</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="BayesianModelProbability.score"><a class="viewcode-back" href="../../../inference.html#pgmpy.inference.bn_inference.BayesianModelProbability.score">[docs]</a>    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">ordering</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute the total log probability density under the model.</span>
 
@@ -481,25 +479,28 @@
            
           </div>
           <footer>
+  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, Ankur Ankan.
+        
+        &copy; Copyright 2021, Ankur Ankan
 
     </p>
   </div>
     
     
     
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
+
         </div>
       </div>
 
@@ -525,7 +526,6 @@
     })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
     ga('create', 'UA-177825880-1', 'auto');
-    
     ga('send', 'pageview');
     </script>
 

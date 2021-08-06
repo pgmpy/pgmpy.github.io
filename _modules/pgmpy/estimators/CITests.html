@@ -3,9 +3,9 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>pgmpy.estimators.CITests &mdash; pgmpy 0.1.15 documentation</title>
   
@@ -13,15 +13,10 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
 
   
   
-
   
-  
-
   
 
   
@@ -31,7 +26,6 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
         <script src="../../../_static/jquery.js"></script>
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/doctools.js"></script>
@@ -55,7 +49,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> pgmpy
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> pgmpy
           
 
           
@@ -65,7 +59,7 @@
             
             
               <div class="version">
-                0.1.15
+                dev branch
               </div>
             
           
@@ -94,6 +88,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../started/install.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../started/contributing.html">Contributing to pgmpy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../started/license.html">License</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Base Structures</span></p>
 <ul>
@@ -122,7 +117,7 @@
 <p class="caption"><span class="caption-text">Exact Inference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/ve.html">Variable Elimination</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/ve.html#module-pgmpy.inference.EliminationOrder">Elimination Ordering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/ve.html#elimination-ordering">Elimination Ordering</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/bp.html">Belief Propagation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/causal.html">Causal Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/mplp.html">MPLP</a></li>
@@ -144,11 +139,16 @@
 <p class="caption"><span class="caption-text">Structure Learning</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/pc.html">PC (Constraint-Based Estimator)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/pc.html#module-pgmpy.estimators.CITests">Conditional Independence Tests for PC algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/pc.html#conditional-independence-tests-for-pc-algorithm">Conditional Independence Tests for PC algorithm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/hill.html">Hill Climb Search</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/hill.html#structure-score">Structure Score</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/tree.html">Tree Search</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/mmhc.html">Mmhc Estimator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/exhaustive.html">Exhaustive Search</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Metrics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Correlation Score</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Input/Output</span></p>
 <ul>
@@ -197,8 +197,6 @@
 
 
 
-
-
 <div role="navigation" aria-label="breadcrumbs navigation">
 
   <ul class="wy-breadcrumbs">
@@ -223,7 +221,7 @@
            <div itemprop="articleBody">
             
   <h1>Source code for pgmpy.estimators.CITests</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span></span><span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -232,7 +230,7 @@
 <span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="kn">import</span> <span class="n">IndependenceAssertion</span>
 
 
-<div class="viewcode-block" id="independence_match"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.independence_match">[docs]</a><span class="k">def</span> <span class="nf">independence_match</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">independencies</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="independence_match"><a class="viewcode-back" href="../../../citests.html#pgmpy.estimators.CITests.independence_match">[docs]</a><span class="k">def</span> <span class="nf">independence_match</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">independencies</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Checks if `X \u27C2 Y | Z` is in `independencies`. This method is implemneted to</span>
 <span class="sd">    have an uniform API when the independencies are provided instead of data.</span>
@@ -257,7 +255,7 @@
     <span class="k">return</span> <span class="n">IndependenceAssertion</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span> <span class="ow">in</span> <span class="n">independencies</span></div>
 
 
-<div class="viewcode-block" id="chi_square"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.chi_square">[docs]</a><span class="k">def</span> <span class="nf">chi_square</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="chi_square"><a class="viewcode-back" href="../../../citests.html#pgmpy.estimators.CITests.chi_square">[docs]</a><span class="k">def</span> <span class="nf">chi_square</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Chi-square conditional independence test.</span>
 <span class="sd">    Tests the null hypothesis that X is independent from Y given Zs.</span>
@@ -332,7 +330,7 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="g_sq"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.g_sq">[docs]</a><span class="k">def</span> <span class="nf">g_sq</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="g_sq"><a class="viewcode-back" href="../../../citests.html#pgmpy.estimators.CITests.g_sq">[docs]</a><span class="k">def</span> <span class="nf">g_sq</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    G squared test for conditional independence. Also commonly known as G-test,</span>
 <span class="sd">    likelihood-ratio or maximum likelihood statistical significance test.</span>
@@ -402,7 +400,7 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="log_likelihood"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.log_likelihood">[docs]</a><span class="k">def</span> <span class="nf">log_likelihood</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="log_likelihood"><a class="viewcode-back" href="../../../citests.html#pgmpy.estimators.CITests.log_likelihood">[docs]</a><span class="k">def</span> <span class="nf">log_likelihood</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Log likelihood ratio test for conditional independence. Also commonly known</span>
 <span class="sd">    as G-test, G-squared test or maximum likelihood statistical significance</span>
@@ -472,7 +470,7 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="freeman_tuckey"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.freeman_tuckey">[docs]</a><span class="k">def</span> <span class="nf">freeman_tuckey</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="freeman_tuckey"><a class="viewcode-back" href="../../../citests.html#pgmpy.estimators.CITests.freeman_tuckey">[docs]</a><span class="k">def</span> <span class="nf">freeman_tuckey</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Freeman Tuckey test for conditional independence [1].</span>
 <span class="sd">    Tests the null hypothesis that X is independent of Y given Zs.</span>
@@ -541,7 +539,7 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="modified_log_likelihood"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.modified_log_likelihood">[docs]</a><span class="k">def</span> <span class="nf">modified_log_likelihood</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="modified_log_likelihood"><a class="viewcode-back" href="../../../citests.html#pgmpy.estimators.CITests.modified_log_likelihood">[docs]</a><span class="k">def</span> <span class="nf">modified_log_likelihood</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Modified log likelihood ratio test for conditional independence.</span>
 <span class="sd">    Tests the null hypothesis that X is independent of Y given Zs.</span>
@@ -612,7 +610,7 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="neyman"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.neyman">[docs]</a><span class="k">def</span> <span class="nf">neyman</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="neyman"><a class="viewcode-back" href="../../../citests.html#pgmpy.estimators.CITests.neyman">[docs]</a><span class="k">def</span> <span class="nf">neyman</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Neyman&#39;s test for conditional independence[1].</span>
 <span class="sd">    Tests the null hypothesis that X is independent of Y given Zs.</span>
@@ -681,7 +679,7 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="cressie_read"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.cressie_read">[docs]</a><span class="k">def</span> <span class="nf">cressie_read</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="cressie_read"><a class="viewcode-back" href="../../../citests.html#pgmpy.estimators.CITests.cressie_read">[docs]</a><span class="k">def</span> <span class="nf">cressie_read</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Cressie Read statistic for conditional independence[1].</span>
 <span class="sd">    Tests the null hypothesis that X is independent of Y given Zs.</span>
@@ -750,7 +748,7 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="power_divergence"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.power_divergence">[docs]</a><span class="k">def</span> <span class="nf">power_divergence</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lambda_</span><span class="o">=</span><span class="s2">&quot;cressie-read&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="power_divergence"><a class="viewcode-back" href="../../../citests.html#pgmpy.estimators.CITests.power_divergence">[docs]</a><span class="k">def</span> <span class="nf">power_divergence</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lambda_</span><span class="o">=</span><span class="s2">&quot;cressie-read&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the Cressie-Read power divergence statistic [1]. The null hypothesis</span>
 <span class="sd">    for the test is X is independent of Y given Z. A lot of the frequency comparision</span>
@@ -859,14 +857,14 @@
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                 <span class="c1"># If one of the values is 0 in the 2x2 table.</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">z_state</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="n">warn</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;Skipping the test </span><span class="si">{</span><span class="n">X</span><span class="si">}</span><span class="s2"> </span><span class="se">\u27C2</span><span class="s2"> </span><span class="si">{</span><span class="n">Y</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">z_state</span><span class="si">}</span><span class="s2">. Not enough samples&quot;</span>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">z_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
                         <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">z_state</span><span class="p">)]</span>
                     <span class="p">)</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="n">warn</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;Skipping the test </span><span class="si">{</span><span class="n">X</span><span class="si">}</span><span class="s2"> </span><span class="se">\u27C2</span><span class="s2"> </span><span class="si">{</span><span class="n">Y</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">z_str</span><span class="si">}</span><span class="s2">. Not enough samples&quot;</span>
                     <span class="p">)</span>
         <span class="n">p_value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">chi</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">dof</span><span class="p">)</span>
@@ -878,7 +876,7 @@
         <span class="k">return</span> <span class="n">chi</span><span class="p">,</span> <span class="n">p_value</span><span class="p">,</span> <span class="n">dof</span></div>
 
 
-<div class="viewcode-block" id="pearsonr"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.pearsonr">[docs]</a><span class="k">def</span> <span class="nf">pearsonr</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="pearsonr"><a class="viewcode-back" href="../../../citests.html#pgmpy.estimators.CITests.pearsonr">[docs]</a><span class="k">def</span> <span class="nf">pearsonr</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes Pearson correlation coefficient and p-value for testing non-correlation.</span>
 <span class="sd">    Should be used only on continuous data. In case when :math:`Z != \null` uses</span>
@@ -953,25 +951,28 @@
            
           </div>
           <footer>
+  
 
   <hr/>
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, Ankur Ankan.
+        
+        &copy; Copyright 2021, Ankur Ankan
 
     </p>
   </div>
     
     
     
-    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
     
-    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
     
     provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
+
         </div>
       </div>
 
@@ -997,7 +998,6 @@
     })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
 
     ga('create', 'UA-177825880-1', 'auto');
-    
     ga('send', 'pageview');
     </script>
 
