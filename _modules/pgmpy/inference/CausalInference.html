@@ -132,6 +132,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Approximate Inference</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/approx_infer.html">Approximate Inference Using Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/bn_sampling.html">Bayesian Model Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/gibbs.html">Gibbs Sampling</a></li>
 </ul>
@@ -151,6 +152,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/tree.html">Tree Search</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/mmhc.html">Mmhc Estimator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/exhaustive.html">Exhaustive Search</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Model Testing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for testing models</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Input/Output</span></p>
 <ul>
@@ -261,6 +266,7 @@
 <span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">DiscreteFactor</span>
 <span class="kn">from</span> <span class="nn">pgmpy.estimators.LinearModel</span> <span class="kn">import</span> <span class="n">LinearEstimator</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">SHOW_PROGRESS</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils.sets</span> <span class="kn">import</span> <span class="n">_powerset</span><span class="p">,</span> <span class="n">_variable_or_iterable_to_set</span>
@@ -845,7 +851,7 @@
                 <span class="sa">f</span><span class="s2">&quot;inference_algo must be one of: &#39;ve&#39;, &#39;bp&#39;, or an instance of pgmpy.inference.Inference. Got: </span><span class="si">{</span><span class="n">inference_algo</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-        <span class="c1"># Step 2: Check if adjustment set is provided, otherwise calcualte it.</span>
+        <span class="c1"># Step 2: Check if adjustment set is provided, otherwise try calculating it.</span>
         <span class="k">if</span> <span class="n">adjustment_set</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">do_vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">do</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
             <span class="n">adjustment_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
@@ -858,17 +864,56 @@
 
         <span class="n">infer</span> <span class="o">=</span> <span class="n">inference_algo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
 
-        <span class="c1"># Step 3: If no do variable specified, do a normal probabilistic inference.</span>
+        <span class="c1"># Step 3.1: If no do variable specified, do a normal probabilistic inference.</span>
         <span class="k">if</span> <span class="n">do</span> <span class="o">==</span> <span class="p">{}:</span>
             <span class="k">return</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># Step 3.2: If no adjustment is required, do a normal probabilistic</span>
+        <span class="c1">#           inference with do variables as the evidence.</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">adjustment_set</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">evidence</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">evidence</span><span class="p">,</span> <span class="o">**</span><span class="n">do</span><span class="p">}</span>
+            <span class="k">return</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-        <span class="c1"># Step 3: Compute \sum_{z} p(variables | do, z) p(z)</span>
+        <span class="c1"># Step 4: For other cases, compute \sum_{z} p(variables | do, z) p(z)</span>
         <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">p_z</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">adjustment_set</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">adj_states</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">adjustment_set</span>
-        <span class="p">]</span>
 
+        <span class="c1"># Step 4.1: Compute p_z and states of z to iterate over.</span>
+        <span class="c1"># For computing p_z, if evidence variables also in adjustment set,</span>
+        <span class="c1"># manually do reduce else inference will throw error.</span>
+        <span class="n">evidence_adj_inter</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">var</span><span class="p">:</span> <span class="n">state</span>
+            <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">adjustment_set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">evidence_adj_inter</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">p_z</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">adjustment_set</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span>
+                <span class="p">[(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">evidence_adj_inter</span><span class="o">.</span><span class="n">items</span><span class="p">()],</span>
+                <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="c1"># Since we are doing reduce over some of the variables, they are</span>
+            <span class="c1"># going to be removed from the factor but would be required to get</span>
+            <span class="c1"># values later. A hackish solution to reintroduce those variables in p_z</span>
+
+            <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">p_z</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">!=</span> <span class="n">adjustment_set</span><span class="p">:</span>
+                <span class="n">p_z</span> <span class="o">=</span> <span class="n">DiscreteFactor</span><span class="p">(</span>
+                    <span class="n">p_z</span><span class="o">.</span><span class="n">variables</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">evidence_adj_inter</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
+                    <span class="nb">list</span><span class="p">(</span><span class="n">p_z</span><span class="o">.</span><span class="n">cardinality</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">evidence_adj_inter</span><span class="p">),</span>
+                    <span class="n">p_z</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                    <span class="n">state_names</span><span class="o">=</span><span class="p">{</span>
+                        <span class="o">**</span><span class="n">p_z</span><span class="o">.</span><span class="n">state_names</span><span class="p">,</span>
+                        <span class="o">**</span><span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence_adj_inter</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+                    <span class="p">},</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p_z</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">adjustment_set</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">adj_states</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">adjustment_set</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">evidence_adj_inter</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">adj_states</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">evidence_adj_inter</span><span class="p">[</span><span class="n">var</span><span class="p">]])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">adj_states</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+
+        <span class="c1"># Step 4.2: Iterate over states of adjustment set and compute values.</span>
         <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">SHOW_PROGRESS</span><span class="p">:</span>
             <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">)</span> <span class="k">for</span> <span class="n">states</span> <span class="ow">in</span> <span class="n">adj_states</span><span class="p">]))</span>
 

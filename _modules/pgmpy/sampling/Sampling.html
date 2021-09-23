@@ -132,6 +132,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Approximate Inference</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/approx_infer.html">Approximate Inference Using Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/bn_sampling.html">Bayesian Model Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/gibbs.html">Gibbs Sampling</a></li>
 </ul>
@@ -151,6 +152,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/tree.html">Tree Search</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/mmhc.html">Mmhc Estimator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/exhaustive.html">Exhaustive Search</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Model Testing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for testing models</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Input/Output</span></p>
 <ul>
@@ -253,16 +258,18 @@
            <div itemprop="articleBody">
             
   <h1>Source code for pgmpy.sampling.Sampling</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">defaultdict</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="kn">import</span> <span class="n">factor_product</span>
 <span class="kn">from</span> <span class="nn">pgmpy.sampling</span> <span class="kn">import</span> <span class="n">BayesianModelInference</span>
 <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span><span class="p">,</span> <span class="n">MarkovChain</span><span class="p">,</span> <span class="n">MarkovNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DynamicBayesianNetwork</span> <span class="k">as</span> <span class="n">DBN</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils.mathext</span> <span class="kn">import</span> <span class="n">sample_discrete</span><span class="p">,</span> <span class="n">sample_discrete_maps</span>
 <span class="kn">from</span> <span class="nn">pgmpy.sampling</span> <span class="kn">import</span> <span class="n">_return_samples</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">SHOW_PROGRESS</span>
@@ -285,7 +292,12 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">BayesianModelSampling</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BayesianModelSampling.forward_sample"><a class="viewcode-back" href="../../../approx_infer/bn_sampling.html#pgmpy.sampling.Sampling.BayesianModelSampling.forward_sample">[docs]</a>    <span class="k">def</span> <span class="nf">forward_sample</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">partial_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generates sample(s) from joint distribution of the bayesian network.</span>
@@ -303,6 +315,10 @@
 
 <span class="sd">        show_progress: boolean</span>
 <span class="sd">            Whether to show a progress bar of samples getting generated.</span>
+
+<span class="sd">        partial_samples: pandas.DataFrame</span>
+<span class="sd">            A pandas dataframe specifying samples on some of the variables in the model. If</span>
+<span class="sd">            specified, the sampling procedure uses these sample values, instead of generating them.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -340,27 +356,31 @@
             <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">SHOW_PROGRESS</span><span class="p">:</span>
                 <span class="n">pbar</span><span class="o">.</span><span class="n">set_description</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generating for node: </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-            <span class="n">cpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-            <span class="n">states</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
-            <span class="n">evidence</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">evidence</span><span class="p">:</span>
-                <span class="n">evidence_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">sampled</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">])</span>
-
-                <span class="n">state_to_index</span><span class="p">,</span> <span class="n">index_to_weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_compute_reduce_maps</span><span class="p">(</span>
-                    <span class="n">variable</span><span class="o">=</span><span class="n">node</span>
-                <span class="p">)</span>
-                <span class="n">unique</span><span class="p">,</span> <span class="n">inverse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
-                    <span class="n">evidence_values</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span>
-                <span class="p">)</span>
-                <span class="n">weight_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">state_to_index</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">u</span><span class="p">)]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">unique</span><span class="p">])[</span>
-                    <span class="n">inverse</span>
-                <span class="p">]</span>
-                <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete_maps</span><span class="p">(</span>
-                    <span class="n">states</span><span class="p">,</span> <span class="n">weight_index</span><span class="p">,</span> <span class="n">index_to_weight</span><span class="p">,</span> <span class="n">size</span>
-                <span class="p">)</span>
+            <span class="c1"># If values specified in partial_samples, use them. Else generate the values.</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">partial_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">node</span> <span class="ow">in</span> <span class="n">partial_samples</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+                <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">partial_samples</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">weights</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">values</span>
-                <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+                <span class="n">cpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+                <span class="n">states</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
+                <span class="n">evidence</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">evidence</span><span class="p">:</span>
+                    <span class="n">evidence_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">sampled</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">])</span>
+
+                    <span class="n">state_to_index</span><span class="p">,</span> <span class="n">index_to_weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_compute_reduce_maps</span><span class="p">(</span>
+                        <span class="n">variable</span><span class="o">=</span><span class="n">node</span>
+                    <span class="p">)</span>
+                    <span class="n">unique</span><span class="p">,</span> <span class="n">inverse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+                        <span class="n">evidence_values</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span>
+                    <span class="n">weight_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">state_to_index</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">u</span><span class="p">)]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">unique</span><span class="p">])[</span>
+                        <span class="n">inverse</span>
+                    <span class="p">]</span>
+                    <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete_maps</span><span class="p">(</span>
+                        <span class="n">states</span><span class="p">,</span> <span class="n">weight_index</span><span class="p">,</span> <span class="n">index_to_weight</span><span class="p">,</span> <span class="n">size</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">weights</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">values</span>
+                    <span class="n">sampled</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
 
         <span class="n">samples_df</span> <span class="o">=</span> <span class="n">_return_samples</span><span class="p">(</span><span class="n">sampled</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names_map</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
@@ -374,6 +394,7 @@
         <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">partial_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generates sample(s) from joint distribution of the bayesian network,</span>
@@ -395,6 +416,10 @@
 
 <span class="sd">        show_progress: boolean</span>
 <span class="sd">            Whether to show a progress bar of samples getting generated.</span>
+
+<span class="sd">        partial_samples: pandas.DataFrame</span>
+<span class="sd">            A pandas dataframe specifying samples on some of the variables in the model. If</span>
+<span class="sd">            specified, the sampling procedure uses these sample values, instead of generating them.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -430,7 +455,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="n">include_latents</span><span class="p">)</span>
 
         <span class="c1"># Setup array to be returned</span>
-        <span class="n">sampled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
+        <span class="n">sampled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
         <span class="n">prob</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -442,8 +467,17 @@
 
         <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">size</span><span class="p">:</span>
             <span class="n">_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(((</span><span class="n">size</span> <span class="o">-</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="n">prob</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">)</span>
+
+            <span class="c1"># If partial_samples is specified, can only generate &lt; partial_samples.shape[0] number of samples</span>
+            <span class="c1"># at a time. For simplicity, just generate the same size as partial_samples.shape[0].</span>
+            <span class="k">if</span> <span class="n">partial_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_size</span> <span class="o">=</span> <span class="n">partial_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
             <span class="n">_sampled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_sample</span><span class="p">(</span>
-                <span class="n">size</span><span class="o">=</span><span class="n">_size</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">size</span><span class="o">=</span><span class="n">_size</span><span class="p">,</span>
+                <span class="n">include_latents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">partial_samples</span><span class="o">=</span><span class="n">partial_samples</span><span class="p">,</span>
             <span class="p">)</span>
 
             <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">:</span>

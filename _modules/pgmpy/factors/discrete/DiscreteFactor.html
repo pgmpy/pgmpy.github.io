@@ -132,6 +132,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Approximate Inference</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../approx_infer/approx_infer.html">Approximate Inference Using Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../approx_infer/bn_sampling.html">Bayesian Model Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../approx_infer/gibbs.html">Gibbs Sampling</a></li>
 </ul>
@@ -151,6 +152,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../structure_estimator/tree.html">Tree Search</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../structure_estimator/mmhc.html">Mmhc Estimator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../structure_estimator/exhaustive.html">Exhaustive Search</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Model Testing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../metrics/metrics.html">Metrics for testing models</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Input/Output</span></p>
 <ul>
@@ -411,7 +416,9 @@
 
 <div class="viewcode-block" id="DiscreteFactor.get_value"><a class="viewcode-back" href="../../../../factors/discrete.html#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.get_value">[docs]</a>    <span class="k">def</span> <span class="nf">get_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the value of the given variable states.</span>
+<span class="sd">        Returns the value of the given variable states. Assumes that the arguments</span>
+<span class="sd">        specified are state names, and falls back to considering it as state no if</span>
+<span class="sd">        can&#39;t find the state name.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -439,11 +446,12 @@
         <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Variable: </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> not found in arguments&quot;</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
-                <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name_to_no</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">]])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> state as number instead of name.&quot;</span><span class="p">)</span>
-                <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name_to_no</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">]])</span>
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> state as number instead of name.&quot;</span><span class="p">)</span>
+                    <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span></div>
 
 <div class="viewcode-block" id="DiscreteFactor.set_value"><a class="viewcode-back" href="../../../../factors/discrete.html#pgmpy.factors.discrete.DiscreteFactor.DiscreteFactor.set_value">[docs]</a>    <span class="k">def</span> <span class="nf">set_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
