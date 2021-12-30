@@ -4,7 +4,8 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
+  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>5. Causal Games &mdash; pgmpy 0.1.15 documentation</title>
@@ -134,6 +135,7 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Approximate Inference</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../approx_infer/approx_infer.html">Approximate Inference Using Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../approx_infer/bn_sampling.html">Bayesian Model Sampling</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../approx_infer/gibbs.html">Gibbs Sampling</a></li>
 </ul>
@@ -153,6 +155,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../structure_estimator/tree.html">Tree Search</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../structure_estimator/mmhc.html">Mmhc Estimator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../structure_estimator/exhaustive.html">Exhaustive Search</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Model Testing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../metrics/metrics.html">Metrics for testing models</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Input/Output</span></p>
 <ul>
@@ -177,7 +183,8 @@
 <li class="toctree-l1"><a class="reference internal" href="Structure%20Learning%20in%20Bayesian%20Networks.html">8. Structure Learning in Bayesian Networks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Structure%20Learning%20with%20Chow-Liu.html">9. Learning Tree Structure from Data using the Chow-Liu Algorithm</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Structure%20Learning%20with%20TAN.html">10. Learning Tree-augmented Naive Bayes (TAN) Structure from Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Extending%20pgmpy.html">11. Extending pgmpy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Simulating%20Data.html">11. Normal Bayesian Network (no time variation)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Extending%20pgmpy.html">12. Extending pgmpy</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorial Notebooks</span></p>
 <ul>
@@ -530,77 +537,20 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <p><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></p>
-<div class="section" id="Causal-Games">
+<section id="Causal-Games">
 <h1><span class="section-number">5. </span>Causal Games<a class="headerlink" href="#Causal-Games" title="Permalink to this headline">¶</a></h1>
 <p>Causal Inference is a new feature for pgmpy, so I wanted to develop a few examples which show off the features that we’re developing!</p>
 <p>This particular notebook walks through the 5 games that used as examples for building intuition about backdoor paths in <em>The Book of Why</em> by Judea Peal. I have consistently been using them to test different implementations of backdoor adjustment from different libraries and include them as unit tests in pgmpy, so I wanted to walk through them and a few other related games as a potential resource to both understand the implementation of CausalInference in pgmpy, as well as develope some useful
 intuitions about backdoor paths.</p>
-<div class="section" id="Objective-of-the-Games">
+<section id="Objective-of-the-Games">
 <h2><span class="section-number">5.1. </span>Objective of the Games<a class="headerlink" href="#Objective-of-the-Games" title="Permalink to this headline">¶</a></h2>
 <p>For each game we get a causal graph, and our goal is to identify the set of deconfounders (often denoted <img class="math" src="../_images/math/95f028ab2b20b895fa12d986e0d9f40f7b6e52d3.png" alt="Z"/>) which will close all backdoor paths from nodes <img class="math" src="../_images/math/ed38fa24f1c94891bd312012aab3f6673be3eb83.png" alt="X"/> to <img class="math" src="../_images/math/7daf0d4815e763eb90f0d5f1dc406f668c1e21db.png" alt="Y"/>. For the time being, I’ll assume that you’re familiar with the concept of backdoor paths, though I may expand this portion to explain it.</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1">#@title Clone the Development Repo &amp; Install Requirements</span>
-<span class="c1">#@markdown Because the Causal Inference class is currently in dev, we will actually need to pull the code from GitHub.  This cell will give us a pretty good development environment for interactively developing and testing the CausalModel class and its methods.</span>
-<span class="c1">#@markdown You only need to run this the first time you&#39;ve started the kernel.</span>
-<span class="o">%%</span><span class="k">sh</span>
-git clone https://github.com/mrklees/pgmpy.git
-mv /content/pgmpy /content/pgmpydev
-cd pgmpydev/
-git checkout feature/causalmodel
-git pull
-#@markdown In testing the CausalModel and Bayesian Network portion of pgmpy we&#39;ve actually been able to use up to date version of Networkx and other packages, but we may be forced to downgrade to networkx 1.11 if errors arise.
-#pip install -U -r requirements-dev.txt
-</pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-/usr/local/lib/python3.6/dist-packages/statsmodels/compat/pandas.py:56: FutureWarning: The pandas.core.datetools module is deprecated and will be removed in a future version. Please use the pandas.tseries module instead.
-  from pandas.core import datetools
-</pre></div></div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-Your branch is up to date with &#39;origin/feature/causalmodel&#39;.
-Updating c459420..95af23b
-Fast-forward
- pgmpy/inference/causal_inference.py                 | 14 +++++++-------
- pgmpy/tests/test_inference/test_causal_inference.py |  2 +-
- 2 files changed, 8 insertions(+), 8 deletions(-)
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-fatal: destination path &#39;pgmpy&#39; already exists and is not an empty directory.
-mv: cannot move &#39;/content/pgmpy&#39; to &#39;/content/pgmpydev/pgmpy&#39;: Directory not empty
-Already on &#39;feature/causalmodel&#39;
-From https://github.com/mrklees/pgmpy
-   c459420..95af23b  feature/causalmodel -&gt; origin/feature/causalmodel
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="c1">#@title Imports</span>
-<span class="o">%</span><span class="k">load_ext</span> autoreload
-<span class="o">%</span><span class="k">autoreload</span> 2
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;/content/pgmpydev&#39;</span><span class="p">)</span>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
 
 <span class="o">!</span>pip3 install -q daft
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
@@ -610,7 +560,7 @@ From https://github.com/mrklees/pgmpy
 
 <span class="c1"># We can now import the development version of pgmpy</span>
 <span class="kn">from</span> <span class="nn">pgmpy.models.BayesianModel</span> <span class="kn">import</span> <span class="n">BayesianModel</span>
-<span class="kn">from</span> <span class="nn">pgmpy.inference.causal_inference</span> <span class="kn">import</span> <span class="n">CausalInference</span>
+<span class="kn">from</span> <span class="nn">pgmpy.inference.CausalInference</span> <span class="kn">import</span> <span class="n">CausalInference</span>
 
 <span class="k">def</span> <span class="nf">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Takes a Daft PGM object and converts it to a pgmpy BayesianModel&quot;&quot;&quot;</span>
@@ -620,17 +570,8 @@ From https://github.com/mrklees/pgmpy
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-The autoreload extension is already loaded. To reload it, use:
-  %reload_ext autoreload
-</pre></div></div>
-</div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -657,24 +598,24 @@ The autoreload extension is already loaded. To reload it, use:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_Causal_Games_4_0.png" src="../_images/examples_Causal_Games_4_0.png" />
+<img alt="../_images/examples_Causal_Games_3_0.png" src="../_images/examples_Causal_Games_3_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="c1">#@markdown Notice how there are no nodes with arrows pointing into X.  Said another way, X has no parents.  Therefore, there can&#39;t be any backdoor paths confounding X and Y.  pgmpy will confirm this in the following way:</span>
 <span class="n">game1</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
 <span class="n">inference1</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">game1</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="n">inference1</span><span class="o">.</span><span class="n">_has_active_backdoors</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span> <span class="n">inference1</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">adj_sets</span> <span class="o">=</span> <span class="n">inference1</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
+<div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
@@ -683,8 +624,17 @@ Are there are active backdoor paths? False
 If so, what&#39;s the possible backdoor adjustment sets? frozenset()
 </pre></div></div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/ankur/pgmpy/examples/pgmpy/models/BayesianModel.py:8: FutureWarning: BayesianModel has been renamed to BayesianNetwork. Please use BayesianNetwork class, BayesianModel will be removed in future.
+  warnings.warn(
+</pre></div></div>
+</div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -718,17 +668,17 @@ If so, what&#39;s the possible backdoor adjustment sets? frozenset()
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_Causal_Games_6_0.png" src="../_images/examples_Causal_Games_6_0.png" />
+<img alt="../_images/examples_Causal_Games_5_0.png" src="../_images/examples_Causal_Games_5_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
 <span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="n">inference</span><span class="o">.</span><span class="n">_has_active_backdoors</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span> <span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
@@ -744,7 +694,7 @@ If so, what&#39;s the possible backdoor adjustment sets? frozenset()
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -773,17 +723,17 @@ If so, what&#39;s the possible backdoor adjustment sets? frozenset()
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_Causal_Games_8_0.png" src="../_images/examples_Causal_Games_8_0.png" />
+<img alt="../_images/examples_Causal_Games_7_0.png" src="../_images/examples_Causal_Games_7_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
 <span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="n">inference</span><span class="o">.</span><span class="n">_has_active_backdoors</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span> <span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
@@ -799,7 +749,7 @@ If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -828,17 +778,17 @@ If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_Causal_Games_10_0.png" src="../_images/examples_Causal_Games_10_0.png" />
+<img alt="../_images/examples_Causal_Games_9_0.png" src="../_images/examples_Causal_Games_9_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
 <span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="n">inference</span><span class="o">.</span><span class="n">_has_active_backdoors</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span> <span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
@@ -854,7 +804,7 @@ If so, what&#39;s the possible backdoor adjustment sets? frozenset()
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -885,17 +835,17 @@ If so, what&#39;s the possible backdoor adjustment sets? frozenset()
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_Causal_Games_12_0.png" src="../_images/examples_Causal_Games_12_0.png" />
+<img alt="../_images/examples_Causal_Games_11_0.png" src="../_images/examples_Causal_Games_11_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
 <span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="n">inference</span><span class="o">.</span><span class="n">_has_active_backdoors</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span> <span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </pre></div>
@@ -907,11 +857,11 @@ If so, what&#39;s the possible backdoor adjustment sets? frozenset()
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Are there are active backdoor paths? True
-If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&#39;B&#39;, &#39;A&#39;}), frozenset({&#39;C&#39;})})
+If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&#39;A&#39;, &#39;B&#39;}), frozenset({&#39;C&#39;})})
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -951,17 +901,17 @@ If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_Causal_Games_14_0.png" src="../_images/examples_Causal_Games_14_0.png" />
+<img alt="../_images/examples_Causal_Games_13_0.png" src="../_images/examples_Causal_Games_13_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
 <span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="n">inference</span><span class="o">.</span><span class="n">_has_active_backdoors</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span> <span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">bd_adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">bd_adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">fd_adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_frontdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
@@ -975,12 +925,12 @@ If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Are there are active backdoor paths? True
-If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&#39;B&#39;, &#39;D&#39;}), frozenset({&#39;A&#39;, &#39;D&#39;}), frozenset({&#39;C&#39;, &#39;D&#39;}), frozenset({&#39;E&#39;, &#39;D&#39;})})
+If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&#39;A&#39;, &#39;D&#39;}), frozenset({&#39;E&#39;, &#39;D&#39;}), frozenset({&#39;B&#39;, &#39;D&#39;}), frozenset({&#39;D&#39;, &#39;C&#39;})})
 Ehat&#39;s the possible front adjustment sets? frozenset({frozenset({&#39;F&#39;})})
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
@@ -1008,17 +958,17 @@ Ehat&#39;s the possible front adjustment sets? frozenset({frozenset({&#39;F&#39;
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/examples_Causal_Games_16_0.png" src="../_images/examples_Causal_Games_16_0.png" />
+<img alt="../_images/examples_Causal_Games_15_0.png" src="../_images/examples_Causal_Games_15_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
 <span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="n">inference</span><span class="o">.</span><span class="n">_has_active_backdoors</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span> <span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">bd_adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">bd_adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="n">fd_adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_frontdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
@@ -1036,17 +986,8 @@ If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&
 Ehat&#39;s the possible front adjustment sets? frozenset({frozenset({&#39;A&#39;})})
 </pre></div></div>
 </div>
-<div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
