@@ -4,7 +4,8 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
+  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>12. Extending pgmpy &mdash; pgmpy 0.1.15 documentation</title>
@@ -101,7 +102,7 @@
 <p class="caption" role="heading"><span class="caption-text">Base Structures</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../base/base.html">Directed Acyclic Graph (DAG)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../base/base.html#module-pgmpy.base.PDAG">Partial Directed Acyclic Graph (PDAG)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../base/base.html#partial-directed-acyclic-graph-pdag">Partial Directed Acyclic Graph (PDAG)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Models</span></p>
 <ul>
@@ -532,7 +533,7 @@ div.rendered_html tbody tr:hover {
     text-align: unset;
 }
 </style>
-<div class="section" id="Extending-pgmpy">
+<section id="Extending-pgmpy">
 <h1><span class="section-number">12. </span>Extending pgmpy<a class="headerlink" href="#Extending-pgmpy" title="Permalink to this headline">¶</a></h1>
 <p>It’s really easy to extend pgmpy to quickly prototype your ideas. pgmpy has a base abstract class for most of main functionalities like: <code class="docutils literal notranslate"><span class="pre">BaseInference</span></code> for inference, <code class="docutils literal notranslate"><span class="pre">BaseFactor</span></code> for model parameters, <code class="docutils literal notranslate"><span class="pre">BaseEstimators</span></code> for parameter and model learning. For adding a new feature to pgmpy we just need to implement a new class inheriting one of these base classes and then we can use the new class with other functionality of pgmpy.</p>
 <p>In this example we will see how to write a new inference algorithm. We will take the example of a very simple algorithm in which we will multiply all the factors/CPD of the network and marginalize over variable to get the desired query.</p>
@@ -548,6 +549,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">pgmpy.inference.base</span> <span class="kn">import</span> <span class="n">Inference</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="kn">import</span> <span class="n">factor_product</span>
 
+
 <span class="k">class</span> <span class="nc">SimpleInference</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
     <span class="c1"># By inheriting Inference we can use self.model, self.factors and self.cardinality in our class</span>
     <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">,</span> <span class="n">evidence</span><span class="p">):</span>
@@ -556,7 +558,9 @@ div.rendered_html tbody tr:hover {
         <span class="n">product</span> <span class="o">=</span> <span class="n">factor_product</span><span class="p">(</span><span class="o">*</span><span class="n">factors_list</span><span class="p">)</span>
         <span class="n">reduced_prod</span> <span class="o">=</span> <span class="n">product</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">evidence</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">reduced_prod</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
-        <span class="n">var_to_marg</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">])</span>
+        <span class="n">var_to_marg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">])</span>
+        <span class="p">)</span>
         <span class="n">marg_prod</span> <span class="o">=</span> <span class="n">reduced_prod</span><span class="o">.</span><span class="n">marginalize</span><span class="p">(</span><span class="n">var_to_marg</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">marg_prod</span>
 </pre></div>
@@ -572,18 +576,27 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianModel</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
 
-<span class="n">model</span> <span class="o">=</span> <span class="n">BayesianModel</span><span class="p">([(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;J&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="s1">&#39;J&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;J&#39;</span><span class="p">,</span> <span class="s1">&#39;Q&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;J&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">)])</span>
-<span class="n">cpd_a</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">]])</span>
-<span class="n">cpd_r</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.4</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">]])</span>
-<span class="n">cpd_j</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;J&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
-                                   <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">]],</span>
-                  <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span><span class="p">],</span> <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-<span class="n">cpd_q</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;Q&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">]],</span>
-                  <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;J&#39;</span><span class="p">],</span> <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-<span class="n">cpd_l</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>
-                                   <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.55</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">]],</span>
-                  <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;J&#39;</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">],</span> <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-<span class="n">cpd_g</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">]])</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">BayesianModel</span><span class="p">([(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;J&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="s2">&quot;J&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;J&quot;</span><span class="p">,</span> <span class="s2">&quot;Q&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;J&quot;</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">)])</span>
+<span class="n">cpd_a</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">]])</span>
+<span class="n">cpd_r</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.4</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">]])</span>
+<span class="n">cpd_j</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="s2">&quot;J&quot;</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">]],</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">cpd_q</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="s2">&quot;Q&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">]],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;J&quot;</span><span class="p">],</span> <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="n">cpd_l</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="s2">&quot;L&quot;</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">,</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.55</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">]],</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;J&quot;</span><span class="p">,</span> <span class="s2">&quot;G&quot;</span><span class="p">],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">cpd_g</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">]])</span>
 
 <span class="n">model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_a</span><span class="p">,</span> <span class="n">cpd_r</span><span class="p">,</span> <span class="n">cpd_j</span><span class="p">,</span> <span class="n">cpd_q</span><span class="p">,</span> <span class="n">cpd_l</span><span class="p">,</span> <span class="n">cpd_g</span><span class="p">)</span>
 </pre></div>
@@ -597,7 +610,7 @@ div.rendered_html tbody tr:hover {
 <span></span><span class="c1"># Doing inference with our SimpleInference</span>
 
 <span class="n">infer</span> <span class="o">=</span> <span class="n">SimpleInference</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="n">a</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">var</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;J&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">var</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;J&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
 </pre></div>
 </div>
 </div>
@@ -633,8 +646,8 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">VariableElimination</span>
 
 <span class="n">infer</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="n">result</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;J&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;R&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">])</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s2">&quot;A&quot;</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;J&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
 </div>
@@ -652,7 +665,7 @@ div.rendered_html tbody tr:hover {
 </pre></div></div>
 </div>
 <p>Similarly we can also create new classes for Factor or CPDs and add them to networks and do inference over it or can write a new estimator class.</p>
-</div>
+</section>
 
 
            </div>

@@ -4,7 +4,8 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  
+  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <title>8. Structure Learning in Bayesian Networks &mdash; pgmpy 0.1.15 documentation</title>
@@ -101,7 +102,7 @@
 <p class="caption" role="heading"><span class="caption-text">Base Structures</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../base/base.html">Directed Acyclic Graph (DAG)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../base/base.html#module-pgmpy.base.PDAG">Partial Directed Acyclic Graph (PDAG)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../base/base.html#partial-directed-acyclic-graph-pdag">Partial Directed Acyclic Graph (PDAG)</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Models</span></p>
 <ul>
@@ -537,13 +538,13 @@ div.rendered_html tbody tr:hover {
     text-align: unset;
 }
 </style>
-<div class="section" id="Structure-Learning-in-Bayesian-Networks">
+<section id="Structure-Learning-in-Bayesian-Networks">
 <h1><span class="section-number">8. </span>Structure Learning in Bayesian Networks<a class="headerlink" href="#Structure-Learning-in-Bayesian-Networks" title="Permalink to this headline">¶</a></h1>
 <p>In this notebook, we show examples for using the Structure Learning Algorithms in pgmpy. Currently, pgmpy has implementation of 3 main algorithms: 1. PC with stable and parallel variants. 2. Hill-Climb Search 3. Exhaustive Search</p>
 <p>For PC the following conditional independence test can be used: 1. Chi-Square test (<a class="reference external" href="https://en.wikipedia.org/wiki/Chi-squared_test">https://en.wikipedia.org/wiki/Chi-squared_test</a>) 2. Pearsonr (<a class="reference external" href="https://en.wikipedia.org/wiki/Partial_correlation#Using_linear_regression">https://en.wikipedia.org/wiki/Partial_correlation#Using_linear_regression</a>) 3. G-squared (<a class="reference external" href="https://en.wikipedia.org/wiki/G-test">https://en.wikipedia.org/wiki/G-test</a>) 4. Log-likelihood (<a class="reference external" href="https://en.wikipedia.org/wiki/G-test">https://en.wikipedia.org/wiki/G-test</a>) 5. Freeman-Tuckey (Read, Campbell B. “Freeman—Tukey chi-squared goodness-of-fit statistics.” Statistics &amp; probability letters 18.4 (1993): 271-278.) 6. Modified
 Log-likelihood 7. Neymann (<a class="reference external" href="https://en.wikipedia.org/wiki/Neyman%E2%80%93Pearson_lemma">https://en.wikipedia.org/wiki/Neyman%E2%80%93Pearson_lemma</a>) 8. Cressie Read (Cressie, Noel, and Timothy RC Read. “Multinomial goodness‐of‐fit tests.” Journal of the Royal Statistical Society: Series B (Methodological) 46.3 (1984): 440-464) 9. Power Divergence (Cressie, Noel, and Timothy RC Read. “Multinomial goodness‐of‐fit tests.” Journal of the Royal Statistical Society: Series B (Methodological) 46.3 (1984): 440-464.)</p>
 <p>For Hill-Climb and Exhausitive Search the following scoring methods can be used: 1. K2 Score 2. BDeu Score 3. Bic Score</p>
-<div class="section" id="Generate-some-data">
+<section id="Generate-some-data">
 <h2><span class="section-number">8.1. </span>Generate some data<a class="headerlink" href="#Generate-some-data" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -567,7 +568,7 @@ Log-likelihood 7. Neymann (<a class="reference external" href="https://en.wikipe
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="n">model</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="s1">&#39;alarm&#39;</span><span class="p">)</span>
+<span></span><span class="n">model</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="s2">&quot;alarm&quot;</span><span class="p">)</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="n">BayesianModelSampling</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">forward_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">))</span>
 <span class="n">samples</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
@@ -761,16 +762,20 @@ Generating for node: CVP: 100%|██████████| 37/37 [00:00&lt;0
 <span></span><span class="c1"># Funtion to evaluate the learned model structures.</span>
 <span class="k">def</span> <span class="nf">get_f1_score</span><span class="p">(</span><span class="n">estimated_model</span><span class="p">,</span> <span class="n">true_model</span><span class="p">):</span>
     <span class="n">nodes</span> <span class="o">=</span> <span class="n">estimated_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
-    <span class="n">est_adj</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">to_numpy_matrix</span><span class="p">(</span><span class="n">estimated_model</span><span class="o">.</span><span class="n">to_undirected</span><span class="p">(),</span> <span class="n">nodelist</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-    <span class="n">true_adj</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">to_numpy_matrix</span><span class="p">(</span><span class="n">true_model</span><span class="o">.</span><span class="n">to_undirected</span><span class="p">(),</span> <span class="n">nodelist</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">est_adj</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">to_numpy_matrix</span><span class="p">(</span>
+        <span class="n">estimated_model</span><span class="o">.</span><span class="n">to_undirected</span><span class="p">(),</span> <span class="n">nodelist</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">)</span>
+    <span class="n">true_adj</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">to_numpy_matrix</span><span class="p">(</span>
+        <span class="n">true_model</span><span class="o">.</span><span class="n">to_undirected</span><span class="p">(),</span> <span class="n">nodelist</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">)</span>
 
     <span class="n">f1</span> <span class="o">=</span> <span class="n">f1_score</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">true_adj</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">est_adj</span><span class="p">))</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;F1-score for the model skeleton: &quot;</span><span class="p">,</span> <span class="n">f1</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-</div>
-<div class="section" id="Learn-the-model-structure-using-PC">
+</section>
+<section id="Learn-the-model-structure-using-PC">
 <h2><span class="section-number">8.2. </span>Learn the model structure using PC<a class="headerlink" href="#Learn-the-model-structure-using-PC" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -778,7 +783,7 @@ Generating for node: CVP: 100%|██████████| 37/37 [00:00&lt;0
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">est</span> <span class="o">=</span> <span class="n">PC</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">samples</span><span class="p">)</span>
-<span class="n">estimated_model</span> <span class="o">=</span> <span class="n">est</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">variant</span><span class="o">=</span><span class="s1">&#39;stable&#39;</span><span class="p">,</span> <span class="n">max_cond_vars</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">estimated_model</span> <span class="o">=</span> <span class="n">est</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">variant</span><span class="o">=</span><span class="s2">&quot;stable&quot;</span><span class="p">,</span> <span class="n">max_cond_vars</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 <span class="n">get_f1_score</span><span class="p">(</span><span class="n">estimated_model</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -813,7 +818,7 @@ F1-score for the model skeleton:  0.7777777777777779
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">est</span> <span class="o">=</span> <span class="n">PC</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">samples</span><span class="p">)</span>
-<span class="n">estimated_model</span> <span class="o">=</span> <span class="n">est</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">variant</span><span class="o">=</span><span class="s1">&#39;orig&#39;</span><span class="p">,</span> <span class="n">max_cond_vars</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">estimated_model</span> <span class="o">=</span> <span class="n">est</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">variant</span><span class="o">=</span><span class="s2">&quot;orig&quot;</span><span class="p">,</span> <span class="n">max_cond_vars</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 <span class="n">get_f1_score</span><span class="p">(</span><span class="n">estimated_model</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -842,8 +847,8 @@ F1-score for the model skeleton:  0.7777777777777779
 
 </pre></div></div>
 </div>
-</div>
-<div class="section" id="Learn-the-model-structure-using-Hill-Climb-Search">
+</section>
+<section id="Learn-the-model-structure-using-Hill-Climb-Search">
 <h2><span class="section-number">8.3. </span>Learn the model structure using Hill-Climb Search<a class="headerlink" href="#Learn-the-model-structure-using-Hill-Climb-Search" title="Permalink to this headline">¶</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -852,7 +857,9 @@ F1-score for the model skeleton:  0.7777777777777779
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">K2Score</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">samples</span><span class="p">)</span>
 <span class="n">est</span> <span class="o">=</span> <span class="n">HillClimbSearch</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">samples</span><span class="p">)</span>
-<span class="n">estimated_model</span> <span class="o">=</span> <span class="n">est</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">scoring_method</span><span class="o">=</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">max_indegree</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">))</span>
+<span class="n">estimated_model</span> <span class="o">=</span> <span class="n">est</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span>
+    <span class="n">scoring_method</span><span class="o">=</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">max_indegree</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)</span>
+<span class="p">)</span>
 <span class="n">get_f1_score</span><span class="p">(</span><span class="n">estimated_model</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -881,8 +888,8 @@ F1-score for the model skeleton:  0.84
 
 </pre></div></div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
            </div>
