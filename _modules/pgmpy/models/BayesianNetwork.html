@@ -15,6 +15,7 @@
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -156,9 +157,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-      <li>pgmpy.models.BayesianNetwork</li>
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pgmpy.models.BayesianNetwork</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -1497,7 +1498,8 @@
 
 <div class="viewcode-block" id="BayesianNetwork.save"><a class="viewcode-back" href="../../../models/bayesiannetwork.html#pgmpy.models.BayesianNetwork.BayesianNetwork.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">filetype</span><span class="o">=</span><span class="s2">&quot;bif&quot;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Writes the model to a file.</span>
+<span class="sd">        Writes the model to a file. Plese avoid using any special characters or</span>
+<span class="sd">        spaces in variable or state names.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1537,18 +1539,22 @@
             <span class="n">writer</span><span class="o">.</span><span class="n">write_xmlbif</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="BayesianNetwork.load"><a class="viewcode-back" href="../../../models/bayesiannetwork.html#pgmpy.models.BayesianNetwork.BayesianNetwork.load">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">filetype</span><span class="o">=</span><span class="s2">&quot;bif&quot;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">filetype</span><span class="o">=</span><span class="s2">&quot;bif&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Writes the model to a file.</span>
+<span class="sd">        Read the model from a file.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        filename: str</span>
-<span class="sd">            The path along with the filename where to write the file.</span>
+<span class="sd">            The path along with the filename where to read the file.</span>
 
 <span class="sd">        filetype: str (default: bif)</span>
-<span class="sd">            The format in which to write the model to file. Can be one of</span>
+<span class="sd">            The format of the model file. Can be one of</span>
 <span class="sd">            the following: bif, uai, xmlbif.</span>
+
+<span class="sd">        kwargs: kwargs</span>
+<span class="sd">            Any additional arguments for the reader class or get_model method.</span>
+<span class="sd">            Please refer the file format class for details.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1564,8 +1570,18 @@
         <span class="k">if</span> <span class="n">filetype</span> <span class="o">==</span> <span class="s2">&quot;bif&quot;</span><span class="p">:</span>
             <span class="kn">from</span> <span class="nn">pgmpy.readwrite</span> <span class="kn">import</span> <span class="n">BIFReader</span>
 
-            <span class="n">reader</span> <span class="o">=</span> <span class="n">BIFReader</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">reader</span><span class="o">.</span><span class="n">get_model</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s2">&quot;n_jobs&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">n_jobs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;n_jobs&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">n_jobs</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+            <span class="k">if</span> <span class="s2">&quot;state_name_type&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="n">state_name_type</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;state_name_type&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">state_name_type</span> <span class="o">=</span> <span class="nb">str</span>
+
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">BIFReader</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">reader</span><span class="o">.</span><span class="n">get_model</span><span class="p">(</span><span class="n">state_name_type</span><span class="o">=</span><span class="n">state_name_type</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">filetype</span> <span class="o">==</span> <span class="s2">&quot;uai&quot;</span><span class="p">:</span>
             <span class="kn">from</span> <span class="nn">pgmpy.readwrite</span> <span class="kn">import</span> <span class="n">UAIReader</span>

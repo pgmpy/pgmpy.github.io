@@ -16,6 +16,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -180,8 +181,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-      <li><span class="section-number">8. </span>Sampling In Continuous Graphical Models</li>
+      <li><a href="../index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active"><span class="section-number">8. </span>Sampling In Continuous Graphical Models</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/detailed_notebooks/8. Sampling Algorithms.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -481,60 +482,60 @@ div.rendered_html tbody tr:hover {
 <p>Hamiltonian Monte Carlo (HMC) is a Markov Chain Monte Carlo (MCMC) that proposes future states in Markov Chain using Hamiltonian Dynamics. Before understanding the HMC algorithm lets first understand Hamiltonian Dynamics.</p>
 <section id="Hamiltonian-Dynamics">
 <h3><span class="section-number">8.1.1. </span>Hamiltonian Dynamics<a class="headerlink" href="#Hamiltonian-Dynamics" title="Permalink to this heading"></a></h3>
-<p>Hamiltonian dynamics are used to describe how objects move throughout a system. Hamiltonian dynamics is defined in terms of object location <img class="math" src="../_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and its momentum <img class="math" src="../_images/math/141bbefb74014fc5e43499901bf78607ae335583.png" alt="p"/> (equivalent to object’s mass times velocity) at some time <img class="math" src="../_images/math/907a4add6d5db5b7f197f7924f1371b8ac404fe6.png" alt="t"/>. For each location of object there is an associated potential energy <img class="math" src="../_images/math/f27e04a3bf55c0b10cc028169f91878fda1bcd9e.png" alt="U(x)"/> and with momentum there is associated kinetic energy <img class="math" src="../_images/math/d202e378ff02af696b2d38bd1ea983e92a5f2743.png" alt="K(p)"/>. The total energy of system is constant and is called as Hamiltonian <img class="math" src="../_images/math/44bfc9c9aaf5a94b2aa0b21b5ccf3092d71ada0e.png" alt="H(x, p)"/>, defined as the sum of
+<p>Hamiltonian dynamics are used to describe how objects move throughout a system. Hamiltonian dynamics is defined in terms of object location <img class="math" src="_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and its momentum <img class="math" src="_images/math/141bbefb74014fc5e43499901bf78607ae335583.png" alt="p"/> (equivalent to object’s mass times velocity) at some time <img class="math" src="_images/math/907a4add6d5db5b7f197f7924f1371b8ac404fe6.png" alt="t"/>. For each location of object there is an associated potential energy <img class="math" src="_images/math/f27e04a3bf55c0b10cc028169f91878fda1bcd9e.png" alt="U(x)"/> and with momentum there is associated kinetic energy <img class="math" src="_images/math/d202e378ff02af696b2d38bd1ea983e92a5f2743.png" alt="K(p)"/>. The total energy of system is constant and is called as Hamiltonian <img class="math" src="_images/math/44bfc9c9aaf5a94b2aa0b21b5ccf3092d71ada0e.png" alt="H(x, p)"/>, defined as the sum of
 potential energy and kinetic energy:</p>
 <div class="math">
-<p><img src="../_images/math/0ecc8bab0b4b4658401a59cc62710ab4c2c3578a.png" alt="H(x, p) = U(x) + K(p)"/></p>
-</div><p>The partial derivatives of the Hamiltonian determines how position <img class="math" src="../_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and momentum <img class="math" src="../_images/math/141bbefb74014fc5e43499901bf78607ae335583.png" alt="p"/> change over time <img class="math" src="../_images/math/907a4add6d5db5b7f197f7924f1371b8ac404fe6.png" alt="t"/>, according to Hamiltonian’s equations:</p>
+<p><img src="_images/math/0ecc8bab0b4b4658401a59cc62710ab4c2c3578a.png" alt="H(x, p) = U(x) + K(p)"/></p>
+</div><p>The partial derivatives of the Hamiltonian determines how position <img class="math" src="_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and momentum <img class="math" src="_images/math/141bbefb74014fc5e43499901bf78607ae335583.png" alt="p"/> change over time <img class="math" src="_images/math/907a4add6d5db5b7f197f7924f1371b8ac404fe6.png" alt="t"/>, according to Hamiltonian’s equations:</p>
 <div class="math">
-<p><img src="../_images/math/21b1a3e5ce44e7913de823553a48e53cf8fc2e7d.png" alt="\frac{dx_i}{dt} = \frac{\partial H}{\partial p_i} = \frac{\partial K(p)}{\partial p_i}"/></p>
+<p><img src="_images/math/21b1a3e5ce44e7913de823553a48e53cf8fc2e7d.png" alt="\frac{dx_i}{dt} = \frac{\partial H}{\partial p_i} = \frac{\partial K(p)}{\partial p_i}"/></p>
 </div><div class="math">
-<p><img src="../_images/math/13d7dec09fca3075decce7b314a8ca096457e689.png" alt="\frac{dp_i}{dt} = -\frac{\partial H}{\partial x_i} = -\frac{\partial U(x)}{\partial x_i}"/></p>
-</div><p>The above equations operates on a <em>d-dimensional position vector</em> <img class="math" src="../_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and a <em>d-dimensional momentum vector</em> <img class="math" src="../_images/math/141bbefb74014fc5e43499901bf78607ae335583.png" alt="p"/>, for <img class="math" src="../_images/math/e43960c1376a9268121e5f7cca445c7d393edc88.png" alt="i = 1, 2, \cdots, d"/>.</p>
-<p>Thus, if we can evaluate <img class="math" src="../_images/math/e6766d320f6f8f2c20d9d108b026f8db9db99848.png" alt="\frac{\partial U(x)}{\partial x_i}"/> and <img class="math" src="../_images/math/96791fd8289860b0ebb718ebc1fc02964ef4c492.png" alt="\frac{\partial K(p)}{\partial p_i}"/> and have a set of initial conditions i.e an initial position and initial momentum at time <img class="math" src="../_images/math/ec0f4b5ec85f2c2005b5f78c12cf51c1cb2bb167.png" alt="t_0"/>, then we can predict the location and momentum of object at any future time <img class="math" src="../_images/math/c820f2f0a659008aa458fba1abfda7938f21c28e.png" alt="t = t_0 + T"/> by simulating dynamics for a time duration <img class="math" src="../_images/math/e8dea8254118f111b5fb20895b03528c17566f06.png" alt="T"/>.</p>
+<p><img src="_images/math/13d7dec09fca3075decce7b314a8ca096457e689.png" alt="\frac{dp_i}{dt} = -\frac{\partial H}{\partial x_i} = -\frac{\partial U(x)}{\partial x_i}"/></p>
+</div><p>The above equations operates on a <em>d-dimensional position vector</em> <img class="math" src="_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and a <em>d-dimensional momentum vector</em> <img class="math" src="_images/math/141bbefb74014fc5e43499901bf78607ae335583.png" alt="p"/>, for <img class="math" src="_images/math/e43960c1376a9268121e5f7cca445c7d393edc88.png" alt="i = 1, 2, \cdots, d"/>.</p>
+<p>Thus, if we can evaluate <img class="math" src="_images/math/e6766d320f6f8f2c20d9d108b026f8db9db99848.png" alt="\frac{\partial U(x)}{\partial x_i}"/> and <img class="math" src="_images/math/96791fd8289860b0ebb718ebc1fc02964ef4c492.png" alt="\frac{\partial K(p)}{\partial p_i}"/> and have a set of initial conditions i.e an initial position and initial momentum at time <img class="math" src="_images/math/ec0f4b5ec85f2c2005b5f78c12cf51c1cb2bb167.png" alt="t_0"/>, then we can predict the location and momentum of object at any future time <img class="math" src="_images/math/c820f2f0a659008aa458fba1abfda7938f21c28e.png" alt="t = t_0 + T"/> by simulating dynamics for a time duration <img class="math" src="_images/math/e8dea8254118f111b5fb20895b03528c17566f06.png" alt="T"/>.</p>
 </section>
 <section id="Discretizing-Hamiltonian’s-Equations">
 <h3><span class="section-number">8.1.2. </span>Discretizing Hamiltonian’s Equations<a class="headerlink" href="#Discretizing-Hamiltonian’s-Equations" title="Permalink to this heading"></a></h3>
-<p>The Hamiltonian’s equations describes an object’s motion in regard to time, which is a continuous variable. For simulating dynamics on a computer, Hamiltonian’s equations must be numerically approximated by discretizing time. This is done by splitting the time interval <img class="math" src="../_images/math/e8dea8254118f111b5fb20895b03528c17566f06.png" alt="T"/> into small intervals of size <img class="math" src="../_images/math/0ad7b30534898f253002222f998f38001e604648.png" alt="\epsilon"/>.</p>
+<p>The Hamiltonian’s equations describes an object’s motion in regard to time, which is a continuous variable. For simulating dynamics on a computer, Hamiltonian’s equations must be numerically approximated by discretizing time. This is done by splitting the time interval <img class="math" src="_images/math/e8dea8254118f111b5fb20895b03528c17566f06.png" alt="T"/> into small intervals of size <img class="math" src="_images/math/0ad7b30534898f253002222f998f38001e604648.png" alt="\epsilon"/>.</p>
 <section id="Euler’s-Method">
 <h4><span class="section-number">8.1.2.1. </span>Euler’s Method<a class="headerlink" href="#Euler’s-Method" title="Permalink to this heading"></a></h4>
-<p>For Hamiltonian’s equations, this method performs the following steps, for each component of position and momentum (indexed by <img class="math" src="../_images/math/865bf9c8cbee3576138321ac5e622030a2624d47.png" alt="i=1, ...,d"/>)</p>
+<p>For Hamiltonian’s equations, this method performs the following steps, for each component of position and momentum (indexed by <img class="math" src="_images/math/865bf9c8cbee3576138321ac5e622030a2624d47.png" alt="i=1, ...,d"/>)</p>
 <div class="math">
-<p><img src="../_images/math/0b147fa60a9d06a93c2314b32d5d24953d31e09f.png" alt="p_i(t + \epsilon) = p_i(t) + \epsilon \frac{dp_i}{dt}(t) = p_i(t) - \epsilon \frac{\partial U}{\partial x_i(t)}"/></p>
+<p><img src="_images/math/0b147fa60a9d06a93c2314b32d5d24953d31e09f.png" alt="p_i(t + \epsilon) = p_i(t) + \epsilon \frac{dp_i}{dt}(t) = p_i(t) - \epsilon \frac{\partial U}{\partial x_i(t)}"/></p>
 </div><div class="math">
-<p><img src="../_images/math/ee672719746c870de0e1cc42c054f2eed2346ee0.png" alt="x_i(t + \epsilon) = x_i(t) + \epsilon \frac{dx_i}{dt} = x_i(t) + \epsilon \frac{\partial K}{\partial p_i(t)}"/></p>
+<p><img src="_images/math/ee672719746c870de0e1cc42c054f2eed2346ee0.png" alt="x_i(t + \epsilon) = x_i(t) + \epsilon \frac{dx_i}{dt} = x_i(t) + \epsilon \frac{\partial K}{\partial p_i(t)}"/></p>
 </div><p>Even better results can be obtained if we use updated value of momentum in later equation</p>
 <div class="math">
-<p><img src="../_images/math/32bc467308ee3756a12bccf43dceb32973388b98.png" alt="x_i(t + \epsilon) = x_i(t) + \epsilon \frac{\partial K}{\partial p_i(t + \epsilon)}"/></p>
+<p><img src="_images/math/32bc467308ee3756a12bccf43dceb32973388b98.png" alt="x_i(t + \epsilon) = x_i(t) + \epsilon \frac{\partial K}{\partial p_i(t + \epsilon)}"/></p>
 </div><p>This method is called as <strong>Modified Euler’s method</strong>.</p>
 </section>
 <section id="Leapfrog-Method">
 <h4><span class="section-number">8.1.2.2. </span>Leapfrog Method<a class="headerlink" href="#Leapfrog-Method" title="Permalink to this heading"></a></h4>
 <p>Unlike Euler’s method where we take full steps for updating position and momentum in leapfrog method we take half steps to update momentum value.</p>
 <div class="math">
-<p><img src="../_images/math/69e5349bfd834e15e39e4b8280649a87a7c702f3.png" alt="p_i(t + \epsilon / 2) = p_i(t) - (\epsilon / 2) \frac{\partial U}{\partial x_i(t)}"/></p>
+<p><img src="_images/math/69e5349bfd834e15e39e4b8280649a87a7c702f3.png" alt="p_i(t + \epsilon / 2) = p_i(t) - (\epsilon / 2) \frac{\partial U}{\partial x_i(t)}"/></p>
 </div><div class="math">
-<p><img src="../_images/math/2eb588502f3bf1f757670c4668f406b923b6ea16.png" alt="x_i(t + \epsilon) = x_i(t) + \epsilon \frac{\partial K}{\partial p_i(t + \epsilon /2)}"/></p>
+<p><img src="_images/math/2eb588502f3bf1f757670c4668f406b923b6ea16.png" alt="x_i(t + \epsilon) = x_i(t) + \epsilon \frac{\partial K}{\partial p_i(t + \epsilon /2)}"/></p>
 </div><div class="math">
-<p><img src="../_images/math/65a1a8d3ca3d74e0bc164ecb05b1342b08a18e99.png" alt="p_i(t + \epsilon) = p_i(t) - (\epsilon / 2) \frac{\partial U}{\partial x_i(t + \epsilon)}"/></p>
+<p><img src="_images/math/65a1a8d3ca3d74e0bc164ecb05b1342b08a18e99.png" alt="p_i(t + \epsilon) = p_i(t) - (\epsilon / 2) \frac{\partial U}{\partial x_i(t + \epsilon)}"/></p>
 </div><p>Leapfrog method yields even better result than Modified Euler Method.</p>
 </section>
 <section id="Example:-Simulating-Hamiltonian-dynamics-of-a-simple-pendulum">
 <h4><span class="section-number">8.1.2.3. </span>Example: Simulating Hamiltonian dynamics of a simple pendulum<a class="headerlink" href="#Example:-Simulating-Hamiltonian-dynamics-of-a-simple-pendulum" title="Permalink to this heading"></a></h4>
-<p>Imagine a bob of mass <img class="math" src="../_images/math/5b86129132ab70546e40931c75182dfb9883645a.png" alt="m = 1"/> attached to a string of length <img class="math" src="../_images/math/db5ab47290508c9c3c34eca635ea2f08a72db2ac.png" alt="l=1.5"/> whose one end is fixed at point <img class="math" src="../_images/math/962c1d81036036ef55bc76d513ca5e160bae8ab4.png" alt="(x=0, y=0)"/>. The equilibrium position of the pendulum is at <img class="math" src="../_images/math/72810d8f4a084481458a621a19c31dfa768e0a30.png" alt="x = 0"/>. Now keeping string stretched we move it some distance horizontally say <img class="math" src="../_images/math/ed7fb0260e58d3ca5851e823ff991dae4cde5671.png" alt="x_0"/>. The corresponding change in potential energy is given by</p>
-<p><img class="math" src="../_images/math/f13d36414f970764fa54539bd1bbb50761680299.png" alt="U(h) = mg\Delta h"/>, where <img class="math" src="../_images/math/852b8ffc2553dfa818c2e131e468d82d26f1af1e.png" alt="\Delta h"/> is change in height and <img class="math" src="../_images/math/157ba5711de84b4c715a0478fd8ae440e596d96e.png" alt="g"/> is gravity of earth.</p>
-<p>Using simple trigonometry one can derive relationship between <img class="math" src="../_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and <img class="math" src="../_images/math/852b8ffc2553dfa818c2e131e468d82d26f1af1e.png" alt="\Delta h"/>.</p>
+<p>Imagine a bob of mass <img class="math" src="_images/math/5b86129132ab70546e40931c75182dfb9883645a.png" alt="m = 1"/> attached to a string of length <img class="math" src="_images/math/db5ab47290508c9c3c34eca635ea2f08a72db2ac.png" alt="l=1.5"/> whose one end is fixed at point <img class="math" src="_images/math/962c1d81036036ef55bc76d513ca5e160bae8ab4.png" alt="(x=0, y=0)"/>. The equilibrium position of the pendulum is at <img class="math" src="_images/math/72810d8f4a084481458a621a19c31dfa768e0a30.png" alt="x = 0"/>. Now keeping string stretched we move it some distance horizontally say <img class="math" src="_images/math/ed7fb0260e58d3ca5851e823ff991dae4cde5671.png" alt="x_0"/>. The corresponding change in potential energy is given by</p>
+<p><img class="math" src="_images/math/f13d36414f970764fa54539bd1bbb50761680299.png" alt="U(h) = mg\Delta h"/>, where <img class="math" src="_images/math/852b8ffc2553dfa818c2e131e468d82d26f1af1e.png" alt="\Delta h"/> is change in height and <img class="math" src="_images/math/157ba5711de84b4c715a0478fd8ae440e596d96e.png" alt="g"/> is gravity of earth.</p>
+<p>Using simple trigonometry one can derive relationship between <img class="math" src="_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and <img class="math" src="_images/math/852b8ffc2553dfa818c2e131e468d82d26f1af1e.png" alt="\Delta h"/>.</p>
 <div class="math">
-<p><img src="../_images/math/77a5147233187c0026b4b9120709b4cb1648ddc0.png" alt="U(x) = mgl(1 - cos(sin^{-1}(x/l)))"/></p>
+<p><img src="_images/math/77a5147233187c0026b4b9120709b4cb1648ddc0.png" alt="U(x) = mgl(1 - cos(sin^{-1}(x/l)))"/></p>
 </div><p>Kinetic energy of bob can be written in terms of momentum as</p>
 <div class="math">
-<p><img src="../_images/math/3197a04a4f787dede91fedcfc4badc487d3bb463.png" alt="K(v) = \frac{mv^2}{2} = \frac{(mv)^2}{2m} = \frac{p^2}{2m} = K(p)"/></p>
+<p><img src="_images/math/3197a04a4f787dede91fedcfc4badc487d3bb463.png" alt="K(v) = \frac{mv^2}{2} = \frac{(mv)^2}{2m} = \frac{p^2}{2m} = K(p)"/></p>
 </div><p>Further, partial derivatives of potential and kinetic energy can be written as:</p>
 <div class="math">
-<p><img src="../_images/math/46e9f32c19f5d6a3b9ca4f211fbc7991341c6c73.png" alt="\frac{\partial U}{\partial x} = \frac{mglx}{\sqrt{l^2 - x^2}}"/></p>
+<p><img src="_images/math/46e9f32c19f5d6a3b9ca4f211fbc7991341c6c73.png" alt="\frac{\partial U}{\partial x} = \frac{mglx}{\sqrt{l^2 - x^2}}"/></p>
 </div><p>and</p>
 <div class="math">
-<p><img src="../_images/math/3eaca3f740efcd398ef2a9dc9ae43605d16156bb.png" alt="\frac{\partial K}{\partial p} = \frac{p}{m}"/></p>
+<p><img src="_images/math/3eaca3f740efcd398ef2a9dc9ae43605d16156bb.png" alt="\frac{\partial K}{\partial p} = \frac{p}{m}"/></p>
 </div><p>Here is a animation that uses these equations to simulate the dynamics of simple pendulum <img alt="Drawing" src="images/simple_pendulum.gif" /></p>
 <p>The sub-plot in the right upper half of the output demonstrates the energies. The red portion of first bar plot represents potential energy and black represents kinetic energy. The second bar plot represents the Hamiltonian. The lower right sub-plot shows the phase space showing how momentum and position are varying. We can see that phase space maps out an ellipse without deviating from its path. In case of Euler method the particle doesn’t fully trace a ellipse instead diverges slowly towards
 infinity. One can clearly see that value of position and momentum are not completely random, but takes a deterministic circular kind of trajectory. If we use Leapfrog method to propose future states than we can avoid random-walk behavior which we saw in Metropolis-Hastings algorithm. This is the main reason for good performance of HMC algorithm.</p>
@@ -542,51 +543,51 @@ infinity. One can clearly see that value of position and momentum are not comple
 </section>
 <section id="Hamiltonian-and-Probability:-Canonical-Distributions">
 <h3><span class="section-number">8.1.3. </span>Hamiltonian and Probability: Canonical Distributions<a class="headerlink" href="#Hamiltonian-and-Probability:-Canonical-Distributions" title="Permalink to this heading"></a></h3>
-<p>Now having a bit of understanding what is Hamiltonian and how we can simulate Hamiltonian dynamics, we now need to understand how we can use these Hamiltonian dynamics for MCMC. We need to develop some relation between probability distribution and Hamiltonian so that we can use Hamiltonian dynamics to explore the distribution. To relate <img class="math" src="../_images/math/44bfc9c9aaf5a94b2aa0b21b5ccf3092d71ada0e.png" alt="H(x, p)"/> to target distribution <img class="math" src="../_images/math/f01cb75ce76498bd7c3e6f4505d157bc0315ce1d.png" alt="P(x)"/> we use a concept from statistical mechanics known as the canonical distribution. For any energy function
-<img class="math" src="../_images/math/b0768d119ea759f089b0f0b0f7ebaef6c1c5e7df.png" alt="E(q)"/>, defined over a set of variables <img class="math" src="../_images/math/a5fa84b363f309ebc8fe7db38304541732c7de9a.png" alt="q"/>, we can find corresponding <img class="math" src="../_images/math/71fb18a44e207c5ea02b63133a8d236bdf1a2e9e.png" alt="P(q)"/></p>
+<p>Now having a bit of understanding what is Hamiltonian and how we can simulate Hamiltonian dynamics, we now need to understand how we can use these Hamiltonian dynamics for MCMC. We need to develop some relation between probability distribution and Hamiltonian so that we can use Hamiltonian dynamics to explore the distribution. To relate <img class="math" src="_images/math/44bfc9c9aaf5a94b2aa0b21b5ccf3092d71ada0e.png" alt="H(x, p)"/> to target distribution <img class="math" src="_images/math/f01cb75ce76498bd7c3e6f4505d157bc0315ce1d.png" alt="P(x)"/> we use a concept from statistical mechanics known as the canonical distribution. For any energy function
+<img class="math" src="_images/math/b0768d119ea759f089b0f0b0f7ebaef6c1c5e7df.png" alt="E(q)"/>, defined over a set of variables <img class="math" src="_images/math/a5fa84b363f309ebc8fe7db38304541732c7de9a.png" alt="q"/>, we can find corresponding <img class="math" src="_images/math/71fb18a44e207c5ea02b63133a8d236bdf1a2e9e.png" alt="P(q)"/></p>
 <div class="math">
-<p><img src="../_images/math/d8428756932d67042a90d260fba1286d2daa73ef.png" alt="P(q) = \frac{1}{Z} exp \left( \frac{-E(q)}{T} \right)"/></p>
-</div><p>, where <img class="math" src="../_images/math/95f028ab2b20b895fa12d986e0d9f40f7b6e52d3.png" alt="Z"/> is normalizing constant called Partition function and <img class="math" src="../_images/math/e8dea8254118f111b5fb20895b03528c17566f06.png" alt="T"/> is temperature of system. For our use case we will consider <img class="math" src="../_images/math/e34a1b031a138965671cf521ade17793401d7f9b.png" alt="T=1"/>.</p>
-<p>Since, the Hamiltonian is an energy function for the joint state of “position”, <img class="math" src="../_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and “momentum”, <img class="math" src="../_images/math/141bbefb74014fc5e43499901bf78607ae335583.png" alt="p"/>, so we can define a joint distribution for them as follows:</p>
+<p><img src="_images/math/d8428756932d67042a90d260fba1286d2daa73ef.png" alt="P(q) = \frac{1}{Z} exp \left( \frac{-E(q)}{T} \right)"/></p>
+</div><p>, where <img class="math" src="_images/math/95f028ab2b20b895fa12d986e0d9f40f7b6e52d3.png" alt="Z"/> is normalizing constant called Partition function and <img class="math" src="_images/math/e8dea8254118f111b5fb20895b03528c17566f06.png" alt="T"/> is temperature of system. For our use case we will consider <img class="math" src="_images/math/e34a1b031a138965671cf521ade17793401d7f9b.png" alt="T=1"/>.</p>
+<p>Since, the Hamiltonian is an energy function for the joint state of “position”, <img class="math" src="_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and “momentum”, <img class="math" src="_images/math/141bbefb74014fc5e43499901bf78607ae335583.png" alt="p"/>, so we can define a joint distribution for them as follows:</p>
 <div class="math">
-<p><img src="../_images/math/44599eb0b230db147e9e473f98ea20c0902aac5f.png" alt="P(x, p) = \frac{e^{-H(x, p)}}{Z}"/></p>
-</div><p>Since <img class="math" src="../_images/math/98e629ed9ded44dbf2a5ae17bc87bbf07694f0f1.png" alt="H(x, p) = U(x) + K(p)"/>, we can write above equation as</p>
+<p><img src="_images/math/44599eb0b230db147e9e473f98ea20c0902aac5f.png" alt="P(x, p) = \frac{e^{-H(x, p)}}{Z}"/></p>
+</div><p>Since <img class="math" src="_images/math/98e629ed9ded44dbf2a5ae17bc87bbf07694f0f1.png" alt="H(x, p) = U(x) + K(p)"/>, we can write above equation as</p>
 <div class="math">
-<p><img src="../_images/math/00257f4c81caede10b52352b14b0609ecacdc223.png" alt="P(x, p) = \frac{e^{-U(x)-K(p)}}{z}"/></p>
+<p><img src="_images/math/00257f4c81caede10b52352b14b0609ecacdc223.png" alt="P(x, p) = \frac{e^{-U(x)-K(p)}}{z}"/></p>
 </div><div class="math">
-<p><img src="../_images/math/f3ed69f9cd65732904beeefc3c6ece8f0b787d97.png" alt="P(x, p) = \frac{e^{-U(x)}e^{-K(p)}}{Z}"/></p>
-</div><p>Furthermore we can associate probability distribution with each of the potential and kinetic energy (<img class="math" src="../_images/math/f01cb75ce76498bd7c3e6f4505d157bc0315ce1d.png" alt="P(x)"/> with potential energy and <img class="math" src="../_images/math/e84db8e2d4a78055fe6b7c8446b5f08b142b2deb.png" alt="P(p)"/>, with kinetic energy). Thus, we can write above equation as:</p>
+<p><img src="_images/math/f3ed69f9cd65732904beeefc3c6ece8f0b787d97.png" alt="P(x, p) = \frac{e^{-U(x)}e^{-K(p)}}{Z}"/></p>
+</div><p>Furthermore we can associate probability distribution with each of the potential and kinetic energy (<img class="math" src="_images/math/f01cb75ce76498bd7c3e6f4505d157bc0315ce1d.png" alt="P(x)"/> with potential energy and <img class="math" src="_images/math/e84db8e2d4a78055fe6b7c8446b5f08b142b2deb.png" alt="P(p)"/>, with kinetic energy). Thus, we can write above equation as:</p>
 <div class="math">
-<p><img src="../_images/math/33423448ad9abac66bde53a1377fe99bf4d0e476.png" alt="P(x, p) = \frac{P(x)P(p)}{Z'}"/></p>
-</div><p>,where <img class="math" src="../_images/math/1f360609d1924e50e1b95caf88bbdec5543c7449.png" alt="Z'"/> is new normalizing constant. Since joint distribution factorizes over <img class="math" src="../_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and <img class="math" src="../_images/math/141bbefb74014fc5e43499901bf78607ae335583.png" alt="p"/>, we can conclude that <img class="math" src="../_images/math/f01cb75ce76498bd7c3e6f4505d157bc0315ce1d.png" alt="P(x)"/> and <img class="math" src="../_images/math/e84db8e2d4a78055fe6b7c8446b5f08b142b2deb.png" alt="P(p)"/> are independent. Because of this independence we can choose any distribution from which we want to sample the momentum variable. A common choice is to use a zero mean and unit variance Normal distribution <img class="math" src="../_images/math/5eb7c99280e4fdcbe9545e8db4287554dc6ce6e8.png" alt="N(0, I)"/> The target distribution of interest <img class="math" src="../_images/math/f01cb75ce76498bd7c3e6f4505d157bc0315ce1d.png" alt="P(x)"/> from which we actually want to sample from is associated with
+<p><img src="_images/math/33423448ad9abac66bde53a1377fe99bf4d0e476.png" alt="P(x, p) = \frac{P(x)P(p)}{Z'}"/></p>
+</div><p>,where <img class="math" src="_images/math/1f360609d1924e50e1b95caf88bbdec5543c7449.png" alt="Z'"/> is new normalizing constant. Since joint distribution factorizes over <img class="math" src="_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and <img class="math" src="_images/math/141bbefb74014fc5e43499901bf78607ae335583.png" alt="p"/>, we can conclude that <img class="math" src="_images/math/f01cb75ce76498bd7c3e6f4505d157bc0315ce1d.png" alt="P(x)"/> and <img class="math" src="_images/math/e84db8e2d4a78055fe6b7c8446b5f08b142b2deb.png" alt="P(p)"/> are independent. Because of this independence we can choose any distribution from which we want to sample the momentum variable. A common choice is to use a zero mean and unit variance Normal distribution <img class="math" src="_images/math/5eb7c99280e4fdcbe9545e8db4287554dc6ce6e8.png" alt="N(0, I)"/> The target distribution of interest <img class="math" src="_images/math/f01cb75ce76498bd7c3e6f4505d157bc0315ce1d.png" alt="P(x)"/> from which we actually want to sample from is associated with
 potential energy.</p>
 <div class="math">
-<p><img src="../_images/math/906061d5e00fea9bc78e72f7373785ca9d418e64.png" alt="U(x) = - log (P(x))"/></p>
-</div><p>Thus, if we can calculate <img class="math" src="../_images/math/ecff9011ea620116ec69c76346ed05d1e8281144.png" alt="\frac{\partial log(P(x))}{\partial x_i}"/>, then we are in business and we can use Hamiltonian dynamics to generate samples.</p>
+<p><img src="_images/math/906061d5e00fea9bc78e72f7373785ca9d418e64.png" alt="U(x) = - log (P(x))"/></p>
+</div><p>Thus, if we can calculate <img class="math" src="_images/math/ecff9011ea620116ec69c76346ed05d1e8281144.png" alt="\frac{\partial log(P(x))}{\partial x_i}"/>, then we are in business and we can use Hamiltonian dynamics to generate samples.</p>
 </section>
 <section id="Hamiltonian-Monte-Carlo-Algorithm">
 <h3><span class="section-number">8.1.4. </span>Hamiltonian Monte Carlo Algorithm<a class="headerlink" href="#Hamiltonian-Monte-Carlo-Algorithm" title="Permalink to this heading"></a></h3>
-<p>Given initial state <img class="math" src="../_images/math/ed7fb0260e58d3ca5851e823ff991dae4cde5671.png" alt="x_0"/>, stepsize <img class="math" src="../_images/math/0ad7b30534898f253002222f998f38001e604648.png" alt="\epsilon"/>, number of steps <img class="math" src="../_images/math/19eef1966f7c545af3ac8c0fa486974d873e3c65.png" alt="L"/>, log density function <img class="math" src="../_images/math/9098c1c4618d7a0f321cee441aabee7f1b57a19b.png" alt="U"/>, number of samples to be drawn <img class="math" src="../_images/math/4abba779877abb276b98ccb2b4ba9bf2e41947ab.png" alt="M"/>, we can write HMC algorithm as:</p>
+<p>Given initial state <img class="math" src="_images/math/ed7fb0260e58d3ca5851e823ff991dae4cde5671.png" alt="x_0"/>, stepsize <img class="math" src="_images/math/0ad7b30534898f253002222f998f38001e604648.png" alt="\epsilon"/>, number of steps <img class="math" src="_images/math/19eef1966f7c545af3ac8c0fa486974d873e3c65.png" alt="L"/>, log density function <img class="math" src="_images/math/9098c1c4618d7a0f321cee441aabee7f1b57a19b.png" alt="U"/>, number of samples to be drawn <img class="math" src="_images/math/4abba779877abb276b98ccb2b4ba9bf2e41947ab.png" alt="M"/>, we can write HMC algorithm as:</p>
 <ul class="simple">
 <li><p>set $m = 0 $</p></li>
-<li><p>repeat until <img class="math" src="../_images/math/0994508bf8ec492baf5961e27711c5f4702fb938.png" alt="m = M"/></p>
+<li><p>repeat until <img class="math" src="_images/math/0994508bf8ec492baf5961e27711c5f4702fb938.png" alt="m = M"/></p>
 <ol class="arabic simple">
-<li><p>set <img class="math" src="../_images/math/3c6b023ad7724de7080faf34092775288c92a7cd.png" alt="m \leftarrow m + 1"/></p></li>
-<li><p>Sample new initial momentum <img class="math" src="../_images/math/8968e4fd6ebe2d668010ed37e2172340daaefa2d.png" alt="p_0"/> ~ <img class="math" src="../_images/math/5eb7c99280e4fdcbe9545e8db4287554dc6ce6e8.png" alt="N(0, I)"/></p></li>
-<li><p>Set <img class="math" src="../_images/math/50ee8a46e5392ab3f1d63c6912b173830ca05fbe.png" alt="x_m \leftarrow x_{m-1}, x' \leftarrow x_{m-1}, p' \leftarrow p_0"/></p></li>
-<li><p>repeat for <img class="math" src="../_images/math/19eef1966f7c545af3ac8c0fa486974d873e3c65.png" alt="L"/> steps</p>
+<li><p>set <img class="math" src="_images/math/3c6b023ad7724de7080faf34092775288c92a7cd.png" alt="m \leftarrow m + 1"/></p></li>
+<li><p>Sample new initial momentum <img class="math" src="_images/math/8968e4fd6ebe2d668010ed37e2172340daaefa2d.png" alt="p_0"/> ~ <img class="math" src="_images/math/5eb7c99280e4fdcbe9545e8db4287554dc6ce6e8.png" alt="N(0, I)"/></p></li>
+<li><p>Set <img class="math" src="_images/math/50ee8a46e5392ab3f1d63c6912b173830ca05fbe.png" alt="x_m \leftarrow x_{m-1}, x' \leftarrow x_{m-1}, p' \leftarrow p_0"/></p></li>
+<li><p>repeat for <img class="math" src="_images/math/19eef1966f7c545af3ac8c0fa486974d873e3c65.png" alt="L"/> steps</p>
 <ul>
-<li><p>Set <img class="math" src="../_images/math/30596a4b5911ed38e017a9b0546719fd7114b283.png" alt="x', p' \leftarrow Leapfrog(x', p', \epsilon)"/></p></li>
+<li><p>Set <img class="math" src="_images/math/30596a4b5911ed38e017a9b0546719fd7114b283.png" alt="x', p' \leftarrow Leapfrog(x', p', \epsilon)"/></p></li>
 </ul>
 </li>
-<li><p>Calculate acceptance probability <img class="math" src="../_images/math/b790c27f5a8e4d84e74875106b690478720fcefe.png" alt="\alpha = min \left(1, \frac{exp( U(x') - (p'.p')/2 )}{exp( U(x_{m-1}) - (p_0.p_0)/2 )} \right)"/></p></li>
+<li><p>Calculate acceptance probability <img class="math" src="_images/math/b790c27f5a8e4d84e74875106b690478720fcefe.png" alt="\alpha = min \left(1, \frac{exp( U(x') - (p'.p')/2 )}{exp( U(x_{m-1}) - (p_0.p_0)/2 )} \right)"/></p></li>
 <li><p>Draw a random number u ~ Uniform(0, 1)</p></li>
-<li><p>if <img class="math" src="../_images/math/d2408e3c25783435885e9d5ec6548d2d4c0217d7.png" alt="u \leq \alpha"/> then <img class="math" src="../_images/math/43f4c9915a4dcf883f328a0c43374dcba71a7389.png" alt="x_m \leftarrow x', p_m \leftarrow -p'"/></p></li>
+<li><p>if <img class="math" src="_images/math/d2408e3c25783435885e9d5ec6548d2d4c0217d7.png" alt="u \leq \alpha"/> then <img class="math" src="_images/math/43f4c9915a4dcf883f328a0c43374dcba71a7389.png" alt="x_m \leftarrow x', p_m \leftarrow -p'"/></p></li>
 </ol>
 </li>
 </ul>
-<p><img class="math" src="../_images/math/135140df16b895f03c6a28279df53029df1573a5.png" alt="Leapfrog"/> is a function that runs a single iteration of Leapfrog method.</p>
-<p>In practice sometimes instead of explicitly giving number of steps <img class="math" src="../_images/math/19eef1966f7c545af3ac8c0fa486974d873e3c65.png" alt="L"/>, we use <strong>trajectory length</strong> which is product of number of steps <img class="math" src="../_images/math/19eef1966f7c545af3ac8c0fa486974d873e3c65.png" alt="L"/>, and stepsize <img class="math" src="../_images/math/0ad7b30534898f253002222f998f38001e604648.png" alt="\epsilon"/>.</p>
+<p><img class="math" src="_images/math/135140df16b895f03c6a28279df53029df1573a5.png" alt="Leapfrog"/> is a function that runs a single iteration of Leapfrog method.</p>
+<p>In practice sometimes instead of explicitly giving number of steps <img class="math" src="_images/math/19eef1966f7c545af3ac8c0fa486974d873e3c65.png" alt="L"/>, we use <strong>trajectory length</strong> which is product of number of steps <img class="math" src="_images/math/19eef1966f7c545af3ac8c0fa486974d873e3c65.png" alt="L"/>, and stepsize <img class="math" src="_images/math/0ad7b30534898f253002222f998f38001e604648.png" alt="\epsilon"/>.</p>
 </section>
 <section id="Hamiltonian-Monte-Carlo-in-pgmpy">
 <h3><span class="section-number">8.1.5. </span>Hamiltonian Monte Carlo in pgmpy<a class="headerlink" href="#Hamiltonian-Monte-Carlo-in-pgmpy" title="Permalink to this heading"></a></h3>
@@ -599,9 +600,9 @@ potential energy.</p>
 </pre></div>
 </div>
 </div>
-<p>Lets use the HamiltonianMC implementation and draw some samples from a multivariate disrtibution <img class="math" src="../_images/math/5d2b84b6836e9e50220eb5b13fedda325aafa4e1.png" alt="P(x) = N(\mu, \Sigma)"/>, where</p>
+<p>Lets use the HamiltonianMC implementation and draw some samples from a multivariate disrtibution <img class="math" src="_images/math/5d2b84b6836e9e50220eb5b13fedda325aafa4e1.png" alt="P(x) = N(\mu, \Sigma)"/>, where</p>
 <div class="math">
-<p><img src="../_images/math/33c7b05d4d768a1944807b61af8ee91465b5197c.png" alt="\mu = [0, 0], \qquad
+<p><img src="_images/math/33c7b05d4d768a1944807b61af8ee91465b5197c.png" alt="\mu = [0, 0], \qquad
 \Sigma = \left[
     \begin{array}{cc}
     1 &amp; 0.97 \\
@@ -768,7 +769,7 @@ Total accepted proposal: 10.0
 <section id="No-U-Turn-Sampler">
 <h2><span class="section-number">8.2. </span>No-U-Turn Sampler<a class="headerlink" href="#No-U-Turn-Sampler" title="Permalink to this heading"></a></h2>
 <p>Both (HMC and HMCda) of these algorithms requires some hand-tuning from user, which can be time consuming especially for high dimensional complex model. No-U-Turn Sampler(NUTS) is an extension of HMC that eliminates the need to specify the trajectory length but requires user to specify stepsize.</p>
-<p>NUTS, removes the need of parameter number of steps by considering a metric to evaluate whether we have ran Leapfrog algorithm for long enough, that is when running the simulation for more steps would no longer increase the distance between the proposal value of <img class="math" src="../_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and initial value of <img class="math" src="../_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/></p>
+<p>NUTS, removes the need of parameter number of steps by considering a metric to evaluate whether we have ran Leapfrog algorithm for long enough, that is when running the simulation for more steps would no longer increase the distance between the proposal value of <img class="math" src="_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/> and initial value of <img class="math" src="_images/math/888f7c323ac0341871e867220ae2d76467d74d6e.png" alt="x"/></p>
 <p>At high level, NUTS uses the leapfrog method to trace out a path forward and backward in fictitious time, first running forwards or backwards 1 step, the forwards and backwards 2 steps, then forwards or backwards 4 steps etc. This doubling process builds a balanced binary tree whose leaf nodes correspond to position-momentum states. The doubling process is halted when the sub-trajectory from the leftmost to the rightmost nodes of any balanced subtree of the overall binary tree starts to double
 back on itself (i.e., the fictional particle starts to make a “U-Turn”). At this point NUTS stops the simulation and samples from among the set of points computed during the simulation, taking are to preserve detailed balance.</p>
 <p>Lets use NUTS and draw some samples.</p>
@@ -949,13 +950,13 @@ back on itself (i.e., the fictional particle starts to make a “U-Turn”). At 
 <p>In this example we will define our own logisitcs distribution and use NUTSda to sample from it.</p>
 <p>The probability density of logistic distribution is given by:</p>
 <div class="math">
-<p><img src="../_images/math/a7d68cc0ab2355f0eb34dd83f44bd35518a3eddd.png" alt="P(x; \mu, s) = \frac{e^{-\frac{x- \mu}{s}}}{s(1 + e^{-\frac{x - \mu}{s}})^2}"/></p>
+<p><img src="_images/math/a7d68cc0ab2355f0eb34dd83f44bd35518a3eddd.png" alt="P(x; \mu, s) = \frac{e^{-\frac{x- \mu}{s}}}{s(1 + e^{-\frac{x - \mu}{s}})^2}"/></p>
 </div><p>Thus the log of this probability density function (potential energy function) can be written as:</p>
 <div class="math">
-<p><img src="../_images/math/32ea0d0d0225ec155c481ab959a5a1230fd54e1e.png" alt="log(P(x; \mu, s)) = -\frac{x - \mu}{s} - log(s) - 2 log(1 + e^{-\frac{x - \mu}{s}})"/></p>
+<p><img src="_images/math/32ea0d0d0225ec155c481ab959a5a1230fd54e1e.png" alt="log(P(x; \mu, s)) = -\frac{x - \mu}{s} - log(s) - 2 log(1 + e^{-\frac{x - \mu}{s}})"/></p>
 </div><p>And the gradient of potential energy :</p>
 <div class="math">
-<p><img src="../_images/math/fab34cee57229a69348cefd214e80c6dc815e777.png" alt="\frac{\partial log(P(x; \mu, s))}{\partial x} = - \frac{1}{s} + \frac{2e^{-\frac{x - \mu}{s}}}{s(1 + e^{-\frac{x - \mu}{s}})}"/></p>
+<p><img src="_images/math/fab34cee57229a69348cefd214e80c6dc815e777.png" alt="\frac{\partial log(P(x; \mu, s))}{\partial x} = - \frac{1}{s} + \frac{2e^{-\frac{x - \mu}{s}}}{s(1 + e^{-\frac{x - \mu}{s}})}"/></p>
 </div><div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>

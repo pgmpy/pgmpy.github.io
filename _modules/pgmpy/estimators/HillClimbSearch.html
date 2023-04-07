@@ -15,6 +15,7 @@
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -156,9 +157,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-      <li>pgmpy.estimators.HillClimbSearch</li>
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pgmpy.estimators.HillClimbSearch</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -169,22 +170,23 @@
              
   <h1>Source code for pgmpy.estimators.HillClimbSearch</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span>
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">trange</span>
 
+<span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">StructureScore</span><span class="p">,</span>
-    <span class="n">StructureEstimator</span><span class="p">,</span>
-    <span class="n">K2Score</span><span class="p">,</span>
-    <span class="n">ScoreCache</span><span class="p">,</span>
+    <span class="n">AICScore</span><span class="p">,</span>
     <span class="n">BDeuScore</span><span class="p">,</span>
     <span class="n">BDsScore</span><span class="p">,</span>
     <span class="n">BicScore</span><span class="p">,</span>
+    <span class="n">K2Score</span><span class="p">,</span>
+    <span class="n">ScoreCache</span><span class="p">,</span>
+    <span class="n">StructureEstimator</span><span class="p">,</span>
+    <span class="n">StructureScore</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">SHOW_PROGRESS</span>
 
 
@@ -256,7 +258,7 @@
             <span class="o">-</span> <span class="nb">set</span><span class="p">([(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">edges</span><span class="p">()])</span>
         <span class="p">)</span>
 
-        <span class="k">for</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">potential_new_edges</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">potential_new_edges</span><span class="p">:</span>
             <span class="c1"># Check if adding (X, Y) will create a cycle.</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
                 <span class="n">operation</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">))</span>
@@ -273,7 +275,7 @@
                         <span class="k">yield</span> <span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">score_delta</span><span class="p">)</span>
 
         <span class="c1"># Step 2: Get all legal operations for removing edges</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
             <span class="n">operation</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">))</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">operation</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tabu_list</span><span class="p">)</span> <span class="ow">and</span> <span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fixed_edges</span><span class="p">):</span>
                 <span class="n">old_parents</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
@@ -284,7 +286,7 @@
                 <span class="k">yield</span> <span class="p">(</span><span class="n">operation</span><span class="p">,</span> <span class="n">score_delta</span><span class="p">)</span>
 
         <span class="c1"># Step 3: Get all legal operations for flipping edges</span>
-        <span class="k">for</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
             <span class="c1"># Check if flipping creates any cycles</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span>
                 <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">path</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">nx</span><span class="o">.</span><span class="n">all_simple_paths</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">))</span>
@@ -335,7 +337,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        scoring_method: str or StructureScore instance</span>
 <span class="sd">            The score to be optimized during structure estimation.  Supported</span>
-<span class="sd">            structure scores: k2score, bdeuscore, bdsscore, bicscore. Also accepts a</span>
+<span class="sd">            structure scores: k2score, bdeuscore, bdsscore, bicscore, aicscore. Also accepts a</span>
 <span class="sd">            custom score, but it should be an instance of `StructureScore`.</span>
 
 <span class="sd">        start_dag: DAG instance</span>
@@ -403,6 +405,7 @@
             <span class="s2">&quot;bdeuscore&quot;</span><span class="p">:</span> <span class="n">BDeuScore</span><span class="p">,</span>
             <span class="s2">&quot;bdsscore&quot;</span><span class="p">:</span> <span class="n">BDsScore</span><span class="p">,</span>
             <span class="s2">&quot;bicscore&quot;</span><span class="p">:</span> <span class="n">BicScore</span><span class="p">,</span>
+            <span class="s2">&quot;aicscore&quot;</span><span class="p">:</span> <span class="n">AICScore</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="p">(</span>
             <span class="p">(</span>
@@ -411,7 +414,7 @@
             <span class="p">)</span>
         <span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">StructureScore</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;scoring_method should either be one of k2score, bdeuscore, bicscore, bdsscore, or an instance of StructureScore&quot;</span>
+                <span class="s2">&quot;scoring_method should either be one of k2score, bdeuscore, bicscore, bdsscore, aicscore, or an instance of StructureScore&quot;</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>

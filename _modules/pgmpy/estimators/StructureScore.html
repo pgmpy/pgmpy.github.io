@@ -15,6 +15,7 @@
         <script src="../../../_static/underscore.js"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -156,9 +157,9 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../../index.html">Module code</a> &raquo;</li>
-      <li>pgmpy.estimators.StructureScore</li>
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pgmpy.estimators.StructureScore</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -180,7 +181,7 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Abstract base class for structure scoring classes in pgmpy. Use any of the derived classes</span>
-<span class="sd">        K2Score, BDeuScore, or BicScore. Scoring classes are</span>
+<span class="sd">        K2Score, BDeuScore, BicScore or AICScore. Scoring classes are</span>
 <span class="sd">        used to measure how well a model is able to describe the given data set.</span>
 
 <span class="sd">        Parameters</span>
@@ -523,6 +524,72 @@
         <span class="n">score</span> <span class="o">-=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">log</span><span class="p">(</span><span class="n">sample_size</span><span class="p">)</span> <span class="o">*</span> <span class="n">num_parents_states</span> <span class="o">*</span> <span class="p">(</span><span class="n">var_cardinality</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">score</span></div></div>
+
+
+<span class="k">class</span> <span class="nc">AICScore</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Class for Bayesian structure scoring for BayesianNetworks with</span>
+<span class="sd">        Dirichlet priors.  The AIC score (&quot;Akaike Information Criterion) is a log-likelihood score with an</span>
+<span class="sd">        additional penalty for network complexity, to avoid overfitting.  The</span>
+<span class="sd">        `score`-method measures how well a model is able to describe the given</span>
+<span class="sd">        data set.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data: pandas DataFrame object</span>
+<span class="sd">            dataframe object where each column represents one variable.</span>
+<span class="sd">            (If some values in the data are missing the data cells should be set to `numpy.NaN`.</span>
+<span class="sd">            Note that pandas converts each column containing `numpy.NaN`s to dtype `float`.)</span>
+
+<span class="sd">        state_names: dict (optional)</span>
+<span class="sd">            A dict indicating, for each variable, the discrete set of states (or values)</span>
+<span class="sd">            that the variable can take. If unspecified, the observed values in the data set</span>
+<span class="sd">            are taken to be the only possible states.</span>
+
+<span class="sd">        complete_samples_only: bool (optional, default `True`)</span>
+<span class="sd">            Specifies how to deal with missing data, if present. If set to `True` all rows</span>
+<span class="sd">            that contain `np.Nan` somewhere are ignored. If `False` then, for each variable,</span>
+<span class="sd">            every row where neither the variable nor its parents are `np.NaN` is used.</span>
+<span class="sd">            This sets the behavior of the `state_count`-method.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ---------</span>
+<span class="sd">        [1] Koller &amp; Friedman, Probabilistic Graphical Models - Principles and Techniques, 2009</span>
+<span class="sd">        Section 18.3.4-18.3.6 (esp. page 802)</span>
+<span class="sd">        [2] AM Carvalho, Scoring functions for learning Bayesian networks,</span>
+<span class="sd">        http://www.lx.it.pt/~asmc/pub/talks/09-TA/ta_pres.pdf</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AICScore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+        <span class="s1">&#39;Computes a score that measures how much a </span><span class="se">\</span>
+<span class="s1">        given variable is &quot;influenced&quot; by a given list of potential parents.&#39;</span>
+
+        <span class="n">var_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
+        <span class="n">var_cardinality</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">var_states</span><span class="p">)</span>
+        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
+        <span class="n">sample_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">num_parents_states</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">state_counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">state_counts</span><span class="p">)</span>
+        <span class="n">log_likelihoods</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+        <span class="c1"># Compute the log-counts</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">log_likelihoods</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">counts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Compute the log-conditional sample size</span>
+        <span class="n">log_conditionals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">log_conditionals</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">log_conditionals</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">log_conditionals</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Compute the log-likelihoods</span>
+        <span class="n">log_likelihoods</span> <span class="o">-=</span> <span class="n">log_conditionals</span>
+        <span class="n">log_likelihoods</span> <span class="o">*=</span> <span class="n">counts</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_likelihoods</span><span class="p">)</span>
+        <span class="n">score</span> <span class="o">-=</span> <span class="n">num_parents_states</span> <span class="o">*</span> <span class="p">(</span><span class="n">var_cardinality</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">score</span>
 </pre></div>
 
            </div>
