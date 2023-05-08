@@ -169,8 +169,8 @@
            <div itemprop="articleBody">
              
   <h1>Source code for pgmpy.inference.ApproxInference</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span><span class="p">,</span> <span class="n">DynamicBayesianNetwork</span>
-<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">DiscreteFactor</span>
+<span></span><span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">DiscreteFactor</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span><span class="p">,</span> <span class="n">DynamicBayesianNetwork</span>
 
 
 <div class="viewcode-block" id="ApproxInference"><a class="viewcode-back" href="../../../approx_infer/approx_infer.html#pgmpy.inference.ApproxInference.ApproxInference">[docs]</a><span class="k">class</span> <span class="nc">ApproxInference</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -247,6 +247,7 @@
         <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method for doing approximate inference based on sampling in Bayesian</span>
@@ -271,6 +272,9 @@
 <span class="sd">        show_progress: boolean (default: True)</span>
 <span class="sd">            If True, shows a progress bar when generating samples.</span>
 
+<span class="sd">        seed: int (default: None)</span>
+<span class="sd">            Sets the seed for the random generators.</span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Probability distribution: pgmpy.factors.discrete.TabularCPD</span>
@@ -291,12 +295,38 @@
 <span class="sd">         &#39;CVP&#39;: &lt;DiscreteFactor representing phi(CVP:3) at 0x7f92d915ec40&gt;}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Step 1: Generate samples for the query</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span>
-            <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
-            <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
-            <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">virtual_evidence</span><span class="p">,</span>
-            <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span>
+                <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
+                <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+                <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">virtual_evidence</span><span class="p">,</span>
+                <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">DynamicBayesianNetwork</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">evidence</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">virtual_evidence</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+            <span class="n">max_time_slices</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_time_slices</span><span class="p">:</span>
+                    <span class="n">max_time_slices</span> <span class="o">=</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_time_slices</span><span class="p">:</span>
+                    <span class="n">max_time_slices</span> <span class="o">=</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_time_slices</span><span class="p">:</span>
+                    <span class="n">max_time_slices</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span>
+                <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
+                <span class="n">n_time_slices</span><span class="o">=</span><span class="n">max_time_slices</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+                <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">virtual_evidence</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+                <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="c1"># Step 2: Compute the distributions and return it.</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_distribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">)</span></div></div>

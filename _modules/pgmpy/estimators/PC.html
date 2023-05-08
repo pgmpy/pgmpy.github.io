@@ -180,8 +180,21 @@
 
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">PDAG</span>
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">StructureEstimator</span>
-<span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="kn">import</span> <span class="n">chi_square</span><span class="p">,</span> <span class="n">independence_match</span><span class="p">,</span> <span class="n">pearsonr</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">SHOW_PROGRESS</span>
+
+<span class="n">CI_TESTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;chi_square&quot;</span><span class="p">:</span> <span class="n">chi_square</span><span class="p">,</span>
+    <span class="s2">&quot;independence_match&quot;</span><span class="p">:</span> <span class="n">independence_match</span><span class="p">,</span>
+    <span class="s2">&quot;pearsonr&quot;</span><span class="p">:</span> <span class="n">pearsonr</span><span class="p">,</span>
+    <span class="s2">&quot;g_sq&quot;</span><span class="p">:</span> <span class="n">g_sq</span><span class="p">,</span>
+    <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="n">log_likelihood</span><span class="p">,</span>
+    <span class="s2">&quot;freeman_tuckey&quot;</span><span class="p">:</span> <span class="n">freeman_tuckey</span><span class="p">,</span>
+    <span class="s2">&quot;modified_log_likelihood&quot;</span><span class="p">:</span> <span class="n">modified_log_likelihood</span><span class="p">,</span>
+    <span class="s2">&quot;neyman&quot;</span><span class="p">:</span> <span class="n">neyman</span><span class="p">,</span>
+    <span class="s2">&quot;cressie_read&quot;</span><span class="p">:</span> <span class="n">cressie_read</span><span class="p">,</span>
+    <span class="s2">&quot;power_divergence&quot;</span><span class="p">:</span> <span class="n">power_divergence</span><span class="p">,</span>
+<span class="p">}</span>
 
 
 <div class="viewcode-block" id="PC"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.PC">[docs]</a><span class="k">class</span> <span class="nc">PC</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">):</span>
@@ -249,6 +262,12 @@
 <span class="sd">                &quot;pearsonr&quot;: Uses the pertial correlation based on pearson</span>
 <span class="sd">                        correlation coefficient to test independence. This works</span>
 <span class="sd">                        only for continuous datasets.</span>
+<span class="sd">                &quot;g_sq&quot;: G-test. Works only for discrete datasets.</span>
+<span class="sd">                &quot;log_likelihood&quot;: Log-likelihood test. Works only for discrete dataset.</span>
+<span class="sd">                &quot;freeman_tuckey&quot;: Freeman Tuckey test. Works only for discrete dataset.</span>
+<span class="sd">                &quot;modified_log_likelihood&quot;: Modified Log Likelihood test. Works only for discrete variables.</span>
+<span class="sd">                &quot;neyman&quot;: Neyman test. Works only for discrete variables.</span>
+<span class="sd">                &quot;cressie_read&quot;: Cressie Read test. Works only for discrete variables.</span>
 
 <span class="sd">        max_cond_vars: int</span>
 <span class="sd">            The maximum number of conditional variables allowed to do the statistical</span>
@@ -257,7 +276,8 @@
 <span class="sd">        return_type: str (one of &quot;dag&quot;, &quot;cpdag&quot;, &quot;pdag&quot;, &quot;skeleton&quot;)</span>
 <span class="sd">            The type of structure to return.</span>
 
-<span class="sd">            If `return_type=pdag` or `return_type=cpdag`: a partially directed structure                is returned.</span>
+<span class="sd">            If `return_type=pdag` or `return_type=cpdag`: a partially directed structure</span>
+<span class="sd">                is returned.</span>
 <span class="sd">            If `return_type=dag`, a fully directed structure is returned if it</span>
 <span class="sd">                is possible to orient all the edges.</span>
 <span class="sd">            If `return_type=&quot;skeleton&quot;, returns an undirected graph along</span>
@@ -321,17 +341,19 @@
                 <span class="sa">f</span><span class="s2">&quot;variant must be one of: orig, stable, or parallel. Got: </span><span class="si">{</span><span class="n">variant</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="p">(</span><span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">ci_test</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span>
-            <span class="n">ci_test</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span> <span class="s2">&quot;independence_match&quot;</span><span class="p">,</span> <span class="s2">&quot;pearsonr&quot;</span><span class="p">)</span>
+            <span class="n">ci_test</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">CI_TESTS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;independence_match&quot;</span><span class="p">])</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;ci_test must be a callable or one of: chi_square, pearsonr, independence_match&quot;</span>
+                <span class="s2">&quot;ci_test must be a callable or one of the tests defined in CITests.py&quot;</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">ci_test</span> <span class="o">==</span> <span class="s2">&quot;independence_match&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">independencies</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;For using independence_match, independencies argument must be specified&quot;</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="n">ci_test</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span> <span class="s2">&quot;pearsonr&quot;</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">ci_test</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">CI_TESTS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="s2">&quot;independence_match&quot;</span><span class="p">]))</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;For using Chi Square or Pearsonr, data argument must be specified&quot;</span>
             <span class="p">)</span>
@@ -429,18 +451,13 @@
         <span class="c1"># Initialize initial values and structures.</span>
         <span class="n">lim_neighbors</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">separating_sets</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">ci_test</span> <span class="o">==</span> <span class="s2">&quot;chi_square&quot;</span><span class="p">:</span>
-            <span class="n">ci_test</span> <span class="o">=</span> <span class="n">chi_square</span>
-        <span class="k">elif</span> <span class="n">ci_test</span> <span class="o">==</span> <span class="s2">&quot;pearsonr&quot;</span><span class="p">:</span>
-            <span class="n">ci_test</span> <span class="o">=</span> <span class="n">pearsonr</span>
-        <span class="k">elif</span> <span class="n">ci_test</span> <span class="o">==</span> <span class="s2">&quot;independence_match&quot;</span><span class="p">:</span>
-            <span class="n">ci_test</span> <span class="o">=</span> <span class="n">independence_match</span>
-        <span class="k">elif</span> <span class="n">callable</span><span class="p">(</span><span class="n">ci_test</span><span class="p">):</span>
-            <span class="n">ci_test</span> <span class="o">=</span> <span class="n">ci_test</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;ci_test must either be chi_square, pearsonr, independence_match, or a function. Got: </span><span class="si">{</span><span class="n">ci_test</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">ci_test</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ci_test</span> <span class="o">=</span> <span class="n">CI_TESTS</span><span class="p">[</span><span class="n">ci_test</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;ci_test must either be one of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">CI_TESTS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">, or a function. Got: </span><span class="si">{</span><span class="n">ci_test</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">SHOW_PROGRESS</span><span class="p">:</span>
             <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">max_cond_vars</span><span class="p">)</span>
