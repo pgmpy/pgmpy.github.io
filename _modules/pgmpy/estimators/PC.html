@@ -202,9 +202,9 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Class for constraint-based estimation of DAGs using the PC algorithm</span>
 <span class="sd">        from a given data set.  Identifies (conditional) dependencies in data</span>
-<span class="sd">        set using chi_square dependency test and uses the PC algorithm to</span>
-<span class="sd">        estimate a DAG pattern that satisfies the identified dependencies. The</span>
-<span class="sd">        DAG pattern can then be completed to a faithful DAG, if possible.</span>
+<span class="sd">        set using statistical independence tests and estimates a DAG pattern</span>
+<span class="sd">        that satisfies the identified dependencies. The DAG pattern can then be</span>
+<span class="sd">        completed to a faithful DAG, if possible.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -238,7 +238,7 @@
 <span class="sd">        is a constraint-based structure learning algorithm[1]. The independencies</span>
 <span class="sd">        in the dataset are identified by doing statistical independece test. This</span>
 <span class="sd">        method returns a DAG/PDAG structure which is faithful to the independencies</span>
-<span class="sd">        implied by the dataset</span>
+<span class="sd">        implied by the dataset.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -311,29 +311,17 @@
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import PC</span>
-<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 5, size=(2500, 3)), columns=list(&#39;XYZ&#39;))</span>
-<span class="sd">        &gt;&gt;&gt; data[&#39;sum&#39;] = data.sum(axis=1)</span>
-<span class="sd">        &gt;&gt;&gt; print(data)</span>
-<span class="sd">              X  Y  Z  sum</span>
-<span class="sd">        0     3  0  1    4</span>
-<span class="sd">        1     1  4  3    8</span>
-<span class="sd">        2     0  0  3    3</span>
-<span class="sd">        3     0  2  3    5</span>
-<span class="sd">        4     2  1  1    4</span>
-<span class="sd">        ...  .. .. ..  ...</span>
-<span class="sd">        2495  2  3  0    5</span>
-<span class="sd">        2496  1  1  2    4</span>
-<span class="sd">        2497  0  4  2    6</span>
-<span class="sd">        2498  0  0  0    0</span>
-<span class="sd">        2499  2  4  0    6</span>
-<span class="sd">        [2500 rows x 4 columns]</span>
-<span class="sd">        &gt;&gt;&gt; c = PC(data)</span>
-<span class="sd">        &gt;&gt;&gt; model = c.estimate()</span>
-<span class="sd">        &gt;&gt;&gt; print(model.edges())</span>
-<span class="sd">        [(&#39;Z&#39;, &#39;sum&#39;), (&#39;X&#39;, &#39;sum&#39;), (&#39;Y&#39;, &#39;sum&#39;)]</span>
+<span class="sd">        &gt;&gt;&gt; model = get_example_model(&#39;alarm&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; data = model.simulate(n_samples=1000)</span>
+<span class="sd">        &gt;&gt;&gt; est = PC(data)</span>
+<span class="sd">        &gt;&gt;&gt; model_chi = est.estimate(ci_test=&#39;chi_square&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; print(len(model_chi.edges()))</span>
+<span class="sd">        28</span>
+<span class="sd">        &gt;&gt;&gt; model_gsq, _ = est.estimate(ci_test=&#39;g_sq&#39;, return_type=&#39;skeleton&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; print(len(model_gsq.edges()))</span>
+<span class="sd">        33</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Step 0: Do checks that the specified parameters are correct, else throw meaningful error.</span>
         <span class="k">if</span> <span class="n">variant</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;orig&quot;</span><span class="p">,</span> <span class="s2">&quot;stable&quot;</span><span class="p">,</span> <span class="s2">&quot;parallel&quot;</span><span class="p">):</span>
@@ -427,27 +415,7 @@
 <span class="sd">            http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf</span>
 <span class="sd">        [2] Koller &amp; Friedman, Probabilistic Graphical Models - Principles and Techniques, 2009</span>
 <span class="sd">            Section 3.4.2.1 (page 85), Algorithm 3.3</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import PC</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.independencies import Independencies</span>
-<span class="sd">        &gt;&gt;&gt; # build skeleton from list of independencies:</span>
-<span class="sd">        ... ind = Independencies([&#39;B&#39;, &#39;C&#39;], [&#39;A&#39;, [&#39;B&#39;, &#39;C&#39;], &#39;D&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; # we need to compute closure, otherwise this set of independencies doesn&#39;t</span>
-<span class="sd">        ... # admit a faithful representation:</span>
-<span class="sd">        ... ind = ind.closure()</span>
-<span class="sd">        &gt;&gt;&gt; skel, sep_sets = PC(independencies=ind).build_skeleton(&quot;ABCD&quot;, ind)</span>
-<span class="sd">        &gt;&gt;&gt; print(skel.edges())</span>
-<span class="sd">        [(&#39;A&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;D&#39;), (&#39;C&#39;, &#39;D&#39;)]</span>
-<span class="sd">        &gt;&gt;&gt; # build skeleton from d-separations of DAG:</span>
-<span class="sd">        ... model = DAG([(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;D&#39;), (&#39;C&#39;, &#39;E&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; skel, sep_sets = PC.build_skeleton(model.nodes(), model.get_independencies())</span>
-<span class="sd">        &gt;&gt;&gt; print(skel.edges())</span>
-<span class="sd">        [(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;D&#39;), (&#39;C&#39;, &#39;E&#39;)]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># Initialize initial values and structures.</span>
         <span class="n">lim_neighbors</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">separating_sets</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
