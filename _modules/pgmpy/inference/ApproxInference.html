@@ -169,7 +169,9 @@
            <div itemprop="articleBody">
              
   <h1>Source code for pgmpy.inference.ApproxInference</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">DiscreteFactor</span>
+<span></span><span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">DiscreteFactor</span>
 <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span><span class="p">,</span> <span class="n">DynamicBayesianNetwork</span>
 
 
@@ -196,21 +198,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_get_factor_from_df</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_factor_from_df</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">state_names</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Takes a groupby dataframe and converts it into a pgmpy.factors.discrete.DiscreteFactor object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
-        <span class="n">state_names</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">var</span><span class="p">))</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">}</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">df_index</span> <span class="o">=</span> <span class="n">state_names</span><span class="p">[</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">df_index</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">])</span>
+        <span class="c1"># state_names = {var: list(df.index.unique(var)) for var in variables}</span>
         <span class="n">cardinality</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">])</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">DiscreteFactor</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">cardinality</span><span class="o">=</span><span class="n">cardinality</span><span class="p">,</span>
-            <span class="n">values</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">values</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">df_index</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
             <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">,</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="ApproxInference.get_distribution"><a class="viewcode-back" href="../../../approx_infer/approx_infer.html#pgmpy.inference.ApproxInference.ApproxInference.get_distribution">[docs]</a>    <span class="k">def</span> <span class="nf">get_distribution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="ApproxInference.get_distribution"><a class="viewcode-back" href="../../../approx_infer/approx_infer.html#pgmpy.inference.ApproxInference.ApproxInference.get_distribution">[docs]</a>    <span class="k">def</span> <span class="nf">get_distribution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes distribution of `variables` from given data `samples`.</span>
 
@@ -222,6 +228,10 @@
 <span class="sd">        variables: list (array-like)</span>
 <span class="sd">            A list of variables whose distribution needs to be computed.</span>
 
+<span class="sd">        state_names: dict (default: None)</span>
+<span class="sd">            A dict of state names for each variable in `variables` in the form {variable_name: list of states}.</span>
+<span class="sd">            If None, inferred from the data but is possible that the final distribution misses some states.</span>
+
 <span class="sd">        joint: boolean</span>
 <span class="sd">            If joint=True, computes the joint distribution over `variables`.</span>
 <span class="sd">            Else, returns a dict with marginal distribution of each variable in</span>
@@ -229,12 +239,12 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">joint</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_factor_from_df</span><span class="p">(</span>
-                <span class="n">samples</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">/</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">samples</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">/</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state_names</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">{</span>
                 <span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_factor_from_df</span><span class="p">(</span>
-                    <span class="n">samples</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">var</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">/</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">samples</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">var</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">/</span> <span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">state_names</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span>
             <span class="p">}</span></div>
@@ -243,9 +253,11 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">,</span>
         <span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">),</span>
+        <span class="n">samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">state_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
@@ -262,12 +274,21 @@
 <span class="sd">            The number of samples to generate for computing the distributions. Higher `n_samples`</span>
 <span class="sd">            results in more accurate results at the cost of more computation time.</span>
 
+<span class="sd">        samples: pd.DataFrame (default: None)</span>
+<span class="sd">            If provided, uses these samples to compute the distribution instead</span>
+<span class="sd">            of generating samples. `samples` **must** conform with the provided</span>
+<span class="sd">            `evidence` and `virtual_evidence`.</span>
+
 <span class="sd">        evidence: dict (default: None)</span>
 <span class="sd">            The observed values. A dict key, value pair of the form {var: state_name}.</span>
 
 <span class="sd">        virtual_evidence: list (default: None)</span>
 <span class="sd">            A list of pgmpy.factors.discrete.TabularCPD representing the virtual/soft</span>
 <span class="sd">            evidence.</span>
+
+<span class="sd">        state_names: dict (default: None)</span>
+<span class="sd">            A dict of state names for each variable in `variables` in the form {variable_name: list of states}.</span>
+<span class="sd">            If None, inferred from the data but is possible that the final distribution misses some states.</span>
 
 <span class="sd">        show_progress: boolean (default: True)</span>
 <span class="sd">            If True, shows a progress bar when generating samples.</span>
@@ -294,42 +315,57 @@
 <span class="sd">        {&#39;HISTORY&#39;: &lt;DiscreteFactor representing phi(HISTORY:2) at 0x7f92dc61eb50&gt;,</span>
 <span class="sd">         &#39;CVP&#39;: &lt;DiscreteFactor representing phi(CVP:3) at 0x7f92d915ec40&gt;}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Step 1: Generate samples for the query</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
-            <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span>
-                <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
-                <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
-                <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">virtual_evidence</span><span class="p">,</span>
-                <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">DynamicBayesianNetwork</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">evidence</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">virtual_evidence</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="c1"># Step 1: If samples are not provided, generate samples for the query</span>
+        <span class="k">if</span> <span class="n">samples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span>
+                    <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
+                    <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+                    <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">virtual_evidence</span><span class="p">,</span>
+                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                    <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">DynamicBayesianNetwork</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">evidence</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">virtual_evidence</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
-            <span class="n">max_time_slices</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_time_slices</span><span class="p">:</span>
-                    <span class="n">max_time_slices</span> <span class="o">=</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_time_slices</span><span class="p">:</span>
-                    <span class="n">max_time_slices</span> <span class="o">=</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_time_slices</span><span class="p">:</span>
-                    <span class="n">max_time_slices</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-            <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span>
-                <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
-                <span class="n">n_time_slices</span><span class="o">=</span><span class="n">max_time_slices</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
-                <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">virtual_evidence</span><span class="p">,</span>
-                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
-                <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-            <span class="p">)</span>
+                <span class="n">max_time_slices</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_time_slices</span><span class="p">:</span>
+                        <span class="n">max_time_slices</span> <span class="o">=</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">evidence</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_time_slices</span><span class="p">:</span>
+                        <span class="n">max_time_slices</span> <span class="o">=</span> <span class="n">var</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_time_slices</span><span class="p">:</span>
+                        <span class="n">max_time_slices</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span>
+                    <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
+                    <span class="n">n_time_slices</span><span class="o">=</span><span class="n">max_time_slices</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+                    <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">virtual_evidence</span><span class="p">,</span>
+                    <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
+                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                <span class="p">)</span>
 
-        <span class="c1"># Step 2: Compute the distributions and return it.</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_distribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">)</span></div></div>
+        <span class="c1"># Step 2: If state_names is None, infer it from samples.</span>
+        <span class="k">if</span> <span class="n">state_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+                <span class="n">state_names</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">var</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span>
+                <span class="p">}</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">DynamicBayesianNetwork</span><span class="p">):</span>
+                <span class="n">state_names</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">var</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="n">var</span><span class="p">]]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+                    <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span>
+                <span class="p">}</span>
+
+        <span class="c1"># Step 3: Compute the distributions and return it.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_distribution</span><span class="p">(</span>
+            <span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="n">joint</span>
+        <span class="p">)</span></div></div>
 </pre></div>
 
            </div>

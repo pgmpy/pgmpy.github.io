@@ -170,9 +170,10 @@
              
   <h1>Source code for pgmpy.estimators.StructureScore</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">lgamma</span><span class="p">,</span> <span class="n">log</span>
+
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">gammaln</span>
-<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">lgamma</span><span class="p">,</span> <span class="n">log</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">BaseEstimator</span>
 
@@ -297,8 +298,9 @@
 
         <span class="n">var_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
         <span class="n">var_cardinality</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">var_states</span><span class="p">)</span>
-        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
-        <span class="n">num_parents_states</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">state_counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span>
+        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="n">reindex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">num_parents_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">])</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">])</span>
 
         <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">state_counts</span><span class="p">)</span>
         <span class="n">log_gamma_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
@@ -309,6 +311,14 @@
         <span class="c1"># Compute the log-gamma conditional sample size</span>
         <span class="n">log_gamma_conds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="n">gammaln</span><span class="p">(</span><span class="n">log_gamma_conds</span> <span class="o">+</span> <span class="n">var_cardinality</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">log_gamma_conds</span><span class="p">)</span>
+
+        <span class="c1"># Adjustments when using reindex=False as it drops columns of 0 state counts</span>
+        <span class="n">gamma_counts_adj</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">num_parents_states</span> <span class="o">-</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">var_cardinality</span> <span class="o">*</span> <span class="n">gammaln</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">gamma_conds_adj</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_parents_states</span> <span class="o">-</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">gammaln</span><span class="p">(</span>
+            <span class="n">var_cardinality</span>
+        <span class="p">)</span>
 
         <span class="n">score</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_gamma_counts</span><span class="p">)</span>
@@ -359,22 +369,22 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">equivalent_sample_size</span> <span class="o">=</span> <span class="n">equivalent_sample_size</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BDeuScore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">get_number_of_parent_states</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_counts</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">state_counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-
 <div class="viewcode-block" id="BDeuScore.local_score"><a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDeuScore.local_score">[docs]</a>    <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
         <span class="s1">&#39;Computes a score that measures how much a </span><span class="se">\</span>
 <span class="s1">        given variable is &quot;influenced&quot; by a given list of potential parents.&#39;</span>
 
         <span class="n">var_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
         <span class="n">var_cardinality</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">var_states</span><span class="p">)</span>
-        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
-        <span class="n">num_parents_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_number_of_parent_states</span><span class="p">(</span><span class="n">state_counts</span><span class="p">)</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span>
+        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="n">reindex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">num_parents_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">])</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">])</span>
 
         <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">state_counts</span><span class="p">)</span>
+        <span class="c1"># counts size is different because reindex=False is dropping columns.</span>
+        <span class="n">counts_size</span> <span class="o">=</span> <span class="n">num_parents_states</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">])</span>
         <span class="n">log_gamma_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">equivalent_sample_size</span> <span class="o">/</span> <span class="n">num_parents_states</span>
-        <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">equivalent_sample_size</span> <span class="o">/</span> <span class="n">counts</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">equivalent_sample_size</span> <span class="o">/</span> <span class="n">counts_size</span>
         <span class="c1"># Compute log(gamma(counts + beta))</span>
         <span class="n">gammaln</span><span class="p">(</span><span class="n">counts</span> <span class="o">+</span> <span class="n">beta</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">log_gamma_counts</span><span class="p">)</span>
 
@@ -382,11 +392,19 @@
         <span class="n">log_gamma_conds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="n">gammaln</span><span class="p">(</span><span class="n">log_gamma_conds</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">log_gamma_conds</span><span class="p">)</span>
 
+        <span class="c1"># Adjustment because of missing 0 columns when using reindex=False for computing state_counts to save memory.</span>
+        <span class="n">gamma_counts_adj</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">num_parents_states</span> <span class="o">-</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">])</span>
+            <span class="o">*</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">gamma_conds_adj</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_parents_states</span> <span class="o">-</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+
         <span class="n">score</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_gamma_counts</span><span class="p">)</span>
-            <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_gamma_conds</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_gamma_counts</span><span class="p">)</span> <span class="o">+</span> <span class="n">gamma_counts_adj</span><span class="p">)</span>
+            <span class="o">-</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_gamma_conds</span><span class="p">)</span> <span class="o">+</span> <span class="n">gamma_conds_adj</span><span class="p">)</span>
             <span class="o">+</span> <span class="n">num_parents_states</span> <span class="o">*</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
-            <span class="o">-</span> <span class="n">counts</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">counts_size</span> <span class="o">*</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">score</span></div></div>
 
@@ -434,9 +452,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BDsScore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">equivalent_sample_size</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">get_number_of_parent_states</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_counts</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">state_counts</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
-
 <div class="viewcode-block" id="BDsScore.structure_prior_ratio"><a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDsScore.structure_prior_ratio">[docs]</a>    <span class="k">def</span> <span class="nf">structure_prior_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the log ratio of the prior probabilities for a given proposed change to</span>
 <span class="sd">        the DAG.</span>
@@ -456,6 +471,45 @@
         <span class="n">nnodes</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
         <span class="n">possible_edges</span> <span class="o">=</span> <span class="n">nnodes</span> <span class="o">*</span> <span class="p">(</span><span class="n">nnodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
         <span class="n">score</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">nedges</span> <span class="o">+</span> <span class="n">possible_edges</span><span class="p">)</span> <span class="o">*</span> <span class="n">log</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">score</span></div>
+
+<div class="viewcode-block" id="BDsScore.local_score"><a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDsScore.local_score">[docs]</a>    <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+        <span class="s1">&#39;Computes a score that measures how much a </span><span class="se">\</span>
+<span class="s1">        given variable is &quot;influenced&quot; by a given list of potential parents.&#39;</span>
+
+        <span class="n">var_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
+        <span class="n">var_cardinality</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">var_states</span><span class="p">)</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span>
+        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="n">reindex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">num_parents_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">])</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">])</span>
+
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">state_counts</span><span class="p">)</span>
+        <span class="c1"># counts size is different because reindex=False is dropping columns.</span>
+        <span class="n">counts_size</span> <span class="o">=</span> <span class="n">num_parents_states</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">])</span>
+        <span class="n">log_gamma_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">equivalent_sample_size</span> <span class="o">/</span> <span class="n">state_counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">equivalent_sample_size</span> <span class="o">/</span> <span class="n">counts_size</span>
+        <span class="c1"># Compute log(gamma(counts + beta))</span>
+        <span class="n">gammaln</span><span class="p">(</span><span class="n">counts</span> <span class="o">+</span> <span class="n">beta</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">log_gamma_counts</span><span class="p">)</span>
+
+        <span class="c1"># Compute the log-gamma conditional sample size</span>
+        <span class="n">log_gamma_conds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">gammaln</span><span class="p">(</span><span class="n">log_gamma_conds</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">log_gamma_conds</span><span class="p">)</span>
+
+        <span class="c1"># Adjustment because of missing 0 columns when using reindex=False for computing state_counts to save memory.</span>
+        <span class="n">gamma_counts_adj</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">num_parents_states</span> <span class="o">-</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">])</span>
+            <span class="o">*</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">gamma_conds_adj</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_parents_states</span> <span class="o">-</span> <span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">gammaln</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+
+        <span class="n">score</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_gamma_counts</span><span class="p">)</span> <span class="o">+</span> <span class="n">gamma_counts_adj</span><span class="p">)</span>
+            <span class="o">-</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_gamma_conds</span><span class="p">)</span> <span class="o">+</span> <span class="n">gamma_conds_adj</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">state_counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">counts_size</span> <span class="o">*</span> <span class="n">lgamma</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">score</span></div></div>
 
 
@@ -502,9 +556,10 @@
 
         <span class="n">var_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
         <span class="n">var_cardinality</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">var_states</span><span class="p">)</span>
-        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span>
+        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="n">reindex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">sample_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">num_parents_states</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">state_counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">num_parents_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">])</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">])</span>
 
         <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">state_counts</span><span class="p">)</span>
         <span class="n">log_likelihoods</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
@@ -568,9 +623,10 @@
 
         <span class="n">var_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
         <span class="n">var_cardinality</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">var_states</span><span class="p">)</span>
-        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">)</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span>
+        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="n">reindex</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">sample_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">num_parents_states</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">state_counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">num_parents_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">])</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">])</span>
 
         <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">state_counts</span><span class="p">)</span>
         <span class="n">log_likelihoods</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>

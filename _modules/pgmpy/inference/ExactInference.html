@@ -659,10 +659,8 @@
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes the MAP Query over the variables given the evidence.</span>
-
-<span class="sd">        Note: When multiple variables are passed, it returns the map_query for each</span>
-<span class="sd">        of them individually.</span>
+<span class="sd">        Computes the MAP Query over the variables given the evidence. Returns the</span>
+<span class="sd">        highest probable state in the joint distribution of `variables`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -726,7 +724,6 @@
         <span class="n">reduced_ve</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">model_reduced</span><span class="p">)</span>
         <span class="n">reduced_ve</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 
-        <span class="c1"># TODO:Check the note in docstring. Change that behavior to return the joint MAP</span>
         <span class="n">final_distribution</span> <span class="o">=</span> <span class="n">reduced_ve</span><span class="o">.</span><span class="n">_variable_elimination</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
@@ -744,13 +741,7 @@
             <span class="n">var</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">var_assignment</span>
             <span class="n">map_query_results</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">variables</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">map_query_results</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">return_dict</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
-                <span class="n">return_dict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">map_query_results</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">return_dict</span></div>
+        <span class="k">return</span> <span class="n">map_query_results</span></div>
 
 <div class="viewcode-block" id="VariableElimination.induced_graph"><a class="viewcode-back" href="../../../exact_infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.induced_graph">[docs]</a>    <span class="k">def</span> <span class="nf">induced_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -1301,10 +1292,8 @@
         <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        MAP Query method using belief propagation.</span>
-
-<span class="sd">        Note: When multiple variables are passed, it returns the map_query for each</span>
-<span class="sd">        of them individually.</span>
+<span class="sd">        MAP Query method using belief propagation. Returns the highest probable</span>
+<span class="sd">        state in the joint distributon of `variables`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1385,6 +1374,7 @@
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
             <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+            <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -1400,13 +1390,7 @@
             <span class="n">var</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">var_assignment</span>
             <span class="n">map_query_results</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">variables</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">map_query_results</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">return_dict</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
-                <span class="n">return_dict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">map_query_results</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">return_dict</span></div></div>
+        <span class="k">return</span> <span class="n">map_query_results</span></div></div>
 </pre></div>
 
            </div>
