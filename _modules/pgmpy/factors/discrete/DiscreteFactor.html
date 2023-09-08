@@ -8,8 +8,6 @@
     <title>pgmpy.factors.discrete.DiscreteFactor &#8212; pgmpy 0.1.23 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css" />
-    <script src="../../../../_static/jquery.js"></script>
-    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
     <script src="../../../../_static/doctools.js"></script>
     <script src="../../../../_static/sphinx_highlight.js"></script>
@@ -40,10 +38,12 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">torch</span>
 
+<span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
 <span class="kn">from</span> <span class="nn">pgmpy.extern</span> <span class="kn">import</span> <span class="n">tabulate</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors.base</span> <span class="kn">import</span> <span class="n">BaseFactor</span>
-<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">StateNameMixin</span>
+<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">StateNameMixin</span><span class="p">,</span> <span class="n">compat_fns</span>
 
 <span class="n">State</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;State&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;var&quot;</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">])</span>
 
@@ -120,15 +120,20 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Variables: Expected type list or array like, got string&quot;</span><span class="p">)</span>
 
-        <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">BACKEND</span> <span class="o">==</span> <span class="s2">&quot;numpy&quot;</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get_device</span><span class="p">())</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cardinality</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;Number of elements in cardinality must be equal to number of variables&quot;</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">values</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">cardinality</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Values array must be of size: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">cardinality</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">cardinality</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Values array must be of size: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">cardinality</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Variable names cannot be same&quot;</span><span class="p">)</span>
@@ -140,7 +145,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cardinality</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">))</span>
 
         <span class="c1"># Set the state names</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">DiscreteFactor</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">store_state_names</span><span class="p">(</span>
@@ -304,23 +309,31 @@
 <span class="sd">        &gt;&gt;&gt; phi.assignment([1, 2])</span>
 <span class="sd">        [[(&#39;diff&#39;, 0), (&#39;intel&#39;, 1)], [(&#39;diff&#39;, 1), (&#39;intel&#39;, 0)]]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">get_backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;numpy&quot;</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)):</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="kc">None</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get_device</span><span class="p">())</span>
 
         <span class="n">max_possible_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;=</span> <span class="n">max_possible_index</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">index</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Index greater than max possible index&quot;</span><span class="p">)</span>
 
-        <span class="n">assignments</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="p">())),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">assignments</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">get_compute_backend</span><span class="p">()</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="p">())),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span>
+        <span class="p">)</span>
         <span class="n">rev_card</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">card</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rev_card</span><span class="p">):</span>
             <span class="n">assignments</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span> <span class="o">%</span> <span class="n">card</span>
             <span class="n">index</span> <span class="o">=</span> <span class="n">index</span> <span class="o">//</span> <span class="n">card</span>
 
-        <span class="n">assignments</span> <span class="o">=</span> <span class="n">assignments</span><span class="p">[:,</span> <span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">assignments</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">assignments</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
 
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">[</span>
-                <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_state_names</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span>
+                <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_state_names</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)))</span>
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
             <span class="p">]</span>
             <span class="k">for</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">assignments</span>
@@ -357,7 +370,7 @@
         <span class="k">return</span> <span class="n">DiscreteFactor</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">cardinality</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">,</span>
-            <span class="n">values</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+            <span class="n">values</span><span class="o">=</span><span class="n">compat_fns</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">compat_fns</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)),</span>
             <span class="n">state_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">,</span>
         <span class="p">)</span></div>
 
@@ -407,7 +420,7 @@
         <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">index_to_keep</span><span class="p">]</span>
         <span class="n">phi</span><span class="o">.</span><span class="n">del_state_names</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
 
-        <span class="n">phi</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_variables</span><span class="p">),</span> <span class="n">index_to_keep</span><span class="p">)</span>
+        <span class="n">phi</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_variables</span><span class="p">),</span> <span class="n">index_to_keep</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">phi</span></div>
@@ -463,8 +476,7 @@
         <span class="n">phi</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">index_to_keep</span><span class="p">]</span>
         <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="n">index_to_keep</span><span class="p">]</span>
         <span class="n">phi</span><span class="o">.</span><span class="n">del_state_names</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
-
-        <span class="n">phi</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">var_indexes</span><span class="p">))</span>
+        <span class="n">phi</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">var_indexes</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">phi</span></div>
@@ -736,7 +748,7 @@
             <span class="c1"># Compute the new values</span>
             <span class="n">new_variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">phi1</span><span class="o">.</span><span class="n">variables</span><span class="p">))</span>
             <span class="n">var_to_int</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">index</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">new_variables</span><span class="p">)}</span>
-            <span class="n">phi</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
+            <span class="n">phi</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
                 <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
                 <span class="p">[</span><span class="n">var_to_int</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">phi</span><span class="o">.</span><span class="n">variables</span><span class="p">],</span>
                 <span class="n">phi1</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
@@ -823,7 +835,7 @@
 
         <span class="c1"># If factor division 0/0 = 0 but is undefined for x/0. In pgmpy we are using</span>
         <span class="c1"># np.inf to represent x/0 cases.</span>
-        <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">get_compute_backend</span><span class="p">()</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">phi</span></div>
@@ -851,6 +863,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">phi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+        <span class="c1"># TODO: Fix this to make it work natively in torch.</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
         <span class="n">indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)),</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">index_to_state</span> <span class="o">=</span> <span class="p">{}</span>
@@ -894,7 +910,7 @@
         <span class="n">copy</span> <span class="o">=</span> <span class="n">DiscreteFactor</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span>
         <span class="n">copy</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
         <span class="n">copy</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">)</span>
-        <span class="n">copy</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">copy</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
         <span class="n">copy</span><span class="o">.</span><span class="n">state_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">copy</span><span class="o">.</span><span class="n">no_to_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_to_name</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">copy</span><span class="o">.</span><span class="n">name_to_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_to_no</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -904,11 +920,11 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Checks if the factor&#39;s values can be used for a valid CPD.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+        <span class="k">return</span> <span class="n">config</span><span class="o">.</span><span class="n">get_compute_backend</span><span class="p">()</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">to_factor</span><span class="p">()</span>
             <span class="o">.</span><span class="n">marginalize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scope</span><span class="p">()[:</span><span class="mi">1</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">),</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])),</span>
+            <span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+            <span class="n">compat_fns</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])),</span>
             <span class="n">atol</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
         <span class="p">)</span></div>
 
@@ -1024,7 +1040,9 @@
 
             <span class="k">if</span> <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">False</span>
-            <span class="k">elif</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">):</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">get_compute_backend</span><span class="p">()</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+                <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span>
+            <span class="p">):</span>
                 <span class="k">return</span> <span class="kc">False</span>
             <span class="k">elif</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">==</span> <span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">):</span>
                 <span class="k">return</span> <span class="kc">False</span>
@@ -1052,8 +1070,8 @@
             <span class="n">phi</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">swapaxes</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">exchange_index</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span>
             <span class="nb">str</span><span class="p">(</span><span class="n">sorted_var_hashes</span><span class="p">)</span>
-            <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">hash</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()))</span>
-            <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">hash</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()))</span>
+            <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">hash</span><span class="p">(</span><span class="n">compat_fns</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">values</span><span class="p">)))</span>
+            <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">hash</span><span class="p">(</span><span class="n">compat_fns</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">phi</span><span class="o">.</span><span class="n">cardinality</span><span class="p">)))</span>
             <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">state_names_hash</span><span class="p">)</span>
         <span class="p">)</span></div>
 </pre></div>
@@ -1078,17 +1096,7 @@
 
 
 
-
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<h3>Navigation</h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../started/base.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../base/base.html">Base Model Structures</a></li>
@@ -1124,6 +1132,16 @@
 <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
