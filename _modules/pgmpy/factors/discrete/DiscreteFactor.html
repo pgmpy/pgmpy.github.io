@@ -31,9 +31,7 @@
           <div class="body" role="main">
             
   <h1>Source code for pgmpy.factors.discrete.DiscreteFactor</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -43,6 +41,7 @@
 <span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
 <span class="kn">from</span> <span class="nn">pgmpy.extern</span> <span class="kn">import</span> <span class="n">tabulate</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors.base</span> <span class="kn">import</span> <span class="n">BaseFactor</span>
+<span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">StateNameMixin</span><span class="p">,</span> <span class="n">compat_fns</span>
 
 <span class="n">State</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;State&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;var&quot;</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">])</span>
@@ -238,7 +237,7 @@
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name_to_no</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">]])</span>
                 <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> state as number instead of name.&quot;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> state as number instead of name.&quot;</span><span class="p">)</span>
                     <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span></div>
 
@@ -282,7 +281,7 @@
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name_to_no</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">]])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> state as number instead of name.&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> state as number instead of name.&quot;</span><span class="p">)</span>
                 <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span></div>
@@ -585,9 +584,8 @@
             <span class="p">]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">show_warnings</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                    <span class="s2">&quot;Found unknown state name. Trying to switch to using all state names as state numbers&quot;</span><span class="p">,</span>
-                    <span class="ne">UserWarning</span><span class="p">,</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Found unknown state name. Trying to switch to using all state names as state numbers&quot;</span>
                 <span class="p">)</span>
 
         <span class="n">var_index_to_del</span> <span class="o">=</span> <span class="p">[]</span>
