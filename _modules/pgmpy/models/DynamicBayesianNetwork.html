@@ -102,72 +102,72 @@
 
 
 <div class="viewcode-block" id="DynamicBayesianNetwork"><a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork">[docs]</a><span class="k">class</span> <span class="nc">DynamicBayesianNetwork</span><span class="p">(</span><span class="n">DAG</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for Dynamic Bayesian Network</span>
+
+<span class="sd">    This is a time variant model of the static Bayesian model, where each</span>
+<span class="sd">    time-slice has some static nodes and is then replicated over a certain</span>
+<span class="sd">    time period.</span>
+
+<span class="sd">    The nodes can be any hashable python objects.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ebunch: Data to initialize graph.  If data=None (default) an empty</span>
+<span class="sd">          graph is created.  The data can be an edge list, or any NetworkX</span>
+<span class="sd">          graph object</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Create an empty Dynamic Bayesian Network with no nodes and no edges:</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.models import DynamicBayesianNetwork as DBN</span>
+<span class="sd">    &gt;&gt;&gt; dbn = DBN()</span>
+
+<span class="sd">    Adding nodes and edges inside the Dynamic Bayesian Network. A single</span>
+<span class="sd">    node can be added using the method below. For adding edges we need to</span>
+<span class="sd">    specify the time slice since edges can be across different time slices.</span>
+
+<span class="sd">    For example for a network as [image](http://s8.postimg.org/aaybw4x2t/Blank_Flowchart_New_Page_1.png),</span>
+<span class="sd">    we will need to add all the edges in the 2-TBN as:</span>
+
+<span class="sd">    &gt;&gt;&gt; dbn.add_edges_from([((&#39;D&#39;, 0), (&#39;G&#39;, 0)), ((&#39;I&#39;, 0), (&#39;G&#39;, 0)),</span>
+<span class="sd">    ...                     ((&#39;G&#39;, 0), (&#39;L&#39;, 0)), ((&#39;D&#39;, 0), (&#39;D&#39;, 1)),</span>
+<span class="sd">    ...                     ((&#39;I&#39;, 0), (&#39;I&#39;, 1)), ((&#39;G&#39;, 0), (&#39;G&#39;, 1)),</span>
+<span class="sd">    ...                     ((&#39;G&#39;, 0), (&#39;L&#39;, 1)), ((&#39;L&#39;, 0), (&#39;L&#39;, 1))])</span>
+
+<span class="sd">    We can query the edges and nodes in the network as:</span>
+<span class="sd">    &gt;&gt;&gt; dbn.nodes()</span>
+<span class="sd">    [&#39;G&#39;, &#39;D&#39;, &#39;I&#39;, &#39;L&#39;]</span>
+<span class="sd">    &gt;&gt;&gt; dbn.edges()</span>
+<span class="sd">    [((&#39;D&#39;, 1), (&#39;G&#39;, 1)), ((&#39;I&#39;, 0), (&#39;G&#39;, 0)), ((&#39;I&#39;, 0), (&#39;I&#39;, 1)),</span>
+<span class="sd">     ((&#39;I&#39;, 1), (&#39;G&#39;, 1)), ((&#39;G&#39;, 0), (&#39;L&#39;, 0)), ((&#39;G&#39;, 0), (&#39;G&#39;, 1)),</span>
+<span class="sd">     ((&#39;G&#39;, 0), (&#39;L&#39;, 1)), ((&#39;D&#39;, 0), (&#39;G&#39;, 0)), ((&#39;D&#39;, 0), (&#39;D&#39;, 1)),</span>
+<span class="sd">     ((&#39;L&#39;, 0), (&#39;L&#39;, 1)), ((&#39;G&#39;, 1), (&#39;L&#39;, 1))]</span>
+
+<span class="sd">    If any variable is not present in the network while adding an edge,</span>
+<span class="sd">    pgmpy will automatically add that variable to the network.</span>
+
+<span class="sd">    But for adding nodes to the model we don&#39;t need to specify the time</span>
+<span class="sd">    slice as it is common in all the time slices. And therefore pgmpy</span>
+<span class="sd">    automatically replicated it all the time slices. For example, for</span>
+<span class="sd">    adding a new variable `S` in the above network we can simply do:</span>
+<span class="sd">    &gt;&gt;&gt; dbn.add_node(&#39;S&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; dbn.nodes()</span>
+<span class="sd">    [&#39;S&#39;, &#39;G&#39;, &#39;D&#39;, &#39;I&#39;, &#39;L&#39;]</span>
+
+<span class="sd">    Public Methods</span>
+<span class="sd">    --------------</span>
+<span class="sd">    add_node</span>
+<span class="sd">    add_nodes_from</span>
+<span class="sd">    add_edges</span>
+<span class="sd">    add_edges_from</span>
+<span class="sd">    add_cpds</span>
+<span class="sd">    initialize_initial_state</span>
+<span class="sd">    inter_slice</span>
+<span class="sd">    intra_slice</span>
+<span class="sd">    copy</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Base class for Dynamic Bayesian Network</span>
-
-<span class="sd">        This is a time variant model of the static Bayesian model, where each</span>
-<span class="sd">        time-slice has some static nodes and is then replicated over a certain</span>
-<span class="sd">        time period.</span>
-
-<span class="sd">        The nodes can be any hashable python objects.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        ebunch: Data to initialize graph.  If data=None (default) an empty</span>
-<span class="sd">              graph is created.  The data can be an edge list, or any NetworkX</span>
-<span class="sd">              graph object</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        Create an empty Dynamic Bayesian Network with no nodes and no edges:</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import DynamicBayesianNetwork as DBN</span>
-<span class="sd">        &gt;&gt;&gt; dbn = DBN()</span>
-
-<span class="sd">        Adding nodes and edges inside the dynamic bayesian network. A single</span>
-<span class="sd">        node can be added using the method below. For adding edges we need to</span>
-<span class="sd">        specify the time slice since edges can be across different time slices.</span>
-
-<span class="sd">        For example for a network as [image](http://s8.postimg.org/aaybw4x2t/Blank_Flowchart_New_Page_1.png),</span>
-<span class="sd">        we will need to add all the edges in the 2-TBN as:</span>
-
-<span class="sd">        &gt;&gt;&gt; dbn.add_edges_from([((&#39;D&#39;, 0), (&#39;G&#39;, 0)), ((&#39;I&#39;, 0), (&#39;G&#39;, 0)),</span>
-<span class="sd">        ...                     ((&#39;G&#39;, 0), (&#39;L&#39;, 0)), ((&#39;D&#39;, 0), (&#39;D&#39;, 1)),</span>
-<span class="sd">        ...                     ((&#39;I&#39;, 0), (&#39;I&#39;, 1)), ((&#39;G&#39;, 0), (&#39;G&#39;, 1)),</span>
-<span class="sd">        ...                     ((&#39;G&#39;, 0), (&#39;L&#39;, 1)), ((&#39;L&#39;, 0), (&#39;L&#39;, 1))])</span>
-
-<span class="sd">        We can query the edges and nodes in the network as:</span>
-<span class="sd">        &gt;&gt;&gt; dbn.nodes()</span>
-<span class="sd">        [&#39;G&#39;, &#39;D&#39;, &#39;I&#39;, &#39;L&#39;]</span>
-<span class="sd">        &gt;&gt;&gt; dbn.edges()</span>
-<span class="sd">        [((&#39;D&#39;, 1), (&#39;G&#39;, 1)), ((&#39;I&#39;, 0), (&#39;G&#39;, 0)), ((&#39;I&#39;, 0), (&#39;I&#39;, 1)),</span>
-<span class="sd">         ((&#39;I&#39;, 1), (&#39;G&#39;, 1)), ((&#39;G&#39;, 0), (&#39;L&#39;, 0)), ((&#39;G&#39;, 0), (&#39;G&#39;, 1)),</span>
-<span class="sd">         ((&#39;G&#39;, 0), (&#39;L&#39;, 1)), ((&#39;D&#39;, 0), (&#39;G&#39;, 0)), ((&#39;D&#39;, 0), (&#39;D&#39;, 1)),</span>
-<span class="sd">         ((&#39;L&#39;, 0), (&#39;L&#39;, 1)), ((&#39;G&#39;, 1), (&#39;L&#39;, 1))]</span>
-
-<span class="sd">        If any variable is not present in the network while adding an edge,</span>
-<span class="sd">        pgmpy will automatically add that variable to the network.</span>
-
-<span class="sd">        But for adding nodes to the model we don&#39;t need to specify the time</span>
-<span class="sd">        slice as it is common in all the time slices. And therefore pgmpy</span>
-<span class="sd">        automatically replicated it all the time slices. For example, for</span>
-<span class="sd">        adding a new variable `S` in the above network we can simply do:</span>
-<span class="sd">        &gt;&gt;&gt; dbn.add_node(&#39;S&#39;)</span>
-<span class="sd">        &gt;&gt;&gt; dbn.nodes()</span>
-<span class="sd">        [&#39;S&#39;, &#39;G&#39;, &#39;D&#39;, &#39;I&#39;, &#39;L&#39;]</span>
-
-<span class="sd">        Public Methods</span>
-<span class="sd">        --------------</span>
-<span class="sd">        add_node</span>
-<span class="sd">        add_nodes_from</span>
-<span class="sd">        add_edges</span>
-<span class="sd">        add_edges_from</span>
-<span class="sd">        add_cpds</span>
-<span class="sd">        initialize_initial_state</span>
-<span class="sd">        inter_slice</span>
-<span class="sd">        intra_slice</span>
-<span class="sd">        copy</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">DynamicBayesianNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">ebunch</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">ebunch</span><span class="p">)</span>
@@ -454,7 +454,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.add_cpds"><a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.add_cpds">[docs]</a>    <span class="k">def</span> <span class="nf">add_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">cpds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This method adds the cpds to the dynamic bayesian network.</span>
+<span class="sd">        This method adds the cpds to the Dynamic Bayesian Network.</span>
 <span class="sd">        Note that while adding variables and the evidence in cpd,</span>
 <span class="sd">        they have to be of the following form</span>
 <span class="sd">        (node_name, time_slice)</span>
@@ -635,10 +635,10 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.initialize_initial_state"><a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.initialize_initial_state">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_initial_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This method will automatically re-adjust the cpds and the edges added to the bayesian network.</span>
+<span class="sd">        This method will automatically re-adjust the cpds and the edges added to the Bayesian Network.</span>
 <span class="sd">        If an edge that is added as an intra time slice edge in the 0th timeslice, this method will</span>
 <span class="sd">        automatically add it in the 1st timeslice. It will also add the cpds. However, to call this</span>
-<span class="sd">        method, one needs to add cpds as well as the edges in the bayesian network of the whole</span>
+<span class="sd">        method, one needs to add cpds as well as the edges in the Bayesian Network of the whole</span>
 <span class="sd">        skeleton including the 0th and the 1st timeslice,.</span>
 
 <span class="sd">        Examples</span>
@@ -731,11 +731,11 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.copy"><a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.copy">[docs]</a>    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a copy of the dynamic bayesian network.</span>
+<span class="sd">        Returns a copy of the Dynamic Bayesian Network.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        DynamicBayesianNetwork: copy of the dynamic bayesian network</span>
+<span class="sd">        DynamicBayesianNetwork: copy of the Dynamic Bayesian Network</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -811,9 +811,9 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.get_constant_bn"><a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.get_constant_bn">[docs]</a>    <span class="k">def</span> <span class="nf">get_constant_bn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t_slice</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a normal bayesian network object which has nodes from the first two</span>
+<span class="sd">        Returns a normal Bayesian Network object which has nodes from the first two</span>
 <span class="sd">        time slices and all the edges in the first time slice and edges going from</span>
-<span class="sd">        first to second time slice. The returned bayesian network basically represents</span>
+<span class="sd">        first to second time slice. The returned Bayesian Network basically represents</span>
 <span class="sd">        the part of the DBN which remains constant.</span>
 
 <span class="sd">        The node names are changed to strings in the form `{var}_{time}`.</span>
@@ -918,7 +918,7 @@
             <span class="c1"># Select the data frame for this time slice</span>
             <span class="n">df_slice</span> <span class="o">=</span> <span class="n">data_copy</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">colnames</span><span class="p">]</span>
 
-            <span class="c1"># Change the column time slice to match the constant bayesian network.</span>
+            <span class="c1"># Change the column time slice to match the constant Bayesian Network.</span>
             <span class="n">tuple_colnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">df_slice</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
             <span class="n">new_colnames</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="n">t_slice</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="ow">in</span> <span class="n">tuple_colnames</span>

@@ -51,84 +51,81 @@
     <span class="n">JointProbabilityDistribution</span><span class="p">,</span>
     <span class="n">TabularCPD</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">pgmpy.models.MarkovNetwork</span> <span class="kn">import</span> <span class="n">MarkovNetwork</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">compat_fns</span>
-<span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 
 
 <div class="viewcode-block" id="BayesianNetwork"><a class="viewcode-back" href="../../../models/bayesiannetwork.html#pgmpy.models.BayesianNetwork.BayesianNetwork">[docs]</a><span class="k">class</span> <span class="nc">BayesianNetwork</span><span class="p">(</span><span class="n">DAG</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Base class for Bayesian Models.</span>
+<span class="sd">    Initializes a Bayesian Network.</span>
+<span class="sd">    A models stores nodes and edges with conditional probability</span>
+<span class="sd">    distribution (cpd) and other attributes.</span>
+
+<span class="sd">    models hold directed edges.  Self loops are not allowed neither</span>
+<span class="sd">    multiple (parallel) edges.</span>
+
+<span class="sd">    Nodes can be any hashable python object.</span>
+
+<span class="sd">    Edges are represented as links between nodes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ebunch: input graph</span>
+<span class="sd">        Data to initialize graph.  If ebunch=None (default) an empty</span>
+<span class="sd">        graph is created.  The ebunch can be an edge list, or any</span>
+<span class="sd">        NetworkX graph object.</span>
+
+<span class="sd">    latents: list, array-like</span>
+<span class="sd">        List of variables which are latent (i.e. unobserved) in the model.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Create an empty Bayesian Network with no nodes and no edges.</span>
+
+<span class="sd">    &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">    &gt;&gt;&gt; G = BayesianNetwork()</span>
+
+<span class="sd">    G can be grown in several ways.</span>
+
+<span class="sd">    **Nodes:**</span>
+
+<span class="sd">    Add one node at a time:</span>
+
+<span class="sd">    &gt;&gt;&gt; G.add_node(&#39;a&#39;)</span>
+
+<span class="sd">    Add the nodes from any container (a list, set or tuple or the nodes</span>
+<span class="sd">    from another graph).</span>
+
+<span class="sd">    &gt;&gt;&gt; G.add_nodes_from([&#39;a&#39;, &#39;b&#39;])</span>
+
+<span class="sd">    **Edges:**</span>
+
+<span class="sd">    G can also be grown by adding edges.</span>
+
+<span class="sd">    Add one edge,</span>
+
+<span class="sd">    &gt;&gt;&gt; G.add_edge(&#39;a&#39;, &#39;b&#39;)</span>
+
+<span class="sd">    a list of edges,</span>
+
+<span class="sd">    &gt;&gt;&gt; G.add_edges_from([(&#39;a&#39;, &#39;b&#39;), (&#39;b&#39;, &#39;c&#39;)])</span>
+
+<span class="sd">    If some edges connect nodes not yet in the model, the nodes</span>
+<span class="sd">    are added automatically.  There are no errors when adding</span>
+<span class="sd">    nodes or edges that already exist.</span>
+
+<span class="sd">    **Shortcuts:**</span>
+
+<span class="sd">    Many common graph features allow python syntax for speed reporting.</span>
+
+<span class="sd">    &gt;&gt;&gt; &#39;a&#39; in G     # check if node in graph</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; len(G)  # number of nodes in graph</span>
+<span class="sd">    3</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="nb">set</span><span class="p">()):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a Bayesian Model.</span>
-<span class="sd">        A models stores nodes and edges with conditional probability</span>
-<span class="sd">        distribution (cpd) and other attributes.</span>
-
-<span class="sd">        models hold directed edges.  Self loops are not allowed neither</span>
-<span class="sd">        multiple (parallel) edges.</span>
-
-<span class="sd">        Nodes can be any hashable python object.</span>
-
-<span class="sd">        Edges are represented as links between nodes.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        data : input graph</span>
-<span class="sd">            Data to initialize graph.  If data=None (default) an empty</span>
-<span class="sd">            graph is created.  The data can be an edge list, or any</span>
-<span class="sd">            NetworkX graph object.</span>
-
-<span class="sd">        latents: list, array-like</span>
-<span class="sd">            List of variables which are latent (i.e. unobserved) in the model.</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        Create an empty bayesian model with no nodes and no edges.</span>
-
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
-<span class="sd">        &gt;&gt;&gt; G = BayesianNetwork()</span>
-
-<span class="sd">        G can be grown in several ways.</span>
-
-<span class="sd">        **Nodes:**</span>
-
-<span class="sd">        Add one node at a time:</span>
-
-<span class="sd">        &gt;&gt;&gt; G.add_node(&#39;a&#39;)</span>
-
-<span class="sd">        Add the nodes from any container (a list, set or tuple or the nodes</span>
-<span class="sd">        from another graph).</span>
-
-<span class="sd">        &gt;&gt;&gt; G.add_nodes_from([&#39;a&#39;, &#39;b&#39;])</span>
-
-<span class="sd">        **Edges:**</span>
-
-<span class="sd">        G can also be grown by adding edges.</span>
-
-<span class="sd">        Add one edge,</span>
-
-<span class="sd">        &gt;&gt;&gt; G.add_edge(&#39;a&#39;, &#39;b&#39;)</span>
-
-<span class="sd">        a list of edges,</span>
-
-<span class="sd">        &gt;&gt;&gt; G.add_edges_from([(&#39;a&#39;, &#39;b&#39;), (&#39;b&#39;, &#39;c&#39;)])</span>
-
-<span class="sd">        If some edges connect nodes not yet in the model, the nodes</span>
-<span class="sd">        are added automatically.  There are no errors when adding</span>
-<span class="sd">        nodes or edges that already exist.</span>
-
-<span class="sd">        **Shortcuts:**</span>
-
-<span class="sd">        Many common graph features allow python syntax for speed reporting.</span>
-
-<span class="sd">        &gt;&gt;&gt; &#39;a&#39; in G     # check if node in graph</span>
-<span class="sd">        True</span>
-<span class="sd">        &gt;&gt;&gt; len(G)  # number of nodes in graph</span>
-<span class="sd">        3</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BayesianNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cardinalities</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
@@ -485,8 +482,8 @@
 
 <div class="viewcode-block" id="BayesianNetwork.to_markov_model"><a class="viewcode-back" href="../../../models/bayesiannetwork.html#pgmpy.models.BayesianNetwork.BayesianNetwork.to_markov_model">[docs]</a>    <span class="k">def</span> <span class="nf">to_markov_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts bayesian model to markov model. The markov model created would</span>
-<span class="sd">        be the moral graph of the bayesian model.</span>
+<span class="sd">        Converts Bayesian Network to Markov Model. The Markov Model created would</span>
+<span class="sd">        be the moral graph of the Bayesian Network.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -508,7 +505,7 @@
 
 <div class="viewcode-block" id="BayesianNetwork.to_junction_tree"><a class="viewcode-back" href="../../../models/bayesiannetwork.html#pgmpy.models.BayesianNetwork.BayesianNetwork.to_junction_tree">[docs]</a>    <span class="k">def</span> <span class="nf">to_junction_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a junction tree (or clique tree) for a given bayesian model.</span>
+<span class="sd">        Creates a junction tree (or clique tree) for a given Bayesian Network.</span>
 
 <span class="sd">        For converting a Bayesian Model into a Clique tree, first it is converted</span>
 <span class="sd">        into a Markov one.</span>
@@ -916,7 +913,7 @@
 
 <div class="viewcode-block" id="BayesianNetwork.is_imap"><a class="viewcode-back" href="../../../models/bayesiannetwork.html#pgmpy.models.BayesianNetwork.BayesianNetwork.is_imap">[docs]</a>    <span class="k">def</span> <span class="nf">is_imap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">JPD</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Checks whether the bayesian model is Imap of given JointProbabilityDistribution</span>
+<span class="sd">        Checks whether the Bayesian Network is Imap of given JointProbabilityDistribution</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -925,7 +922,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        is IMAP: True or False</span>
-<span class="sd">            True if bayesian model is Imap for given Joint Probability Distribution False otherwise</span>
+<span class="sd">            True if Bayesian Network is Imap for given Joint Probability Distribution False otherwise</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1033,7 +1030,7 @@
 <div class="viewcode-block" id="BayesianNetwork.get_random"><a class="viewcode-back" href="../../../models/bayesiannetwork.html#pgmpy.models.BayesianNetwork.BayesianNetwork.get_random">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">edge_prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">n_states</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a randomly generated bayesian network on `n_nodes` variables</span>
+<span class="sd">        Returns a randomly generated Bayesian Network on `n_nodes` variables</span>
 <span class="sd">        with edge probabiliy of `edge_prob` between variables.</span>
 
 <span class="sd">        Parameters</span>

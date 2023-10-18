@@ -40,54 +40,54 @@
 
 
 <div class="viewcode-block" id="DBNInference"><a class="viewcode-back" href="../../../exact_infer/dbn_infer.html#pgmpy.inference.dbn_inference.DBNInference">[docs]</a><span class="k">class</span> <span class="nc">DBNInference</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class for performing inference using Belief Propagation method</span>
+<span class="sd">    for the input Dynamic Bayesian Network.</span>
+
+<span class="sd">    For the exact inference implementation, the interface algorithm</span>
+<span class="sd">    is used which is adapted from [1].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model: Dynamic Bayesian Network</span>
+<span class="sd">        Model for which inference is to performed</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.models import DynamicBayesianNetwork as DBN</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.inference import DBNInference</span>
+<span class="sd">    &gt;&gt;&gt; dbnet = DBN()</span>
+<span class="sd">    &gt;&gt;&gt; dbnet.add_edges_from([((&#39;Z&#39;, 0), (&#39;X&#39;, 0)), ((&#39;X&#39;, 0), (&#39;Y&#39;, 0)),</span>
+<span class="sd">    ...                       ((&#39;Z&#39;, 0), (&#39;Z&#39;, 1))])</span>
+<span class="sd">    &gt;&gt;&gt; z_start_cpd = TabularCPD((&#39;Z&#39;, 0), 2, [[0.5], [0.5]])</span>
+<span class="sd">    &gt;&gt;&gt; x_i_cpd = TabularCPD((&#39;X&#39;, 0), 2, [[0.6, 0.9],</span>
+<span class="sd">    ...                                    [0.4, 0.1]],</span>
+<span class="sd">    ...                      evidence=[(&#39;Z&#39;, 0)],</span>
+<span class="sd">    ...                      evidence_card=[2])</span>
+<span class="sd">    &gt;&gt;&gt; y_i_cpd = TabularCPD((&#39;Y&#39;, 0), 2, [[0.2, 0.3],</span>
+<span class="sd">    ...                                    [0.8, 0.7]],</span>
+<span class="sd">    ...                      evidence=[(&#39;X&#39;, 0)],</span>
+<span class="sd">    ...                      evidence_card=[2])</span>
+<span class="sd">    &gt;&gt;&gt; z_trans_cpd = TabularCPD((&#39;Z&#39;, 1), 2, [[0.4, 0.7],</span>
+<span class="sd">    ...                                        [0.6, 0.3]],</span>
+<span class="sd">    ...                      evidence=[(&#39;Z&#39;, 0)],</span>
+<span class="sd">    ...                      evidence_card=[2])</span>
+<span class="sd">    &gt;&gt;&gt; dbnet.add_cpds(z_start_cpd, z_trans_cpd, x_i_cpd, y_i_cpd)</span>
+<span class="sd">    &gt;&gt;&gt; dbnet.initialize_initial_state()</span>
+<span class="sd">    &gt;&gt;&gt; dbn_inf = DBNInference(dbnet)</span>
+<span class="sd">    &gt;&gt;&gt; dbn_inf.start_junction_tree.nodes()</span>
+<span class="sd">    NodeView((((&#39;X&#39;, 0), (&#39;Y&#39;, 0)), ((&#39;X&#39;, 0), (&#39;Z&#39;, 0))))</span>
+<span class="sd">    &gt;&gt;&gt; dbn_inf.one_and_half_junction_tree.nodes()</span>
+<span class="sd">    NodeView((((&#39;Z&#39;, 1), (&#39;Z&#39;, 0)), ((&#39;Y&#39;, 1), (&#39;X&#39;, 1)), ((&#39;Z&#39;, 1), (&#39;X&#39;, 1))))</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] Dynamic Bayesian Networks: Representation, Inference and Learning</span>
+<span class="sd">        by Kevin Patrick Murphy</span>
+<span class="sd">        http://www.cs.ubc.ca/~murphyk/Thesis/thesis.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Class for performing inference using Belief Propagation method</span>
-<span class="sd">        for the input Dynamic Bayesian Network.</span>
-
-<span class="sd">        For the exact inference implementation, the interface algorithm</span>
-<span class="sd">        is used which is adapted from [1].</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        model: Dynamic Bayesian Network</span>
-<span class="sd">            Model for which inference is to performed</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import DynamicBayesianNetwork as DBN</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.inference import DBNInference</span>
-<span class="sd">        &gt;&gt;&gt; dbnet = DBN()</span>
-<span class="sd">        &gt;&gt;&gt; dbnet.add_edges_from([((&#39;Z&#39;, 0), (&#39;X&#39;, 0)), ((&#39;X&#39;, 0), (&#39;Y&#39;, 0)),</span>
-<span class="sd">        ...                       ((&#39;Z&#39;, 0), (&#39;Z&#39;, 1))])</span>
-<span class="sd">        &gt;&gt;&gt; z_start_cpd = TabularCPD((&#39;Z&#39;, 0), 2, [[0.5], [0.5]])</span>
-<span class="sd">        &gt;&gt;&gt; x_i_cpd = TabularCPD((&#39;X&#39;, 0), 2, [[0.6, 0.9],</span>
-<span class="sd">        ...                                    [0.4, 0.1]],</span>
-<span class="sd">        ...                      evidence=[(&#39;Z&#39;, 0)],</span>
-<span class="sd">        ...                      evidence_card=[2])</span>
-<span class="sd">        &gt;&gt;&gt; y_i_cpd = TabularCPD((&#39;Y&#39;, 0), 2, [[0.2, 0.3],</span>
-<span class="sd">        ...                                    [0.8, 0.7]],</span>
-<span class="sd">        ...                      evidence=[(&#39;X&#39;, 0)],</span>
-<span class="sd">        ...                      evidence_card=[2])</span>
-<span class="sd">        &gt;&gt;&gt; z_trans_cpd = TabularCPD((&#39;Z&#39;, 1), 2, [[0.4, 0.7],</span>
-<span class="sd">        ...                                        [0.6, 0.3]],</span>
-<span class="sd">        ...                      evidence=[(&#39;Z&#39;, 0)],</span>
-<span class="sd">        ...                      evidence_card=[2])</span>
-<span class="sd">        &gt;&gt;&gt; dbnet.add_cpds(z_start_cpd, z_trans_cpd, x_i_cpd, y_i_cpd)</span>
-<span class="sd">        &gt;&gt;&gt; dbnet.initialize_initial_state()</span>
-<span class="sd">        &gt;&gt;&gt; dbn_inf = DBNInference(dbnet)</span>
-<span class="sd">        &gt;&gt;&gt; dbn_inf.start_junction_tree.nodes()</span>
-<span class="sd">        NodeView((((&#39;X&#39;, 0), (&#39;Y&#39;, 0)), ((&#39;X&#39;, 0), (&#39;Z&#39;, 0))))</span>
-<span class="sd">        &gt;&gt;&gt; dbn_inf.one_and_half_junction_tree.nodes()</span>
-<span class="sd">        NodeView((((&#39;Z&#39;, 1), (&#39;Z&#39;, 0)), ((&#39;Y&#39;, 1), (&#39;X&#39;, 1)), ((&#39;Z&#39;, 1), (&#39;X&#39;, 1))))</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        [1] Dynamic Bayesian Networks: Representation, Inference and Learning</span>
-<span class="sd">            by Kevin Patrick Murphy</span>
-<span class="sd">            http://www.cs.ubc.ca/~murphyk/Thesis/thesis.pdf</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">DBNInference</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 

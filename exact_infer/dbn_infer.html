@@ -38,7 +38,51 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="pgmpy.inference.dbn_inference.DBNInference">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.inference.dbn_inference.</span></span><span class="sig-name descname"><span class="pre">DBNInference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/dbn_inference.html#DBNInference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.dbn_inference.DBNInference" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="py method">
+<dd><p>Class for performing inference using Belief Propagation method
+for the input Dynamic Bayesian Network.</p>
+<p>For the exact inference implementation, the interface algorithm
+is used which is adapted from [1].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<em>Dynamic Bayesian Network</em>) – Model for which inference is to performed</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DynamicBayesianNetwork</span> <span class="k">as</span> <span class="n">DBN</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">DBNInference</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dbnet</span> <span class="o">=</span> <span class="n">DBN</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dbnet</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([((</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span> <span class="p">((</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>
+<span class="gp">... </span>                      <span class="p">((</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z_start_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">((</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x_i_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">((</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span>
+<span class="gp">... </span>                                   <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]],</span>
+<span class="gp">... </span>                     <span class="n">evidence</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)],</span>
+<span class="gp">... </span>                     <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_i_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">((</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+<span class="gp">... </span>                                   <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]],</span>
+<span class="gp">... </span>                     <span class="n">evidence</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)],</span>
+<span class="gp">... </span>                     <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z_trans_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">((</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">],</span>
+<span class="gp">... </span>                                       <span class="p">[</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">]],</span>
+<span class="gp">... </span>                     <span class="n">evidence</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)],</span>
+<span class="gp">... </span>                     <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dbnet</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">z_start_cpd</span><span class="p">,</span> <span class="n">z_trans_cpd</span><span class="p">,</span> <span class="n">x_i_cpd</span><span class="p">,</span> <span class="n">y_i_cpd</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dbnet</span><span class="o">.</span><span class="n">initialize_initial_state</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dbn_inf</span> <span class="o">=</span> <span class="n">DBNInference</span><span class="p">(</span><span class="n">dbnet</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dbn_inf</span><span class="o">.</span><span class="n">start_junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+<span class="go">NodeView((((&#39;X&#39;, 0), (&#39;Y&#39;, 0)), ((&#39;X&#39;, 0), (&#39;Z&#39;, 0))))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dbn_inf</span><span class="o">.</span><span class="n">one_and_half_junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+<span class="go">NodeView((((&#39;Z&#39;, 1), (&#39;Z&#39;, 0)), ((&#39;Y&#39;, 1), (&#39;X&#39;, 1)), ((&#39;Z&#39;, 1), (&#39;X&#39;, 1))))</span>
+</pre></div>
+</div>
+<p class="rubric">References</p>
+<dl class="simple">
+<dt>[1] Dynamic Bayesian Networks: Representation, Inference and Learning</dt><dd><p>by Kevin Patrick Murphy
+<a class="reference external" href="http://www.cs.ubc.ca/~murphyk/Thesis/thesis.pdf">http://www.cs.ubc.ca/~murphyk/Thesis/thesis.pdf</a></p>
+</dd>
+</dl>
+<dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.inference.dbn_inference.DBNInference.backward_inference">
 <span class="sig-name descname"><span class="pre">backward_inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/dbn_inference.html#DBNInference.backward_inference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.dbn_inference.DBNInference.backward_inference" title="Permalink to this definition">¶</a></dt>
 <dd><p>Backward inference method using belief propagation.</p>
