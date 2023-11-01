@@ -70,12 +70,6 @@
 <span class="sd">        that the variable can take. If unspecified, the observed values in</span>
 <span class="sd">        the data set are taken to be the only possible states.</span>
 
-<span class="sd">    complete_samples_only: bool (optional, default `True`)</span>
-<span class="sd">        Specifies how to deal with missing data, if present. If set to</span>
-<span class="sd">        `True` all rows that contain `np.NaN` somewhere are ignored. If</span>
-<span class="sd">        `False` then, for each variable, every row where neither the</span>
-<span class="sd">        variable nor its parents are `np.NaN` is used.</span>
-
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import numpy as np</span>
@@ -107,8 +101,15 @@
         <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">cpds</span><span class="p">:</span>
             <span class="n">scope</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">scope</span><span class="p">())</span>
             <span class="n">likelihood</span> <span class="o">+=</span> <span class="n">log</span><span class="p">(</span>
-                <span class="n">cpd</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span>
-                    <span class="o">**</span><span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">datapoint</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">scope</span><span class="p">}</span>
+                <span class="nb">max</span><span class="p">(</span>
+                    <span class="n">cpd</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span>
+                        <span class="o">**</span><span class="p">{</span>
+                            <span class="n">key</span><span class="p">:</span> <span class="n">value</span>
+                            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">datapoint</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">scope</span>
+                        <span class="p">}</span>
+                    <span class="p">),</span>
+                    <span class="mf">1e-10</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">likelihood</span>
@@ -126,7 +127,9 @@
             <span class="p">)</span>
             <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">latent_var</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">latent_card</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
                 <span class="n">df</span><span class="p">[</span><span class="n">latent_var</span><span class="p">]</span> <span class="o">=</span> <span class="n">latent_combinations</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_log_likelihood</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">t</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">e</span> <span class="o">**</span> <span class="p">(</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_log_likelihood</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">t</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
             <span class="n">df</span><span class="p">[</span><span class="s2">&quot;_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">weights</span> <span class="o">/</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">*</span> <span class="n">n_counts</span><span class="p">[</span>
                 <span class="nb">tuple</span><span class="p">(</span><span class="n">data_unique</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
             <span class="p">]</span>
@@ -167,7 +170,7 @@
         <span class="n">latent_card</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
         <span class="n">atol</span><span class="o">=</span><span class="mf">1e-08</span><span class="p">,</span>
-        <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
         <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -190,9 +193,9 @@
 <span class="sd">            The absolute accepted tolerance for checking convergence. If the parameters</span>
 <span class="sd">            change is less than atol in an iteration, the algorithm will exit.</span>
 
-<span class="sd">        n_jobs: int (default: -1)</span>
-<span class="sd">            Number of jobs to run in parallel. Default: -1 uses all the processors.</span>
-<span class="sd">            Suggest to use n_jobs=1 when dataset size is less than 1000.</span>
+<span class="sd">        n_jobs: int (default: 1)</span>
+<span class="sd">            Number of jobs to run in parallel.</span>
+<span class="sd">            Using n_jobs &gt; 1 for small models or datasets might be slower.</span>
 
 <span class="sd">        batch_size: int (default: 1000)</span>
 <span class="sd">            Number of data used to compute weights in a batch.</span>
@@ -234,14 +237,30 @@
         <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">latents</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_states_dict</span><span class="p">[</span><span class="n">var</span><span class="p">]))</span>
 
-        <span class="c1"># Step 3: Initialize random CPDs if starting values aren&#39;t provided.</span>
-        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="c1"># Step 3: Initialize CPDs.</span>
+        <span class="c1"># Step 3.1: Learn the CPDs of variables which don&#39;t involve</span>
+        <span class="c1">#           latent variables using MLE.</span>
+        <span class="n">fixed_cpds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">fixed_cpd_vars</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+            <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span>
+            <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_children</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="p">]))</span>
+        <span class="p">)</span>
 
-        <span class="n">cpds</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+        <span class="n">mle</span> <span class="o">=</span> <span class="n">MaximumLikelihoodEstimator</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">MaximumLikelihoodEstimator</span><span class="p">)</span>
+        <span class="n">mle</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span>
+        <span class="n">mle</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">mle</span><span class="o">.</span><span class="n">state_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span>
+
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">fixed_cpd_vars</span><span class="p">:</span>
+            <span class="n">fixed_cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mle</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">(</span><span class="n">var</span><span class="p">))</span>
+
+        <span class="c1"># Step 3.2: Randomly initialize the CPDs involving latent variables.</span>
+        <span class="n">latent_cpds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">vars_with_latents</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="n">fixed_cpd_vars</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">vars_with_latents</span><span class="p">:</span>
             <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
-            <span class="n">cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">latent_cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">TabularCPD</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span>
                     <span class="n">variable</span><span class="o">=</span><span class="n">node</span><span class="p">,</span>
                     <span class="n">evidence</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span>
@@ -251,23 +270,27 @@
                     <span class="n">state_names</span><span class="o">=</span><span class="p">{</span>
                         <span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">([</span><span class="n">node</span><span class="p">],</span> <span class="n">parents</span><span class="p">)</span>
                     <span class="p">},</span>
+                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="n">fixed_cpds</span><span class="p">,</span> <span class="n">latent_cpds</span><span class="p">)))</span>
 
         <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span><span class="p">:</span>
             <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">max_iter</span><span class="p">)</span>
 
+        <span class="n">mle</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span>
         <span class="c1"># Step 4: Run the EM algorithm.</span>
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_iter</span><span class="p">):</span>
             <span class="c1"># Step 4.1: E-step: Expands the dataset and computes the likelihood of each</span>
             <span class="c1">#           possible state of latent variables.</span>
             <span class="n">weighted_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_weights</span><span class="p">(</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">latent_card</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">)</span>
             <span class="c1"># Step 4.2: M-step: Uses the weights of the dataset to do a weighted MLE.</span>
-            <span class="n">new_cpds</span> <span class="o">=</span> <span class="n">MaximumLikelihoodEstimator</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="p">,</span> <span class="n">weighted_data</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">weighted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">new_cpds</span> <span class="o">=</span> <span class="n">fixed_cpds</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">mle</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">weighted_data</span>
+            <span class="c1"># mle = MaximumLikelihoodEstimator(self.model_copy, weighted_data)</span>
+            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">vars_with_latents</span><span class="p">:</span>
+                <span class="n">new_cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mle</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">weighted</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
             <span class="c1"># Step 4.3: Check of convergence and max_iter</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_converged</span><span class="p">(</span><span class="n">new_cpds</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">atol</span><span class="p">):</span>
@@ -280,7 +303,7 @@
                 <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span><span class="p">:</span>
                     <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">cpds</span></div></div>
+        <span class="k">return</span> <span class="n">new_cpds</span></div></div>
 </pre></div>
 
           </div>
@@ -338,7 +361,14 @@
 
 <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
-<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div>
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
 <div id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
@@ -364,22 +394,6 @@
 
     
 
-    
-    <script type="text/javascript">
-
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', '405910108']);
-      _gaq.push(['_setDomainName', 'none']);
-      _gaq.push(['_setAllowLinker', true]);
-      _gaq.push(['_trackPageview']);
-
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-
-    </script>
     
   </body>
 </html>

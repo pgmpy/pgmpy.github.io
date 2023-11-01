@@ -630,7 +630,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="TabularCPD.get_random"><a class="viewcode-back" href="../../../../factors/discrete.html#pgmpy.factors.discrete.CPD.TabularCPD.get_random">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cardinality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cardinality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{},</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generates a TabularCPD instance with random values on `variable` with</span>
 <span class="sd">        parents/evidence `evidence` with cardinality/number of states as given</span>
@@ -671,6 +671,8 @@
 <span class="sd">        ...                         &#39;B&#39;: [&#39;b1&#39;, &#39;b2&#39;],</span>
 <span class="sd">        ...                         &#39;C&#39;: [&#39;c1&#39;, &#39;c2&#39;]})</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">evidence</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -682,7 +684,7 @@
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cardinality for variable: </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> not specified.&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">cardinality</span><span class="p">[</span><span class="n">variable</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="n">cardinality</span><span class="p">[</span><span class="n">variable</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span>
             <span class="n">values</span> <span class="o">=</span> <span class="n">values</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">node_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
                 <span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span>
@@ -692,7 +694,7 @@
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">parent_card</span> <span class="o">=</span> <span class="p">[</span><span class="n">cardinality</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">]</span>
-            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">cardinality</span><span class="p">[</span><span class="n">variable</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">parent_card</span><span class="p">))</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">generator</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="n">cardinality</span><span class="p">[</span><span class="n">variable</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">parent_card</span><span class="p">)))</span>
             <span class="n">values</span> <span class="o">=</span> <span class="n">values</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">node_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
                 <span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span>
@@ -761,7 +763,14 @@
 
 <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
-<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div>
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
 <div id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
@@ -787,22 +796,6 @@
 
     
 
-    
-    <script type="text/javascript">
-
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-177825880-1']);
-      _gaq.push(['_setDomainName', 'none']);
-      _gaq.push(['_setAllowLinker', true]);
-      _gaq.push(['_trackPageview']);
-
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-
-    </script>
     
   </body>
 </html>

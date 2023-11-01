@@ -47,32 +47,29 @@
 
 <div class="viewcode-block" id="CausalInference"><a class="viewcode-back" href="../../../exact_infer/causal.html#pgmpy.inference.CausalInference.CausalInference">[docs]</a><span class="k">class</span> <span class="nc">CausalInference</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is an inference class for performing Causal Inference over Bayesian Networks or Structural Equation Models.</span>
-
-<span class="sd">    This class will accept queries of the form: P(Y | do(X)) and utilize its methods to provide an estimand which:</span>
-<span class="sd">     * Identifies adjustment variables</span>
-<span class="sd">     * Backdoor Adjustment</span>
-<span class="sd">     * Front Door Adjustment</span>
-<span class="sd">     * Instrumental Variable Adjustment</span>
+<span class="sd">    This is an inference class for performing Causal Inference over Bayesian</span>
+<span class="sd">    Networks or Structural Equation Models.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    model: CausalGraph</span>
+<span class="sd">    model: pgmpy.base.DAG | pgmpy.models.BayesianNetwork</span>
 <span class="sd">        The model that we&#39;ll perform inference over.</span>
 
 <span class="sd">    set_nodes: list[node:str] or None</span>
-<span class="sd">        A list (or set/tuple) of nodes in the Bayesian Network which have been set to a specific value per the</span>
-<span class="sd">        do-operator.</span>
+<span class="sd">        A list (or set/tuple) of nodes in the Bayesian Network which have been</span>
+<span class="sd">        set to a specific value per the do-operator.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    Create a small Bayesian Network.</span>
+
 <span class="sd">    &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
 <span class="sd">    &gt;&gt;&gt; game = BayesianNetwork([(&#39;X&#39;, &#39;A&#39;),</span>
 <span class="sd">    ...                         (&#39;A&#39;, &#39;Y&#39;),</span>
 <span class="sd">    ...                         (&#39;A&#39;, &#39;B&#39;)])</span>
 
 <span class="sd">    Load the graph into the CausalInference object to make causal queries.</span>
+
 <span class="sd">    &gt;&gt;&gt; from pgmpy.inference.CausalInference import CausalInference</span>
 <span class="sd">    &gt;&gt;&gt; inference = CausalInference(game)</span>
 <span class="sd">    &gt;&gt;&gt; inference.get_all_backdoor_adjustment_sets(X=&quot;X&quot;, Y=&quot;Y&quot;)</span>
@@ -81,9 +78,6 @@
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    &#39;Causality: Models, Reasoning, and Inference&#39; - Judea Pearl (2000)</span>
-
-<span class="sd">    Many thanks to @ijmbarr for their implementation of Causal Graphical models available. It served as an invaluable</span>
-<span class="sd">    reference. Available on GitHub: https://github.com/ijmbarr/causalgraphicalmodels</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">set_nodes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -107,14 +101,15 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X: str</span>
-<span class="sd">            Intervention Variable</span>
 
-<span class="sd">        Y: str</span>
-<span class="sd">            Target Variable</span>
+<span class="sd">        X: str (variable name)</span>
+<span class="sd">            The cause/exposure variables.</span>
 
-<span class="sd">        Z: str or set[str]</span>
-<span class="sd">            Adjustment variables</span>
+<span class="sd">        Y: str (variable name)</span>
+<span class="sd">            The outcome variable.</span>
+
+<span class="sd">        Z: list (array-like)</span>
+<span class="sd">            List of adjustment variables.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -146,19 +141,13 @@
 <span class="sd">            (i) no node in Z is a descendant of Xi; and</span>
 <span class="sd">            (ii) Z blocks every path between Xi and Xj that contains an arrow into Xi.</span>
 
-<span class="sd">        TODO:</span>
-<span class="sd">          * Backdoors are great, but the most general things we could implement would be Ilya Shpitser&#39;s ID and</span>
-<span class="sd">            IDC algorithms. See [his Ph.D. thesis for a full explanation]</span>
-<span class="sd">            (https://ftp.cs.ucla.edu/pub/stat_ser/shpitser-thesis.pdf). After doing a little reading it is clear</span>
-<span class="sd">            that we do not need to immediatly implement this.  However, in order for us to truly account for</span>
-<span class="sd">            unobserved variables, we will need not only these algorithms, but a more general implementation of a DAG.</span>
-<span class="sd">            Most DAGs do not allow for bidirected edges, but it is an important piece of notation which Pearl and</span>
-<span class="sd">            Shpitser use to denote graphs with latent variables.</span>
-
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X: str</span>
-<span class="sd">            Intervention Variable</span>
+<span class="sd">        X: str (variable name)</span>
+<span class="sd">            The cause/exposure variables.</span>
+
+<span class="sd">        Y: str (variable name)</span>
+<span class="sd">            The outcome variable.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -175,10 +164,6 @@
 <span class="sd">        &gt;&gt;&gt; inference = CausalInference(game1)</span>
 <span class="sd">        &gt;&gt;&gt; inference.get_all_backdoor_adjustment_sets(&quot;X&quot;, &quot;Y&quot;)</span>
 <span class="sd">        frozenset()</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        &quot;Causality: Models, Reasoning, and Inference&quot;, Judea Pearl (2000). p.79.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">X</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">observed_variables</span>
@@ -218,14 +203,14 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X: str</span>
-<span class="sd">            Intervention Variable</span>
+<span class="sd">        X: str (variable name)</span>
+<span class="sd">            The cause/exposure variables.</span>
 
-<span class="sd">        Y: str</span>
-<span class="sd">            Target Variable</span>
+<span class="sd">        Y: str (variable name)</span>
+<span class="sd">            The outcome variable.</span>
 
-<span class="sd">        Z: set</span>
-<span class="sd">            Adjustment variables</span>
+<span class="sd">        Z: list (array-like)</span>
+<span class="sd">            List of adjustment variables.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -274,13 +259,17 @@
 <span class="sd">          (ii)   there is no backdoor path from X to Z</span>
 <span class="sd">          (iii)  all back-door paths from Z to Y are blocked by X</span>
 
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X: str (variable name)</span>
+<span class="sd">            The cause/exposure variables.</span>
+
+<span class="sd">        Y: str (variable name)</span>
+<span class="sd">            The outcome variable</span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        frozenset: a frozenset of frozensets</span>
-
-<span class="sd">        References</span>
-<span class="sd">        ----------</span>
-<span class="sd">        Causality: Models, Reasoning, and Inference, Judea Pearl (2000). p.82.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="n">X</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">observed_variables</span>
         <span class="k">assert</span> <span class="n">Y</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">observed_variables</span>
@@ -297,27 +286,7 @@
 
         <span class="k">return</span> <span class="n">valid_adjustment_sets</span></div>
 
-<div class="viewcode-block" id="CausalInference.get_distribution"><a class="viewcode-back" href="../../../exact_infer/causal.html#pgmpy.inference.CausalInference.CausalInference.get_distribution">[docs]</a>    <span class="k">def</span> <span class="nf">get_distribution</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a string representing the factorized distribution implied by the CGM.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">products</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_nodes</span><span class="p">:</span>
-                <span class="k">continue</span>
-
-            <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">parents</span><span class="p">:</span>
-                <span class="n">p</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;P(</span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">)&quot;</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">parents</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="sa">f</span><span class="s2">&quot;do(</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">if</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_nodes</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">parents</span>
-                <span class="p">]</span>
-                <span class="n">p</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;P(</span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">|</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
-            <span class="n">products</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
-        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">products</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="CausalInference.simple_decision"><a class="viewcode-back" href="../../../exact_infer/causal.html#pgmpy.inference.CausalInference.CausalInference.simple_decision">[docs]</a>    <span class="k">def</span> <span class="nf">simple_decision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adjustment_sets</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="k">def</span> <span class="nf">_simple_decision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adjustment_sets</span><span class="o">=</span><span class="p">[]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Selects the smallest set from provided adjustment sets.</span>
 
@@ -333,7 +302,7 @@
         <span class="n">adjustment_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">adjustment_sets</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">adjustment_list</span> <span class="o">==</span> <span class="p">[]:</span>
             <span class="k">return</span> <span class="nb">frozenset</span><span class="p">([])</span>
-        <span class="k">return</span> <span class="n">adjustment_list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">adjustment_list</span><span class="p">)]</span></div>
+        <span class="k">return</span> <span class="n">adjustment_list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">adjustment_list</span><span class="p">)]</span>
 
 <div class="viewcode-block" id="CausalInference.estimate_ate"><a class="viewcode-back" href="../../../exact_infer/causal.html#pgmpy.inference.CausalInference.CausalInference.estimate_ate">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_ate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -349,11 +318,11 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        X: str</span>
-<span class="sd">            Intervention Variable</span>
+<span class="sd">        X: str (variable name)</span>
+<span class="sd">            The cause/exposure variables.</span>
 
-<span class="sd">        Y: str</span>
-<span class="sd">            Target Variable</span>
+<span class="sd">        Y: str (variable name)</span>
+<span class="sd">            The outcome variable</span>
 
 <span class="sd">        data: pandas.DataFrame</span>
 <span class="sd">            All observed data for this Bayesian Network.</span>
@@ -415,7 +384,7 @@
                     <span class="n">adjustment_sets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">estimand_strategy</span> <span class="o">==</span> <span class="s2">&quot;smallest&quot;</span><span class="p">:</span>
                         <span class="n">adjustment_sets</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
-                            <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">simple_decision</span><span class="p">(</span><span class="n">adjustment_sets</span><span class="p">)}</span>
+                            <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_simple_decision</span><span class="p">(</span><span class="n">adjustment_sets</span><span class="p">)}</span>
                         <span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">estimator_type</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
@@ -538,6 +507,11 @@
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.inference import CausalInference</span>
+<span class="sd">        &gt;&gt;&gt; dag = BayesianNetwork([(&quot;X&quot;, &quot;Y&quot;), (&quot;Z&quot;, &quot;X&quot;), (&quot;Z&quot;, &quot;Y&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; dag.get_minimal_adjustment_set(X=&quot;X&quot;, Y=&quot;Y&quot;)</span>
+<span class="sd">        {&quot;Z&quot;}</span>
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
@@ -779,7 +753,14 @@
 
 <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
-<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div>
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
 <div id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
@@ -805,22 +786,6 @@
 
     
 
-    
-    <script type="text/javascript">
-
-      var _gaq = _gaq || [];
-      _gaq.push(['_setAccount', 'UA-177825880-1']);
-      _gaq.push(['_setDomainName', 'none']);
-      _gaq.push(['_setAllowLinker', true]);
-      _gaq.push(['_trackPageview']);
-
-      (function() {
-        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-      })();
-
-    </script>
     
   </body>
 </html>
