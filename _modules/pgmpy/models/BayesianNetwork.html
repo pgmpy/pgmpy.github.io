@@ -653,7 +653,7 @@
 
         <span class="c1"># Step 1: Compute the pseudo_counts for the dirichlet prior.</span>
         <span class="n">pseudo_counts</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">get_values</span><span class="p">()</span> <span class="o">*</span> <span class="n">n_prev_samples</span>
+            <span class="n">var</span><span class="p">:</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">get_values</span><span class="p">())</span> <span class="o">*</span> <span class="n">n_prev_samples</span>
             <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span>
         <span class="p">}</span>
 
@@ -667,7 +667,11 @@
         <span class="n">cpds</span> <span class="o">=</span> <span class="n">_est</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span>
             <span class="n">prior_type</span><span class="o">=</span><span class="s2">&quot;dirichlet&quot;</span><span class="p">,</span> <span class="n">pseudo_counts</span><span class="o">=</span><span class="n">pseudo_counts</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds</span><span class="p">)</span></div>
+
+        <span class="c1"># Temporarily disable logger to stop giving warning about replacing CPDs.</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">disabled</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">disabled</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="BayesianNetwork.predict"><a class="viewcode-back" href="../../../models/bayesiannetwork.html#pgmpy.models.BayesianNetwork.BayesianNetwork.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">stochastic</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

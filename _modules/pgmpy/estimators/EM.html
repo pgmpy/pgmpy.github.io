@@ -173,6 +173,7 @@
         <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
         <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">init_cpds</span><span class="o">=</span><span class="p">{},</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -202,6 +203,13 @@
 
 <span class="sd">        seed: int</span>
 <span class="sd">            The random seed to use for generating the intial values.</span>
+
+<span class="sd">        init_cpds: dict</span>
+<span class="sd">            A dictionary of the form {variable: instance of TabularCPD}</span>
+<span class="sd">            specifying the initial CPD values for the EM optimizer to start</span>
+<span class="sd">            with. If not specified, CPDs involving latent variables are</span>
+<span class="sd">            initialized randomly, and CPDs involving only observed variables are</span>
+<span class="sd">            initialized with their MLE estimates.</span>
 
 <span class="sd">        show_progress: boolean (default: True)</span>
 <span class="sd">            Whether to show a progress bar for iterations.</span>
@@ -239,12 +247,14 @@
 
         <span class="c1"># Step 3: Initialize CPDs.</span>
         <span class="c1"># Step 3.1: Learn the CPDs of variables which don&#39;t involve</span>
-        <span class="c1">#           latent variables using MLE.</span>
+        <span class="c1">#           latent variables using MLE if their init_cpd is</span>
+        <span class="c1">#           not specified.</span>
         <span class="n">fixed_cpds</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">fixed_cpd_vars</span> <span class="o">=</span> <span class="p">(</span>
             <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
             <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span>
             <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_children</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="p">]))</span>
+            <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">init_cpds</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="p">)</span>
 
         <span class="n">mle</span> <span class="o">=</span> <span class="n">MaximumLikelihoodEstimator</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">MaximumLikelihoodEstimator</span><span class="p">)</span>
@@ -255,9 +265,11 @@
         <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">fixed_cpd_vars</span><span class="p">:</span>
             <span class="n">fixed_cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mle</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">(</span><span class="n">var</span><span class="p">))</span>
 
-        <span class="c1"># Step 3.2: Randomly initialize the CPDs involving latent variables.</span>
+        <span class="c1"># Step 3.2: Randomly initialize the CPDs involving latent variables if init_cpds is not specified.</span>
         <span class="n">latent_cpds</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">vars_with_latents</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="n">fixed_cpd_vars</span>
+        <span class="n">vars_with_latents</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="n">fixed_cpd_vars</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">init_cpds</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="p">)</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">vars_with_latents</span><span class="p">:</span>
             <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
             <span class="n">latent_cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -274,7 +286,9 @@
                 <span class="p">)</span>
             <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="n">fixed_cpds</span><span class="p">,</span> <span class="n">latent_cpds</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span>
+            <span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="n">fixed_cpds</span><span class="p">,</span> <span class="n">latent_cpds</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">init_cpds</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span><span class="p">:</span>
             <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">max_iter</span><span class="p">)</span>
@@ -288,8 +302,7 @@
             <span class="c1"># Step 4.2: M-step: Uses the weights of the dataset to do a weighted MLE.</span>
             <span class="n">new_cpds</span> <span class="o">=</span> <span class="n">fixed_cpds</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
             <span class="n">mle</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">weighted_data</span>
-            <span class="c1"># mle = MaximumLikelihoodEstimator(self.model_copy, weighted_data)</span>
-            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">vars_with_latents</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">vars_with_latents</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">init_cpds</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
                 <span class="n">new_cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mle</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">weighted</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
             <span class="c1"># Step 4.3: Check of convergence and max_iter</span>

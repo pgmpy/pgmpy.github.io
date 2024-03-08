@@ -39,10 +39,10 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">networkx.algorithms</span> <span class="kn">import</span> <span class="n">bipartite</span>
 
-<span class="kn">from</span> <span class="nn">pgmpy.models.MarkovNetwork</span> <span class="kn">import</span> <span class="n">MarkovNetwork</span>
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">UndirectedGraph</span>
-<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">DiscreteFactor</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="kn">import</span> <span class="n">factor_product</span>
+<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">DiscreteFactor</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models.MarkovNetwork</span> <span class="kn">import</span> <span class="n">MarkovNetwork</span>
 
 
 <div class="viewcode-block" id="FactorGraph"><a class="viewcode-back" href="../../../models/factorgraph.html#pgmpy.models.FactorGraph.FactorGraph">[docs]</a><span class="k">class</span> <span class="nc">FactorGraph</span><span class="p">(</span><span class="n">UndirectedGraph</span><span class="p">):</span>
@@ -502,7 +502,59 @@
             <span class="n">factors_copy</span> <span class="o">=</span> <span class="p">[</span><span class="n">factor</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">]</span>
             <span class="n">copy</span><span class="o">.</span><span class="n">add_factors</span><span class="p">(</span><span class="o">*</span><span class="n">factors_copy</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">copy</span></div></div>
+        <span class="k">return</span> <span class="n">copy</span></div>
+
+<div class="viewcode-block" id="FactorGraph.get_point_mass_message"><a class="viewcode-back" href="../../../models/factorgraph.html#pgmpy.models.FactorGraph.FactorGraph.get_point_mass_message">[docs]</a>    <span class="k">def</span> <span class="nf">get_point_mass_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">observation</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a point mass message for the variable given the observed state.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        variable: str</span>
+<span class="sd">            The variable for which the message needs to be computed.</span>
+<span class="sd">        observation: int</span>
+<span class="sd">            The observed state of the variable.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import FactorGraph</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import DiscreteFactor</span>
+<span class="sd">        &gt;&gt;&gt; G = FactorGraph()</span>
+<span class="sd">        &gt;&gt;&gt; G.add_node(&quot;a&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; phi = DiscreteFactor([&quot;a&quot;], [4], np.random.rand(4))</span>
+<span class="sd">        &gt;&gt;&gt; G.add_factors(phi)</span>
+<span class="sd">        &gt;&gt;&gt; G.add_edges_from([(&quot;a&quot;, phi)])</span>
+<span class="sd">        &gt;&gt;&gt; G.get_point_mass_message(&quot;a&quot;, 1)</span>
+<span class="sd">        array([0, 1, 0, 0])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">card</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="n">variable</span><span class="p">)</span>
+        <span class="c1"># Create an array with 1 at the index of the evidence and 0 elsewhere</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">card</span><span class="p">)</span>
+        <span class="n">message</span><span class="p">[</span><span class="n">observation</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">message</span></div>
+
+<div class="viewcode-block" id="FactorGraph.get_uniform_message"><a class="viewcode-back" href="../../../models/factorgraph.html#pgmpy.models.FactorGraph.FactorGraph.get_uniform_message">[docs]</a>    <span class="k">def</span> <span class="nf">get_uniform_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a uniform message for the given variable</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        variable: str</span>
+<span class="sd">            The variable for which the message needs to be computed.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import FactorGraph</span>
+<span class="sd">        &gt;&gt;&gt; G = FactorGraph()</span>
+<span class="sd">        &gt;&gt;&gt; G.add_node(&quot;a&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; phi = DiscreteFactor([&quot;a&quot;], [4], np.random.rand(4))</span>
+<span class="sd">        &gt;&gt;&gt; G.add_factors(phi)</span>
+<span class="sd">        &gt;&gt;&gt; G.add_edges_from([(&quot;a&quot;, phi)])</span>
+<span class="sd">        &gt;&gt;&gt; G.get_get_uniform_message(&quot;a&quot;)</span>
+<span class="sd">        array([0.25, 0.25, 0.25, 0.25])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">card</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="n">variable</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">card</span><span class="p">)</span> <span class="o">/</span> <span class="n">card</span></div></div>
 </pre></div>
 
           </div>
