@@ -39,8 +39,9 @@
 <span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">ParameterEstimator</span>
+<span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="kn">import</span> <span class="n">FactorDict</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span><span class="p">,</span> <span class="n">JunctionTree</span>
 
 
 <div class="viewcode-block" id="MaximumLikelihoodEstimator"><a class="viewcode-back" href="../../../param_estimator/mle.html#pgmpy.estimators.MLE.MaximumLikelihoodEstimator">[docs]</a><span class="k">class</span> <span class="nc">MaximumLikelihoodEstimator</span><span class="p">(</span><span class="n">ParameterEstimator</span><span class="p">):</span>
@@ -49,7 +50,7 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    model: A pgmpy.models.BayesianNetwork instance</span>
+<span class="sd">    model: A pgmpy.models.BayesianNetwork or pgmpy.models.JunctionTree instance</span>
 
 <span class="sd">    data: pandas DataFrame object</span>
 <span class="sd">        DataFrame object with column names identical to the variable names of the network.</span>
@@ -74,22 +75,29 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">JunctionTree</span>
+        <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">&quot;Maximum Likelihood Estimate is only implemented for BayesianNetwork&quot;</span>
+                <span class="s2">&quot;Maximum Likelihood Estimate is only implemented for BayesianNetwork and JunctionTree&quot;</span>
             <span class="p">)</span>
 
         <span class="k">elif</span> <span class="nb">set</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">&gt;</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Found latent variables: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="si">}</span><span class="s2">. Maximum Likelihood doesn&#39;t support latent variables, please use ExpectationMaximization&quot;</span>
-            <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Found latent variables: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="si">}</span><span class="s2">. Maximum Likelihood doesn&#39;t support latent variables, please use ExpectationMaximization&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Nodes detected in the model that are not present in the dataset. &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;Refine the model so that all parameters can be estimated from the data.&quot;</span>
+                <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">MaximumLikelihoodEstimator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MaximumLikelihoodEstimator.get_parameters"><a class="viewcode-back" href="../../../param_estimator/mle.html#pgmpy.estimators.MLE.MaximumLikelihoodEstimator.get_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">weighted</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Method to estimate the model parameters (CPDs) using Maximum Likelihood</span>
-<span class="sd">        Estimation.</span>
+<span class="sd">        Method to estimate the model parameters using Maximum Likelihood Estimation.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -104,8 +112,9 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        Estimated parameters: list</span>
+<span class="sd">        Estimated parameters: list or pgmpy.factors.FactorDict</span>
 <span class="sd">            List of pgmpy.factors.discrete.TabularCPDs, one for each variable of the model</span>
+<span class="sd">            Or a FactorDict representing potential values of a Junction Tree</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -123,6 +132,9 @@
 <span class="sd">        &lt;TabularCPD representing P(A:2) at 0x7f7b4dfd4fd0&gt;,</span>
 <span class="sd">        &lt;TabularCPD representing P(D:2 | C:2) at 0x7f7b4df822b0&gt;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">JunctionTree</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_potentials</span><span class="p">()</span>
 
         <span class="n">parameters</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)(</span>
             <span class="n">delayed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">)(</span><span class="n">node</span><span class="p">,</span> <span class="n">weighted</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
@@ -207,7 +219,104 @@
             <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">([</span><span class="n">node</span><span class="p">],</span> <span class="n">parents</span><span class="p">)},</span>
         <span class="p">)</span>
         <span class="n">cpd</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">cpd</span></div></div>
+        <span class="k">return</span> <span class="n">cpd</span></div>
+
+<div class="viewcode-block" id="MaximumLikelihoodEstimator.estimate_potentials"><a class="viewcode-back" href="../../../param_estimator/mle.html#pgmpy.estimators.MLE.MaximumLikelihoodEstimator.estimate_potentials">[docs]</a>    <span class="k">def</span> <span class="nf">estimate_potentials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Implements Iterative Proportional Fitting to estimate potentials specifically</span>
+<span class="sd">        for a Decomposable Undirected Graphical Model. Decomposability is enforced</span>
+<span class="sd">        by using a Junction Tree.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Estimated potentials: pgmpy.factors.FactorDict</span>
+<span class="sd">            Estimated potentials for the entire graphical model.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ---------</span>
+<span class="sd">        [1] Kevin P. Murphy, ML Machine Learning - A Probabilistic Perspective</span>
+<span class="sd">            Algorithm 19.2 Iterative Proportional Fitting algorithm for tabular MRFs &amp; Section 19.5.7.4 IPF for decomposable graphical models.</span>
+<span class="sd">        [2] Eric P. Xing, Meng Song, Li Zhou, Probabilistic Graphical Models 10-708, Spring 2014.</span>
+<span class="sd">            https://www.cs.cmu.edu/~epxing/Class/10708-14/scribe_notes/scribe_note_lecture8.pdf.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import JunctionTree</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import MaximumLikelihoodEstimator</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(data={&#39;A&#39;: [0, 0, 1], &#39;B&#39;: [0, 1, 0], &#39;C&#39;: [1, 1, 0]})</span>
+<span class="sd">        &gt;&gt;&gt; model = JunctionTree()</span>
+<span class="sd">        &gt;&gt;&gt; model.add_edges_from([((&quot;A&quot;, &quot;C&quot;), (&quot;B&quot;, &quot;C&quot;))])</span>
+<span class="sd">        &gt;&gt;&gt; potentials = MaximumLikelihoodEstimator(model, data).estimate_potentials()</span>
+<span class="sd">        &gt;&gt;&gt; print(potentials[(&quot;A&quot;, &quot;C&quot;)])</span>
+<span class="sd">        +------+------+------------+</span>
+<span class="sd">        | A    | C    |   phi(A,C) |</span>
+<span class="sd">        +======+======+============+</span>
+<span class="sd">        | A(0) | C(0) |     0.0000 |</span>
+<span class="sd">        +------+------+------------+</span>
+<span class="sd">        | A(0) | C(1) |     0.6667 |</span>
+<span class="sd">        +------+------+------------+</span>
+<span class="sd">        | A(1) | C(0) |     0.3333 |</span>
+<span class="sd">        +------+------+------------+</span>
+<span class="sd">        | A(1) | C(1) |     0.0000 |</span>
+<span class="sd">        +------+------+------------+</span>
+<span class="sd">        &gt;&gt;&gt; print(potentials[(&quot;B&quot;, &quot;C&quot;)])</span>
+<span class="sd">        +------+------+------------+</span>
+<span class="sd">        | B    | C    |   phi(B,C) |</span>
+<span class="sd">        +======+======+============+</span>
+<span class="sd">        | B(0) | C(0) |     1.0000 |</span>
+<span class="sd">        +------+------+------------+</span>
+<span class="sd">        | B(0) | C(1) |     0.5000 |</span>
+<span class="sd">        +------+------+------------+</span>
+<span class="sd">        | B(1) | C(0) |     0.0000 |</span>
+<span class="sd">        +------+------+------------+</span>
+<span class="sd">        | B(1) | C(1) |     0.5000 |</span>
+<span class="sd">        +------+------+------------+</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">JunctionTree</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;Iterative Proportional Fitting is only implemented for Junction Trees.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;clique_beliefs&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;A model containing clique beliefs is required to estimate parameters.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">clique_beliefs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">clique_beliefs</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">clique_beliefs</span><span class="p">,</span> <span class="n">FactorDict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;`UndirectedMaximumLikelihoodEstimator.model.clique_beliefs` must be a `FactorDict`.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># These are the variables as represented by the `JunctionTree`.</span>
+        <span class="n">cliques</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">clique_beliefs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">empirical_marginals</span> <span class="o">=</span> <span class="n">FactorDict</span><span class="o">.</span><span class="n">from_dataframe</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">marginals</span><span class="o">=</span><span class="n">cliques</span><span class="p">)</span>
+        <span class="n">potentials</span> <span class="o">=</span> <span class="n">FactorDict</span><span class="p">({})</span>
+        <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="c1"># ML Machine Learning - A Probabilistic Perspective</span>
+        <span class="c1"># Chapter 19, Algorithm 19.2, Page 682:</span>
+        <span class="c1"># Update each clique by multiplying the potential value by</span>
+        <span class="c1"># the ratio of the empirical counts over expected counts.</span>
+        <span class="c1"># Since the potential values are equal to the expected counts</span>
+        <span class="c1"># for a JunctionTree, we can simplify this to just the empirical counts.</span>
+        <span class="c1"># This is also described in section 19.5.7.4.</span>
+        <span class="k">for</span> <span class="n">clique</span> <span class="ow">in</span> <span class="n">cliques</span><span class="p">:</span>
+            <span class="c1"># Calculate the running sepset between the new clique and all of the</span>
+            <span class="c1"># variables we have previously seen.</span>
+            <span class="n">variables</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">clique</span><span class="p">)</span> <span class="o">-</span> <span class="n">seen</span><span class="p">)</span>
+            <span class="n">seen</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">clique</span><span class="p">)</span>
+            <span class="n">potentials</span><span class="p">[</span><span class="n">clique</span><span class="p">]</span> <span class="o">=</span> <span class="n">empirical_marginals</span><span class="p">[</span><span class="n">clique</span><span class="p">]</span>
+
+            <span class="c1"># Divide out the sepset.</span>
+            <span class="k">if</span> <span class="n">variables</span><span class="p">:</span>
+                <span class="n">marginalized</span> <span class="o">=</span> <span class="n">empirical_marginals</span><span class="p">[</span><span class="n">clique</span><span class="p">]</span><span class="o">.</span><span class="n">marginalize</span><span class="p">(</span>
+                    <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="n">potentials</span><span class="p">[</span><span class="n">clique</span><span class="p">]</span> <span class="o">=</span> <span class="n">potentials</span><span class="p">[</span><span class="n">clique</span><span class="p">]</span> <span class="o">/</span> <span class="n">marginalized</span>
+        <span class="k">return</span> <span class="n">potentials</span></div></div>
 </pre></div>
 
           </div>

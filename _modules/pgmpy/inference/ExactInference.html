@@ -1273,16 +1273,18 @@
 
 <span class="k">class</span> <span class="nc">BeliefPropagationWithMessageParsing</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Class for performing efficient inference using Belief Propagation method on factor graphs.</span>
+<span class="sd">    Class for performing efficient inference using Belief Propagation method on factor graphs with no loops.</span>
 
 <span class="sd">    The message-parsing algorithm recursively parses the factor graph to propagate the</span>
 <span class="sd">    model&#39;s beliefs to infer the posterior distribution of the queried variable. The recursion</span>
 <span class="sd">    stops when reaching an observed variable or a unobserved root/leaf variable.</span>
 
+<span class="sd">    It does not work for loopy graphs.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    model: FactorGraph</span>
-<span class="sd">        model for which inference is to performed</span>
+<span class="sd">        Model on which to run the inference.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -1298,17 +1300,169 @@
             <span class="n">model</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
 
-    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">_RecursiveMessageSchedulingQuery</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the a dict of posterior distributions for each of the queried `variables`,</span>
-<span class="sd">        given the `evidence`.</span>
+<span class="sd">        Private class used in `BeliefPropagationWithMessageParsing.query()` to efficiently</span>
+<span class="sd">        manage the message scheduling across the different queried variables, in a recursive way.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Same as in the query method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">belief_propagation</span><span class="p">,</span>
+            <span class="n">variables</span><span class="p">,</span>
+            <span class="n">evidence</span><span class="p">,</span>
+            <span class="n">virtual_evidence</span><span class="p">,</span>
+            <span class="n">get_messages</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bp</span> <span class="o">=</span> <span class="n">belief_propagation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="n">variables</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">virtual_evidence</span> <span class="o">=</span> <span class="n">virtual_evidence</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">all_messages</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">get_messages</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">agg_res</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_variable_node_messages</span><span class="p">(</span>
+                    <span class="n">variable</span><span class="p">,</span>
+                    <span class="n">from_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">agg_res</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">DiscreteFactor</span><span class="p">([</span><span class="n">variable</span><span class="p">],</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)],</span> <span class="n">res</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_messages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">agg_res</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">agg_res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_messages</span>
+
+        <span class="k">def</span> <span class="nf">schedule_variable_node_messages</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">variable</span><span class="p">,</span>
+            <span class="n">from_factor</span><span class="p">,</span>
+        <span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Returns the message sent by the variable to the factor requesting it.</span>
+<span class="sd">            For that, the variable requests the messages coming from its neighbouring</span>
+<span class="sd">            factors, except the one making the request.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            variable: str</span>
+<span class="sd">                The variable node from which to compute the outgoing message</span>
+<span class="sd">            from_factor: pgmpy.factors.discrete.DiscreteFactor or None.</span>
+<span class="sd">                The factor requesting the message, as part of the recursion.</span>
+<span class="sd">                None for the first time this function is called.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">variable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="c1"># Is an observed variable</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_point_mass_message</span><span class="p">(</span>
+                    <span class="n">variable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">evidence</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
+                <span class="p">)</span>
+
+            <span class="n">virtual_messages</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="n">variable</span>
+                <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">_get_virtual_evidence_var_list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">virtual_evidence</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">virtual_messages</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">cpd</span><span class="o">.</span><span class="n">values</span>
+                    <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">virtual_evidence</span>
+                    <span class="k">if</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">variable</span>
+                <span class="p">]</span>
+
+            <span class="n">incoming_factors</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">factor</span>
+                <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">variable</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">factor</span> <span class="o">!=</span> <span class="n">from_factor</span>
+            <span class="p">]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">incoming_factors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Is an unobserved leaf variable</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">calc_variable_node_message</span><span class="p">(</span>
+                    <span class="n">variable</span><span class="p">,</span> <span class="p">[]</span> <span class="o">+</span> <span class="n">virtual_messages</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Else, get the incoming messages from all incoming factors</span>
+                <span class="n">incoming_messages</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">incoming_factors</span><span class="p">:</span>
+                    <span class="n">incoming_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_factor_node_messages</span><span class="p">(</span>
+                        <span class="n">factor</span><span class="p">,</span> <span class="n">variable</span>
+                    <span class="p">)</span>
+
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_messages</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># Store the message if it&#39;s not already stored</span>
+                        <span class="n">factor_node_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">factor</span><span class="o">.</span><span class="n">variables</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="k">if</span> <span class="n">factor_node_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_messages</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">all_messages</span><span class="p">[</span><span class="n">factor_node_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">incoming_message</span>
+
+                    <span class="n">incoming_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">incoming_message</span><span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">calc_variable_node_message</span><span class="p">(</span>
+                    <span class="n">variable</span><span class="p">,</span> <span class="n">incoming_messages</span> <span class="o">+</span> <span class="n">virtual_messages</span>
+                <span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">schedule_factor_node_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">from_variable</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Returns the message sent from the factor to the variable requesting it.</span>
+<span class="sd">            For that, the factor requests the messages coming from its neighbouring</span>
+<span class="sd">            variables, except the one making the request.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            factor: pgmpy.factors.discrete.DiscreteFactor</span>
+<span class="sd">                The factor from which we want to compute the outgoing message.</span>
+<span class="sd">            from_variable: str</span>
+<span class="sd">                The variable requesting the message, as part of the recursion.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">assert</span> <span class="n">from_variable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;from_var must be specified&quot;</span>
+
+            <span class="n">incoming_vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">factor</span><span class="o">.</span><span class="n">variables</span> <span class="k">if</span> <span class="n">var</span> <span class="o">!=</span> <span class="n">from_variable</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">incoming_vars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># from_var is a root variable. The factor is its prior</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">calc_factor_node_message</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="p">[],</span> <span class="n">from_variable</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Else, get the incoming messages from all incoming variables</span>
+                <span class="n">incoming_messages</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">incoming_vars</span><span class="p">:</span>
+                    <span class="n">incoming_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_variable_node_messages</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">factor</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bp</span><span class="o">.</span><span class="n">calc_factor_node_message</span><span class="p">(</span>
+                    <span class="n">factor</span><span class="p">,</span> <span class="n">incoming_messages</span><span class="p">,</span> <span class="n">from_variable</span>
+                <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_messages</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the posterior distributions for each of the queried variable,</span>
+<span class="sd">        given the `evidence`, and the `virtual_evidence`. Optionally also returns</span>
+<span class="sd">        the computed messages.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        variables: list</span>
-<span class="sd">            list of variables for which you want to compute the posterior</span>
-<span class="sd">        evidence: dict</span>
-<span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
+<span class="sd">            List of variables for which you want to compute the posterior.</span>
+<span class="sd">        evidence: dict or None (default: None)</span>
+<span class="sd">            A dict key, value pair as {var: state_of_var_observed}.</span>
+<span class="sd">            None if no evidence.</span>
+<span class="sd">        virtual_evidence: list or None (default: None)</span>
+<span class="sd">            A list of pgmpy.factors.discrete.TabularCPD representing the virtual</span>
+<span class="sd">            evidences. Each virtual evidence becomes a virtual message that gets added to</span>
+<span class="sd">            the list of computed messages incoming to the variable node.</span>
+<span class="sd">            None if no virtual evidence.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        If `get_messages` is False, returns a dict of the variables, posterior distributions</span>
+<span class="sd">            pairs: {variable: pgmpy.factors.discrete.DiscreteFactor}.</span>
+<span class="sd">        If `get_messages` is True, returns:</span>
+<span class="sd">            1. A dict of the variables, posterior distributions pairs:</span>
+<span class="sd">            {variable: pgmpy.factors.discrete.DiscreteFactor}</span>
+<span class="sd">            2. A dict of all messages sent from a factor to a node:</span>
+<span class="sd">            {&quot;{pgmpy.factors.discrete.DiscreteFactor.variables} -&gt; variable&quot;: np.array}.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1339,7 +1493,8 @@
 <span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; belief_propagation = BeliefPropagation(factor_graph)</span>
 <span class="sd">        &gt;&gt;&gt; belief_propagation.query(variables=[&#39;B&#39;, &#39;C&#39;],</span>
-<span class="sd">        ...                          evidence={&#39;A&#39;: 1, &#39;D&#39;: 0})</span>
+<span class="sd">        ...                          evidence={&#39;D&#39;: 0},</span>
+<span class="sd">        ...                          virtual_evidence=[TabularCPD([&#39;A&#39;], 2, [[0.3], [0.7]])])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
             <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
@@ -1349,85 +1504,20 @@
                 <span class="sa">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-        <span class="n">agg_res</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
-            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_variable_node_messages</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="n">agg_res</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">DiscreteFactor</span><span class="p">([</span><span class="n">var</span><span class="p">],</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)],</span> <span class="n">res</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">agg_res</span>
-
-    <span class="k">def</span> <span class="nf">schedule_variable_node_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="n">from_factor</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the message sent by the variable to the factor requesting it.</span>
-<span class="sd">        For that, the variable requests the messages coming from its neighbouring</span>
-<span class="sd">        factors, except the one making the request.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        variable: str</span>
-<span class="sd">            the variable node from which to compute the outgoing message</span>
-<span class="sd">        evidence: dict</span>
-<span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
-<span class="sd">        from_factor: str</span>
-<span class="sd">            the factor requesting the message, as part of the recursion.</span>
-<span class="sd">            None for the first time this function is called.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="c1"># Is an observed variable</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_point_mass_message</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">evidence</span><span class="p">[</span><span class="n">variable</span><span class="p">])</span>
-
-        <span class="n">incoming_factors</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">factor</span>
-            <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">variable</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">factor</span> <span class="o">!=</span> <span class="n">from_factor</span>
-        <span class="p">]</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">incoming_factors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># Is an unobserved leaf variable</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_variable_node_message</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="p">[])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Else, get the incoming messages from all incoming factors</span>
-            <span class="n">incoming_messages</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="n">incoming_factors</span><span class="p">:</span>
-                <span class="n">incoming_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">schedule_factor_node_messages</span><span class="p">(</span>
-                        <span class="n">factor</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="n">from_variable</span><span class="o">=</span><span class="n">variable</span>
-                    <span class="p">)</span>
+        <span class="c1"># Can&#39;t have the same variables in both `evidence` and `virtual_evidence`</span>
+        <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_virtual_evidence</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
+            <span class="n">ve_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_virtual_evidence_var_list</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
+            <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">ve_names</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">common_vars</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `evidence` and `virtual_evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_variable_node_message</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">incoming_messages</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">schedule_factor_node_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="n">from_variable</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the message sent from the factor to the variable requesting it.</span>
-<span class="sd">        For that, the factor requests the messages coming from its neighbouring</span>
-<span class="sd">        variables, except the one making the request.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        factor: str</span>
-<span class="sd">            the factor from which we want to compute the outgoing message</span>
-<span class="sd">        evidence: dict</span>
-<span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
-<span class="sd">        from_variable: str</span>
-<span class="sd">            the variable requesting the message, as part of the recursion.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="n">from_variable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;from_var must be specified&quot;</span>
-
-        <span class="n">incoming_vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">factor</span><span class="o">.</span><span class="n">variables</span> <span class="k">if</span> <span class="n">var</span> <span class="o">!=</span> <span class="n">from_variable</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">incoming_vars</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># from_var is a root variable. The factor is its prior</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_factor_node_message</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="p">[],</span> <span class="n">from_variable</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Else, get the incoming messages from all incoming variables</span>
-            <span class="n">incoming_messages</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">incoming_vars</span><span class="p">:</span>
-                <span class="n">incoming_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">schedule_variable_node_messages</span><span class="p">(</span>
-                        <span class="n">var</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="n">from_factor</span><span class="o">=</span><span class="n">factor</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_factor_node_message</span><span class="p">(</span>
-                <span class="n">factor</span><span class="p">,</span> <span class="n">incoming_messages</span><span class="p">,</span> <span class="n">from_variable</span>
-            <span class="p">)</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RecursiveMessageSchedulingQuery</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="n">virtual_evidence</span><span class="p">,</span> <span class="n">get_messages</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">query</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">calc_variable_node_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">incoming_messages</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

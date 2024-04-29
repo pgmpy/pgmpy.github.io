@@ -39,6 +39,7 @@
 
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">UndirectedGraph</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="kn">import</span> <span class="n">FactorDict</span><span class="p">,</span> <span class="n">factor_product</span>
+<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">compat_fns</span>
 
 
 <div class="viewcode-block" id="ClusterGraph"><a class="viewcode-back" href="../../../models/clustergraph.html#pgmpy.models.ClusterGraph.ClusterGraph">[docs]</a><span class="k">class</span> <span class="nc">ClusterGraph</span><span class="p">(</span><span class="n">UndirectedGraph</span><span class="p">):</span>
@@ -247,6 +248,26 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">clique_beliefs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FactorDict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a mapping from the cliques to their factor representations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        FactorDict: mapping from cliques to factors</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import ClusterGraph</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import DiscreteFactor</span>
+<span class="sd">        &gt;&gt;&gt; G = ClusterGraph()</span>
+<span class="sd">        &gt;&gt;&gt; G.add_nodes_from([(&#39;a&#39;, &#39;b&#39;, &#39;c&#39;), (&#39;a&#39;, &#39;b&#39;), (&#39;a&#39;, &#39;c&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; G.add_edges_from([((&#39;a&#39;, &#39;b&#39;, &#39;c&#39;), (&#39;a&#39;, &#39;b&#39;)),</span>
+<span class="sd">        ...                   ((&#39;a&#39;, &#39;b&#39;, &#39;c&#39;), (&#39;a&#39;, &#39;c&#39;))])</span>
+<span class="sd">        &gt;&gt;&gt; phi1 = DiscreteFactor([&#39;a&#39;, &#39;b&#39;, &#39;c&#39;], [2, 2, 2], np.random.rand(8))</span>
+<span class="sd">        &gt;&gt;&gt; phi2 = DiscreteFactor([&#39;a&#39;, &#39;b&#39;], [2, 2], np.random.rand(4))</span>
+<span class="sd">        &gt;&gt;&gt; phi3 = DiscreteFactor([&#39;a&#39;, &#39;c&#39;], [2, 2], np.random.rand(4))</span>
+<span class="sd">        &gt;&gt;&gt; G.clique_beliefs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">FactorDict</span><span class="p">({</span><span class="n">clique</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_factors</span><span class="p">(</span><span class="n">clique</span><span class="p">)</span> <span class="k">for</span> <span class="n">clique</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">()})</span>
 
     <span class="nd">@clique_beliefs</span><span class="o">.</span><span class="n">setter</span>
@@ -330,7 +351,7 @@
             <span class="n">factor</span> <span class="o">=</span> <span class="n">factor_product</span><span class="p">(</span>
                 <span class="n">factor</span><span class="p">,</span> <span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">))]</span>
             <span class="p">)</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">values</span><span class="p">)</span></div>
+            <span class="k">return</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">values</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ClusterGraph.check_model"><a class="viewcode-back" href="../../../models/clustergraph.html#pgmpy.models.ClusterGraph.ClusterGraph.check_model">[docs]</a>    <span class="k">def</span> <span class="nf">check_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
