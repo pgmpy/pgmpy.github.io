@@ -34,9 +34,12 @@
 <span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">from</span> <span class="nn">sklearn.cross_decomposition</span> <span class="kn">import</span> <span class="n">CCA</span>
+<span class="kn">from</span> <span class="nn">statsmodels.multivariate.manova</span> <span class="kn">import</span> <span class="n">MANOVA</span>
+<span class="kn">from</span> <span class="nn">xgboost</span> <span class="kn">import</span> <span class="n">XGBClassifier</span><span class="p">,</span> <span class="n">XGBRegressor</span>
 
-<span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="kn">import</span> <span class="n">IndependenceAssertion</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="kn">import</span> <span class="n">IndependenceAssertion</span>
 
 
 <div class="viewcode-block" id="independence_match"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.independence_match">[docs]</a><span class="k">def</span> <span class="nf">independence_match</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">independencies</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -676,6 +679,171 @@
             <span class="k">return</span> <span class="kc">False</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">coef</span><span class="p">,</span> <span class="n">p_value</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_predictions</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to get predictions using XGBoost for `ci_pillai`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: Check if any of the conditional variables are categorical</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">):</span>
+        <span class="n">enable_categorical</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">enable_categorical</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Step 2: Check variable type of X, choose estimator, and compute predictions.</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">:</span>
+        <span class="n">clf_x</span> <span class="o">=</span> <span class="n">XGBClassifier</span><span class="p">(</span>
+            <span class="n">enable_categorical</span><span class="o">=</span><span class="n">enable_categorical</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">),</span>
+            <span class="n">random_state</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">x_cat_index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">factorize</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">])</span>
+        <span class="n">clf_x</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">],</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">pred_x</span> <span class="o">=</span> <span class="n">clf_x</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">clf_x</span> <span class="o">=</span> <span class="n">XGBRegressor</span><span class="p">(</span>
+            <span class="n">enable_categorical</span><span class="o">=</span><span class="n">enable_categorical</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">),</span>
+            <span class="n">random_state</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">]</span>
+        <span class="n">x_cat_index</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">clf_x</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">],</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">pred_x</span> <span class="o">=</span> <span class="n">clf_x</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">])</span>
+
+    <span class="c1"># Step 3: Check variable type of Y, choose estimator, and compute predictions.</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">:</span>
+        <span class="n">clf_y</span> <span class="o">=</span> <span class="n">XGBClassifier</span><span class="p">(</span>
+            <span class="n">enable_categorical</span><span class="o">=</span><span class="n">enable_categorical</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">),</span>
+            <span class="n">random_state</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">y</span><span class="p">,</span> <span class="n">y_cat_index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">factorize</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">])</span>
+        <span class="n">clf_y</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">],</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">pred_y</span> <span class="o">=</span> <span class="n">clf_y</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">clf_y</span> <span class="o">=</span> <span class="n">XGBRegressor</span><span class="p">(</span>
+            <span class="n">enable_categorical</span><span class="o">=</span><span class="n">enable_categorical</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">),</span>
+            <span class="n">random_state</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;seed&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">]</span>
+        <span class="n">y_cat_index</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">clf_y</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">],</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">pred_y</span> <span class="o">=</span> <span class="n">clf_y</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">])</span>
+
+    <span class="c1"># Step 4: Return the predictions.</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">pred_x</span><span class="p">,</span> <span class="n">pred_y</span><span class="p">,</span> <span class="n">x_cat_index</span><span class="p">,</span> <span class="n">y_cat_index</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ci_pillai"><a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.ci_pillai">[docs]</a><span class="k">def</span> <span class="nf">ci_pillai</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A mixed-data residualization based conditional independence test[1].</span>
+
+<span class="sd">    Uses XGBoost estimator to compute LS residuals[2], and then does an</span>
+<span class="sd">    association test (Pillai&#39;s Trace) on the residuals.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X: str</span>
+<span class="sd">        The first variable for testing the independence condition X \u27C2 Y | Z</span>
+
+<span class="sd">    Y: str</span>
+<span class="sd">        The second variable for testing the independence condition X \u27C2 Y | Z</span>
+
+<span class="sd">    Z: list/array-like</span>
+<span class="sd">        A list of conditional variable for testing the condition X \u27C2 Y | Z</span>
+
+<span class="sd">    data: pandas.DataFrame</span>
+<span class="sd">        The dataset in which to test the indepenedence condition.</span>
+
+<span class="sd">    boolean: bool</span>
+<span class="sd">        If boolean=True, an additional argument `significance_level` must</span>
+<span class="sd">            be specified. If p_value of the test is greater than equal to</span>
+<span class="sd">            `significance_level`, returns True. Otherwise returns False.</span>
+
+<span class="sd">        If boolean=False, returns the pearson correlation coefficient and p_value</span>
+<span class="sd">            of the test.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    CI Test results: tuple or bool</span>
+<span class="sd">        If boolean=True, returns True if p-value &gt;= significance_level, else False. If</span>
+<span class="sd">        boolean=False, returns a tuple of (Pearson&#39;s correlation Coefficient, p-value)</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] Ankan, Ankur, and Johannes Textor. &quot;A simple unified approach to testing high-dimensional conditional independences for categorical and ordinal data.&quot; Proceedings of the AAAI Conference on Artificial Intelligence.</span>
+<span class="sd">    [2] Li, C.; and Shepherd, B. E. 2010. Test of Association Between Two Ordinal Variables While Adjusting for Covariates. Journal of the American Statistical Association.</span>
+<span class="sd">    [3] Muller, K. E. and Peterson B. L. (1984) Practical Methods for computing power in testing the multivariate general linear hypothesis. Computational Statistics &amp; Data Analysis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: Test if the inputs are correct</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Variable Z. Expected type: iterable. Got type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Variable data. Expected type: pandas.DataFrame. Got type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Step 1.1: If no conditional variables are specified, use a constant value.</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cont_Z&quot;</span><span class="p">]</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s2">&quot;cont_Z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># Step 2: Get the predictions</span>
+    <span class="n">pred_x</span><span class="p">,</span> <span class="n">pred_y</span><span class="p">,</span> <span class="n">x_cat_index</span><span class="p">,</span> <span class="n">y_cat_index</span> <span class="o">=</span> <span class="n">_get_predictions</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Compute the residuals</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">get_dummies</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">])</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+            <span class="p">:,</span> <span class="n">x_cat_index</span><span class="o">.</span><span class="n">categories</span><span class="p">[</span><span class="n">x_cat_index</span><span class="o">.</span><span class="n">codes</span><span class="p">]</span>
+        <span class="p">]</span>
+        <span class="n">res_x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">pred_x</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">res_x</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">]</span> <span class="o">-</span> <span class="n">pred_x</span>
+
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">get_dummies</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">])</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+            <span class="p">:,</span> <span class="n">y_cat_index</span><span class="o">.</span><span class="n">categories</span><span class="p">[</span><span class="n">y_cat_index</span><span class="o">.</span><span class="n">codes</span><span class="p">]</span>
+        <span class="p">]</span>
+        <span class="n">res_y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">pred_y</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">res_y</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">]</span> <span class="o">-</span> <span class="n">pred_y</span>
+
+    <span class="c1"># Step 4: Compute Pillai&#39;s trace.</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res_x</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="n">res_x</span> <span class="o">=</span> <span class="n">res_x</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res_y</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="n">res_y</span> <span class="o">=</span> <span class="n">res_y</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+
+    <span class="n">cca</span> <span class="o">=</span> <span class="n">CCA</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">res_x_c</span><span class="p">,</span> <span class="n">res_y_c</span> <span class="o">=</span> <span class="n">cca</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">res_x</span><span class="p">,</span> <span class="n">res_y</span><span class="p">)</span>
+
+    <span class="n">cancor</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+        <span class="n">cancor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">res_x_c</span><span class="p">[:,</span> <span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">res_y_c</span><span class="p">[:,</span> <span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">T</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">coef</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cancor</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="c1"># Step 5: Compute p-value using f-approximation [3].</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">df1</span> <span class="o">=</span> <span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">df2</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">s</span> <span class="o">-</span> <span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">f_stat</span> <span class="o">=</span> <span class="p">(</span><span class="n">coef</span> <span class="o">/</span> <span class="n">df1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">df2</span> <span class="o">/</span> <span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="n">coef</span><span class="p">))</span>
+    <span class="n">p_value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">stats</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">f_stat</span><span class="p">,</span> <span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">)</span>
+
+    <span class="c1"># Step 6: Return</span>
+    <span class="k">if</span> <span class="n">boolean</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">p_value</span> <span class="o">&gt;=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;significance_level&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">coef</span><span class="p">,</span> <span class="n">p_value</span></div>
 </pre></div>
 
           </div>
@@ -711,6 +879,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Structure Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for testing models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial Notebooks</a></li>
 </ul>
