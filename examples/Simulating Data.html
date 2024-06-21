@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Normal Bayesian Network (no time variation) &#8212; pgmpy 0.1.23 documentation</title>
+    <title>Simulating Data From Bayesian Networks &#8212; pgmpy 0.1.23 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
@@ -289,11 +289,16 @@ div.rendered_html tbody tr:hover {
   background: rgba(66, 165, 245, 0.2);
 }
 </style>
+<section id="Simulating-Data-From-Bayesian-Networks">
+<h1>Simulating Data From Bayesian Networks<a class="headerlink" href="#Simulating-Data-From-Bayesian-Networks" title="Permalink to this heading">¶</a></h1>
+<p>pgmpy implements the <code class="docutils literal notranslate"><span class="pre">BayesianNetwork.simulate</span></code> method to allow users to simulate data from a fully defined Bayesian Network under various conditions. These conditions can be any combination of: 1. Virtual Evidence 2. Hard Evidence 3. Virtual Intervention 4. Hard Intervention</p>
+<p>Lastly, users can also provide data corresponding to some of the variables in the model (partial samples) to the simulation method. This allows users to fix the values of those variables to the specified value.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_distribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># A helper function to compute probability distributions from simulated samples.</span>
+<span class="k">def</span> <span class="nf">get_distribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    For marginal distribution, P(A): get_distribution(samples, variables=[&#39;A&#39;])</span>
 <span class="sd">    For joint distribution, P(A, B): get_distribution(samples, variables=[&#39;A&#39;, &#39;B&#39;])</span>
@@ -306,28 +311,31 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define a model</span>
-<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Do not print warnings</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
 
+<span class="c1"># Specify the model to simulate data from.</span>
+<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">get_example_model</span>
 
 <span class="n">alarm</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="s2">&quot;alarm&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<section id="Normal-Bayesian-Network-(no-time-variation)">
-<h1>Normal Bayesian Network (no time variation)<a class="headerlink" href="#Normal-Bayesian-Network-(no-time-variation)" title="Permalink to this heading">¶</a></h1>
-<section id="Normal-simulation">
-<h2>Normal simulation<a class="headerlink" href="#Normal-simulation" title="Permalink to this heading">¶</a></h2>
+<section id="1.-Standard-simulation">
+<h2>1. Standard simulation<a class="headerlink" href="#1.-Standard-simulation" title="Permalink to this heading">¶</a></h2>
+<p>Without any specified conditions for simulation, the <code class="docutils literal notranslate"><span class="pre">simulate</span></code> method draws samples from the joint distribution of the model.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">alarm</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">))</span>
-<span class="n">get_distribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;HISTORY&quot;</span><span class="p">])</span>  <span class="c1"># P(HISTORY)</span>
+<span class="n">samples</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -335,29 +343,191 @@ div.rendered_html tbody tr:hover {
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "0ce37073bf334951ad58a6eff0d1da43", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "1d87045741e04846a89c99bdb785650b", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-HISTORY
-FALSE    0.9452
-TRUE     0.0548
-dtype: float64
-</pre></div></div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>TPR</th>
+      <th>PAP</th>
+      <th>MINVOL</th>
+      <th>HREKG</th>
+      <th>EXPCO2</th>
+      <th>DISCONNECT</th>
+      <th>VENTMACH</th>
+      <th>VENTLUNG</th>
+      <th>LVEDVOLUME</th>
+      <th>HR</th>
+      <th>...</th>
+      <th>SHUNT</th>
+      <th>VENTTUBE</th>
+      <th>MINVOLSET</th>
+      <th>LVFAILURE</th>
+      <th>ERRLOWOUTPUT</th>
+      <th>HRBP</th>
+      <th>FIO2</th>
+      <th>BP</th>
+      <th>HISTORY</th>
+      <th>STROKEVOLUME</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>TRUE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 37 columns</p>
+</div></div>
 </div>
 </section>
-<section id="Simulation-with-some-evidence">
-<h2>Simulation with some evidence<a class="headerlink" href="#Simulation-with-some-evidence" title="Permalink to this heading">¶</a></h2>
+<section id="2.-Simulation-under-specified-evidence">
+<h2>2. Simulation under specified evidence<a class="headerlink" href="#2.-Simulation-under-specified-evidence" title="Permalink to this heading">¶</a></h2>
+<p>Specifying hard evidence for some variables fixes their values to the specified evidence value during simulation.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">alarm</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">),</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;CVP&quot;</span><span class="p">:</span> <span class="s2">&quot;NORMAL&quot;</span><span class="p">,</span> <span class="s2">&quot;HR&quot;</span><span class="p">:</span> <span class="s2">&quot;HIGH&quot;</span><span class="p">})</span>
-<span class="n">get_distribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;HISTORY&quot;</span><span class="p">])</span>  <span class="c1"># P(HISTORY)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;CVP&quot;</span><span class="p">:</span> <span class="s2">&quot;NORMAL&quot;</span><span class="p">,</span> <span class="s2">&quot;HR&quot;</span><span class="p">:</span> <span class="s2">&quot;HIGH&quot;</span><span class="p">}</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">alarm</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">),</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">)</span>
+<span class="n">samples</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -365,64 +535,254 @@ dtype: float64
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "4198ee465d5e445ea3a19f552be79035", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "8a54addf4b4f4f22b66f3b155c433192", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-HISTORY
-FALSE    0.9847
-TRUE     0.0153
-dtype: float64
-</pre></div></div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>TPR</th>
+      <th>PAP</th>
+      <th>MINVOL</th>
+      <th>HREKG</th>
+      <th>EXPCO2</th>
+      <th>DISCONNECT</th>
+      <th>VENTMACH</th>
+      <th>VENTLUNG</th>
+      <th>LVEDVOLUME</th>
+      <th>HR</th>
+      <th>...</th>
+      <th>SHUNT</th>
+      <th>VENTTUBE</th>
+      <th>MINVOLSET</th>
+      <th>LVFAILURE</th>
+      <th>ERRLOWOUTPUT</th>
+      <th>HRBP</th>
+      <th>FIO2</th>
+      <th>BP</th>
+      <th>HISTORY</th>
+      <th>STROKEVOLUME</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>NORMAL</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>LOW</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>LOW</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>NORMAL</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 37 columns</p>
+</div></div>
 </div>
-</section>
-<section id="Simulation-with-soft/virtual-evidence">
-<h2>Simulation with soft/virtual evidence<a class="headerlink" href="#Simulation-with-soft/virtual-evidence" title="Permalink to this heading">¶</a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">soft_evidence</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">TabularCPD</span><span class="p">(</span>
-        <span class="s2">&quot;CVP&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">]],</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;CVP&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;NORMAL&quot;</span><span class="p">,</span> <span class="s2">&quot;LOW&quot;</span><span class="p">,</span> <span class="s2">&quot;HIGH&quot;</span><span class="p">]}</span>
-    <span class="p">)</span>
-<span class="p">]</span>
-<span class="n">samples</span> <span class="o">=</span> <span class="n">alarm</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">),</span> <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">soft_evidence</span><span class="p">)</span>
-<span class="n">get_distribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;HISTORY&quot;</span><span class="p">])</span>  <span class="c1"># P(HISTORY)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># All values of HR and CVP should be set to HIGH and NORMAL respectively.</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">HR</span> <span class="o">==</span> <span class="s2">&quot;HIGH&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">all</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">CVP</span> <span class="o">==</span> <span class="s2">&quot;NORMAL&quot;</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
+<div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "cbe81269ceca45e8820b724f6a07c6dc", "version_major": 2, "version_minor": 0}</script></div>
+<div class="highlight"><pre>
+True
+True
+</pre></div></div>
+</div>
+</section>
+<section id="3.-Simulation-under-soft/virtual-evidence">
+<h2>3. Simulation under soft/virtual evidence<a class="headerlink" href="#3.-Simulation-under-soft/virtual-evidence" title="Permalink to this heading">¶</a></h2>
+<p>Unlike hard evidence where the value of the specified variables is fixed to the specified evidence, virtual evidence allows users to set the marginal distribution of variables.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The virtual evidence is specified using TabularCPDs. Here, P(CVP=NORMAL) = 0.2, P(CVP=LOW) = 0.3, and P(CPV=HIGH) = 0.5</span>
+<span class="n">cvp_evidence</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;CVP&quot;</span><span class="p">,</span>
+                          <span class="n">variable_card</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                          <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">]],</span>
+                          <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;CVP&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;LOW&quot;</span><span class="p">,</span> <span class="s2">&quot;NORMAL&quot;</span><span class="p">,</span> <span class="s2">&quot;HIGH&quot;</span><span class="p">]})</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">alarm</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">),</span> <span class="n">virtual_evidence</span><span class="o">=</span><span class="p">[</span><span class="n">cvp_evidence</span><span class="p">])</span>
+</pre></div>
+</div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "bb0f2d625fdd4148b6bf35f760366ec2", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check the marginal distribution of CVP</span>
+<span class="n">get_distribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;CVP&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-HISTORY
-FALSE    0.9609
-TRUE     0.0391
+CVP
+HIGH      0.2414
+LOW       0.0692
+NORMAL    0.6894
 dtype: float64
 </pre></div></div>
 </div>
 </section>
-<section id="Simulation-with-intervention">
-<h2>Simulation with intervention<a class="headerlink" href="#Simulation-with-intervention" title="Permalink to this heading">¶</a></h2>
+<section id="4.-Simulation-under-specified-intervention">
+<h2>4. Simulation under specified intervention<a class="headerlink" href="#4.-Simulation-under-specified-intervention" title="Permalink to this heading">¶</a></h2>
+<p>Using the <code class="docutils literal notranslate"><span class="pre">do</span></code> argument, users can specify interventions to the model. The value of the intervened variables are set to the specified value and all incoming edges to these variables are removed in the model.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">alarm</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">),</span> <span class="n">do</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;CVP&quot;</span><span class="p">:</span> <span class="s2">&quot;NORMAL&quot;</span><span class="p">,</span> <span class="s2">&quot;HR&quot;</span><span class="p">:</span> <span class="s2">&quot;HIGH&quot;</span><span class="p">})</span>
-<span class="n">get_distribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;HISTORY&quot;</span><span class="p">])</span>  <span class="c1"># P(HISTORY)</span>
+<span class="n">samples</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -430,60 +790,241 @@ dtype: float64
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "150dc33e0f574cb0b6ce42dd2979d165", "version_major": 2, "version_minor": 0}</script></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "a3b70369804e48f28b7198ac93834b0d", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>TPR</th>
+      <th>PAP</th>
+      <th>MINVOL</th>
+      <th>HREKG</th>
+      <th>EXPCO2</th>
+      <th>DISCONNECT</th>
+      <th>VENTMACH</th>
+      <th>VENTLUNG</th>
+      <th>LVEDVOLUME</th>
+      <th>HR</th>
+      <th>...</th>
+      <th>SHUNT</th>
+      <th>VENTTUBE</th>
+      <th>MINVOLSET</th>
+      <th>LVFAILURE</th>
+      <th>ERRLOWOUTPUT</th>
+      <th>HRBP</th>
+      <th>FIO2</th>
+      <th>BP</th>
+      <th>HISTORY</th>
+      <th>STROKEVOLUME</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>LOW</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>NORMAL</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>LOW</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>TRUE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>LOW</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>NORMAL</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>LOW</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>TRUE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>TRUE</td>
+      <td>LOW</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>NORMAL</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>LOW</td>
+      <td>LOW</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>NORMAL</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>HIGH</td>
+      <td>FALSE</td>
+      <td>NORMAL</td>
+      <td>ZERO</td>
+      <td>HIGH</td>
+      <td>HIGH</td>
+      <td>...</td>
+      <td>NORMAL</td>
+      <td>LOW</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>FALSE</td>
+      <td>HIGH</td>
+      <td>NORMAL</td>
+      <td>NORMAL</td>
+      <td>FALSE</td>
+      <td>LOW</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 37 columns</p>
+</div></div>
+</div>
+</section>
+<section id="5.-Simulation-under-soft/virtual-intervention">
+<h2>5. Simulation under soft/virtual intervention<a class="headerlink" href="#5.-Simulation-under-soft/virtual-intervention" title="Permalink to this heading">¶</a></h2>
+<p>Similar to virtual evidence, users can specify virtual intervention as well.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cvp_intervention</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;CVP&quot;</span><span class="p">,</span>
+                              <span class="n">variable_card</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                              <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">]],</span>
+                              <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;CVP&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;LOW&quot;</span><span class="p">,</span> <span class="s2">&quot;NORMAL&quot;</span><span class="p">,</span> <span class="s2">&quot;HIGH&quot;</span><span class="p">]})</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">alarm</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">),</span> <span class="n">virtual_intervention</span><span class="o">=</span><span class="p">[</span><span class="n">cvp_intervention</span><span class="p">])</span>
+<span class="n">get_distribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;CVP&quot;</span><span class="p">])</span>  <span class="c1"># P(HISTORY)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "215b2f38eada4346ac21fd581671b37c", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-HISTORY
-FALSE    0.9488
-TRUE     0.0512
+CVP
+HIGH      0.3814
+LOW       0.2110
+NORMAL    0.4076
 dtype: float64
 </pre></div></div>
 </div>
 </section>
-<section id="Simulation-with-soft/virtual-intervention">
-<h2>Simulation with soft/virtual intervention<a class="headerlink" href="#Simulation-with-soft/virtual-intervention" title="Permalink to this heading">¶</a></h2>
+<section id="6.-Partial-samples">
+<h2>6. Partial samples<a class="headerlink" href="#6.-Partial-samples" title="Permalink to this heading">¶</a></h2>
+<p>Lastly, users can also pass already generated data for some variables (for example, from some other simulation) to the simulation. This is equivalent to separately specifying evidence for each sample that is generate.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">soft_evidence</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">TabularCPD</span><span class="p">(</span>
-        <span class="s2">&quot;CVP&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">]],</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;CVP&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;NORMAL&quot;</span><span class="p">,</span> <span class="s2">&quot;LOW&quot;</span><span class="p">,</span> <span class="s2">&quot;HIGH&quot;</span><span class="p">]}</span>
-    <span class="p">)</span>
-<span class="p">]</span>
-<span class="n">samples</span> <span class="o">=</span> <span class="n">alarm</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">),</span> <span class="n">virtual_intervention</span><span class="o">=</span><span class="n">soft_evidence</span><span class="p">)</span>
-<span class="n">get_distribution</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;HISTORY&quot;</span><span class="p">])</span>  <span class="c1"># P(HISTORY)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate some data on CVP.</span>
+<span class="n">partial_cvp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;LOW&quot;</span><span class="p">,</span> <span class="s2">&quot;NORMAL&quot;</span><span class="p">,</span> <span class="s2">&quot;HIGH&quot;</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;CVP&#39;</span><span class="p">])</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">alarm</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">),</span> <span class="n">partial_samples</span><span class="o">=</span><span class="n">partial_cvp</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
+<div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "ca9257f0d60a40528336a12d64a5e7d0", "version_major": 2, "version_minor": 0}</script></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
-</pre></div>
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-HISTORY
-FALSE    0.9508
-TRUE     0.0492
-dtype: float64
-</pre></div></div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "1c37a46b25674a7bb508908dd1611315", "version_major": 2, "version_minor": 0}</script></div>
 </div>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span><span class="o">.</span><span class="n">CVP</span> <span class="o">==</span> <span class="n">partial_cvp</span>
 </pre></div>
 </div>
 </div>
@@ -536,7 +1077,7 @@ dtype: float64
 <li class="toctree-l2"><a class="reference internal" href="Causal%20Inference.html">Causal Inference Examples</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Causal%20Games.html">Causal Games</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Monty%20Hall%20Problem.html">Monty Hall Problem</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Normal Bayesian Network (no time variation)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Simulating Data From Bayesian Networks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Extending%20pgmpy.html">Extending pgmpy</a></li>
 </ul>
 </li>
