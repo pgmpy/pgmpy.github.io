@@ -1084,7 +1084,9 @@
 <div class="viewcode-block" id="BayesianNetwork.get_random">
 <a class="viewcode-back" href="../../../models/bayesiannetwork.html#pgmpy.models.BayesianNetwork.BayesianNetwork.get_random">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">edge_prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">n_states</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span>
+        <span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">edge_prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">node_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_states</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a randomly generated Bayesian Network on `n_nodes` variables</span>
 <span class="sd">        with edge probabiliy of `edge_prob` between variables.</span>
@@ -1098,9 +1100,15 @@
 <span class="sd">            The probability of edge between any two nodes in the topologically</span>
 <span class="sd">            sorted DAG.</span>
 
-<span class="sd">        n_states: int or list (array-like) (default: None)</span>
-<span class="sd">            The number of states of each variable. When None randomly</span>
-<span class="sd">            generates the number of states.</span>
+<span class="sd">        node_names: list (default: None)</span>
+<span class="sd">            A list of variables names to use in the random graph.</span>
+<span class="sd">            If None, the node names are integer values starting from 0.</span>
+
+<span class="sd">        n_states: int or dict (default: None)</span>
+<span class="sd">            The number of states of each variable in the form</span>
+<span class="sd">            {variable: no_of_states}. If a single value is provided,</span>
+<span class="sd">            all nodes will have the same number of states. When None</span>
+<span class="sd">            randomly generates the number of states.</span>
 
 <span class="sd">        latents: bool (default: False)</span>
 <span class="sd">            If True, also creates latent variables.</span>
@@ -1125,16 +1133,23 @@
 <span class="sd">         &lt;TabularCPD representing P(4:4 | 1:1, 3:3) at 0x7f97e16eae80&gt;,</span>
 <span class="sd">         &lt;TabularCPD representing P(2:2) at 0x7f97e1682c40&gt;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">node_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">node_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">))</span>
+
         <span class="k">if</span> <span class="n">n_states</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">n_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">)</span>
+            <span class="n">n_states_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">node_names</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">n_states</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)}</span>
+
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_states</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">n_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">n_states</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_nodes</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">n_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">n_states</span><span class="p">)</span>
+            <span class="n">n_states_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">node_names</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">n_states</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)}</span>
 
-        <span class="n">n_states_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">n_states</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)}</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_states</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">n_states_dict</span> <span class="o">=</span> <span class="n">n_states</span>
 
-        <span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">edge_prob</span><span class="o">=</span><span class="n">edge_prob</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">)</span>
+        <span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span>
+            <span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">edge_prob</span><span class="o">=</span><span class="n">edge_prob</span><span class="p">,</span> <span class="n">node_names</span><span class="o">=</span><span class="n">node_names</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="n">latents</span>
+        <span class="p">)</span>
         <span class="n">bn_model</span> <span class="o">=</span> <span class="n">BayesianNetwork</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">edges</span><span class="p">(),</span> <span class="n">latents</span><span class="o">=</span><span class="n">dag</span><span class="o">.</span><span class="n">latents</span><span class="p">)</span>
         <span class="n">bn_model</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
 
@@ -1422,9 +1437,11 @@
 
         <span class="c1"># Step 5: Postprocess and return</span>
         <span class="k">if</span> <span class="n">include_latents</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">samples</span>
+            <span class="k">return</span> <span class="n">samples</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;category&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">samples</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">)]</span></div>
+            <span class="k">return</span> <span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">)])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span>
+                <span class="s2">&quot;category&quot;</span>
+            <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BayesianNetwork.save">
@@ -1538,7 +1555,7 @@
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../../index.html">
@@ -1616,7 +1633,7 @@
       &#169;2023, Ankur Ankan.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
     </div>

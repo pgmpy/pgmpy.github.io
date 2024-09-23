@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pgmpy.estimators.expert &#8212; pgmpy 0.1.23 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
+    <script src="../../../_static/documentation_options.js?v=20522496"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pgmpy.estimators.expert</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">StructureEstimator</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="kn">import</span> <span class="n">ci_pillai</span>
+<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">llm_pairwise_orient</span><span class="p">,</span> <span class="n">manual_pairwise_orient</span>
+
+
+<div class="viewcode-block" id="ExpertInLoop">
+<a class="viewcode-back" href="../../../structure_estimator/expert.html#pgmpy.estimators.ExpertInLoop">[docs]</a>
+<span class="k">class</span> <span class="nc">ExpertInLoop</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ExpertInLoop</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ExpertInLoop.test_all">
+<a class="viewcode-back" href="../../../structure_estimator/expert.html#pgmpy.estimators.ExpertInLoop.test_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">test_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dag</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs CI tests on all possible combinations of variables in `dag`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dag: pgmpy.base.DAG</span>
+<span class="sd">            The DAG on which to run the tests.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pd.DataFrame: The results with p-values and effect sizes of all the tests.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cis</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()),</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="n">u_parents</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">u</span><span class="p">))</span>
+            <span class="n">v_parents</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">u_parents</span><span class="p">:</span>
+                <span class="n">u_parents</span> <span class="o">-=</span> <span class="nb">set</span><span class="p">([</span><span class="n">v</span><span class="p">])</span>
+                <span class="n">edge_present</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">v_parents</span><span class="p">:</span>
+                <span class="n">v_parents</span> <span class="o">-=</span> <span class="nb">set</span><span class="p">([</span><span class="n">u</span><span class="p">])</span>
+                <span class="n">edge_present</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">edge_present</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="n">cond_set</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">u_parents</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">v_parents</span><span class="p">))</span>
+            <span class="n">effect</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">ci_pillai</span><span class="p">(</span>
+                <span class="n">X</span><span class="o">=</span><span class="n">u</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">cond_set</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+            <span class="n">cis</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">cond_set</span><span class="p">,</span> <span class="n">edge_present</span><span class="p">,</span> <span class="n">effect</span><span class="p">,</span> <span class="n">p_value</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="n">cis</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;u&quot;</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;edge_present&quot;</span><span class="p">,</span> <span class="s2">&quot;effect&quot;</span><span class="p">,</span> <span class="s2">&quot;p_val&quot;</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ExpertInLoop.estimate">
+<a class="viewcode-back" href="../../../structure_estimator/expert.html#pgmpy.estimators.ExpertInLoop.estimate">[docs]</a>
+    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">pval_threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+        <span class="n">effect_size_threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+        <span class="n">use_llm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">llm_model</span><span class="o">=</span><span class="s2">&quot;gemini/gemini-1.5-flash&quot;</span><span class="p">,</span>
+        <span class="n">variable_descriptions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimates a DAG from the data by utilizing expert knowledge.</span>
+
+<span class="sd">        The method iteratively adds and removes edges between variables</span>
+<span class="sd">        (similar to Greedy Equivalence Search algorithm) based on a score</span>
+<span class="sd">        metric that improves the model&#39;s fit to the data the most. The score</span>
+<span class="sd">        metric used is based on conditional independence testing. When adding</span>
+<span class="sd">        an edge to the model, the method asks for expert knowledge to decide</span>
+<span class="sd">        the orientation of the edge. Alternatively, an LLM can used to decide</span>
+<span class="sd">        the orientation of the edge.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pval_threshold: float</span>
+<span class="sd">            The p-value threshold to use for the test to determine whether</span>
+<span class="sd">            there is a significant association between the variables or not.</span>
+
+<span class="sd">        effect_size_threshold: float</span>
+<span class="sd">            The effect size threshold to use to suggest a new edge. If the</span>
+<span class="sd">            conditional effect size between two variables is greater than the</span>
+<span class="sd">            threshold, the algorithm would suggest to add an edge between them.</span>
+<span class="sd">            And if the effect size for an edge is less than the threshold,</span>
+<span class="sd">            would suggest to remove the edge.</span>
+
+<span class="sd">        use_llm: bool</span>
+<span class="sd">            Whether to use a Large Language Model for edge orientation. If</span>
+<span class="sd">            False, prompts the user to specify the direction between the edges.</span>
+
+<span class="sd">        llm_model: str (default: gemini/gemini-1.5-flash)</span>
+<span class="sd">            The LLM model to use. Please refer to litellm documentation (https://docs.litellm.ai/docs/providers)</span>
+<span class="sd">            for available model options. Default is gemini-1.5-flash</span>
+
+<span class="sd">        variable_descriptions: dict</span>
+<span class="sd">            A dict of the form {var: description} giving a text description of</span>
+<span class="sd">            each variable in the model.</span>
+
+<span class="sd">        show_progress: bool (default: True)</span>
+<span class="sd">            If True, prints info of the running status.</span>
+
+<span class="sd">        kwargs: kwargs</span>
+<span class="sd">            Any additional parameters to pass to litellm.completion method.</span>
+<span class="sd">            Please refer documentation at: https://docs.litellm.ai/docs/completion/input#input-params-1</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pgmpy.base.DAG: A DAG representing the learned causal structure.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ExpertInLoop</span>
+<span class="sd">        &gt;&gt;&gt; model = get_example_model(&#39;cancer&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; df = model.simulate(int(1e3))</span>
+<span class="sd">        &gt;&gt;&gt; variable_descriptions = {</span>
+<span class="sd">        ...     &quot;Smoker&quot;: &quot;A binary variable representing whether a person smokes or not.&quot;,</span>
+<span class="sd">        ...     &quot;Cancer&quot;: &quot;A binary variable representing whether a person has cancer. &quot;,</span>
+<span class="sd">        ...     &quot;Xray&quot;: &quot;A binary variable representing the result of an X-ray test.&quot;,</span>
+<span class="sd">        ...     &quot;Pollution&quot;: &quot;A binary variable representing whether the person is in a high-pollution area or not.&quot;</span>
+<span class="sd">        ...     &quot;Dyspnoea&quot;: &quot;A binary variable representing whether a person has shortness of breath. &quot;}</span>
+<span class="sd">        &gt;&gt;&gt; dag = ExpertInLoop(df).estimate(</span>
+<span class="sd">        ...                 effect_size_threshold=0.0001,</span>
+<span class="sd">        ...                 use_llm=True,</span>
+<span class="sd">        ...                 variable_descriptions=variable_descriptions)</span>
+<span class="sd">        &gt;&gt;&gt; dag.edges()</span>
+<span class="sd">        OutEdgeView([(&#39;Smoker&#39;, &#39;Cancer&#39;), (&#39;Cancer&#39;, &#39;Xray&#39;), (&#39;Cancer&#39;, &#39;Dyspnoea&#39;), (&#39;Pollution&#39;, &#39;Cancer&#39;)])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Step 0: Create a new DAG on all the variables with no edge.</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">()</span>
+        <span class="n">dag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+
+        <span class="n">blacklisted_edges</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># Step 1: Compute effects and p-values between every combination of variables.</span>
+            <span class="n">all_effects</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_all</span><span class="p">(</span><span class="n">dag</span><span class="p">)</span>
+
+            <span class="c1"># Step 2: Remove any edges between variables that are not sufficiently associated.</span>
+            <span class="n">edge_effects</span> <span class="o">=</span> <span class="n">all_effects</span><span class="p">[</span><span class="n">all_effects</span><span class="o">.</span><span class="n">edge_present</span> <span class="o">==</span> <span class="kc">True</span><span class="p">]</span>
+            <span class="n">edge_effects</span> <span class="o">=</span> <span class="n">edge_effects</span><span class="p">[</span>
+                <span class="p">(</span><span class="n">edge_effects</span><span class="o">.</span><span class="n">effect</span> <span class="o">&lt;</span> <span class="n">effect_size_threshold</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">edge_effects</span><span class="o">.</span><span class="n">p_val</span> <span class="o">&gt;</span> <span class="n">pval_threshold</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="n">remove_edges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">edge_effects</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">(</span><span class="s2">&quot;u&quot;</span><span class="p">,</span> <span class="s2">&quot;v&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">to_records</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">remove_edges</span><span class="p">:</span>
+                <span class="n">dag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="c1"># Step 3: Add edge between variables which have significant association.</span>
+            <span class="n">nonedge_effects</span> <span class="o">=</span> <span class="n">all_effects</span><span class="p">[</span><span class="n">all_effects</span><span class="o">.</span><span class="n">edge_present</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
+            <span class="n">nonedge_effects</span> <span class="o">=</span> <span class="n">nonedge_effects</span><span class="p">[</span>
+                <span class="p">(</span><span class="n">nonedge_effects</span><span class="o">.</span><span class="n">effect</span> <span class="o">&gt;=</span> <span class="n">effect_size_threshold</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">nonedge_effects</span><span class="o">.</span><span class="n">p_val</span> <span class="o">&lt;=</span> <span class="n">pval_threshold</span><span class="p">)</span>
+            <span class="p">]</span>
+
+            <span class="c1"># Step 3.2: Else determine the edge direction and add it if not in blacklisted_edges.</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">blacklisted_edges</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">blacklisted_edges_us</span> <span class="o">=</span> <span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">blacklisted_edges</span><span class="p">]</span>
+                <span class="n">blacklisted_edges_vs</span> <span class="o">=</span> <span class="p">[</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">blacklisted_edges</span><span class="p">]</span>
+                <span class="n">nonedge_effects</span> <span class="o">=</span> <span class="n">nonedge_effects</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
+                    <span class="o">~</span><span class="p">(</span>
+                        <span class="p">(</span>
+                            <span class="n">nonedge_effects</span><span class="o">.</span><span class="n">u</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">blacklisted_edges_us</span><span class="p">)</span>
+                            <span class="o">&amp;</span> <span class="n">nonedge_effects</span><span class="o">.</span><span class="n">v</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">blacklisted_edges_vs</span><span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="o">|</span> <span class="p">(</span>
+                            <span class="n">nonedge_effects</span><span class="o">.</span><span class="n">u</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">blacklisted_edges_vs</span><span class="p">)</span>
+                            <span class="o">&amp;</span> <span class="n">nonedge_effects</span><span class="o">.</span><span class="n">v</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">blacklisted_edges_us</span><span class="p">)</span>
+                        <span class="p">)</span>
+                    <span class="p">),</span>
+                    <span class="p">:,</span>
+                <span class="p">]</span>
+
+            <span class="c1"># Step 3.1: Exit loop if all correlations in data are explained by the model.</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">edge_effects</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">nonedge_effects</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">break</span>
+
+            <span class="n">selected_edge</span> <span class="o">=</span> <span class="n">nonedge_effects</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nonedge_effects</span><span class="o">.</span><span class="n">effect</span><span class="o">.</span><span class="n">argmax</span><span class="p">()]</span>
+            <span class="k">if</span> <span class="n">use_llm</span><span class="p">:</span>
+                <span class="n">edge_direction</span> <span class="o">=</span> <span class="n">llm_pairwise_orient</span><span class="p">(</span>
+                    <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span>
+                    <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span>
+                    <span class="n">variable_descriptions</span><span class="p">,</span>
+                    <span class="n">llm_model</span><span class="o">=</span><span class="n">llm_model</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span> <span class="ow">and</span> <span class="n">show_progress</span><span class="p">:</span>
+                    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">Queried for edge orientation between </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="si">}</span><span class="s2">. Got: </span><span class="si">{</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">edge_direction</span> <span class="o">=</span> <span class="n">manual_pairwise_orient</span><span class="p">(</span>
+                    <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Step 3.3: Blacklist the edge if it creates a cycle, else add it to the DAG.</span>
+            <span class="k">if</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">dag</span><span class="p">,</span> <span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">blacklisted_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([</span><span class="n">edge_direction</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">dag</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../started/base.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../base/base.html">Base Model Structures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../factors/base.html">Parameterization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/base.html">Exact Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/model_testing.html">Model Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/base.html">Approximate Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for testing models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
