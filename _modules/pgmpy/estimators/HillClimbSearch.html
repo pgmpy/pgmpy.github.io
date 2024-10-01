@@ -42,9 +42,11 @@
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">AICScore</span><span class="p">,</span>
+    <span class="n">AICScoreGauss</span><span class="p">,</span>
     <span class="n">BDeuScore</span><span class="p">,</span>
     <span class="n">BDsScore</span><span class="p">,</span>
     <span class="n">BicScore</span><span class="p">,</span>
+    <span class="n">BicScoreGauss</span><span class="p">,</span>
     <span class="n">K2Score</span><span class="p">,</span>
     <span class="n">ScoreCache</span><span class="p">,</span>
     <span class="n">StructureEstimator</span><span class="p">,</span>
@@ -174,7 +176,7 @@
 <a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.HillClimbSearch.estimate">[docs]</a>
     <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">scoring_method</span><span class="o">=</span><span class="s2">&quot;k2score&quot;</span><span class="p">,</span>
+        <span class="n">scoring_method</span><span class="o">=</span><span class="s2">&quot;k2&quot;</span><span class="p">,</span>
         <span class="n">start_dag</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">fixed_edges</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span>
         <span class="n">tabu_length</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
@@ -196,7 +198,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        scoring_method: str or StructureScore instance</span>
 <span class="sd">            The score to be optimized during structure estimation.  Supported</span>
-<span class="sd">            structure scores: k2score, bdeuscore, bdsscore, bicscore, aicscore. Also accepts a</span>
+<span class="sd">            structure scores: k2, bdeu, bds, bic, aic, bic-g, aic-g. Also accepts a</span>
 <span class="sd">            custom score, but it should be an instance of `StructureScore`.</span>
 
 <span class="sd">        start_dag: DAG instance</span>
@@ -241,39 +243,48 @@
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import HillClimbSearch, BicScore</span>
-<span class="sd">        &gt;&gt;&gt; # create data sample with 9 random variables:</span>
-<span class="sd">        ... data = pd.DataFrame(np.random.randint(0, 5, size=(5000, 9)), columns=list(&#39;ABCDEFGHI&#39;))</span>
-<span class="sd">        &gt;&gt;&gt; # add 10th dependent variable</span>
-<span class="sd">        ... data[&#39;J&#39;] = data[&#39;A&#39;] * data[&#39;B&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; # Simulate some sample data from a known model to learn the model structure from</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
+<span class="sd">        &gt;&gt;&gt; model = get_example_model(&#39;alarm&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; df = model.simulate(int(1e3))</span>
+
+<span class="sd">        &gt;&gt;&gt; # Learn the model structure using HillClimbSearch algorithm from `df`</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import HillClimbSearch</span>
 <span class="sd">        &gt;&gt;&gt; est = HillClimbSearch(data)</span>
-<span class="sd">        &gt;&gt;&gt; best_model = est.estimate(scoring_method=BicScore(data))</span>
-<span class="sd">        &gt;&gt;&gt; sorted(best_model.nodes())</span>
-<span class="sd">        [&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;, &#39;F&#39;, &#39;G&#39;, &#39;H&#39;, &#39;I&#39;, &#39;J&#39;]</span>
-<span class="sd">        &gt;&gt;&gt; best_model.edges()</span>
-<span class="sd">        OutEdgeView([(&#39;B&#39;, &#39;J&#39;), (&#39;A&#39;, &#39;J&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; # search a model with restriction on the number of parents:</span>
-<span class="sd">        &gt;&gt;&gt; est.estimate(max_indegree=1).edges()</span>
-<span class="sd">        OutEdgeView([(&#39;J&#39;, &#39;A&#39;), (&#39;B&#39;, &#39;J&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; dag = est.estimate(scoring_method=&#39;bic&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; len(dag.nodes())</span>
+<span class="sd">        37</span>
+<span class="sd">        &gt;&gt;&gt; len(dag.edges())</span>
+<span class="sd">        45</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Step 1: Initial checks and setup for arguments</span>
         <span class="c1"># Step 1.1: Check scoring_method</span>
         <span class="n">supported_methods</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;k2score&quot;</span><span class="p">:</span> <span class="n">K2Score</span><span class="p">,</span>
-            <span class="s2">&quot;bdeuscore&quot;</span><span class="p">:</span> <span class="n">BDeuScore</span><span class="p">,</span>
-            <span class="s2">&quot;bdsscore&quot;</span><span class="p">:</span> <span class="n">BDsScore</span><span class="p">,</span>
-            <span class="s2">&quot;bicscore&quot;</span><span class="p">:</span> <span class="n">BicScore</span><span class="p">,</span>
-            <span class="s2">&quot;aicscore&quot;</span><span class="p">:</span> <span class="n">AICScore</span><span class="p">,</span>
+            <span class="s2">&quot;k2&quot;</span><span class="p">:</span> <span class="n">K2Score</span><span class="p">,</span>
+            <span class="s2">&quot;bdeu&quot;</span><span class="p">:</span> <span class="n">BDeuScore</span><span class="p">,</span>
+            <span class="s2">&quot;bds&quot;</span><span class="p">:</span> <span class="n">BDsScore</span><span class="p">,</span>
+            <span class="s2">&quot;bic&quot;</span><span class="p">:</span> <span class="n">BicScore</span><span class="p">,</span>
+            <span class="s2">&quot;aic&quot;</span><span class="p">:</span> <span class="n">AICScore</span><span class="p">,</span>
+            <span class="s2">&quot;aic-g&quot;</span><span class="p">:</span> <span class="n">AICScoreGauss</span><span class="p">,</span>
+            <span class="s2">&quot;bic-g&quot;</span><span class="p">:</span> <span class="n">BicScoreGauss</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="p">(</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-                <span class="ow">and</span> <span class="p">(</span><span class="n">scoring_method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported_methods</span><span class="p">)</span>
-            <span class="p">)</span>
-        <span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">StructureScore</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">scoring_method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="s2">&quot;k2score&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;bdeuscore&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;bdsscore&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;bicscore&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;aicscore&quot;</span><span class="p">,</span>
+            <span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;The scoring method names have been changed. Please refer the documentation.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">scoring_method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">supported_methods</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Unknown scoring method. Please refer documentation for a list of supported score metrics.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">StructureScore</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;scoring_method should either be one of k2score, bdeuscore, bicscore, bdsscore, aicscore, or an instance of StructureScore&quot;</span>
             <span class="p">)</span>

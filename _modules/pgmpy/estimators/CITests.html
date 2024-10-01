@@ -36,7 +36,6 @@
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
 <span class="kn">from</span> <span class="nn">sklearn.cross_decomposition</span> <span class="kn">import</span> <span class="n">CCA</span>
 <span class="kn">from</span> <span class="nn">statsmodels.multivariate.manova</span> <span class="kn">import</span> <span class="n">MANOVA</span>
-<span class="kn">from</span> <span class="nn">xgboost</span> <span class="kn">import</span> <span class="n">XGBClassifier</span><span class="p">,</span> <span class="n">XGBRegressor</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="kn">import</span> <span class="n">IndependenceAssertion</span>
@@ -264,68 +263,6 @@
 
 
 
-<div class="viewcode-block" id="freeman_tuckey">
-<a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.freeman_tuckey">[docs]</a>
-<span class="k">def</span> <span class="nf">freeman_tuckey</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Freeman Tuckey test for conditional independence [1].</span>
-<span class="sd">    Tests the null hypothesis that X is independent of Y given Zs.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    X: int, string, hashable object</span>
-<span class="sd">        A variable name contained in the data set</span>
-
-<span class="sd">    Y: int, string, hashable object</span>
-<span class="sd">        A variable name contained in the data set, different from X</span>
-
-<span class="sd">    Z: list (array-like)</span>
-<span class="sd">        A list of variable names contained in the data set, different from X and Y.</span>
-<span class="sd">        This is the separating set that (potentially) makes X and Y independent.</span>
-<span class="sd">        Default: []</span>
-
-<span class="sd">    data: pandas.DataFrame</span>
-<span class="sd">        The dataset on which to test the independence condition.</span>
-
-<span class="sd">    boolean: bool</span>
-<span class="sd">        If boolean=True, an additional argument `significance_level` must be</span>
-<span class="sd">        specified. If p_value of the test is greater than equal to</span>
-<span class="sd">        `significance_level`, returns True. Otherwise returns False.</span>
-<span class="sd">        If boolean=False, returns the chi2 and p_value of the test.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    CI Test Results: tuple or bool</span>
-<span class="sd">        If boolean = False, Returns a tuple (chi, p_value, dof). `chi` is the</span>
-<span class="sd">        chi-squared test statistic. The `p_value` for the test, i.e. the</span>
-<span class="sd">        probability of observing the computed chi-square statistic (or an even</span>
-<span class="sd">        higher value), given the null hypothesis that X \u27C2 Y | Zs is True.</span>
-<span class="sd">        If boolean = True, returns True if the p_value of the test is greater</span>
-<span class="sd">        than `significance_level` else returns False.</span>
-
-<span class="sd">    References</span>
-<span class="sd">    ----------</span>
-<span class="sd">    [1] Read, Campbell B. &quot;Freeman—Tukey chi-squared goodness-of-fit statistics.&quot; Statistics &amp; probability letters 18.4 (1993): 271-278.</span>
-
-<span class="sd">    Examples</span>
-<span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 2, size=(50000, 4)), columns=list(&#39;ABCD&#39;))</span>
-<span class="sd">    &gt;&gt;&gt; data[&#39;E&#39;] = data[&#39;A&#39;] + data[&#39;B&#39;] + data[&#39;C&#39;]</span>
-<span class="sd">    &gt;&gt;&gt; freeman_tuckey(X=&#39;A&#39;, Y=&#39;C&#39;, Z=[], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; freeman_tuckey(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; freeman_tuckey(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;, &#39;E&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    False</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">power_divergence</span><span class="p">(</span>
-        <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="n">boolean</span><span class="p">,</span> <span class="n">lambda_</span><span class="o">=</span><span class="s2">&quot;freeman-tukey&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span></div>
-
-
-
 <div class="viewcode-block" id="modified_log_likelihood">
 <a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.modified_log_likelihood">[docs]</a>
 <span class="k">def</span> <span class="nf">modified_log_likelihood</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -386,130 +323,6 @@
         <span class="n">boolean</span><span class="o">=</span><span class="n">boolean</span><span class="p">,</span>
         <span class="n">lambda_</span><span class="o">=</span><span class="s2">&quot;mod-log-likelihood&quot;</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span></div>
-
-
-
-<div class="viewcode-block" id="neyman">
-<a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.neyman">[docs]</a>
-<span class="k">def</span> <span class="nf">neyman</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Neyman&#39;s test for conditional independence[1].</span>
-<span class="sd">    Tests the null hypothesis that X is independent of Y given Zs.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    X: int, string, hashable object</span>
-<span class="sd">        A variable name contained in the data set</span>
-
-<span class="sd">    Y: int, string, hashable object</span>
-<span class="sd">        A variable name contained in the data set, different from X</span>
-
-<span class="sd">    Z: list (array-like)</span>
-<span class="sd">        A list of variable names contained in the data set, different from X and Y.</span>
-<span class="sd">        This is the separating set that (potentially) makes X and Y independent.</span>
-<span class="sd">        Default: []</span>
-
-<span class="sd">    data: pandas.DataFrame</span>
-<span class="sd">        The dataset on which to test the independence condition.</span>
-
-<span class="sd">    boolean: bool</span>
-<span class="sd">        If boolean=True, an additional argument `significance_level` must be</span>
-<span class="sd">        specified. If p_value of the test is greater than equal to</span>
-<span class="sd">        `significance_level`, returns True. Otherwise returns False.</span>
-<span class="sd">        If boolean=False, returns the chi2 and p_value of the test.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    CI Test Results: tuple or bool</span>
-<span class="sd">        If boolean = False, Returns a tuple (chi, p_value, dof). `chi` is the</span>
-<span class="sd">        chi-squared test statistic. The `p_value` for the test, i.e. the</span>
-<span class="sd">        probability of observing the computed chi-square statistic (or an even</span>
-<span class="sd">        higher value), given the null hypothesis that X \u27C2 Y | Zs is True.</span>
-<span class="sd">        If boolean = True, returns True if the p_value of the test is greater</span>
-<span class="sd">        than `significance_level` else returns False.</span>
-
-<span class="sd">    References</span>
-<span class="sd">    ----------</span>
-<span class="sd">    [1] https://en.wikipedia.org/wiki/Neyman%E2%80%93Pearson_lemma</span>
-
-<span class="sd">    Examples</span>
-<span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 2, size=(50000, 4)), columns=list(&#39;ABCD&#39;))</span>
-<span class="sd">    &gt;&gt;&gt; data[&#39;E&#39;] = data[&#39;A&#39;] + data[&#39;B&#39;] + data[&#39;C&#39;]</span>
-<span class="sd">    &gt;&gt;&gt; neyman(X=&#39;A&#39;, Y=&#39;C&#39;, Z=[], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; neyman(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; neyman(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;, &#39;E&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    False</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">power_divergence</span><span class="p">(</span>
-        <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="n">boolean</span><span class="p">,</span> <span class="n">lambda_</span><span class="o">=</span><span class="s2">&quot;neyman&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span></div>
-
-
-
-<div class="viewcode-block" id="cressie_read">
-<a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.cressie_read">[docs]</a>
-<span class="k">def</span> <span class="nf">cressie_read</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Cressie Read statistic for conditional independence[1].</span>
-<span class="sd">    Tests the null hypothesis that X is independent of Y given Zs.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    X: int, string, hashable object</span>
-<span class="sd">        A variable name contained in the data set</span>
-
-<span class="sd">    Y: int, string, hashable object</span>
-<span class="sd">        A variable name contained in the data set, different from X</span>
-
-<span class="sd">    Z: list (array-like)</span>
-<span class="sd">        A list of variable names contained in the data set, different from X and Y.</span>
-<span class="sd">        This is the separating set that (potentially) makes X and Y independent.</span>
-<span class="sd">        Default: []</span>
-
-<span class="sd">    data: pandas.DataFrame</span>
-<span class="sd">        The dataset on which to test the independence condition.</span>
-
-<span class="sd">    boolean: bool</span>
-<span class="sd">        If boolean=True, an additional argument `significance_level` must be</span>
-<span class="sd">        specified. If p_value of the test is greater than equal to</span>
-<span class="sd">        `significance_level`, returns True. Otherwise returns False.</span>
-<span class="sd">        If boolean=False, returns the chi2 and p_value of the test.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    CI Test Results: tuple or bool</span>
-<span class="sd">        If boolean = False, Returns a tuple (chi, p_value, dof). `chi` is the</span>
-<span class="sd">        chi-squared test statistic. The `p_value` for the test, i.e. the</span>
-<span class="sd">        probability of observing the computed chi-square statistic (or an even</span>
-<span class="sd">        higher value), given the null hypothesis that X \u27C2 Y | Zs is True.</span>
-<span class="sd">        If boolean = True, returns True if the p_value of the test is greater</span>
-<span class="sd">        than `significance_level` else returns False.</span>
-
-<span class="sd">    References</span>
-<span class="sd">    ----------</span>
-<span class="sd">    [1] Cressie, Noel, and Timothy RC Read. &quot;Multinomial goodness‐of‐fit tests.&quot; Journal of the Royal Statistical Society: Series B (Methodological) 46.3 (1984): 440-464.</span>
-
-<span class="sd">    Examples</span>
-<span class="sd">    --------</span>
-<span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 2, size=(50000, 4)), columns=list(&#39;ABCD&#39;))</span>
-<span class="sd">    &gt;&gt;&gt; data[&#39;E&#39;] = data[&#39;A&#39;] + data[&#39;B&#39;] + data[&#39;C&#39;]</span>
-<span class="sd">    &gt;&gt;&gt; cressie_read(X=&#39;A&#39;, Y=&#39;C&#39;, Z=[], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; cressie_read(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; cressie_read(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;, &#39;E&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    False</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">power_divergence</span><span class="p">(</span>
-        <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="n">boolean</span><span class="p">,</span> <span class="n">lambda_</span><span class="o">=</span><span class="s2">&quot;cressie-read&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span></div>
 
 
@@ -583,7 +396,6 @@
 <span class="sd">    &gt;&gt;&gt; chi_square(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;, &#39;E&#39;], data=data, boolean=True, significance_level=0.05)</span>
 <span class="sd">    False</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="c1"># Step 1: Check if the arguments are valid and type conversions.</span>
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
         <span class="n">Z</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
@@ -598,7 +410,8 @@
     <span class="c1"># Step 2: Do a simple contingency test if there are no conditional variables.</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">chi</span><span class="p">,</span> <span class="n">p_value</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">expected</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2_contingency</span><span class="p">(</span>
-            <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">lambda_</span><span class="o">=</span><span class="n">lambda_</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">],</span> <span class="n">observed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">lambda_</span><span class="o">=</span><span class="n">lambda_</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="c1"># Step 3: If there are conditionals variables, iterate over unique states and do</span>
@@ -606,15 +419,16 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">chi</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">dof</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">z_state</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">Z</span><span class="p">):</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">c</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2_contingency</span><span class="p">(</span>
-                    <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">lambda_</span><span class="o">=</span><span class="n">lambda_</span>
-                <span class="p">)</span>
-                <span class="n">chi</span> <span class="o">+=</span> <span class="n">c</span>
-                <span class="n">dof</span> <span class="o">+=</span> <span class="n">d</span>
-            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                <span class="c1"># If one of the values is 0 in the 2x2 table.</span>
+        <span class="k">for</span> <span class="n">z_state</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="c1"># Compute the contingency table</span>
+            <span class="n">unique_x</span><span class="p">,</span> <span class="n">x_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">X</span><span class="p">],</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">unique_y</span><span class="p">,</span> <span class="n">y_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">Y</span><span class="p">],</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">contingency</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span>
+                <span class="n">x_inv</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_y</span><span class="p">)</span> <span class="o">+</span> <span class="n">y_inv</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_x</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_y</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_x</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_y</span><span class="p">))</span>
+
+            <span class="c1"># If all values of a column in the contingency table are zeros, skip the test.</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">contingency</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">contingency</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">z_state</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;Skipping the test </span><span class="si">{</span><span class="n">X</span><span class="si">}</span><span class="s2"> </span><span class="se">\u27C2</span><span class="s2"> </span><span class="si">{</span><span class="n">Y</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">z_state</span><span class="si">}</span><span class="s2">. Not enough samples&quot;</span>
@@ -626,6 +440,10 @@
                     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;Skipping the test </span><span class="si">{</span><span class="n">X</span><span class="si">}</span><span class="s2"> </span><span class="se">\u27C2</span><span class="s2"> </span><span class="si">{</span><span class="n">Y</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">z_str</span><span class="si">}</span><span class="s2">. Not enough samples&quot;</span>
                     <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">c</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2_contingency</span><span class="p">(</span><span class="n">contingency</span><span class="p">,</span> <span class="n">lambda_</span><span class="o">=</span><span class="n">lambda_</span><span class="p">)</span>
+                <span class="n">chi</span> <span class="o">+=</span> <span class="n">c</span>
+                <span class="n">dof</span> <span class="o">+=</span> <span class="n">d</span>
         <span class="n">p_value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">chi</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">dof</span><span class="p">)</span>
 
     <span class="c1"># Step 4: Return the values</span>
@@ -715,6 +533,15 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function to get predictions using XGBoost for `ci_pillai`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 0: Check if XGboost is installed.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">xgboost</span> <span class="kn">import</span> <span class="n">XGBClassifier</span><span class="p">,</span> <span class="n">XGBRegressor</span>
+    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">message</span>
+            <span class="o">+</span> <span class="s2">&quot;. xgboost is required for using pillai_trace test. Please install using: pip install xgboost&quot;</span>
+        <span class="p">)</span>
+
     <span class="c1"># Step 1: Check if any of the conditional variables are categorical</span>
     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">):</span>
         <span class="n">enable_categorical</span> <span class="o">=</span> <span class="kc">True</span>
@@ -767,9 +594,9 @@
     <span class="k">return</span> <span class="p">(</span><span class="n">pred_x</span><span class="p">,</span> <span class="n">pred_y</span><span class="p">,</span> <span class="n">x_cat_index</span><span class="p">,</span> <span class="n">y_cat_index</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="ci_pillai">
-<a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.ci_pillai">[docs]</a>
-<span class="k">def</span> <span class="nf">ci_pillai</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="pillai_trace">
+<a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.pillai_trace">[docs]</a>
+<span class="k">def</span> <span class="nf">pillai_trace</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A mixed-data residualization based conditional independence test[1].</span>
 
@@ -824,7 +651,7 @@
     <span class="c1"># Step 1.1: If no conditional variables are specified, use a constant value.</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">Z</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cont_Z&quot;</span><span class="p">]</span>
-        <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s2">&quot;cont_Z&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">cont_Z</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
 
     <span class="c1"># Step 2: Get the predictions</span>
     <span class="n">pred_x</span><span class="p">,</span> <span class="n">pred_y</span><span class="p">,</span> <span class="n">x_cat_index</span><span class="p">,</span> <span class="n">y_cat_index</span> <span class="o">=</span> <span class="n">_get_predictions</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
