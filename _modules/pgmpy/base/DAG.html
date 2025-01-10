@@ -464,7 +464,7 @@
 <a class="viewcode-back" href="../../../base/base.html#pgmpy.base.DAG.DAG.get_independencies">[docs]</a>
     <span class="k">def</span> <span class="nf">get_independencies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes independencies in the DAG, by checking d-seperation.</span>
+<span class="sd">        Computes independencies in the DAG, by checking minimal d-seperation.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -482,37 +482,21 @@
 <span class="sd">        &gt;&gt;&gt; chain = DAG([(&#39;X&#39;, &#39;Y&#39;), (&#39;Y&#39;, &#39;Z&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; chain.get_independencies()</span>
 <span class="sd">        (X \u27C2 Z | Y)</span>
-<span class="sd">        (Z \u27C2 X | Y)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
-            <span class="n">nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span>
+            <span class="n">nodes</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span>
 
         <span class="n">independencies</span> <span class="o">=</span> <span class="n">Independencies</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
-                <span class="n">rest</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="p">{</span><span class="n">start</span><span class="p">}</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">rest</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">-</span> <span class="p">{</span><span class="n">start</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+                <span class="n">minimal_separator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">minimal_dseparator</span><span class="p">(</span>
+                    <span class="n">start</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="n">include_latents</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">minimal_separator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">independencies</span><span class="o">.</span><span class="n">add_assertions</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">minimal_separator</span><span class="p">])</span>
 
-            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rest</span><span class="p">)):</span>
-                <span class="k">for</span> <span class="n">observed</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">rest</span><span class="p">,</span> <span class="n">r</span><span class="p">):</span>
-                    <span class="n">d_seperated_variables</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="n">rest</span>
-                        <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">observed</span><span class="p">)</span>
-                        <span class="o">-</span> <span class="nb">set</span><span class="p">(</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">(</span>
-                                <span class="n">start</span><span class="p">,</span>
-                                <span class="n">observed</span><span class="o">=</span><span class="n">observed</span><span class="p">,</span>
-                                <span class="n">include_latents</span><span class="o">=</span><span class="n">include_latents</span><span class="p">,</span>
-                            <span class="p">)[</span><span class="n">start</span><span class="p">]</span>
-                        <span class="p">)</span>
-                    <span class="p">)</span>
-                    <span class="k">if</span> <span class="n">d_seperated_variables</span><span class="p">:</span>
-                        <span class="n">independencies</span><span class="o">.</span><span class="n">add_assertions</span><span class="p">(</span>
-                            <span class="p">[</span><span class="n">start</span><span class="p">,</span> <span class="n">d_seperated_variables</span><span class="p">,</span> <span class="n">observed</span><span class="p">]</span>
-                        <span class="p">)</span>
-        <span class="n">independencies</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span>
+        <span class="n">independencies</span> <span class="o">=</span> <span class="n">independencies</span><span class="o">.</span><span class="n">reduce</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">latex</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">independencies</span>
@@ -624,19 +608,21 @@
 <span class="sd">        &gt;&gt;&gt; student.get_immoralities()</span>
 <span class="sd">        {(&#39;diff&#39;, &#39;intel&#39;)}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">immoralities</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">immoralities</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+            <span class="n">parent_pairs</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">parents</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">),</span> <span class="mi">2</span><span class="p">):</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">parents</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span>
                     <span class="n">parents</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="p">):</span>
-                    <span class="n">immoralities</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">parents</span><span class="p">)))</span>
+                    <span class="n">parent_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">parents</span><span class="p">)))</span>
+            <span class="n">immoralities</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent_pairs</span>
         <span class="k">return</span> <span class="n">immoralities</span></div>
 
 
 <div class="viewcode-block" id="DAG.is_dconnected">
 <a class="viewcode-back" href="../../../base/base.html#pgmpy.base.DAG.DAG.is_dconnected">[docs]</a>
-    <span class="k">def</span> <span class="nf">is_dconnected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">is_dconnected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns True if there is an active trail (i.e. d-connection) between</span>
 <span class="sd">        `start` and `end` node given that `observed` is observed.</span>
@@ -650,6 +636,9 @@
 <span class="sd">            If given the active trail would be computed assuming these nodes to</span>
 <span class="sd">            be observed.</span>
 
+<span class="sd">        include_latents: boolean (default: False)</span>
+<span class="sd">            If true, latent variables are return as part of the active trail.</span>
+
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
@@ -662,7 +651,12 @@
 <span class="sd">        &gt;&gt;&gt; student.is_dconnected(&#39;grades&#39;, &#39;sat&#39;)</span>
 <span class="sd">        True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">end</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">observed</span><span class="p">)[</span><span class="n">start</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">end</span>
+            <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">(</span>
+                <span class="n">variables</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">observed</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="n">include_latents</span>
+            <span class="p">)[</span><span class="n">start</span><span class="p">]</span>
+        <span class="p">):</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span></div>
@@ -670,7 +664,7 @@
 
 <div class="viewcode-block" id="DAG.minimal_dseparator">
 <a class="viewcode-back" href="../../../base/base.html#pgmpy.base.DAG.DAG.minimal_dseparator">[docs]</a>
-    <span class="k">def</span> <span class="nf">minimal_dseparator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">minimal_dseparator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Finds the minimal d-separating set for `start` and `end`.</span>
 
@@ -681,6 +675,9 @@
 
 <span class="sd">        end: node</span>
 <span class="sd">            The second node.</span>
+
+<span class="sd">        include_latents: boolean (default: False)</span>
+<span class="sd">            If true, latent variables are consider for minimal d-seperator.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -700,14 +697,17 @@
         <span class="n">separator</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
             <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">end</span><span class="p">))</span>
         <span class="p">)</span>
-        <span class="c1"># If any of the parents were latents, take the latent&#39;s parent</span>
-        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">separator</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">separator_copy</span> <span class="o">=</span> <span class="n">separator</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">separator</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">u</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">:</span>
-                    <span class="n">separator_copy</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
-                    <span class="n">separator_copy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">u</span><span class="p">)))</span>
-            <span class="n">separator</span> <span class="o">=</span> <span class="n">separator_copy</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
+            <span class="c1"># If any of the parents were latents, take the latent&#39;s parent</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">separator</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">separator_copy</span> <span class="o">=</span> <span class="n">separator</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">separator</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">u</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">:</span>
+                        <span class="n">separator_copy</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+                        <span class="n">separator_copy</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">u</span><span class="p">)))</span>
+                <span class="n">separator</span> <span class="o">=</span> <span class="n">separator_copy</span>
+
         <span class="c1"># Remove the start and end nodes in case it reaches there while removing latents.</span>
         <span class="n">separator</span><span class="o">.</span><span class="n">difference_update</span><span class="p">({</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">})</span>
 
@@ -871,7 +871,7 @@
 
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Node </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2"> not in not in graph&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Node </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2"> not in graph&quot;</span><span class="p">)</span>
 
         <span class="n">ancestors_list</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="n">nodes_list</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
@@ -1118,7 +1118,7 @@
 <div class="viewcode-block" id="DAG.get_random">
 <a class="viewcode-back" href="../../../base/base.html#pgmpy.base.DAG.DAG.get_random">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">edge_prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">node_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">edge_prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">node_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a randomly generated DAG with `n_nodes` number of nodes with</span>
 <span class="sd">        edge probability being `edge_prob`.</span>
@@ -1139,6 +1139,9 @@
 <span class="sd">        latents: bool (default: False)</span>
 <span class="sd">            If True, includes latent variables in the generated DAG.</span>
 
+<span class="sd">        seed: int (default: None)</span>
+<span class="sd">            The seed for the random number generator.</span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Random DAG: pgmpy.base.DAG</span>
@@ -1154,7 +1157,8 @@
 <span class="sd">        OutEdgeView([(0, 6), (1, 6), (1, 7), (7, 9), (2, 5), (2, 7), (2, 8), (5, 9), (3, 7)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Step 1: Generate a matrix of 0 and 1. Prob of choosing 1 = edge_prob</span>
-        <span class="n">adj_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+        <span class="n">gen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">adj_mat</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
             <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span> <span class="o">-</span> <span class="n">edge_prob</span><span class="p">,</span> <span class="n">edge_prob</span><span class="p">]</span>
         <span class="p">)</span>
 
@@ -1172,9 +1176,7 @@
 
         <span class="k">if</span> <span class="n">latents</span><span class="p">:</span>
             <span class="n">dag</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
-                    <span class="n">dag</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
-                <span class="p">)</span>
+                <span class="n">gen</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="n">gen</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">nodes</span><span class="p">())))</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">dag</span></div>
 
@@ -1195,6 +1197,80 @@
 <span class="sd">        &gt;&gt;&gt; model.draw(&#39;model.png&#39;, prog=&#39;neato&#39;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">nx_agraph</span><span class="o">.</span><span class="n">to_agraph</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DAG.fit">
+<a class="viewcode-back" href="../../../base/base.html#pgmpy.base.DAG.DAG.fit">[docs]</a>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="p">[],</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimates the CPD for each variable based on a given data set.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data: pandas DataFrame object</span>
+<span class="sd">            DataFrame object with column names identical to the variable names of the network.</span>
+<span class="sd">            (If some values in the data are missing the data cells should be set to `numpy.nan`.</span>
+<span class="sd">            Note that pandas converts each column containing `numpy.nan`s to dtype `float`.)</span>
+
+<span class="sd">        estimator: Estimator class</span>
+<span class="sd">            One of:</span>
+<span class="sd">            - MaximumLikelihoodEstimator (default)</span>
+<span class="sd">            - BayesianEstimator: In this case, pass &#39;prior_type&#39; and either &#39;pseudo_counts&#39;</span>
+<span class="sd">            or &#39;equivalent_sample_size&#39; as additional keyword arguments.</span>
+<span class="sd">            See `BayesianEstimator.get_parameters()` for usage.</span>
+<span class="sd">            - ExpectationMaximization</span>
+
+<span class="sd">        state_names: dict (optional)</span>
+<span class="sd">            A dict indicating, for each variable, the discrete set of states</span>
+<span class="sd">            that the variable can take. If unspecified, the observed values</span>
+<span class="sd">            in the data set are taken to be the only possible states.</span>
+
+<span class="sd">        n_jobs: int (default: 1)</span>
+<span class="sd">            Number of threads/processes to use for estimation. Using n_jobs &gt; 1</span>
+<span class="sd">            for small models or datasets might be slower.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Fitted Model: BayesianNetwork</span>
+<span class="sd">            Returns a BayesianNetwork object with learned CPDs.</span>
+<span class="sd">            The DAG structure is preserved, and parameters (CPDs) are added.</span>
+<span class="sd">            This allows the DAG to represent both the structure and the parameters of a Bayesian Network.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(data={&#39;A&#39;: [0, 0, 1], &#39;B&#39;: [0, 1, 0], &#39;C&#39;: [1, 1, 0]})</span>
+<span class="sd">        &gt;&gt;&gt; model = DAG([(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; fitted_model = model.fit(data)</span>
+<span class="sd">        &gt;&gt;&gt; fitted_model.get_cpds()</span>
+<span class="sd">        [&lt;TabularCPD representing P(A:2) at 0x17945372c30&gt;,</span>
+<span class="sd">        &lt;TabularCPD representing P(B:2) at 0x17945a19760&gt;,</span>
+<span class="sd">        &lt;TabularCPD representing P(C:2 | A:2, B:2) at 0x17944f42690&gt;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">MaximumLikelihoodEstimator</span>
+        <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+            <span class="n">bn</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bn</span> <span class="o">=</span> <span class="n">BayesianNetwork</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">estimator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">estimator</span> <span class="o">=</span> <span class="n">MaximumLikelihoodEstimator</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Estimator object should be a valid pgmpy estimator.&quot;</span><span class="p">)</span>
+
+        <span class="n">_estimator</span> <span class="o">=</span> <span class="n">estimator</span><span class="p">(</span>
+            <span class="n">bn</span><span class="p">,</span>
+            <span class="n">data</span><span class="p">,</span>
+            <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">cpds_list</span> <span class="o">=</span> <span class="n">_estimator</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">bn</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds_list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">bn</span></div>
 </div>
 
 

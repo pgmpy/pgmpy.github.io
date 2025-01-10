@@ -72,14 +72,21 @@
 <span class="sd">    evidence_card: array-like</span>
 <span class="sd">        cardinality/no. of states of variables in `evidence`(if any)</span>
 
+<span class="sd">    state_names: dict (default: dict())</span>
+<span class="sd">        A dictionary of the form {variable: list of states} specifying the</span>
+<span class="sd">        names of possible states for each variable (variable + evidence) in</span>
+<span class="sd">        the TabularCPD. The order in which the states are specified should</span>
+<span class="sd">        match the order in the values array. If state_names is not specified,</span>
+<span class="sd">        auto-assigns state names starting from 0.</span>
+
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    For a distribution of P(grade|diff, intel)</span>
 
 <span class="sd">    +---------+-------------------------+------------------------+</span>
-<span class="sd">    |diff:    |          easy           |         hard           |</span>
+<span class="sd">    |diff     |          easy           |         hard           |</span>
 <span class="sd">    +---------+------+--------+---------+------+--------+--------+</span>
-<span class="sd">    |aptitude:| low  | medium |  high   | low  | medium |  high  |</span>
+<span class="sd">    |intel    | low  | medium |  high   | low  | medium |  high  |</span>
 <span class="sd">    +---------+------+--------+---------+------+--------+--------+</span>
 <span class="sd">    |gradeA   | 0.1  | 0.1    |   0.1   |  0.1 |  0.1   |   0.1  |</span>
 <span class="sd">    +---------+------+--------+---------+------+--------+--------+</span>
@@ -88,27 +95,33 @@
 <span class="sd">    |gradeC   | 0.8  | 0.8    |   0.8   |  0.8 |  0.8   |   0.8  |</span>
 <span class="sd">    +---------+------+--------+---------+------+--------+--------+</span>
 
-<span class="sd">    values should be</span>
+<span class="sd">    the values array should be</span>
 <span class="sd">    [[0.1,0.1,0.1,0.1,0.1,0.1],</span>
-<span class="sd">    [0.1,0.1,0.1,0.1,0.1,0.1],</span>
-<span class="sd">    [0.8,0.8,0.8,0.8,0.8,0.8]]</span>
+<span class="sd">     [0.1,0.1,0.1,0.1,0.1,0.1],</span>
+<span class="sd">     [0.8,0.8,0.8,0.8,0.8,0.8]]</span>
 
-<span class="sd">    &gt;&gt;&gt; cpd = TabularCPD(&#39;grade&#39;,3,[[0.1,0.1,0.1,0.1,0.1,0.1],</span>
-<span class="sd">    ...                             [0.1,0.1,0.1,0.1,0.1,0.1],</span>
-<span class="sd">    ...                             [0.8,0.8,0.8,0.8,0.8,0.8]],</span>
-<span class="sd">    ...                             evidence=[&#39;diff&#39;, &#39;intel&#39;], evidence_card=[2,3])</span>
+<span class="sd">    &gt;&gt;&gt; cpd = TabularCPD(variable=&#39;grade&#39;,</span>
+<span class="sd">    ...                  variable_card=3,</span>
+<span class="sd">    ...                  values=[[0.1,0.1,0.1,0.1,0.1,0.1],</span>
+<span class="sd">    ...                          [0.1,0.1,0.1,0.1,0.1,0.1],</span>
+<span class="sd">    ...                          [0.8,0.8,0.8,0.8,0.8,0.8]],</span>
+<span class="sd">    ...                  evidence=[&#39;diff&#39;, &#39;intel&#39;],</span>
+<span class="sd">    ...                  evidence_card=[2, 3],</span>
+<span class="sd">    ...                  state_names={&#39;diff&#39;: [&#39;easy&#39;, &#39;hard&#39;],</span>
+<span class="sd">    ...                               &#39;intel&#39;: [&#39;low&#39;, &#39;mid&#39;, &#39;high&#39;],</span>
+<span class="sd">    ...                               &#39;grade&#39;: [&#39;A&#39;, &#39;B&#39;, &#39;C&#39;]})</span>
 <span class="sd">    &gt;&gt;&gt; print(cpd)</span>
-<span class="sd">    +---------+---------+---------+---------+---------+---------+---------+</span>
-<span class="sd">    | diff    | diff_0  | diff_0  | diff_0  | diff_1  | diff_1  | diff_1  |</span>
-<span class="sd">    +---------+---------+---------+---------+---------+---------+---------+</span>
-<span class="sd">    | intel   | intel_0 | intel_1 | intel_2 | intel_0 | intel_1 | intel_2 |</span>
-<span class="sd">    +---------+---------+---------+---------+---------+---------+---------+</span>
-<span class="sd">    | grade_0 | 0.1     | 0.1     | 0.1     | 0.1     | 0.1     | 0.1     |</span>
-<span class="sd">    +---------+---------+---------+---------+---------+---------+---------+</span>
-<span class="sd">    | grade_1 | 0.1     | 0.1     | 0.1     | 0.1     | 0.1     | 0.1     |</span>
-<span class="sd">    +---------+---------+---------+---------+---------+---------+---------+</span>
-<span class="sd">    | grade_2 | 0.8     | 0.8     | 0.8     | 0.8     | 0.8     | 0.8     |</span>
-<span class="sd">    +---------+---------+---------+---------+---------+---------+---------+</span>
+<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
+<span class="sd">    | diff    |diff(easy)|diff(easy)|diff(easy) |diff(hard)|diff(hard)|diff(hard) |</span>
+<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
+<span class="sd">    | intel   |intel(low)|intel(mid)|intel(high)|intel(low)|intel(mid)|intel(high)|</span>
+<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
+<span class="sd">    | grade(A)| 0.1      | 0.1      | 0.1       | 0.1      | 0.1      | 0.1       |</span>
+<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
+<span class="sd">    | grade(B)| 0.1      | 0.1      | 0.1       | 0.1      | 0.1      | 0.1       |</span>
+<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
+<span class="sd">    | grade(C)| 0.8      | 0.8      | 0.8       | 0.8      | 0.8      | 0.8       |</span>
+<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
 <span class="sd">    &gt;&gt;&gt; cpd.values</span>
 <span class="sd">    array([[[ 0.1,  0.1,  0.1],</span>
 <span class="sd">            [ 0.1,  0.1,  0.1]],</span>
@@ -661,7 +674,9 @@
 <div class="viewcode-block" id="TabularCPD.get_random">
 <a class="viewcode-back" href="../../../../factors/discrete.html#pgmpy.factors.discrete.CPD.TabularCPD.get_random">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cardinality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{},</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span>
+        <span class="n">variable</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cardinality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{},</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generates a TabularCPD instance with random values on `variable` with</span>
 <span class="sd">        parents/evidence `evidence` with cardinality/number of states as given</span>
@@ -745,7 +760,7 @@
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../../../index.html">
@@ -823,7 +838,7 @@
       &#169;2023, Ankur Ankan.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
     </div>

@@ -33,7 +33,7 @@
   <h1>Source code for pgmpy.estimators.MmhcEstimator</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">UndirectedGraph</span>
-<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">BDeuScore</span><span class="p">,</span> <span class="n">HillClimbSearch</span><span class="p">,</span> <span class="n">StructureEstimator</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">BDeu</span><span class="p">,</span> <span class="n">ExpertKnowledge</span><span class="p">,</span> <span class="n">HillClimbSearch</span><span class="p">,</span> <span class="n">StructureEstimator</span>
 <span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="kn">import</span> <span class="n">chi_square</span>
 <span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="kn">import</span> <span class="n">IndependenceAssertion</span><span class="p">,</span> <span class="n">Independencies</span>
 <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span>
@@ -81,7 +81,7 @@
 <span class="sd">        significance_level: float, default: 0.01</span>
 <span class="sd">            The significance level to use for conditional independence tests in the data set. See `mmpc`-method.</span>
 
-<span class="sd">        scoring_method: instance of a Scoring method (default: BDeuScore)</span>
+<span class="sd">        scoring_method: instance of a Scoring method (default: BDeu)</span>
 <span class="sd">            The method to use for scoring during Hill Climb Search. Can be an instance of any of the</span>
 <span class="sd">            scoring methods implemented in pgmpy.</span>
 
@@ -114,16 +114,18 @@
 <span class="sd">        [(&#39;Z&#39;, &#39;sum&#39;), (&#39;X&#39;, &#39;sum&#39;), (&#39;W&#39;, &#39;sum&#39;), (&#39;Y&#39;, &#39;sum&#39;)]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">scoring_method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">scoring_method</span> <span class="o">=</span> <span class="n">BDeuScore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+            <span class="n">scoring_method</span> <span class="o">=</span> <span class="n">BDeu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
         <span class="n">skel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mmpc</span><span class="p">(</span><span class="n">significance_level</span><span class="p">)</span>
 
         <span class="n">hc</span> <span class="o">=</span> <span class="n">HillClimbSearch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
+        <span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">(</span><span class="n">white_list</span><span class="o">=</span><span class="n">skel</span><span class="o">.</span><span class="n">to_directed</span><span class="p">()</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+
         <span class="n">model</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span>
             <span class="n">scoring_method</span><span class="o">=</span><span class="n">scoring_method</span><span class="p">,</span>
-            <span class="n">white_list</span><span class="o">=</span><span class="n">skel</span><span class="o">.</span><span class="n">to_directed</span><span class="p">()</span><span class="o">.</span><span class="n">edges</span><span class="p">(),</span>
             <span class="n">tabu_length</span><span class="o">=</span><span class="n">tabu_length</span><span class="p">,</span>
+            <span class="n">expert_knowledge</span><span class="o">=</span><span class="n">expert_knowledge</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">model</span></div>

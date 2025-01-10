@@ -58,8 +58,8 @@
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>samples</strong> (<em>pandas.DataFrame</em>) – A dataframe of samples generated from the model.</p></li>
-<li><p><strong>variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em> (</em><em>array-like</em><em>)</em>) – A list of variables whose distribution needs to be computed.</p></li>
-<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – A dict of state names for each variable in <cite>variables</cite> in the form {variable_name: list of states}.
+<li><p><strong>variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em> (</em><em>array-like</em><em>)</em>) – A list of variables whose distribution needs to be computed.</p></li>
+<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – A dict of state names for each variable in <cite>variables</cite> in the form {variable_name: list of states}.
 If None, inferred from the data but is possible that the final distribution misses some states.</p></li>
 <li><p><strong>joint</strong> (<em>boolean</em>) – If joint=True, computes the joint distribution over <cite>variables</cite>.
 Else, returns a dict with marginal distribution of each variable in
@@ -70,6 +70,53 @@ Else, returns a dict with marginal distribution of each variable in
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.ApproxInference.ApproxInference.map_query">
+<span class="sig-name descname"><span class="pre">map_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">virtual_evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/ApproxInference.html#ApproxInference.map_query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.ApproxInference.ApproxInference.map_query" title="Link to this definition">¶</a></dt>
+<dd><p>Finds the most probable state in the joint distribution of variables. Calculates the
+result by generating samples and calculating most probable states based on the probabilities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a>) – List of variables for which the probability distribution needs to be calculated.</p></li>
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – The number of samples to generate for computing the distributions. Higher <cite>n_samples</cite>
+results in more accurate results at the cost of more computation time.</p></li>
+<li><p><strong>samples</strong> (<em>pd.DataFrame</em><em> (</em><em>default: None</em><em>)</em>) – If provided, uses these samples to compute the distribution instead
+of generating samples. <cite>samples</cite> <strong>must</strong> conform with the provided
+<cite>evidence</cite> and <cite>virtual_evidence</cite>.</p></li>
+<li><p><strong>evidence</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – The observed values. A dict key, value pair of the form {var: state_name}.</p></li>
+<li><p><strong>virtual_evidence</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em> (</em><em>default: None</em><em>)</em>) – A list of pgmpy.factors.discrete.TabularCPD representing the virtual/soft
+evidence.</p></li>
+<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – A dict of state names for each variable in <cite>variables</cite> in the form {variable_name: list of states}.
+If None, inferred from the data but is possible that the final distribution misses some states.</p></li>
+<li><p><strong>show_progress</strong> (<em>boolean</em><em> (</em><em>default: True</em><em>)</em>) – If True, shows a progress bar when generating samples.</p></li>
+<li><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> (</em><em>default: None</em><em>)</em>) – Sets the seed for the random generators.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>MAP values</strong> – The most probable state of provided <cite>variables</cite> given the evidence.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">get_example_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">ApproxInference</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">State</span><span class="p">,</span><span class="n">TabularCPD</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="s2">&quot;alarm&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">infer</span> <span class="o">=</span> <span class="n">ApproxInference</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">infer</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;HISTORY&quot;</span><span class="p">,</span> <span class="s2">&quot;CVP&quot;</span><span class="p">]))</span>
+<span class="go">{&#39;HISTORY&#39;: &#39;FALSE&#39;, &#39;CVP&#39;: &#39;NORMAL&#39;}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">virtual_evidence_history</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;HISTORY&#39;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.99</span><span class="p">],[</span><span class="mf">0.01</span><span class="p">]],</span>
+<span class="gp">... </span>                                 <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;HISTORY&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;TRUE&quot;</span><span class="p">,</span> <span class="s2">&quot;FALSE&quot;</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;CVP&#39;</span><span class="p">:</span><span class="s1">&#39;NORMAL&#39;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">infer</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;HISTORY&quot;</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">virtual_evidence</span><span class="o">=</span><span class="p">[</span><span class="n">virtual_evidence_history</span><span class="p">]))</span>
+<span class="go">{&#39;HISTORY&#39;: &#39;TRUE&#39;}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.inference.ApproxInference.ApproxInference.query">
 <span class="sig-name descname"><span class="pre">query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">virtual_evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">joint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/ApproxInference.html#ApproxInference.query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.ApproxInference.ApproxInference.query" title="Link to this definition">¶</a></dt>
 <dd><p>Method for doing approximate inference based on sampling in Bayesian
@@ -77,19 +124,19 @@ Networks and Dynamic Bayesian Networks.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a>) – List of variables for which the probability distribution needs to be calculated.</p></li>
-<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – The number of samples to generate for computing the distributions. Higher <cite>n_samples</cite>
+<li><p><strong>variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a>) – List of variables for which the probability distribution needs to be calculated.</p></li>
+<li><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – The number of samples to generate for computing the distributions. Higher <cite>n_samples</cite>
 results in more accurate results at the cost of more computation time.</p></li>
 <li><p><strong>samples</strong> (<em>pd.DataFrame</em><em> (</em><em>default: None</em><em>)</em>) – If provided, uses these samples to compute the distribution instead
 of generating samples. <cite>samples</cite> <strong>must</strong> conform with the provided
 <cite>evidence</cite> and <cite>virtual_evidence</cite>.</p></li>
-<li><p><strong>evidence</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – The observed values. A dict key, value pair of the form {var: state_name}.</p></li>
-<li><p><strong>virtual_evidence</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em> (</em><em>default: None</em><em>)</em>) – A list of pgmpy.factors.discrete.TabularCPD representing the virtual/soft
+<li><p><strong>evidence</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – The observed values. A dict key, value pair of the form {var: state_name}.</p></li>
+<li><p><strong>virtual_evidence</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em> (</em><em>default: None</em><em>)</em>) – A list of pgmpy.factors.discrete.TabularCPD representing the virtual/soft
 evidence.</p></li>
-<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – A dict of state names for each variable in <cite>variables</cite> in the form {variable_name: list of states}.
+<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – A dict of state names for each variable in <cite>variables</cite> in the form {variable_name: list of states}.
 If None, inferred from the data but is possible that the final distribution misses some states.</p></li>
 <li><p><strong>show_progress</strong> (<em>boolean</em><em> (</em><em>default: True</em><em>)</em>) – If True, shows a progress bar when generating samples.</p></li>
-<li><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> (</em><em>default: None</em><em>)</em>) – Sets the seed for the random generators.</p></li>
+<li><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> (</em><em>default: None</em><em>)</em>) – Sets the seed for the random generators.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -124,7 +171,7 @@ If None, inferred from the data but is possible that the final distribution miss
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../index.html">
@@ -209,7 +256,7 @@ If None, inferred from the data but is possible that the final distribution miss
       &#169;2023, Ankur Ankan.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |

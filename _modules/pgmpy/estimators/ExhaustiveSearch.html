@@ -38,7 +38,7 @@
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
-<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">K2Score</span><span class="p">,</span> <span class="n">ScoreCache</span><span class="p">,</span> <span class="n">StructureEstimator</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">K2</span><span class="p">,</span> <span class="n">ScoreCache</span><span class="p">,</span> <span class="n">StructureEstimator</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils.mathext</span> <span class="kn">import</span> <span class="n">powerset</span>
 
@@ -54,11 +54,11 @@
 <span class="sd">    ----------</span>
 <span class="sd">    data: pandas DataFrame object</span>
 <span class="sd">        dataframe object where each column represents one variable.</span>
-<span class="sd">        (If some values in the data are missing the data cells should be set to `numpy.nan`.</span>
-<span class="sd">        Note that pandas converts each column containing `numpy.nan`s to dtype `float`.)</span>
+<span class="sd">        (If some values in the data are missing the data cells should be set to `numpy.NaN`.</span>
+<span class="sd">        Note that pandas converts each column containing `numpy.NaN`s to dtype `float`.)</span>
 
-<span class="sd">    scoring_method: Instance of a `StructureScore`-subclass (`K2Score` is used as default)</span>
-<span class="sd">        An instance of `K2Score`, `BDeuScore`, `BicScore` or &#39;AICScore&#39;.</span>
+<span class="sd">    scoring_method: Instance of a `StructureScore`-subclass (`K2` is used as default)</span>
+<span class="sd">        An instance of `K2`, `BDeu`, `BIC` or &#39;AIC&#39;.</span>
 <span class="sd">        This score is optimized during structure estimation by the `estimate`-method.</span>
 
 <span class="sd">    state_names: dict (optional)</span>
@@ -79,7 +79,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">scoring_method</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">ScoreCache</span><span class="o">.</span><span class="n">ScoreCache</span><span class="p">(</span><span class="n">K2Score</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">ScoreCache</span><span class="o">.</span><span class="n">ScoreCache</span><span class="p">(</span><span class="n">K2</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">ExhaustiveSearch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -157,11 +157,11 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ExhaustiveSearch, K2Score</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ExhaustiveSearch, K2</span>
 <span class="sd">        &gt;&gt;&gt; # create random data sample with 3 variables, where B and C are identical:</span>
 <span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 5, size=(5000, 2)), columns=list(&#39;AB&#39;))</span>
 <span class="sd">        &gt;&gt;&gt; data[&#39;C&#39;] = data[&#39;B&#39;]</span>
-<span class="sd">        &gt;&gt;&gt; searcher = ExhaustiveSearch(data, scoring_method=K2Score(data))</span>
+<span class="sd">        &gt;&gt;&gt; searcher = ExhaustiveSearch(data, scoring_method=K2(data))</span>
 <span class="sd">        &gt;&gt;&gt; for score, model in searcher.all_scores():</span>
 <span class="sd">        ...   print(&quot;{0}\t{1}&quot;.format(score, model.edges()))</span>
 <span class="sd">        -24234.44977974726      [(&#39;A&#39;, &#39;B&#39;), (&#39;A&#39;, &#39;C&#39;)]</span>

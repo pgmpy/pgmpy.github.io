@@ -54,7 +54,49 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.models.SEM.SEM.fit">
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/models/SEM.html#SEM.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.models.SEM.SEM.fit" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Estimates the CPD for each variable based on a given data set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>pandas DataFrame object</em>) – DataFrame object with column names identical to the variable names of the network.
+(If some values in the data are missing the data cells should be set to <cite>numpy.nan</cite>.
+Note that pandas converts each column containing <cite>numpy.nan`s to dtype `float</cite>.)</p></li>
+<li><p><strong>estimator</strong> (<em>Estimator class</em>) – One of:
+- MaximumLikelihoodEstimator (default)
+- BayesianEstimator: In this case, pass ‘prior_type’ and either ‘pseudo_counts’
+or ‘equivalent_sample_size’ as additional keyword arguments.
+See <cite>BayesianEstimator.get_parameters()</cite> for usage.
+- ExpectationMaximization</p></li>
+<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – A dict indicating, for each variable, the discrete set of states
+that the variable can take. If unspecified, the observed values
+in the data set are taken to be the only possible states.</p></li>
+<li><p><strong>n_jobs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> (</em><em>default: 1</em><em>)</em>) – Number of threads/processes to use for estimation. Using n_jobs &gt; 1
+for small models or datasets might be slower.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Fitted Model</strong> – Returns a BayesianNetwork object with learned CPDs.
+The DAG structure is preserved, and parameters (CPDs) are added.
+This allows the DAG to represent both the structure and the parameters of a Bayesian Network.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="bayesiannetwork.html#pgmpy.models.BayesianNetwork.BayesianNetwork" title="pgmpy.models.BayesianNetwork.BayesianNetwork">BayesianNetwork</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;C&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">([(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fitted_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fitted_model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">()</span>
+<span class="go">[&lt;TabularCPD representing P(A:2) at 0x17945372c30&gt;,</span>
+<span class="go">&lt;TabularCPD representing P(B:2) at 0x17945a19760&gt;,</span>
+<span class="go">&lt;TabularCPD representing P(C:2 | A:2, B:2) at 0x17944f42690&gt;]</span>
+</pre></div>
+</div>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.models.SEM.SEM.from_RAM">
@@ -74,13 +116,13 @@ observed variables, no of total variables).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>, </em><em>array-like</em>) – List of variables (both latent and observed) in the model.</p></li>
+<li><p><strong>variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>, </em><em>array-like</em>) – List of variables (both latent and observed) in the model.</p></li>
 <li><p><strong>B</strong> (2-D boolean array (shape: <cite>len(variables)</cite> x <cite>len(variables)</cite>)) – The non-zero parameters in <img class="math" src="../_images/math/4bc3e94a67870b41b7c20179693e889251e2c136.png" alt="B"/> matrix. Refer model definition in docstring for details.</p></li>
 <li><p><strong>zeta</strong> (2-D boolean array (shape: <cite>len(variables)</cite> x <cite>len(variables)</cite>)) – The non-zero parameters in <img class="math" src="../_images/math/3ef1157ea7221d7eda6098e1fd7a04a28a555e6d.png" alt="\zeta"/> (error covariance) matrix. Refer model definition
 in docstring for details.</p></li>
 <li><p><strong>observed</strong> (list, array-like (optional: Either <cite>observed</cite> or <cite>wedge_y</cite> needs to be specified)) – List of observed variables in the model.</p></li>
 <li><p><strong>wedge_y</strong> (2-D array (shape: no. observed x total vars) (optional: Either <cite>observed</cite> or <cite>wedge_y</cite>)) – The <img class="math" src="../_images/math/73fd3fd745ca7db10eaf95f28e3458a705c6d26f.png" alt="\wedge_y"/> matrix. Refer model definition in docstring for details.</p></li>
-<li><p><strong>fixed_values</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – If specified, fixes the parameter values and are not changed during estimation.
+<li><p><strong>fixed_values</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – If specified, fixes the parameter values and are not changed during estimation.
 A dict with the keys B, zeta.</p></li>
 </ul>
 </dd>
@@ -138,7 +180,7 @@ A dict with the keys B, zeta.</p></li>
 </dd>
 </dl>
 </p></li>
-<li><p><strong>err_var</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) – Dict of the form (var: variance).</p></li>
+<li><p><strong>err_var</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – Dict of the form (var: variance).</p></li>
 </ul>
 </dd>
 </dl>
@@ -176,9 +218,9 @@ parameter <cite>np.nan</cite> can be explicitly passed.
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>string</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> (</em><em>default: None</em><em>)</em>) – A <cite>lavaan</cite> style multiline set of regression equation representing the model.
+<li><p><strong>string</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> (</em><em>default: None</em><em>)</em>) – A <cite>lavaan</cite> style multiline set of regression equation representing the model.
 Refer <a class="reference external" href="http://lavaan.ugent.be/tutorial/syntax1.html">http://lavaan.ugent.be/tutorial/syntax1.html</a> for details.</p></li>
-<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> (</em><em>default: None</em><em>)</em>) – The filename of the file containing the model in lavaan syntax.</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> (</em><em>default: None</em><em>)</em>) – The filename of the file containing the model in lavaan syntax.</p></li>
 </ul>
 </dd>
 </dl>
@@ -204,17 +246,17 @@ respectively.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>str_model</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> (</em><em>default: None</em><em>)</em>) – <p>A <cite>lavaan</cite> style multiline set of regression equation representing the model.
+<li><p><strong>str_model</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> (</em><em>default: None</em><em>)</em>) – <p>A <cite>lavaan</cite> style multiline set of regression equation representing the model.
 Refer <a class="reference external" href="http://lavaan.ugent.be/tutorial/syntax1.html">http://lavaan.ugent.be/tutorial/syntax1.html</a> for details.</p>
 <p>If None requires <cite>var_names</cite> and <cite>params</cite> to be specified.</p>
 </p></li>
-<li><p><strong>var_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – A dict with the keys: eta, xi, y, and x. Each keys should have a list as the value
+<li><p><strong>var_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – A dict with the keys: eta, xi, y, and x. Each keys should have a list as the value
 with the name of variables.</p></li>
-<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – <p>A dict of LISREL representation non-zero parameters. Must contain the following
+<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – <p>A dict of LISREL representation non-zero parameters. Must contain the following
 keys: B, gamma, wedge_y, wedge_x, phi, theta_e, theta_del, and psi.</p>
 <p>If None <cite>str_model</cite> must be specified.</p>
 </p></li>
-<li><p><strong>fixed_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – <p>A dict of fixed values for parameters. The shape of the parameters should be same
+<li><p><strong>fixed_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>default: None</em><em>)</em>) – <p>A dict of fixed values for parameters. The shape of the parameters should be same
 as params.</p>
 <p>If None all the parameters are learnable.</p>
 </p></li>
@@ -247,7 +289,7 @@ represented using the Reticular Action Model (RAM).</p>
 <dd><p>Generates random samples from the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – The number of samples to generate.</p>
+<dd class="field-odd"><p><strong>n_samples</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – The number of samples to generate.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>pd.DataFrame</strong></p>
@@ -336,7 +378,7 @@ doesn’t need to be specified.</p>
 </dd>
 </dl>
 </p></li>
-<li><p><strong>err_var</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em> (</em><em>variable: variance</em><em>)</em>) – Sets variance for the error terms in the model.</p></li>
+<li><p><strong>err_var</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>variable: variance</em><em>)</em>) – Sets variance for the error terms in the model.</p></li>
 </ul>
 </dd>
 </dl>
@@ -371,7 +413,7 @@ parameter <cite>np.nan</cite> can be explicitly passed.
 <dd><p>List of all the latent variables in the model except the error terms.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)">list</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -382,7 +424,7 @@ parameter <cite>np.nan</cite> can be explicitly passed.
 <dd><p>List of all the observed variables in the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)">list</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -433,11 +475,11 @@ when <cite>observed</cite> variables are observed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> or </em><em>array like</em>) – Observed variables whose d-connected variables are to be found.</p></li>
+<li><p><strong>variables</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> or </em><em>array like</em>) – Observed variables whose d-connected variables are to be found.</p></li>
 <li><p><strong>observed</strong> (<em>list/array-like</em>) – If given the active trails would be computed assuming these nodes to be observed.</p></li>
 <li><p><strong>avoid_nodes</strong> (<em>list/array-like</em>) – If specificed, the algorithm doesn’t account for paths that have influence flowing
 through the avoid node.</p></li>
-<li><p><strong>struct</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> or </em><em>nx.DiGraph instance</em>) – If “full”, considers correlation between error terms for computing d-connection.
+<li><p><strong>struct</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> or </em><em>nx.DiGraph instance</em>) – If “full”, considers correlation between error terms for computing d-connection.
 If “non_error”, doesn’t condised error correlations for computing d-connection.
 If instance of nx.DiGraph, finds d-connected variables on the given graph.</p></li>
 </ul>
@@ -477,7 +519,7 @@ Page 75 Algorithm 3.1</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> (<em>node</em>) – The observed variable’s name</p></li>
 <li><p><strong>Y</strong> (<em>node</em>) – The oberved variable’s name</p></li>
-<li><p><strong>scaling_indicators</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – A dict representing which observed variable to use as scaling indicator for
+<li><p><strong>scaling_indicators</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – A dict representing which observed variable to use as scaling indicator for
 the latent variables.
 If not provided, automatically finds scaling indicators by randomly selecting
 one of the measurement variables of each latent variable.</p></li>
@@ -519,7 +561,7 @@ Conference on Artificial Intelligence.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> (<em>node</em>) – The variable name (observed or latent)</p></li>
 <li><p><strong>Y</strong> (<em>node</em>) – The variable name (observed or latent)</p></li>
-<li><p><strong>scaling_indicators</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – A dict representing which observed variable to use as scaling indicator for
+<li><p><strong>scaling_indicators</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – A dict representing which observed variable to use as scaling indicator for
 the latent variables.
 If not given the method automatically selects one of the measurement variables
 at random as the scaling indicator.</p></li>
@@ -692,10 +734,10 @@ set value for the parameter in the model else it is 0.</p></li>
 <li class="toctree-l1"><a class="reference internal" href="../base/base.html">Base Model Structures</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="base.html">Models</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="bayesiannetwork.html">Bayesian Network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gaussianbn.html">Linear Gaussian Bayesian Network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dbn.html">Dynamic Bayesian Network (DBN)</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Structural Equation Models (SEM)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="naive.html">Naive Bayes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="noisyor.html">NoisyOr Model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="markovnetwork.html">Markov Network</a></li>
 <li class="toctree-l2"><a class="reference internal" href="junctiontree.html">Junction Tree</a></li>
 <li class="toctree-l2"><a class="reference internal" href="clustergraph.html">Cluster Graph</a></li>
