@@ -14,7 +14,7 @@
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Tree Search" href="tree.html" />
+    <link rel="next" title="Greedy Equivalence Search (GES)" href="ges.html" />
     <link rel="prev" title="PC (Constraint-Based Estimator)" href="pc.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -35,343 +35,41 @@
             
   <section id="hill-climb-search">
 <h1>Hill Climb Search<a class="headerlink" href="#hill-climb-search" title="Link to this heading">¶</a></h1>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.HillClimbSearch">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">HillClimbSearch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/HillClimbSearch.html#HillClimbSearch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.HillClimbSearch" title="Link to this definition">¶</a></dt>
-<dd><p>Class for heuristic hill climb searches for DAGs, to learn
-network structure from data. <cite>estimate</cite> attempts to find a model with optimal score.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>pandas DataFrame object</em>) – dataframe object where each column represents one variable.
-(If some values in the data are missing the data cells should be set to <cite>numpy.nan</cite>.
-Note that pandas converts each column containing <cite>numpy.nan`s to dtype `float</cite>.)</p></li>
-<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – A dict indicating, for each variable, the discrete set of states (or values)
-that the variable can take. If unspecified, the observed values in the data set
-are taken to be the only possible states.</p></li>
-<li><p><strong>use_caching</strong> (<em>boolean</em>) – If True, uses caching of score for faster computation.
-Note: Caching only works for scoring methods which are decomposable. Can
-give wrong results in case of custom scoring methods.</p></li>
-</ul>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<p>Koller &amp; Friedman, Probabilistic Graphical Models - Principles and Techniques, 2009
-Section 18.4.3 (page 811ff)</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.estimators.HillClimbSearch.estimate">
-<span class="sig-name descname"><span class="pre">estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scoring_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'k2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_dag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tabu_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_indegree</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expert_knowledge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/HillClimbSearch.html#HillClimbSearch.estimate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.HillClimbSearch.estimate" title="Link to this definition">¶</a></dt>
-<dd><p>Performs local hill climb search to estimates the <cite>DAG</cite> structure that
-has optimal score, according to the scoring method supplied. Starts at
-model <cite>start_dag</cite> and proceeds by step-by-step network modifications
-until a local maximum is reached. Only estimates network structure, no
-parametrization.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>scoring_method</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> or </em><em>StructureScore instance</em>) – The score to be optimized during structure estimation.  Supported
-structure scores: k2, bdeu, bds, bic-d, aic-d, ll-g, aic-g, bic-g,
-ll-cg, aic-cg, bic-cg. Also accepts a custom score, but it should
-be an instance of <cite>StructureScore</cite>.</p></li>
-<li><p><strong>start_dag</strong> (<em>DAG instance</em>) – The starting point for the local search. By default, a completely
-disconnected network is used.</p></li>
-<li><p><strong>tabu_length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – If provided, the last <cite>tabu_length</cite> graph modifications cannot be
-reversed during the search procedure. This serves to enforce a
-wider exploration of the search space. Default value: 100.</p></li>
-<li><p><strong>max_indegree</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> or </em><em>None</em>) – If provided and unequal None, the procedure only searches among models
-where all nodes have at most <cite>max_indegree</cite> parents. Defaults to None.</p></li>
-<li><p><strong>expert_knowledge</strong> (<em>pgmpy.estimators.ExpertKnowledge instance</em>) – Expert knowledge to be used with the algorithm. Expert knowledge
-includes whitelisted/blacklisted edges in the search space and
-fixed edges in the final network.</p></li>
-<li><p><strong>epsilon</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> (</em><em>default: 1e-4</em><em>)</em>) – Defines the exit condition. If the improvement in score is less
-than <cite>epsilon</cite>, the learned model is returned.</p></li>
-<li><p><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> (</em><em>default: 1e6</em><em>)</em>) – The maximum number of iterations allowed. Returns the learned model
-when the number of iterations is greater than <cite>max_iter</cite>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>Estimated model</strong> – A <cite>DAG</cite> at a (local) score maximum.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../base/base.html#pgmpy.base.DAG" title="pgmpy.base.DAG">pgmpy.base.DAG</a></p>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Simulate some sample data from a known model to learn the model structure from</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">get_example_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="s1">&#39;alarm&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">))</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Learn the model structure using HillClimbSearch algorithm from `df`</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">HillClimbSearch</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">est</span> <span class="o">=</span> <span class="n">HillClimbSearch</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dag</span> <span class="o">=</span> <span class="n">est</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">scoring_method</span><span class="o">=</span><span class="s1">&#39;bic-d&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
-<span class="go">37</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
-<span class="go">45</span>
-</pre></div>
-</div>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 <section id="structure-scores">
 <h1>Structure Scores<a class="headerlink" href="#structure-scores" title="Link to this heading">¶</a></h1>
 <section id="bdeu-score">
 <h2>BDeu Score<a class="headerlink" href="#bdeu-score" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.BDeu">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">BDeu</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equivalent_sample_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#BDeu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.BDeu" title="Link to this definition">¶</a></dt>
-<dd><p>Class for Bayesian structure scoring for BayesianNetworks with Dirichlet priors.
-The BDeu score is the result of setting all Dirichlet hyperparameters/pseudo_counts to
-<cite>equivalent_sample_size/variable_cardinality</cite>.
-The <cite>score</cite>-method measures how well a model is able to describe the given data set.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>pandas DataFrame object</em>) – dataframe object where each column represents one variable.
-(If some values in the data are missing the data cells should be set to <cite>numpy.nan</cite>.
-Note that pandas converts each column containing <cite>numpy.nan`s to dtype `float</cite>.)</p></li>
-<li><p><strong>equivalent_sample_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> (</em><em>default: 10</em><em>)</em>) – The equivalent/imaginary sample size (of uniform pseudo samples) for the dirichlet hyperparameters.
-The score is sensitive to this value, runs with different values might be useful.</p></li>
-<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – A dict indicating, for each variable, the discrete set of states (or values)
-that the variable can take. If unspecified, the observed values in the data set
-are taken to be the only possible states.</p></li>
-</ul>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<p>[1] Koller &amp; Friedman, Probabilistic Graphical Models - Principles and Techniques, 2009
-Section 18.3.4-18.3.6 (esp. page 806)
-[2] AM Carvalho, Scoring functions for learning Bayesian networks,
-<a class="reference external" href="http://www.lx.it.pt/~asmc/pub/talks/09-TA/ta_pres.pdf">http://www.lx.it.pt/~asmc/pub/talks/09-TA/ta_pres.pdf</a></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.estimators.BDeu.local_score">
-<span class="sig-name descname"><span class="pre">local_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parents</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#BDeu.local_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.BDeu.local_score" title="Link to this definition">¶</a></dt>
-<dd><p>Computes a score that measures how much a         given variable is “influenced” by a given list of potential parents.</p>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 <section id="bic-score">
 <h2>BIC Score<a class="headerlink" href="#bic-score" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.BIC">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">BIC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#BIC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.BIC" title="Link to this definition">¶</a></dt>
-<dd><p>Class for Bayesian structure scoring for BayesianNetworks with
-Dirichlet priors.  The BIC/MDL score (“Bayesian Information Criterion”,
-also “Minimal Descriptive Length”) is a log-likelihood score with an
-additional penalty for network complexity, to avoid overfitting.  The
-<cite>score</cite>-method measures how well a model is able to describe the given
-data set.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>pandas DataFrame object</em>) – dataframe object where each column represents one variable.
-(If some values in the data are missing the data cells should be set to <cite>numpy.nan</cite>.
-Note that pandas converts each column containing <cite>numpy.nan`s to dtype `float</cite>.)</p></li>
-<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – A dict indicating, for each variable, the discrete set of states (or values)
-that the variable can take. If unspecified, the observed values in the data set
-are taken to be the only possible states.</p></li>
-</ul>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<p>[1] Koller &amp; Friedman, Probabilistic Graphical Models - Principles and Techniques, 2009
-Section 18.3.4-18.3.6 (esp. page 802)
-[2] AM Carvalho, Scoring functions for learning Bayesian networks,
-<a class="reference external" href="http://www.lx.it.pt/~asmc/pub/talks/09-TA/ta_pres.pdf">http://www.lx.it.pt/~asmc/pub/talks/09-TA/ta_pres.pdf</a></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.estimators.BIC.local_score">
-<span class="sig-name descname"><span class="pre">local_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parents</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#BIC.local_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.BIC.local_score" title="Link to this definition">¶</a></dt>
-<dd><p>Computes a score that measures how much a         given variable is “influenced” by a given list of potential parents.</p>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 <section id="aic-score">
 <h2>AIC Score<a class="headerlink" href="#aic-score" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.AIC">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">AIC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#AIC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.AIC" title="Link to this definition">¶</a></dt>
-<dd><p>Class for Bayesian structure scoring for BayesianNetworks with
-Dirichlet priors.  The AIC score (“Akaike Information Criterion) is a log-likelihood score with an
-additional penalty for network complexity, to avoid overfitting.  The
-<cite>score</cite>-method measures how well a model is able to describe the given
-data set.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>pandas DataFrame object</em>) – dataframe object where each column represents one variable.
-(If some values in the data are missing the data cells should be set to <cite>numpy.nan</cite>.
-Note that pandas converts each column containing <cite>numpy.nan`s to dtype `float</cite>.)</p></li>
-<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – A dict indicating, for each variable, the discrete set of states (or values)
-that the variable can take. If unspecified, the observed values in the data set
-are taken to be the only possible states.</p></li>
-</ul>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<p>[1] Koller &amp; Friedman, Probabilistic Graphical Models - Principles and Techniques, 2009
-Section 18.3.4-18.3.6 (esp. page 802)
-[2] AM Carvalho, Scoring functions for learning Bayesian networks,
-<a class="reference external" href="http://www.lx.it.pt/~asmc/pub/talks/09-TA/ta_pres.pdf">http://www.lx.it.pt/~asmc/pub/talks/09-TA/ta_pres.pdf</a></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.estimators.AIC.local_score">
-<span class="sig-name descname"><span class="pre">local_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parents</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#AIC.local_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.AIC.local_score" title="Link to this definition">¶</a></dt>
-<dd><p>Computes a score that measures how much a         given variable is “influenced” by a given list of potential parents.</p>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 <section id="k2-score">
 <h2>K2 Score<a class="headerlink" href="#k2-score" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.K2">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">K2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#K2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.K2" title="Link to this definition">¶</a></dt>
-<dd><p>Class for Bayesian structure scoring for BayesianNetworks with Dirichlet priors.
-The K2 score is the result of setting all Dirichlet hyperparameters/pseudo_counts to 1.
-The <cite>score</cite>-method measures how well a model is able to describe the given data set.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>pandas DataFrame object</em>) – dataframe object where each column represents one variable.
-(If some values in the data are missing the data cells should be set to <cite>numpy.nan</cite>.
-Note that pandas converts each column containing <cite>numpy.nan`s to dtype `float</cite>.)</p></li>
-<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – A dict indicating, for each variable, the discrete set of states (or values)
-that the variable can take. If unspecified, the observed values in the data set
-are taken to be the only possible states.</p></li>
-</ul>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<p>[1] Koller &amp; Friedman, Probabilistic Graphical Models - Principles and Techniques, 2009
-Section 18.3.4-18.3.6 (esp. page 806)
-[2] AM Carvalho, Scoring functions for learning Bayesian networks,
-<a class="reference external" href="http://www.lx.it.pt/~asmc/pub/talks/09-TA/ta_pres.pdf">http://www.lx.it.pt/~asmc/pub/talks/09-TA/ta_pres.pdf</a></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.estimators.K2.local_score">
-<span class="sig-name descname"><span class="pre">local_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parents</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#K2.local_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.K2.local_score" title="Link to this definition">¶</a></dt>
-<dd><p>Computes a score that measures how much a         given variable is “influenced” by a given list of potential parents.</p>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 <section id="bds-score">
 <h2>BDs Score<a class="headerlink" href="#bds-score" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.BDs">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">BDs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equivalent_sample_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#BDs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.BDs" title="Link to this definition">¶</a></dt>
-<dd><p>Class for Bayesian structure scoring for BayesianNetworks with
-Dirichlet priors.  The BDs score is the result of setting all Dirichlet
-hyperparameters/pseudo_counts to
-<cite>equivalent_sample_size/modified_variable_cardinality</cite> where for the
-modified_variable_cardinality only the number of parent configurations
-where there were observed variable counts are considered.  The
-<cite>score</cite>-method measures how well a model is able to describe the given
-data set.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>pandas DataFrame object</em>) – dataframe object where each column represents one variable.
-(If some values in the data are missing the data cells should be set to <cite>numpy.nan</cite>.
-Note that pandas converts each column containing <cite>numpy.nan`s to dtype `float</cite>.)</p></li>
-<li><p><strong>equivalent_sample_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em> (</em><em>default: 10</em><em>)</em>) – The equivalent/imaginary sample size (of uniform pseudo samples) for the dirichlet
-hyperparameters.
-The score is sensitive to this value, runs with different values might be useful.</p></li>
-<li><p><strong>state_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> (</em><em>optional</em><em>)</em>) – A dict indicating, for each variable, the discrete set of states (or values)
-that the variable can take. If unspecified, the observed values in the data set
-are taken to be the only possible states.</p></li>
-</ul>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<p>[1] Scutari, Marco. An Empirical-Bayes Score for Discrete Bayesian Networks.
-Journal of Machine Learning Research, 2016, pp. 438–48</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.estimators.BDs.local_score">
-<span class="sig-name descname"><span class="pre">local_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parents</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#BDs.local_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.BDs.local_score" title="Link to this definition">¶</a></dt>
-<dd><p>Computes a score that measures how much a         given variable is “influenced” by a given list of potential parents.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.estimators.BDs.structure_prior">
-<span class="sig-name descname"><span class="pre">structure_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#BDs.structure_prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.BDs.structure_prior" title="Link to this definition">¶</a></dt>
-<dd><p>Implements the marginal uniform prior for the graph structure where each arc
-is independent with the probability of an arc for any two nodes in either direction
-is 1/4 and the probability of no arc between any two nodes is 1/2.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.estimators.BDs.structure_prior_ratio">
-<span class="sig-name descname"><span class="pre">structure_prior_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">operation</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#BDs.structure_prior_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.BDs.structure_prior_ratio" title="Link to this definition">¶</a></dt>
-<dd><p>Return the log ratio of the prior probabilities for a given proposed change to
-the DAG.</p>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 <section id="gaussian-log-likelihood-score">
 <h2>Gaussian Log-Likelihood Score<a class="headerlink" href="#gaussian-log-likelihood-score" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.LogLikelihoodGauss">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">LogLikelihoodGauss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#LogLikelihoodGauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.LogLikelihoodGauss" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </section>
 <section id="gaussian-bic-score">
 <h2>Gaussian BIC Score<a class="headerlink" href="#gaussian-bic-score" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.BICGauss">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">BICGauss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#BICGauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.BICGauss" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </section>
 <section id="gaussian-aic-score">
 <h2>Gaussian AIC Score<a class="headerlink" href="#gaussian-aic-score" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.AICGauss">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">AICGauss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#AICGauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.AICGauss" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </section>
 <section id="conditional-gaussian-log-likelihood-score">
 <h2>Conditional Gaussian Log-Likelihood Score<a class="headerlink" href="#conditional-gaussian-log-likelihood-score" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.LogLikelihoodCondGauss">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">LogLikelihoodCondGauss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#LogLikelihoodCondGauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.LogLikelihoodCondGauss" title="Link to this definition">¶</a></dt>
-<dd><p class="rubric">References</p>
-<dl class="simple">
-<dt>[1] Andrews, B., Ramsey, J., &amp; Cooper, G. F. (2018). Scoring Bayesian</dt><dd><p>Networks of Mixed Variables. International journal of data science and
-analytics, 6(1), 3–18. <a class="reference external" href="https://doi.org/10.1007/s41060-017-0085-7">https://doi.org/10.1007/s41060-017-0085-7</a></p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="conditional-gaussian-bic-score">
 <h2>Conditional Gaussian BIC Score<a class="headerlink" href="#conditional-gaussian-bic-score" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.BICCondGauss">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">BICCondGauss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#BICCondGauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.BICCondGauss" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </section>
 <section id="conditional-gaussian-aic-score">
 <h2>Conditional Gaussian AIC Score<a class="headerlink" href="#conditional-gaussian-aic-score" title="Link to this heading">¶</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="pgmpy.estimators.AICCondGauss">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">AICCondGauss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/StructureScore.html#AICCondGauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.AICCondGauss" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </section>
 </section>
 
@@ -411,6 +109,7 @@ analytics, 6(1), 3–18. <a class="reference external" href="https://doi.org/10.
 <li class="toctree-l2"><a class="reference internal" href="pc.html#module-pgmpy.estimators.CITests">Conditional Independence Tests for PC algorithm</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Hill Climb Search</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#structure-scores">Structure Scores</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ges.html">Greedy Equivalence Search (GES)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tree.html">Tree Search</a></li>
 <li class="toctree-l2"><a class="reference internal" href="expert.html">Expert In The Loop</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mmhc.html">Mmhc Estimator</a></li>
@@ -430,7 +129,7 @@ analytics, 6(1), 3–18. <a class="reference external" href="https://doi.org/10.
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="base.html">Structure Learning</a><ul>
       <li>Previous: <a href="pc.html" title="previous chapter">PC (Constraint-Based Estimator)</a></li>
-      <li>Next: <a href="tree.html" title="next chapter">Tree Search</a></li>
+      <li>Next: <a href="ges.html" title="next chapter">Greedy Equivalence Search (GES)</a></li>
   </ul></li>
   </ul></li>
 </ul>

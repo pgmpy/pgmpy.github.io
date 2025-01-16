@@ -39,13 +39,17 @@
 <span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">AICScore</span><span class="p">,</span>
-    <span class="n">AICScoreGauss</span><span class="p">,</span>
-    <span class="n">BDeuScore</span><span class="p">,</span>
-    <span class="n">BDsScore</span><span class="p">,</span>
-    <span class="n">BicScore</span><span class="p">,</span>
-    <span class="n">BicScoreGauss</span><span class="p">,</span>
-    <span class="n">K2Score</span><span class="p">,</span>
+    <span class="n">AIC</span><span class="p">,</span>
+    <span class="n">BIC</span><span class="p">,</span>
+    <span class="n">K2</span><span class="p">,</span>
+    <span class="n">AICCondGauss</span><span class="p">,</span>
+    <span class="n">AICGauss</span><span class="p">,</span>
+    <span class="n">BDeu</span><span class="p">,</span>
+    <span class="n">BDs</span><span class="p">,</span>
+    <span class="n">BICCondGauss</span><span class="p">,</span>
+    <span class="n">BICGauss</span><span class="p">,</span>
+    <span class="n">LogLikelihoodCondGauss</span><span class="p">,</span>
+    <span class="n">LogLikelihoodGauss</span><span class="p">,</span>
     <span class="n">ScoreCache</span><span class="p">,</span>
     <span class="n">StructureEstimator</span><span class="p">,</span>
     <span class="n">StructureScore</span><span class="p">,</span>
@@ -117,7 +121,7 @@
 
 <div class="viewcode-block" id="GES.estimate">
 <a class="viewcode-back" href="../../../structure_estimator/ges.html#pgmpy.estimators.GES.estimate">[docs]</a>
-    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scoring_method</span><span class="o">=</span><span class="s2">&quot;bic&quot;</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scoring_method</span><span class="o">=</span><span class="s2">&quot;bic-d&quot;</span><span class="p">,</span> <span class="n">min_improvement</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Estimates the DAG from the data.</span>
 
@@ -125,8 +129,13 @@
 <span class="sd">        ----------</span>
 <span class="sd">        scoring_method: str or StructureScore instance</span>
 <span class="sd">            The score to be optimized during structure estimation.  Supported</span>
-<span class="sd">            structure scores: k2, bdeu, bds, bic, aic, bic-g, aic-g. Also accepts a</span>
-<span class="sd">            custom score, but it should be an instance of `StructureScore`.</span>
+<span class="sd">            structure scores: k2, bdeu, bds, bic-d, aic-d, ll-g, aic-g, bic-g,</span>
+<span class="sd">            ll-cg, aic-cg, bic-cg. Also accepts a custom score, but it should</span>
+<span class="sd">            be an instance of `StructureScore`.</span>
+
+<span class="sd">        min_improvement: float</span>
+<span class="sd">            The operation (edge addition, removal, or flipping) would only be performed if the</span>
+<span class="sd">            model score improves by atleast `min_improvement`.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -143,7 +152,7 @@
 <span class="sd">        &gt;&gt;&gt; # Learn the model structure using GES algorithm from `df`</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import GES</span>
 <span class="sd">        &gt;&gt;&gt; est = GES(data)</span>
-<span class="sd">        &gt;&gt;&gt; dag = est.estimate(scoring_method=&#39;bic&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; dag = est.estimate(scoring_method=&#39;bic-d&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; len(dag.nodes())</span>
 <span class="sd">        37</span>
 <span class="sd">        &gt;&gt;&gt; len(dag.edges())</span>
@@ -152,13 +161,17 @@
 
         <span class="c1"># Step 0: Initial checks and setup for arguments</span>
         <span class="n">supported_methods</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;k2&quot;</span><span class="p">:</span> <span class="n">K2Score</span><span class="p">,</span>
-            <span class="s2">&quot;bdeu&quot;</span><span class="p">:</span> <span class="n">BDeuScore</span><span class="p">,</span>
-            <span class="s2">&quot;bds&quot;</span><span class="p">:</span> <span class="n">BDsScore</span><span class="p">,</span>
-            <span class="s2">&quot;bic&quot;</span><span class="p">:</span> <span class="n">BicScore</span><span class="p">,</span>
-            <span class="s2">&quot;aic&quot;</span><span class="p">:</span> <span class="n">AICScore</span><span class="p">,</span>
-            <span class="s2">&quot;aic-g&quot;</span><span class="p">:</span> <span class="n">AICScoreGauss</span><span class="p">,</span>
-            <span class="s2">&quot;bic-g&quot;</span><span class="p">:</span> <span class="n">BicScoreGauss</span><span class="p">,</span>
+            <span class="s2">&quot;k2&quot;</span><span class="p">:</span> <span class="n">K2</span><span class="p">,</span>
+            <span class="s2">&quot;bdeu&quot;</span><span class="p">:</span> <span class="n">BDeu</span><span class="p">,</span>
+            <span class="s2">&quot;bds&quot;</span><span class="p">:</span> <span class="n">BDs</span><span class="p">,</span>
+            <span class="s2">&quot;bic-d&quot;</span><span class="p">:</span> <span class="n">BIC</span><span class="p">,</span>
+            <span class="s2">&quot;aic-d&quot;</span><span class="p">:</span> <span class="n">AIC</span><span class="p">,</span>
+            <span class="s2">&quot;ll-g&quot;</span><span class="p">:</span> <span class="n">LogLikelihoodGauss</span><span class="p">,</span>
+            <span class="s2">&quot;aic-g&quot;</span><span class="p">:</span> <span class="n">AICGauss</span><span class="p">,</span>
+            <span class="s2">&quot;bic-g&quot;</span><span class="p">:</span> <span class="n">BICGauss</span><span class="p">,</span>
+            <span class="s2">&quot;ll-cg&quot;</span><span class="p">:</span> <span class="n">LogLikelihoodCondGauss</span><span class="p">,</span>
+            <span class="s2">&quot;aic-cg&quot;</span><span class="p">:</span> <span class="n">AICCondGauss</span><span class="p">,</span>
+            <span class="s2">&quot;bic-cg&quot;</span><span class="p">:</span> <span class="n">BICCondGauss</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">scoring_method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
@@ -205,7 +218,7 @@
                 <span class="p">)</span>
                 <span class="n">score_deltas</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">score_delta</span>
 
-            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">potential_edges</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">score_deltas</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">potential_edges</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">score_deltas</span> <span class="o">&lt;</span> <span class="n">min_improvement</span><span class="p">)):</span>
                 <span class="k">break</span>
 
             <span class="n">edge_to_add</span> <span class="o">=</span> <span class="n">potential_edges</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">score_deltas</span><span class="p">)]</span>
@@ -225,7 +238,9 @@
                 <span class="n">score_deltas</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">score_fn</span><span class="p">(</span>
                     <span class="n">v</span><span class="p">,</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">current_parents</span> <span class="k">if</span> <span class="n">node</span> <span class="o">!=</span> <span class="n">u</span><span class="p">]</span>
                 <span class="p">)</span> <span class="o">-</span> <span class="n">score_fn</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">current_parents</span><span class="p">)</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">potential_removals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">score_deltas</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">potential_removals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">score_deltas</span> <span class="o">&lt;</span> <span class="n">min_improvement</span><span class="p">)</span>
+            <span class="p">):</span>
                 <span class="k">break</span>
             <span class="n">edge_to_remove</span> <span class="o">=</span> <span class="n">potential_removals</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">score_deltas</span><span class="p">)]</span>
             <span class="n">current_model</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">edge_to_remove</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge_to_remove</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
@@ -248,7 +263,7 @@
                     <span class="o">-</span> <span class="n">score_fn</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">u_parents</span><span class="p">)</span>
                 <span class="p">)</span>
 
-            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">potential_flips</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">score_deltas</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">potential_flips</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">score_deltas</span> <span class="o">&lt;</span> <span class="n">min_improvement</span><span class="p">)):</span>
                 <span class="k">break</span>
             <span class="n">edge_to_flip</span> <span class="o">=</span> <span class="n">potential_flips</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">score_deltas</span><span class="p">)]</span>
             <span class="n">current_model</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">edge_to_flip</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">edge_to_flip</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -268,7 +283,7 @@
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../../index.html">
@@ -346,7 +361,7 @@
       &#169;2023, Ankur Ankan.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
     </div>

@@ -43,6 +43,7 @@
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">MaximumLikelihoodEstimator</span><span class="p">,</span> <span class="n">ParameterEstimator</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 
 
 <div class="viewcode-block" id="ExpectationMaximization">
@@ -85,10 +86,16 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">&quot;Expectation Maximization is only implemented for BayesianNetwork&quot;</span>
+                <span class="s2">&quot;Expectation Maximization is only implemented for DAG or BayesianNetwork&quot;</span>
             <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DAG</span><span class="p">):</span>
+            <span class="n">model_bn</span> <span class="o">=</span> <span class="n">BayesianNetwork</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+            <span class="n">model_bn</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+            <span class="n">model_bn</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">latents</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">model_bn</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">ExpectationMaximization</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
