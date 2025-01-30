@@ -35,16 +35,68 @@
 <span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">lgamma</span><span class="p">,</span> <span class="n">log</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">statsmodels.formula.api</span> <span class="k">as</span> <span class="nn">smf</span>
 <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">gammaln</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">multivariate_normal</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">BaseEstimator</span>
+
+
+<span class="k">def</span> <span class="nf">get_scoring_method</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">use_cache</span><span class="p">):</span>
+    <span class="n">supported_methods</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;k2&quot;</span><span class="p">:</span> <span class="n">K2</span><span class="p">,</span>
+        <span class="s2">&quot;bdeu&quot;</span><span class="p">:</span> <span class="n">BDeu</span><span class="p">,</span>
+        <span class="s2">&quot;bds&quot;</span><span class="p">:</span> <span class="n">BDs</span><span class="p">,</span>
+        <span class="s2">&quot;bic-d&quot;</span><span class="p">:</span> <span class="n">BIC</span><span class="p">,</span>
+        <span class="s2">&quot;aic-d&quot;</span><span class="p">:</span> <span class="n">AIC</span><span class="p">,</span>
+        <span class="s2">&quot;ll-g&quot;</span><span class="p">:</span> <span class="n">LogLikelihoodGauss</span><span class="p">,</span>
+        <span class="s2">&quot;aic-g&quot;</span><span class="p">:</span> <span class="n">AICGauss</span><span class="p">,</span>
+        <span class="s2">&quot;bic-g&quot;</span><span class="p">:</span> <span class="n">BICGauss</span><span class="p">,</span>
+        <span class="s2">&quot;ll-cg&quot;</span><span class="p">:</span> <span class="n">LogLikelihoodCondGauss</span><span class="p">,</span>
+        <span class="s2">&quot;aic-cg&quot;</span><span class="p">:</span> <span class="n">AICCondGauss</span><span class="p">,</span>
+        <span class="s2">&quot;bic-cg&quot;</span><span class="p">:</span> <span class="n">BICCondGauss</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">scoring_method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="s2">&quot;k2score&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;bdeuscore&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;bdsscore&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;bicscore&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;aicscore&quot;</span><span class="p">,</span>
+        <span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The scoring method names have been changed. Please refer the documentation.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">scoring_method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">supported_methods</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unknown scoring method. Please refer documentation for a list of supported score metrics.&quot;</span>
+            <span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">StructureScore</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;scoring_method should either be one of k2score, bdeuscore, bicscore, bdsscore, aicscore, or an instance of StructureScore&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">supported_methods</span><span class="p">[</span><span class="n">scoring_method</span><span class="o">.</span><span class="n">lower</span><span class="p">()](</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">scoring_method</span>
+
+    <span class="k">if</span> <span class="n">use_cache</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">pgmpy.estimators.ScoreCache</span> <span class="kn">import</span> <span class="n">ScoreCache</span>
+
+        <span class="n">score_c</span> <span class="o">=</span> <span class="n">ScoreCache</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">score_c</span> <span class="o">=</span> <span class="n">score</span>
+
+    <span class="k">return</span> <span class="n">score</span><span class="p">,</span> <span class="n">score_c</span>
 
 
 <span class="k">class</span> <span class="nc">StructureScore</span><span class="p">(</span><span class="n">BaseEstimator</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Abstract base class for structure scoring classes in pgmpy. Use any of the</span>
-<span class="sd">    derived classes K2Score, BDeuScore, BicScore or AICScore. Scoring classes</span>
+<span class="sd">    derived classes K2, BDeu, BIC or AIC. Scoring classes</span>
 <span class="sd">    are used to measure how well a model is able to describe the given data</span>
 <span class="sd">    set.</span>
 
@@ -91,13 +143,13 @@
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import K2Score</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import K2</span>
 <span class="sd">        &gt;&gt;&gt; # create random data sample with 3 variables, where B and C are identical:</span>
 <span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 5, size=(5000, 2)), columns=list(&#39;AB&#39;))</span>
 <span class="sd">        &gt;&gt;&gt; data[&#39;C&#39;] = data[&#39;B&#39;]</span>
-<span class="sd">        &gt;&gt;&gt; K2Score(data).score(BayesianNetwork([[&#39;A&#39;,&#39;B&#39;], [&#39;A&#39;,&#39;C&#39;]]))</span>
+<span class="sd">        &gt;&gt;&gt; K2(data).score(BayesianNetwork([[&#39;A&#39;,&#39;B&#39;], [&#39;A&#39;,&#39;C&#39;]]))</span>
 <span class="sd">        -24242.367348745247</span>
-<span class="sd">        &gt;&gt;&gt; K2Score(data).score(BayesianNetwork([[&#39;A&#39;,&#39;B&#39;], [&#39;B&#39;,&#39;C&#39;]]))</span>
+<span class="sd">        &gt;&gt;&gt; K2(data).score(BayesianNetwork([[&#39;A&#39;,&#39;B&#39;], [&#39;B&#39;,&#39;C&#39;]]))</span>
 <span class="sd">        -16273.793897051042</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -117,9 +169,9 @@
         <span class="k">return</span> <span class="mi">0</span>
 
 
-<div class="viewcode-block" id="K2Score">
-<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.K2Score">[docs]</a>
-<span class="k">class</span> <span class="nc">K2Score</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
+<div class="viewcode-block" id="K2">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.K2">[docs]</a>
+<span class="k">class</span> <span class="nc">K2</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for Bayesian structure scoring for BayesianNetworks with Dirichlet priors.</span>
 <span class="sd">    The K2 score is the result of setting all Dirichlet hyperparameters/pseudo_counts to 1.</span>
@@ -146,10 +198,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">K2Score</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">K2</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="K2Score.local_score">
-<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.K2Score.local_score">[docs]</a>
+<div class="viewcode-block" id="K2.local_score">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.K2.local_score">[docs]</a>
     <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
         <span class="s1">&#39;Computes a score that measures how much a </span><span class="se">\</span>
 <span class="s1">        given variable is &quot;influenced&quot; by a given list of potential parents.&#39;</span>
@@ -189,9 +241,9 @@
 
 
 
-<div class="viewcode-block" id="BDeuScore">
-<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDeuScore">[docs]</a>
-<span class="k">class</span> <span class="nc">BDeuScore</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
+<div class="viewcode-block" id="BDeu">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDeu">[docs]</a>
+<span class="k">class</span> <span class="nc">BDeu</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for Bayesian structure scoring for BayesianNetworks with Dirichlet priors.</span>
 <span class="sd">    The BDeu score is the result of setting all Dirichlet hyperparameters/pseudo_counts to</span>
@@ -224,10 +276,10 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">equivalent_sample_size</span> <span class="o">=</span> <span class="n">equivalent_sample_size</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">BDeuScore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BDeu</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="BDeuScore.local_score">
-<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDeuScore.local_score">[docs]</a>
+<div class="viewcode-block" id="BDeu.local_score">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDeu.local_score">[docs]</a>
     <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
         <span class="s1">&#39;Computes a score that measures how much a </span><span class="se">\</span>
 <span class="s1">        given variable is &quot;influenced&quot; by a given list of potential parents.&#39;</span>
@@ -270,9 +322,9 @@
 
 
 
-<div class="viewcode-block" id="BDsScore">
-<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDsScore">[docs]</a>
-<span class="k">class</span> <span class="nc">BDsScore</span><span class="p">(</span><span class="n">BDeuScore</span><span class="p">):</span>
+<div class="viewcode-block" id="BDs">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDs">[docs]</a>
+<span class="k">class</span> <span class="nc">BDs</span><span class="p">(</span><span class="n">BDeu</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for Bayesian structure scoring for BayesianNetworks with</span>
 <span class="sd">    Dirichlet priors.  The BDs score is the result of setting all Dirichlet</span>
@@ -308,10 +360,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">BDsScore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">equivalent_sample_size</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BDs</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">equivalent_sample_size</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="BDsScore.structure_prior_ratio">
-<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDsScore.structure_prior_ratio">[docs]</a>
+<div class="viewcode-block" id="BDs.structure_prior_ratio">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDs.structure_prior_ratio">[docs]</a>
     <span class="k">def</span> <span class="nf">structure_prior_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the log ratio of the prior probabilities for a given proposed change to</span>
 <span class="sd">        the DAG.</span>
@@ -323,8 +375,8 @@
         <span class="k">return</span> <span class="mi">0</span></div>
 
 
-<div class="viewcode-block" id="BDsScore.structure_prior">
-<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDsScore.structure_prior">[docs]</a>
+<div class="viewcode-block" id="BDs.structure_prior">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDs.structure_prior">[docs]</a>
     <span class="k">def</span> <span class="nf">structure_prior</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Implements the marginal uniform prior for the graph structure where each arc</span>
@@ -337,8 +389,8 @@
         <span class="k">return</span> <span class="n">score</span></div>
 
 
-<div class="viewcode-block" id="BDsScore.local_score">
-<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDsScore.local_score">[docs]</a>
+<div class="viewcode-block" id="BDs.local_score">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BDs.local_score">[docs]</a>
     <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
         <span class="s1">&#39;Computes a score that measures how much a </span><span class="se">\</span>
 <span class="s1">        given variable is &quot;influenced&quot; by a given list of potential parents.&#39;</span>
@@ -381,9 +433,9 @@
 
 
 
-<div class="viewcode-block" id="BicScore">
-<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BicScore">[docs]</a>
-<span class="k">class</span> <span class="nc">BicScore</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
+<div class="viewcode-block" id="BIC">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BIC">[docs]</a>
+<span class="k">class</span> <span class="nc">BIC</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for Bayesian structure scoring for BayesianNetworks with</span>
 <span class="sd">    Dirichlet priors.  The BIC/MDL score (&quot;Bayesian Information Criterion&quot;,</span>
@@ -413,10 +465,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">BicScore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BIC</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="BicScore.local_score">
-<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BicScore.local_score">[docs]</a>
+<div class="viewcode-block" id="BIC.local_score">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BIC.local_score">[docs]</a>
     <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
         <span class="s1">&#39;Computes a score that measures how much a </span><span class="se">\</span>
 <span class="s1">        given variable is &quot;influenced&quot; by a given list of potential parents.&#39;</span>
@@ -450,24 +502,9 @@
 
 
 
-<span class="k">class</span> <span class="nc">BicScoreGauss</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">BicScoreGauss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">glm_model</span> <span class="o">=</span> <span class="n">smf</span><span class="o">.</span><span class="n">glm</span><span class="p">(</span><span class="n">formula</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2"> ~ 1&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">glm_model</span> <span class="o">=</span> <span class="n">smf</span><span class="o">.</span><span class="n">glm</span><span class="p">(</span>
-                <span class="n">formula</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2"> ~ </span><span class="si">{</span><span class="s1">&#39; + &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
-        <span class="c1"># Adding +2 to model df to compute the likelihood df.</span>
-        <span class="k">return</span> <span class="n">glm_model</span><span class="o">.</span><span class="n">llf</span> <span class="o">-</span> <span class="p">(</span>
-            <span class="p">((</span><span class="n">glm_model</span><span class="o">.</span><span class="n">df_model</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">AICScore</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
+<div class="viewcode-block" id="AIC">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.AIC">[docs]</a>
+<span class="k">class</span> <span class="nc">AIC</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for Bayesian structure scoring for BayesianNetworks with</span>
 <span class="sd">    Dirichlet priors.  The AIC score (&quot;Akaike Information Criterion) is a log-likelihood score with an</span>
@@ -496,8 +533,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">AICScore</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AIC</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
+<div class="viewcode-block" id="AIC.local_score">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.AIC.local_score">[docs]</a>
     <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
         <span class="s1">&#39;Computes a score that measures how much a </span><span class="se">\</span>
 <span class="s1">        given variable is &quot;influenced&quot; by a given list of potential parents.&#39;</span>
@@ -526,22 +565,292 @@
         <span class="n">score</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_likelihoods</span><span class="p">)</span>
         <span class="n">score</span> <span class="o">-=</span> <span class="n">num_parents_states</span> <span class="o">*</span> <span class="p">(</span><span class="n">var_cardinality</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">score</span>
+        <span class="k">return</span> <span class="n">score</span></div>
+</div>
 
 
-<span class="k">class</span> <span class="nc">AICScoreGauss</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
+
+<div class="viewcode-block" id="LogLikelihoodGauss">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.LogLikelihoodGauss">[docs]</a>
+<span class="k">class</span> <span class="nc">LogLikelihoodGauss</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">AICScoreGauss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LogLikelihoodGauss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_log_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">glm_model</span> <span class="o">=</span> <span class="n">smf</span><span class="o">.</span><span class="n">glm</span><span class="p">(</span><span class="n">formula</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2"> ~ 1&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">glm_model</span> <span class="o">=</span> <span class="n">smf</span><span class="o">.</span><span class="n">glm</span><span class="p">(</span>
                 <span class="n">formula</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2"> ~ </span><span class="si">{</span><span class="s1">&#39; + &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span>
             <span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">glm_model</span><span class="o">.</span><span class="n">llf</span><span class="p">,</span> <span class="n">glm_model</span><span class="o">.</span><span class="n">df_model</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+        <span class="n">ll</span><span class="p">,</span> <span class="n">df_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_likelihood</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ll</span></div>
+
+
+
+<div class="viewcode-block" id="BICGauss">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BICGauss">[docs]</a>
+<span class="k">class</span> <span class="nc">BICGauss</span><span class="p">(</span><span class="n">LogLikelihoodGauss</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BICGauss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+        <span class="n">ll</span><span class="p">,</span> <span class="n">df_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_likelihood</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+
         <span class="c1"># Adding +2 to model df to compute the likelihood df.</span>
-        <span class="k">return</span> <span class="n">glm_model</span><span class="o">.</span><span class="n">llf</span> <span class="o">-</span> <span class="p">(</span><span class="n">glm_model</span><span class="o">.</span><span class="n">df_model</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ll</span> <span class="o">-</span> <span class="p">(((</span><span class="n">df_model</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span></div>
+
+
+
+<div class="viewcode-block" id="AICGauss">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.AICGauss">[docs]</a>
+<span class="k">class</span> <span class="nc">AICGauss</span><span class="p">(</span><span class="n">LogLikelihoodGauss</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AICGauss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+        <span class="n">ll</span><span class="p">,</span> <span class="n">df_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_likelihood</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+
+        <span class="c1"># Adding +2 to model df to compute the likelihood df.</span>
+        <span class="k">return</span> <span class="n">ll</span> <span class="o">-</span> <span class="p">(</span><span class="n">df_model</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="LogLikelihoodCondGauss">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.LogLikelihoodCondGauss">[docs]</a>
+<span class="k">class</span> <span class="nc">LogLikelihoodCondGauss</span><span class="p">(</span><span class="n">StructureScore</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] Andrews, B., Ramsey, J., &amp; Cooper, G. F. (2018). Scoring Bayesian</span>
+<span class="sd">        Networks of Mixed Variables. International journal of data science and</span>
+<span class="sd">        analytics, 6(1), 3–18. https://doi.org/10.1007/s41060-017-0085-7</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LogLikelihoodCondGauss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_adjusted_cov</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes an adjusted covariance matrix from the given dataframe.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If a number of rows less than number of variables, return variance 1 with no covariance.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)),</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+            <span class="p">)</span>
+
+        <span class="c1"># If the matrix is not positive semidefinite, add a small error to make it.</span>
+        <span class="n">df_cov</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">cov</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">eig</span><span class="p">(</span><span class="n">df_cov</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">)):</span>
+            <span class="n">df_cov</span> <span class="o">=</span> <span class="n">df_cov</span> <span class="o">+</span> <span class="mf">1e-6</span>
+        <span class="k">return</span> <span class="n">df_cov</span>
+
+    <span class="k">def</span> <span class="nf">_cat_parents_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">pa</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="n">pa</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;N&quot;</span><span class="p">:</span>
+                <span class="n">n_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pa</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">n_states</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">k</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pa</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">k</span>
+
+    <span class="k">def</span> <span class="nf">_get_num_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+        <span class="n">parent_dtypes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="n">pa</span><span class="p">]</span> <span class="k">for</span> <span class="n">pa</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">]</span>
+        <span class="n">n_cont_parents</span> <span class="o">=</span> <span class="n">parent_dtypes</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;N&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;N&quot;</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_parents_product</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_cont_parents</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">n_cont_parents</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cat_parents_product</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_cat_parents_product</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+                    <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="o">*</span> <span class="p">(</span><span class="n">n_cont_parents</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">k</span>
+
+    <span class="k">def</span> <span class="nf">_log_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents</span><span class="p">]</span>
+
+        <span class="c1"># If variable is continuous, the probability is computed as:</span>
+        <span class="c1"># P(C1 | C2, D) = p(C1, C2 | D) / p(C2 | D)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;N&quot;</span><span class="p">:</span>
+            <span class="n">c1</span> <span class="o">=</span> <span class="n">variable</span>
+            <span class="n">c2</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">parents</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;N&quot;</span><span class="p">]</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">c2</span><span class="p">))</span>
+
+            <span class="c1"># If D = {}, p(C1, C2 | D) = p(C1, C2) and p(C2 | D) = p(C2)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># If C2 = {}, p(C1, C2 | D) = p(C1) and p(C2 | D) = 1.</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">p_c1c2_d</span> <span class="o">=</span> <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+                        <span class="n">x</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+                        <span class="n">mean</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                        <span class="n">cov</span><span class="o">=</span><span class="n">LogLikelihoodCondGauss</span><span class="o">.</span><span class="n">_adjusted_cov</span><span class="p">(</span><span class="n">df</span><span class="p">),</span>
+                        <span class="n">allow_singular</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p_c1c2_d</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">p_c1c2_d</span> <span class="o">=</span> <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+                        <span class="n">x</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+                        <span class="n">mean</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                        <span class="n">cov</span><span class="o">=</span><span class="n">LogLikelihoodCondGauss</span><span class="o">.</span><span class="n">_adjusted_cov</span><span class="p">(</span><span class="n">df</span><span class="p">),</span>
+                        <span class="n">allow_singular</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">df_c2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c2</span><span class="p">]</span>
+                    <span class="n">p_c2_d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                        <span class="mf">1e-8</span><span class="p">,</span>
+                        <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+                            <span class="n">x</span><span class="o">=</span><span class="n">df_c2</span><span class="p">,</span>
+                            <span class="n">mean</span><span class="o">=</span><span class="n">df_c2</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                            <span class="n">cov</span><span class="o">=</span><span class="n">LogLikelihoodCondGauss</span><span class="o">.</span><span class="n">_adjusted_cov</span><span class="p">(</span><span class="n">df_c2</span><span class="p">),</span>
+                            <span class="n">allow_singular</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="p">),</span>
+                    <span class="p">)</span>
+
+                    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p_c1c2_d</span> <span class="o">/</span> <span class="n">p_c2_d</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log_like</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">d_states</span><span class="p">,</span> <span class="n">df_d</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                    <span class="n">p_c1c2_d</span> <span class="o">=</span> <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+                        <span class="n">x</span><span class="o">=</span><span class="n">df_d</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="n">c1</span><span class="p">]</span> <span class="o">+</span> <span class="n">c2</span><span class="p">],</span>
+                        <span class="n">mean</span><span class="o">=</span><span class="n">df_d</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="n">c1</span><span class="p">]</span> <span class="o">+</span> <span class="n">c2</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                        <span class="n">cov</span><span class="o">=</span><span class="n">LogLikelihoodCondGauss</span><span class="o">.</span><span class="n">_adjusted_cov</span><span class="p">(</span>
+                            <span class="n">df_d</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="n">c1</span><span class="p">]</span> <span class="o">+</span> <span class="n">c2</span><span class="p">]</span>
+                        <span class="p">),</span>
+                        <span class="n">allow_singular</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">p_c2_d</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">p_c2_d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                            <span class="mf">1e-8</span><span class="p">,</span>
+                            <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+                                <span class="n">x</span><span class="o">=</span><span class="n">df_d</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c2</span><span class="p">],</span>
+                                <span class="n">mean</span><span class="o">=</span><span class="n">df_d</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c2</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                                <span class="n">cov</span><span class="o">=</span><span class="n">LogLikelihoodCondGauss</span><span class="o">.</span><span class="n">_adjusted_cov</span><span class="p">(</span>
+                                    <span class="n">df_d</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c2</span><span class="p">]</span>
+                                <span class="p">),</span>
+                                <span class="n">allow_singular</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="p">),</span>
+                        <span class="p">)</span>
+
+                    <span class="n">log_like</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p_c1c2_d</span> <span class="o">/</span> <span class="n">p_c2_d</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">log_like</span>
+
+        <span class="c1"># If variable is discrete, the probability is computed as:</span>
+        <span class="c1"># P(D1 | C, D2) = (p(C| D1, D2) p(D1, D2)) / (p(C| D2) p(D2))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d1</span> <span class="o">=</span> <span class="n">variable</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">parents</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;N&quot;</span><span class="p">]</span>
+            <span class="n">d2</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+
+            <span class="n">log_like</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">d_states</span><span class="p">,</span> <span class="n">df_d1d2</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">d1</span><span class="p">]</span> <span class="o">+</span> <span class="n">d2</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                <span class="c1"># Check if df_d1d2 also has the discrete variables.</span>
+                <span class="c1"># If C={}, p(C | D1, D2) = 1.</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">p_c_d1d2</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">p_c_d1d2</span> <span class="o">=</span> <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+                        <span class="n">x</span><span class="o">=</span><span class="n">df_d1d2</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c</span><span class="p">],</span>
+                        <span class="n">mean</span><span class="o">=</span><span class="n">df_d1d2</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                        <span class="n">cov</span><span class="o">=</span><span class="n">LogLikelihoodCondGauss</span><span class="o">.</span><span class="n">_adjusted_cov</span><span class="p">(</span><span class="n">df_d1d2</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c</span><span class="p">]),</span>
+                        <span class="n">allow_singular</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                <span class="c1"># P(D1, D2)</span>
+                <span class="n">p_d1d2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">df_d1d2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">df_d1d2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="c1"># If D2 = {}, p(D1 | C, D2) = (p(C | D1, D2) p(D1, D2)) / p(C)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">d2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">p_c_d2</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">p_c_d2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                            <span class="mf">1e-8</span><span class="p">,</span>
+                            <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+                                <span class="n">x</span><span class="o">=</span><span class="n">df_d1d2</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c</span><span class="p">],</span>
+                                <span class="n">mean</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                                <span class="n">cov</span><span class="o">=</span><span class="n">LogLikelihoodCondGauss</span><span class="o">.</span><span class="n">_adjusted_cov</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c</span><span class="p">]),</span>
+                                <span class="n">allow_singular</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="p">),</span>
+                        <span class="p">)</span>
+
+                    <span class="n">log_like</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p_c_d1d2</span> <span class="o">*</span> <span class="n">p_d1d2</span> <span class="o">/</span> <span class="n">p_c_d2</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">p_c_d2</span> <span class="o">=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">df_d2</span> <span class="o">=</span> <span class="n">df</span>
+                        <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">d2</span><span class="p">,</span> <span class="n">d_states</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+                            <span class="n">df_d2</span> <span class="o">=</span> <span class="n">df_d2</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df_d2</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">==</span> <span class="n">state</span><span class="p">]</span>
+
+                        <span class="n">p_c_d2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+                            <span class="mf">1e-8</span><span class="p">,</span>
+                            <span class="n">multivariate_normal</span><span class="o">.</span><span class="n">pdf</span><span class="p">(</span>
+                                <span class="n">x</span><span class="o">=</span><span class="n">df_d1d2</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c</span><span class="p">],</span>
+                                <span class="n">mean</span><span class="o">=</span><span class="n">df_d2</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                                <span class="n">cov</span><span class="o">=</span><span class="n">LogLikelihoodCondGauss</span><span class="o">.</span><span class="n">_adjusted_cov</span><span class="p">(</span>
+                                    <span class="n">df_d2</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">c</span><span class="p">]</span>
+                                <span class="p">),</span>
+                                <span class="n">allow_singular</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="p">),</span>
+                        <span class="p">)</span>
+
+                    <span class="n">p_d2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">d2</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">/</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">d2</span><span class="p">,</span> <span class="n">d_states</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+                        <span class="n">p_d2</span> <span class="o">=</span> <span class="n">p_d2</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">p_d2</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="o">==</span> <span class="n">value</span><span class="p">]</span>
+
+                    <span class="n">log_like</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">p_c_d1d2</span> <span class="o">*</span> <span class="n">p_d1d2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">p_c_d2</span> <span class="o">*</span> <span class="n">p_d2</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="mi">0</span><span class="p">]))</span>
+                    <span class="p">)</span>
+            <span class="k">return</span> <span class="n">log_like</span>
+
+    <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_likelihood</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ll</span></div>
+
+
+
+<div class="viewcode-block" id="BICCondGauss">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.BICCondGauss">[docs]</a>
+<span class="k">class</span> <span class="nc">BICCondGauss</span><span class="p">(</span><span class="n">LogLikelihoodCondGauss</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BICCondGauss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_likelihood</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_num_parameters</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ll</span> <span class="o">-</span> <span class="p">((</span><span class="n">k</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span></div>
+
+
+
+<div class="viewcode-block" id="AICCondGauss">
+<a class="viewcode-back" href="../../../structure_estimator/hill.html#pgmpy.estimators.AICCondGauss">[docs]</a>
+<span class="k">class</span> <span class="nc">AICCondGauss</span><span class="p">(</span><span class="n">LogLikelihoodCondGauss</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AICCondGauss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+        <span class="n">ll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_likelihood</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_num_parameters</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ll</span> <span class="o">-</span> <span class="n">k</span></div>
+
 </pre></div>
 
           </div>

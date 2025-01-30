@@ -41,16 +41,20 @@
 <span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">AICScore</span><span class="p">,</span>
-    <span class="n">AICScoreGauss</span><span class="p">,</span>
-    <span class="n">BDeuScore</span><span class="p">,</span>
-    <span class="n">BDsScore</span><span class="p">,</span>
-    <span class="n">BicScore</span><span class="p">,</span>
-    <span class="n">BicScoreGauss</span><span class="p">,</span>
-    <span class="n">K2Score</span><span class="p">,</span>
-    <span class="n">ScoreCache</span><span class="p">,</span>
+    <span class="n">AIC</span><span class="p">,</span>
+    <span class="n">BIC</span><span class="p">,</span>
+    <span class="n">K2</span><span class="p">,</span>
+    <span class="n">AICCondGauss</span><span class="p">,</span>
+    <span class="n">AICGauss</span><span class="p">,</span>
+    <span class="n">BDeu</span><span class="p">,</span>
+    <span class="n">BDs</span><span class="p">,</span>
+    <span class="n">BICCondGauss</span><span class="p">,</span>
+    <span class="n">BICGauss</span><span class="p">,</span>
+    <span class="n">LogLikelihoodCondGauss</span><span class="p">,</span>
+    <span class="n">LogLikelihoodGauss</span><span class="p">,</span>
     <span class="n">StructureEstimator</span><span class="p">,</span>
     <span class="n">StructureScore</span><span class="p">,</span>
+    <span class="n">get_scoring_method</span><span class="p">,</span>
 <span class="p">)</span>
 
 
@@ -181,8 +185,8 @@
         <span class="n">fixed_edges</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span>
         <span class="n">tabu_length</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
         <span class="n">max_indegree</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">black_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">white_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">black_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>
         <span class="n">max_iter</span><span class="o">=</span><span class="mf">1e6</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -198,43 +202,35 @@
 <span class="sd">        ----------</span>
 <span class="sd">        scoring_method: str or StructureScore instance</span>
 <span class="sd">            The score to be optimized during structure estimation.  Supported</span>
-<span class="sd">            structure scores: k2, bdeu, bds, bic, aic, bic-g, aic-g. Also accepts a</span>
-<span class="sd">            custom score, but it should be an instance of `StructureScore`.</span>
+<span class="sd">            structure scores: k2, bdeu, bds, bic-d, aic-d, ll-g, aic-g, bic-g,</span>
+<span class="sd">            ll-cg, aic-cg, bic-cg. Also accepts a custom score, but it should</span>
+<span class="sd">            be an instance of `StructureScore`.</span>
 
 <span class="sd">        start_dag: DAG instance</span>
 <span class="sd">            The starting point for the local search. By default, a completely</span>
 <span class="sd">            disconnected network is used.</span>
 
-<span class="sd">        fixed_edges: iterable</span>
-<span class="sd">            A list of edges that will always be there in the final learned model.</span>
-<span class="sd">            The algorithm will add these edges at the start of the algorithm and</span>
-<span class="sd">            will never change it.</span>
-
 <span class="sd">        tabu_length: int</span>
-<span class="sd">            If provided, the last `tabu_length` graph modifications cannot be reversed</span>
-<span class="sd">            during the search procedure. This serves to enforce a wider exploration</span>
-<span class="sd">            of the search space. Default value: 100.</span>
+<span class="sd">            If provided, the last `tabu_length` graph modifications cannot be</span>
+<span class="sd">            reversed during the search procedure. This serves to enforce a</span>
+<span class="sd">            wider exploration of the search space. Default value: 100.</span>
 
 <span class="sd">        max_indegree: int or None</span>
 <span class="sd">            If provided and unequal None, the procedure only searches among models</span>
 <span class="sd">            where all nodes have at most `max_indegree` parents. Defaults to None.</span>
 
-<span class="sd">        black_list: list or None</span>
-<span class="sd">            If a list of edges is provided as `black_list`, they are excluded from the search</span>
-<span class="sd">            and the resulting model will not contain any of those edges. Default: None</span>
-
-<span class="sd">        white_list: list or None</span>
-<span class="sd">            If a list of edges is provided as `white_list`, the search is limited to those</span>
-<span class="sd">            edges. The resulting model will then only contain edges that are in `white_list`.</span>
-<span class="sd">            Default: None</span>
+<span class="sd">        expert_knowledge: pgmpy.estimators.ExpertKnowledge instance</span>
+<span class="sd">            Expert knowledge to be used with the algorithm. Expert knowledge</span>
+<span class="sd">            includes whitelisted/blacklisted edges in the search space and</span>
+<span class="sd">            fixed edges in the final network.</span>
 
 <span class="sd">        epsilon: float (default: 1e-4)</span>
-<span class="sd">            Defines the exit condition. If the improvement in score is less than `epsilon`,</span>
-<span class="sd">            the learned model is returned.</span>
+<span class="sd">            Defines the exit condition. If the improvement in score is less</span>
+<span class="sd">            than `epsilon`, the learned model is returned.</span>
 
 <span class="sd">        max_iter: int (default: 1e6)</span>
-<span class="sd">            The maximum number of iterations allowed. Returns the learned model when the</span>
-<span class="sd">            number of iterations is greater than `max_iter`.</span>
+<span class="sd">            The maximum number of iterations allowed. Returns the learned model</span>
+<span class="sd">            when the number of iterations is greater than `max_iter`.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -251,7 +247,7 @@
 <span class="sd">        &gt;&gt;&gt; # Learn the model structure using HillClimbSearch algorithm from `df`</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import HillClimbSearch</span>
 <span class="sd">        &gt;&gt;&gt; est = HillClimbSearch(data)</span>
-<span class="sd">        &gt;&gt;&gt; dag = est.estimate(scoring_method=&#39;bic&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; dag = est.estimate(scoring_method=&#39;bic-d&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; len(dag.nodes())</span>
 <span class="sd">        37</span>
 <span class="sd">        &gt;&gt;&gt; len(dag.edges())</span>
@@ -260,45 +256,9 @@
 
         <span class="c1"># Step 1: Initial checks and setup for arguments</span>
         <span class="c1"># Step 1.1: Check scoring_method</span>
-        <span class="n">supported_methods</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;k2&quot;</span><span class="p">:</span> <span class="n">K2Score</span><span class="p">,</span>
-            <span class="s2">&quot;bdeu&quot;</span><span class="p">:</span> <span class="n">BDeuScore</span><span class="p">,</span>
-            <span class="s2">&quot;bds&quot;</span><span class="p">:</span> <span class="n">BDsScore</span><span class="p">,</span>
-            <span class="s2">&quot;bic&quot;</span><span class="p">:</span> <span class="n">BicScore</span><span class="p">,</span>
-            <span class="s2">&quot;aic&quot;</span><span class="p">:</span> <span class="n">AICScore</span><span class="p">,</span>
-            <span class="s2">&quot;aic-g&quot;</span><span class="p">:</span> <span class="n">AICScoreGauss</span><span class="p">,</span>
-            <span class="s2">&quot;bic-g&quot;</span><span class="p">:</span> <span class="n">BicScoreGauss</span><span class="p">,</span>
-        <span class="p">}</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">scoring_method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
-                <span class="s2">&quot;k2score&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;bdeuscore&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;bdsscore&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;bicscore&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;aicscore&quot;</span><span class="p">,</span>
-            <span class="p">]:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;The scoring method names have been changed. Please refer the documentation.&quot;</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">scoring_method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">supported_methods</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Unknown scoring method. Please refer documentation for a list of supported score metrics.&quot;</span>
-                <span class="p">)</span>
-        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">StructureScore</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;scoring_method should either be one of k2score, bdeuscore, bicscore, bdsscore, aicscore, or an instance of StructureScore&quot;</span>
-            <span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">score</span> <span class="o">=</span> <span class="n">supported_methods</span><span class="p">[</span><span class="n">scoring_method</span><span class="o">.</span><span class="n">lower</span><span class="p">()](</span><span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">score</span> <span class="o">=</span> <span class="n">scoring_method</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_cache</span><span class="p">:</span>
-            <span class="n">score_fn</span> <span class="o">=</span> <span class="n">ScoreCache</span><span class="o">.</span><span class="n">ScoreCache</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">local_score</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">score_fn</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">local_score</span>
-
+        <span class="n">score</span><span class="p">,</span> <span class="n">score_c</span> <span class="o">=</span> <span class="n">get_scoring_method</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_cache</span><span class="p">)</span>
+        <span class="n">score_fn</span> <span class="o">=</span> <span class="n">score_c</span><span class="o">.</span><span class="n">local_score</span>
         <span class="c1"># Step 1.2: Check the start_dag</span>
         <span class="k">if</span> <span class="n">start_dag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">start_dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">()</span>
@@ -328,7 +288,6 @@
             <span class="k">if</span> <span class="n">white_list</span> <span class="ow">is</span> <span class="kc">None</span>
             <span class="k">else</span> <span class="nb">set</span><span class="p">(</span><span class="n">white_list</span><span class="p">)</span>
         <span class="p">)</span>
-
         <span class="c1"># Step 1.5: Initialize max_indegree, tabu_list, and progress bar</span>
         <span class="k">if</span> <span class="n">max_indegree</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">max_indegree</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
@@ -384,7 +343,7 @@
           
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
         <div class="sphinxsidebarwrapper">
 <p class="logo">
   <a href="../../../index.html">
@@ -462,7 +421,7 @@
       &#169;2023, Ankur Ankan.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
     </div>

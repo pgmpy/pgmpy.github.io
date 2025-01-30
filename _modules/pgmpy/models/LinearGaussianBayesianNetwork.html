@@ -44,7 +44,7 @@
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork">[docs]</a>
-<span class="k">class</span> <span class="nc">LinearGaussianBayesianNetwork</span><span class="p">(</span><span class="n">BayesianNetwork</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">LinearGaussianBayesianNetwork</span><span class="p">(</span><span class="n">DAG</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A Linear Gaussian Bayesian Network is a Bayesian Network, all</span>
 <span class="sd">    of whose variables are continuous, and where all of the CPDs</span>
@@ -55,6 +55,12 @@
 <span class="sd">    Gaussian distributions.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="nb">set</span><span class="p">()):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LinearGaussianBayesianNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">ebunch</span><span class="o">=</span><span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="n">latents</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span> <span class="o">=</span> <span class="p">[]</span>
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.add_cpds">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.add_cpds">[docs]</a>
@@ -129,7 +135,15 @@
 <span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2, cpd3)</span>
 <span class="sd">        &gt;&gt;&gt; model.get_cpds()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">LinearGaussianBayesianNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Node not present in the Directed Graph&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span> <span class="o">==</span> <span class="n">node</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">cpd</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span></div>
 
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.remove_cpds">

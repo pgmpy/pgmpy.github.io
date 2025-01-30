@@ -41,23 +41,59 @@
 <span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="kn">import</span> <span class="n">IndependenceAssertion</span>
 
 
+<span class="k">def</span> <span class="nf">get_ci_test</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">independencies</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">test</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">test</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="n">supported_tests</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;chi_square&quot;</span><span class="p">:</span> <span class="n">chi_square</span><span class="p">,</span>
+        <span class="s2">&quot;g_sq&quot;</span><span class="p">:</span> <span class="n">g_sq</span><span class="p">,</span>
+        <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="n">log_likelihood</span><span class="p">,</span>
+        <span class="s2">&quot;modified_log_likelihood&quot;</span><span class="p">:</span> <span class="n">modified_log_likelihood</span><span class="p">,</span>
+        <span class="s2">&quot;pearsonr&quot;</span><span class="p">:</span> <span class="n">pearsonr</span><span class="p">,</span>
+        <span class="s2">&quot;pillai&quot;</span><span class="p">:</span> <span class="n">pillai_trace</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">full</span><span class="p">:</span>
+        <span class="n">supported_tests</span><span class="p">[</span><span class="s2">&quot;power_divergence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">power_divergence</span>
+        <span class="n">supported_tests</span><span class="p">[</span><span class="s2">&quot;independence_match&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">independence_match</span>
+
+    <span class="k">if</span> <span class="n">test</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported_tests</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;ci_test must either be one of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">supported_tests</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">, or a function. Got: </span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">full</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">test</span> <span class="o">==</span> <span class="s2">&quot;independence_match&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">independencies</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;For using independence_match, independencies argument must be specified&quot;</span>
+                <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;For using Chi Square or Pearsonr, data argument must be specified&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">supported_tests</span><span class="p">[</span><span class="n">test</span><span class="p">]</span>
+
+
 <div class="viewcode-block" id="independence_match">
 <a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.independence_match">[docs]</a>
 <span class="k">def</span> <span class="nf">independence_match</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">independencies</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Checks if `X \u27C2 Y | Z` is in `independencies`. This method is implemented to</span>
+<span class="sd">    Checks if `X \u27c2 Y | Z` is in `independencies`. This method is implemented to</span>
 <span class="sd">    have an uniform API when the independencies are provided instead of data.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    X: str</span>
-<span class="sd">        The first variable for testing the independence condition X \u27C2 Y | Z</span>
+<span class="sd">        The first variable for testing the independence condition X \u27c2 Y | Z</span>
 
 <span class="sd">    Y: str</span>
-<span class="sd">        The second variable for testing the independence condition X \u27C2 Y | Z</span>
+<span class="sd">        The second variable for testing the independence condition X \u27c2 Y | Z</span>
 
 <span class="sd">    Z: list/array-like</span>
-<span class="sd">        A list of conditional variable for testing the condition X \u27C2 Y | Z</span>
+<span class="sd">        A list of conditional variable for testing the condition X \u27c2 Y | Z</span>
 
 <span class="sd">    data: pandas.DataFrame The dataset in which to test the indepenedence condition.</span>
 
@@ -110,7 +146,7 @@
 <span class="sd">        If boolean = False, Returns a tuple (chi, p_value, dof). `chi` is the</span>
 <span class="sd">        chi-squared test statistic. The `p_value` for the test, i.e. the</span>
 <span class="sd">        probability of observing the computed chi-square statistic (or an even</span>
-<span class="sd">        higher value), given the null hypothesis that X \u27C2 Y | Zs is True.</span>
+<span class="sd">        higher value), given the null hypothesis that X \u27c2 Y | Zs is True.</span>
 <span class="sd">        If boolean = True, returns True if the p_value of the test is greater</span>
 <span class="sd">        than `significance_level` else returns False.</span>
 
@@ -173,7 +209,7 @@
 <span class="sd">        If boolean = False, Returns a tuple (chi, p_value, dof). `chi` is the</span>
 <span class="sd">        chi-squared test statistic. The `p_value` for the test, i.e. the</span>
 <span class="sd">        probability of observing the computed chi-square statistic (or an even</span>
-<span class="sd">        higher value), given the null hypothesis that X \u27C2 Y | Zs is True.</span>
+<span class="sd">        higher value), given the null hypothesis that X \u27c2 Y | Zs is True.</span>
 <span class="sd">        If boolean = True, returns True if the p_value of the test is greater</span>
 <span class="sd">        than `significance_level` else returns False.</span>
 
@@ -236,7 +272,7 @@
 <span class="sd">        If boolean = False, Returns a tuple (chi, p_value, dof). `chi` is the</span>
 <span class="sd">        chi-squared test statistic. The `p_value` for the test, i.e. the</span>
 <span class="sd">        probability of observing the computed chi-square statistic (or an even</span>
-<span class="sd">        higher value), given the null hypothesis that X \u27C2 Y | Zs is True.</span>
+<span class="sd">        higher value), given the null hypothesis that X \u27c2 Y | Zs is True.</span>
 <span class="sd">        If boolean = True, returns True if the p_value of the test is greater</span>
 <span class="sd">        than `significance_level` else returns False.</span>
 
@@ -298,7 +334,7 @@
 <span class="sd">        If boolean = False, Returns a tuple (chi, p_value, dof). `chi` is the</span>
 <span class="sd">        chi-squared test statistic. The `p_value` for the test, i.e. the</span>
 <span class="sd">        probability of observing the computed chi-square statistic (or an even</span>
-<span class="sd">        higher value), given the null hypothesis that X \u27C2 Y | Zs is True.</span>
+<span class="sd">        higher value), given the null hypothesis that X \u27c2 Y | Zs is True.</span>
 <span class="sd">        If boolean = True, returns True if the p_value of the test is greater</span>
 <span class="sd">        than `significance_level` else returns False.</span>
 
@@ -375,7 +411,7 @@
 <span class="sd">        If boolean = False, Returns a tuple (chi, p_value, dof). `chi` is the</span>
 <span class="sd">        chi-squared test statistic. The `p_value` for the test, i.e. the</span>
 <span class="sd">        probability of observing the computed chi-square statistic (or an even</span>
-<span class="sd">        higher value), given the null hypothesis that X \u27C2 Y | Zs is True.</span>
+<span class="sd">        higher value), given the null hypothesis that X \u27c2 Y | Zs is True.</span>
 <span class="sd">        If boolean = True, returns True if the p_value of the test is greater</span>
 <span class="sd">        than `significance_level` else returns False.</span>
 
@@ -431,14 +467,14 @@
             <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">contingency</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">contingency</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">z_state</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Skipping the test </span><span class="si">{</span><span class="n">X</span><span class="si">}</span><span class="s2"> </span><span class="se">\u27C2</span><span class="s2"> </span><span class="si">{</span><span class="n">Y</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">z_state</span><span class="si">}</span><span class="s2">. Not enough samples&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Skipping the test </span><span class="si">{</span><span class="n">X</span><span class="si">}</span><span class="s2"> </span><span class="se">\u27c2</span><span class="s2"> </span><span class="si">{</span><span class="n">Y</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">z_state</span><span class="si">}</span><span class="s2">. Not enough samples&quot;</span>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">z_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
                         <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">z_state</span><span class="p">)]</span>
                     <span class="p">)</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Skipping the test </span><span class="si">{</span><span class="n">X</span><span class="si">}</span><span class="s2"> </span><span class="se">\u27C2</span><span class="s2"> </span><span class="si">{</span><span class="n">Y</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">z_str</span><span class="si">}</span><span class="s2">. Not enough samples&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Skipping the test </span><span class="si">{</span><span class="n">X</span><span class="si">}</span><span class="s2"> </span><span class="se">\u27c2</span><span class="s2"> </span><span class="si">{</span><span class="n">Y</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">z_str</span><span class="si">}</span><span class="s2">. Not enough samples&quot;</span>
                     <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">c</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2_contingency</span><span class="p">(</span><span class="n">contingency</span><span class="p">,</span> <span class="n">lambda_</span><span class="o">=</span><span class="n">lambda_</span><span class="p">)</span>
@@ -465,13 +501,13 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    X: str</span>
-<span class="sd">        The first variable for testing the independence condition X \u27C2 Y | Z</span>
+<span class="sd">        The first variable for testing the independence condition X \u27c2 Y | Z</span>
 
 <span class="sd">    Y: str</span>
-<span class="sd">        The second variable for testing the independence condition X \u27C2 Y | Z</span>
+<span class="sd">        The second variable for testing the independence condition X \u27c2 Y | Z</span>
 
 <span class="sd">    Z: list/array-like</span>
-<span class="sd">        A list of conditional variable for testing the condition X \u27C2 Y | Z</span>
+<span class="sd">        A list of conditional variable for testing the condition X \u27c2 Y | Z</span>
 
 <span class="sd">    data: pandas.DataFrame</span>
 <span class="sd">        The dataset in which to test the indepenedence condition.</span>
@@ -538,7 +574,7 @@
         <span class="kn">from</span> <span class="nn">xgboost</span> <span class="kn">import</span> <span class="n">XGBClassifier</span><span class="p">,</span> <span class="n">XGBRegressor</span>
     <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
-            <span class="n">e</span><span class="o">.</span><span class="n">message</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">msg</span>
             <span class="o">+</span> <span class="s2">&quot;. xgboost is required for using pillai_trace test. Please install using: pip install xgboost&quot;</span>
         <span class="p">)</span>
 
@@ -606,13 +642,13 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    X: str</span>
-<span class="sd">        The first variable for testing the independence condition X \u27C2 Y | Z</span>
+<span class="sd">        The first variable for testing the independence condition X \u27c2 Y | Z</span>
 
 <span class="sd">    Y: str</span>
-<span class="sd">        The second variable for testing the independence condition X \u27C2 Y | Z</span>
+<span class="sd">        The second variable for testing the independence condition X \u27c2 Y | Z</span>
 
 <span class="sd">    Z: list/array-like</span>
-<span class="sd">        A list of conditional variable for testing the condition X \u27C2 Y | Z</span>
+<span class="sd">        A list of conditional variable for testing the condition X \u27c2 Y | Z</span>
 
 <span class="sd">    data: pandas.DataFrame</span>
 <span class="sd">        The dataset in which to test the indepenedence condition.</span>

@@ -41,20 +41,9 @@
 
 <span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">PDAG</span>
-<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">StructureEstimator</span>
-<span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">ExpertKnowledge</span><span class="p">,</span> <span class="n">StructureEstimator</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="kn">import</span> <span class="n">get_ci_test</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
-
-<span class="n">CI_TESTS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;chi_square&quot;</span><span class="p">:</span> <span class="n">chi_square</span><span class="p">,</span>
-    <span class="s2">&quot;independence_match&quot;</span><span class="p">:</span> <span class="n">independence_match</span><span class="p">,</span>
-    <span class="s2">&quot;pearsonr&quot;</span><span class="p">:</span> <span class="n">pearsonr</span><span class="p">,</span>
-    <span class="s2">&quot;pillai&quot;</span><span class="p">:</span> <span class="n">pillai_trace</span><span class="p">,</span>
-    <span class="s2">&quot;g_sq&quot;</span><span class="p">:</span> <span class="n">g_sq</span><span class="p">,</span>
-    <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="n">log_likelihood</span><span class="p">,</span>
-    <span class="s2">&quot;modified_log_likelihood&quot;</span><span class="p">:</span> <span class="n">modified_log_likelihood</span><span class="p">,</span>
-    <span class="s2">&quot;power_divergence&quot;</span><span class="p">:</span> <span class="n">power_divergence</span><span class="p">,</span>
-<span class="p">}</span>
 
 
 <div class="viewcode-block" id="PC">
@@ -89,11 +78,13 @@
 <a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.PC.estimate">[docs]</a>
     <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">variant</span><span class="o">=</span><span class="s2">&quot;stable&quot;</span><span class="p">,</span>
+        <span class="n">variant</span><span class="o">=</span><span class="s2">&quot;parallel&quot;</span><span class="p">,</span>
         <span class="n">ci_test</span><span class="o">=</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span>
-        <span class="n">max_cond_vars</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-        <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dag&quot;</span><span class="p">,</span>
+        <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;pdag&quot;</span><span class="p">,</span>
         <span class="n">significance_level</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">max_cond_vars</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="n">expert_knowledge</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">enforce_expert_knowledge</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -134,10 +125,6 @@
 <span class="sd">                &quot;neyman&quot;: Neyman test. Works only for discrete variables.</span>
 <span class="sd">                &quot;cressie_read&quot;: Cressie Read test. Works only for discrete variables.</span>
 
-<span class="sd">        max_cond_vars: int</span>
-<span class="sd">            The maximum number of conditional variables allowed to do the statistical</span>
-<span class="sd">            test with.</span>
-
 <span class="sd">        return_type: str (one of &quot;dag&quot;, &quot;cpdag&quot;, &quot;pdag&quot;, &quot;skeleton&quot;)</span>
 <span class="sd">            The type of structure to return.</span>
 
@@ -157,12 +144,38 @@
 <span class="sd">                2. pearsonr: If p-value &gt; significance_level, it assumes that the</span>
 <span class="sd">                    independence condition satisfied in the data.</span>
 
+<span class="sd">        expert_knowledge: pgmpy.estimators.ExpertKnowledge instance</span>
+<span class="sd">            Expert knowledge to be used with the algorithm. Expert knowledge</span>
+<span class="sd">            includes required/forbidden edges in the final graph, temporal</span>
+<span class="sd">            information about the variables etc. Please refer</span>
+<span class="sd">            pgmpy.estimators.ExpertKnowledge class for more details.</span>
+
+<span class="sd">        enforce_expert_knowledge: boolean (default: False)</span>
+<span class="sd">            If True, the algorithm modifies the search space according to the</span>
+<span class="sd">            edges specified in expert knowledge object. This implies the following:</span>
+<span class="sd">            1. For every edge (u, v) specified in `forbidden_edges`, there will</span>
+<span class="sd">                be no edge between u and v.</span>
+<span class="sd">            2. For every edge (u, v) specified in `required_edges`, one of the</span>
+<span class="sd">                following would be present in the final model: u -&gt; v, u &lt;-</span>
+<span class="sd">                v, or u - v (if CPDAG is returned).</span>
+
+<span class="sd">            If False, the algorithm attempts to make the edge orientations as</span>
+<span class="sd">            specified by expert knowledge after learning the skeleton. This</span>
+<span class="sd">            implies the following:</span>
+<span class="sd">            1. For every edge (u, v) specified in `forbidden_edges`, the final</span>
+<span class="sd">                graph would have either v &lt;- u or no edge except if u -&gt; v is part</span>
+<span class="sd">                of a collider structure in the learned skeleton.</span>
+<span class="sd">            2. For every edge (u, v) specified in `required_edges`, the final graph</span>
+<span class="sd">                would either have u -&gt; v or no edge except if v &lt;- u is part of a</span>
+<span class="sd">                collider structure in the learned skeleton.</span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Estimated model: pgmpy.base.DAG, pgmpy.base.PDAG, or tuple(networkx.UndirectedGraph, dict)</span>
-<span class="sd">                The estimated model structure, can be a partially directed graph (PDAG)</span>
-<span class="sd">                or a fully directed graph (DAG), or (Undirected Graph, separating sets)</span>
-<span class="sd">                depending on the value of `return_type` argument.</span>
+<span class="sd">                The estimated model structure:</span>
+<span class="sd">                1. Partially Directed Graph (PDAG) if `return_type=&#39;pdag&#39;` or `return_type=&#39;cpdag&#39;`.</span>
+<span class="sd">                2. Directed Acyclic Graph (DAG) if `return_type=&#39;dag&#39;`.</span>
+<span class="sd">                3. (nx.Graph, separating sets) if `return_type=&#39;skeleton&#39;`.</span>
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
@@ -173,6 +186,9 @@
 <span class="sd">        [3] Parallel PC: Le, Thuc, et al. &quot;A fast PC algorithm for high dimensional causal</span>
 <span class="sd">                    discovery with multi-core PCs.&quot; IEEE/ACM transactions on computational</span>
 <span class="sd">                    biology and bioinformatics (2016).</span>
+<span class="sd">        [4] Expert Knowledge: Meek, Christopher. &quot;Causal inference and causal</span>
+<span class="sd">                explanation with background knowledge.&quot; arXiv preprint arXiv:1302.4972</span>
+<span class="sd">                (2013).</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -193,31 +209,22 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;variant must be one of: orig, stable, or parallel. Got: </span><span class="si">{</span><span class="n">variant</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">ci_test</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span>
-            <span class="n">ci_test</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">CI_TESTS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;independence_match&quot;</span><span class="p">])</span>
-        <span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;ci_test must be a callable or one of the tests defined in CITests.py&quot;</span>
-            <span class="p">)</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="n">ci_test</span> <span class="o">==</span> <span class="s2">&quot;independence_match&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">independencies</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;For using independence_match, independencies argument must be specified&quot;</span>
-            <span class="p">)</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="n">ci_test</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">CI_TESTS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="s2">&quot;independence_match&quot;</span><span class="p">]))</span> <span class="ow">and</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;For using Chi Square or Pearsonr, data argument must be specified&quot;</span>
-            <span class="p">)</span>
+        <span class="n">ci_test</span> <span class="o">=</span> <span class="n">get_ci_test</span><span class="p">(</span>
+            <span class="n">ci_test</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">independencies</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">independencies</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">expert_knowledge</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">()</span>
 
         <span class="c1"># Step 1: Run the PC algorithm to build the skeleton and get the separating sets.</span>
         <span class="n">skel</span><span class="p">,</span> <span class="n">separating_sets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_skeleton</span><span class="p">(</span>
             <span class="n">ci_test</span><span class="o">=</span><span class="n">ci_test</span><span class="p">,</span>
-            <span class="n">max_cond_vars</span><span class="o">=</span><span class="n">max_cond_vars</span><span class="p">,</span>
             <span class="n">significance_level</span><span class="o">=</span><span class="n">significance_level</span><span class="p">,</span>
             <span class="n">variant</span><span class="o">=</span><span class="n">variant</span><span class="p">,</span>
             <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span>
+            <span class="n">expert_knowledge</span><span class="o">=</span><span class="n">expert_knowledge</span><span class="p">,</span>
+            <span class="n">enforce_expert_knowledge</span><span class="o">=</span><span class="n">enforce_expert_knowledge</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">)</span>
@@ -225,10 +232,15 @@
         <span class="k">if</span> <span class="n">return_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;skeleton&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">skel</span><span class="p">,</span> <span class="n">separating_sets</span>
 
-        <span class="c1"># Step 2: Orient the edges based on build the PDAG/CPDAG.</span>
-        <span class="n">pdag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">skeleton_to_pdag</span><span class="p">(</span><span class="n">skel</span><span class="p">,</span> <span class="n">separating_sets</span><span class="p">)</span>
+        <span class="c1"># Step 2: Orient the edges based on Meek&#39;s rules to build the PDAG/CPDAG.</span>
+        <span class="n">pdag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orient_colliders</span><span class="p">(</span><span class="n">skel</span><span class="p">,</span> <span class="n">separating_sets</span><span class="p">)</span>
+        <span class="n">pdag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_orientation_rules</span><span class="p">(</span><span class="n">pdag</span><span class="p">)</span>
 
-        <span class="c1"># Step 3: Either return the CPDAG or fully orient the edges to build a DAG.</span>
+        <span class="c1"># Step 3: Either return the CPDAG, integrate expert knowledge or fully orient the edges to build a DAG.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">enforce_expert_knowledge</span><span class="p">:</span>
+            <span class="n">pdag</span> <span class="o">=</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">apply_expert_knowledge</span><span class="p">(</span><span class="n">pdag</span><span class="p">)</span>
+            <span class="n">pdag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_orientation_rules</span><span class="p">(</span><span class="n">pdag</span><span class="p">,</span> <span class="n">apply_r4</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">pdag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
 
@@ -246,10 +258,12 @@
 <a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.PC.build_skeleton">[docs]</a>
     <span class="k">def</span> <span class="nf">build_skeleton</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">ci_test</span><span class="o">=</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span>
-        <span class="n">max_cond_vars</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-        <span class="n">significance_level</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
         <span class="n">variant</span><span class="o">=</span><span class="s2">&quot;stable&quot;</span><span class="p">,</span>
+        <span class="n">ci_test</span><span class="o">=</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span>
+        <span class="n">significance_level</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">max_cond_vars</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="n">expert_knowledge</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">enforce_expert_knowledge</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -290,13 +304,10 @@
         <span class="c1"># Initialize initial values and structures.</span>
         <span class="n">lim_neighbors</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">separating_sets</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">ci_test</span><span class="p">):</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">ci_test</span> <span class="o">=</span> <span class="n">CI_TESTS</span><span class="p">[</span><span class="n">ci_test</span><span class="p">]</span>
-            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;ci_test must either be one of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">CI_TESTS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">, or a function. Got: </span><span class="si">{</span><span class="n">ci_test</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
+        <span class="n">ci_test</span> <span class="o">=</span> <span class="n">get_ci_test</span><span class="p">(</span><span class="n">ci_test</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">expert_knowledge</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span><span class="p">:</span>
             <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">max_cond_vars</span><span class="p">)</span>
@@ -304,6 +315,8 @@
 
         <span class="c1"># Step 1: Initialize a fully connected undirected graph</span>
         <span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">complete_graph</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">,</span> <span class="n">create_using</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">enforce_expert_knowledge</span><span class="p">:</span>
+            <span class="n">graph</span><span class="o">.</span><span class="n">remove_edges_from</span><span class="p">(</span><span class="n">expert_knowledge</span><span class="o">.</span><span class="n">forbidden_edges</span><span class="p">)</span>
 
         <span class="c1"># Exit condition: 1. If all the nodes in graph has less than `lim_neighbors` neighbors.</span>
         <span class="c1">#             or  2. `lim_neighbors` is greater than `max_conditional_variables`.</span>
@@ -314,47 +327,57 @@
             <span class="c1"># size `lim_neighbors` which makes u and v independent.</span>
             <span class="k">if</span> <span class="n">variant</span> <span class="o">==</span> <span class="s2">&quot;orig&quot;</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
-                    <span class="k">for</span> <span class="n">separating_set</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span>
-                        <span class="n">combinations</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">u</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">v</span><span class="p">]),</span> <span class="n">lim_neighbors</span><span class="p">),</span>
-                        <span class="n">combinations</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">u</span><span class="p">]),</span> <span class="n">lim_neighbors</span><span class="p">),</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">enforce_expert_knowledge</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                        <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">required_edges</span>
                     <span class="p">):</span>
-                        <span class="c1"># If a conditioning set exists remove the edge, store the separating set</span>
-                        <span class="c1"># and move on to finding conditioning set for next edge.</span>
-                        <span class="k">if</span> <span class="n">ci_test</span><span class="p">(</span>
-                            <span class="n">u</span><span class="p">,</span>
-                            <span class="n">v</span><span class="p">,</span>
-                            <span class="n">separating_set</span><span class="p">,</span>
-                            <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
-                            <span class="n">independencies</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">independencies</span><span class="p">,</span>
-                            <span class="n">significance_level</span><span class="o">=</span><span class="n">significance_level</span><span class="p">,</span>
-                            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                        <span class="k">for</span> <span class="n">separating_set</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span>
+                            <span class="n">combinations</span><span class="p">(</span>
+                                <span class="nb">set</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">u</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">v</span><span class="p">]),</span> <span class="n">lim_neighbors</span>
+                            <span class="p">),</span>
+                            <span class="n">combinations</span><span class="p">(</span>
+                                <span class="nb">set</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">u</span><span class="p">]),</span> <span class="n">lim_neighbors</span>
+                            <span class="p">),</span>
                         <span class="p">):</span>
-                            <span class="n">separating_sets</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))]</span> <span class="o">=</span> <span class="n">separating_set</span>
-                            <span class="n">graph</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
-                            <span class="k">break</span>
+                            <span class="c1"># If a conditioning set exists remove the edge, store the separating set</span>
+                            <span class="c1"># and move on to finding conditioning set for next edge.</span>
+                            <span class="k">if</span> <span class="n">ci_test</span><span class="p">(</span>
+                                <span class="n">u</span><span class="p">,</span>
+                                <span class="n">v</span><span class="p">,</span>
+                                <span class="n">separating_set</span><span class="p">,</span>
+                                <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                                <span class="n">independencies</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">independencies</span><span class="p">,</span>
+                                <span class="n">significance_level</span><span class="o">=</span><span class="n">significance_level</span><span class="p">,</span>
+                                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                            <span class="p">):</span>
+                                <span class="n">separating_sets</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))]</span> <span class="o">=</span> <span class="n">separating_set</span>
+                                <span class="n">graph</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                                <span class="k">break</span>
 
             <span class="k">elif</span> <span class="n">variant</span> <span class="o">==</span> <span class="s2">&quot;stable&quot;</span><span class="p">:</span>
                 <span class="c1"># In case of stable, precompute neighbors as this is the stable algorithm.</span>
                 <span class="n">neighbors</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">graph</span><span class="p">[</span><span class="n">node</span><span class="p">])</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
                 <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
-                    <span class="k">for</span> <span class="n">separating_set</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span>
-                        <span class="n">combinations</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">neighbors</span><span class="p">[</span><span class="n">u</span><span class="p">])</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">v</span><span class="p">]),</span> <span class="n">lim_neighbors</span><span class="p">),</span>
-                        <span class="n">combinations</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">neighbors</span><span class="p">[</span><span class="n">v</span><span class="p">])</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">u</span><span class="p">]),</span> <span class="n">lim_neighbors</span><span class="p">),</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">enforce_expert_knowledge</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                        <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">required_edges</span>
                     <span class="p">):</span>
-                        <span class="c1"># If a conditioning set exists remove the edge, store the</span>
-                        <span class="c1"># separating set and move on to finding conditioning set for next edge.</span>
-                        <span class="k">if</span> <span class="n">ci_test</span><span class="p">(</span>
-                            <span class="n">u</span><span class="p">,</span>
-                            <span class="n">v</span><span class="p">,</span>
-                            <span class="n">separating_set</span><span class="p">,</span>
-                            <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
-                            <span class="n">independencies</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">independencies</span><span class="p">,</span>
-                            <span class="n">significance_level</span><span class="o">=</span><span class="n">significance_level</span><span class="p">,</span>
-                            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                        <span class="k">for</span> <span class="n">separating_set</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span>
+                            <span class="n">combinations</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">neighbors</span><span class="p">[</span><span class="n">u</span><span class="p">])</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">v</span><span class="p">]),</span> <span class="n">lim_neighbors</span><span class="p">),</span>
+                            <span class="n">combinations</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">neighbors</span><span class="p">[</span><span class="n">v</span><span class="p">])</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">u</span><span class="p">]),</span> <span class="n">lim_neighbors</span><span class="p">),</span>
                         <span class="p">):</span>
-                            <span class="n">separating_sets</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))]</span> <span class="o">=</span> <span class="n">separating_set</span>
-                            <span class="n">graph</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
-                            <span class="k">break</span>
+                            <span class="c1"># If a conditioning set exists remove the edge, store the</span>
+                            <span class="c1"># separating set and move on to finding conditioning set for next edge.</span>
+                            <span class="k">if</span> <span class="n">ci_test</span><span class="p">(</span>
+                                <span class="n">u</span><span class="p">,</span>
+                                <span class="n">v</span><span class="p">,</span>
+                                <span class="n">separating_set</span><span class="p">,</span>
+                                <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                                <span class="n">independencies</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">independencies</span><span class="p">,</span>
+                                <span class="n">significance_level</span><span class="o">=</span><span class="n">significance_level</span><span class="p">,</span>
+                                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                            <span class="p">):</span>
+                                <span class="n">separating_sets</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))]</span> <span class="o">=</span> <span class="n">separating_set</span>
+                                <span class="n">graph</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                                <span class="k">break</span>
 
             <span class="k">elif</span> <span class="n">variant</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span><span class="p">:</span>
                 <span class="n">neighbors</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">graph</span><span class="p">[</span><span class="n">node</span><span class="p">])</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
@@ -376,7 +399,10 @@
                             <span class="k">return</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">),</span> <span class="n">separating_set</span>
 
                 <span class="n">results</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)(</span>
-                    <span class="n">delayed</span><span class="p">(</span><span class="n">_parallel_fun</span><span class="p">)(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+                    <span class="n">delayed</span><span class="p">(</span><span class="n">_parallel_fun</span><span class="p">)(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">enforce_expert_knowledge</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">required_edges</span><span class="p">)</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -409,23 +435,110 @@
         <span class="k">return</span> <span class="n">graph</span><span class="p">,</span> <span class="n">separating_sets</span></div>
 
 
-<div class="viewcode-block" id="PC.skeleton_to_pdag">
-<a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.PC.skeleton_to_pdag">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">skeleton_to_pdag</span><span class="p">(</span><span class="n">skeleton</span><span class="p">,</span> <span class="n">separating_sets</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Orients the edges of a graph skeleton based on information from</span>
-<span class="sd">        `separating_sets` to form a DAG pattern (DAG).</span>
+    <span class="k">def</span> <span class="nf">_check_incoming_edges</span><span class="p">(</span><span class="n">pdag</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="s2">&quot;Used for checking whether a new v-structure is getting formed&quot;</span>
+        <span class="k">for</span> <span class="n">predecessor</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span>
+                    <span class="n">v</span><span class="p">,</span> <span class="n">predecessor</span>
+                <span class="p">)</span>  <span class="c1"># this ignores bidirected edges of &#39;v&#39;</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span>
+                    <span class="n">predecessor</span><span class="p">,</span> <span class="n">u</span>
+                <span class="p">)</span>  <span class="c1"># prevent the case (by returning true) when a new unshielded</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span>
+                    <span class="n">u</span><span class="p">,</span> <span class="n">predecessor</span>
+                <span class="p">)</span>  <span class="c1"># collider may form at &#39;v&#39;  i.e. predecessor--&gt; v &lt;--u</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="PC.orient_colliders">
+<a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.PC.orient_colliders">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">orient_colliders</span><span class="p">(</span><span class="n">skeleton</span><span class="p">,</span> <span class="n">separating_sets</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Orients the edges that form v-structures in a graph skeleton</span>
+<span class="sd">        based on information from `separating_sets` to form a DAG pattern (PDAG).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        skeleton: UndirectedGraph</span>
+<span class="sd">        skeleton: nx.Graph</span>
 <span class="sd">            An undirected graph skeleton as e.g. produced by the</span>
 <span class="sd">            estimate_skeleton method.</span>
 
 <span class="sd">        separating_sets: dict</span>
 <span class="sd">            A dict containing for each pair of not directly connected nodes a</span>
-<span class="sd">            separating set (&quot;witnessing set&quot;) of variables that makes then</span>
-<span class="sd">            conditionally independent. (needed for edge orientation)</span>
+<span class="sd">            separating set (&quot;witnessing set&quot;) of variables that makes them</span>
+<span class="sd">            conditionally independent.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Model after edge orientation: pgmpy.base.PDAG</span>
+<span class="sd">            An estimate for the DAG pattern of the BN underlying the data. The</span>
+<span class="sd">            graph might contain some nodes with both-way edges (X-&gt;Y and Y-&gt;X).</span>
+<span class="sd">            Any completion by (removing one of the both-way edges for each such</span>
+<span class="sd">            pair) results in a I-equivalent Bayesian network DAG.</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        [1] Neapolitan, Learning Bayesian Networks, Section 10.1.2, Algorithm</span>
+<span class="sd">                10.2 (page 550)</span>
+<span class="sd">        [2] http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import PC</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 4, size=(5000, 3)), columns=list(&#39;ABD&#39;))</span>
+<span class="sd">        &gt;&gt;&gt; data[&#39;C&#39;] = data[&#39;A&#39;] - data[&#39;B&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; data[&#39;D&#39;] += data[&#39;A&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; c = PC(data)</span>
+<span class="sd">        &gt;&gt;&gt; pdag = c.orient_colliders(*c.build_skeleton())</span>
+<span class="sd">        &gt;&gt;&gt; pdag.edges() # edges: A-&gt;C, B-&gt;C, A--D (not directed)</span>
+<span class="sd">        OutEdgeView([(&#39;B&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;D&#39;), (&#39;D&#39;, &#39;A&#39;)])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">pdag</span> <span class="o">=</span> <span class="n">skeleton</span><span class="o">.</span><span class="n">to_directed</span><span class="p">()</span>
+        <span class="n">node_pairs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">permutations</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()),</span> <span class="mi">2</span><span class="p">))</span>
+
+        <span class="c1"># 1) for each X-Z-Y, if Z not in the separating set of X,Y, then orient edges</span>
+        <span class="c1"># as X-&gt;Z&lt;-Y (Algorithm 3.4 in Koller &amp; Friedman PGM, page 86)</span>
+        <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">pair</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">skeleton</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">skeleton</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">skeleton</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">Y</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="n">Z</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">separating_sets</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">))]:</span>
+                        <span class="n">pdag</span><span class="o">.</span><span class="n">remove_edges_from</span><span class="p">([(</span><span class="n">Z</span><span class="p">,</span> <span class="n">X</span><span class="p">),</span> <span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">Y</span><span class="p">)])</span>
+
+        <span class="n">edges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+        <span class="n">undirected_edges</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">directed_edges</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+                <span class="n">undirected_edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">directed_edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">PDAG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="n">directed_edges</span><span class="p">,</span> <span class="n">undirected_ebunch</span><span class="o">=</span><span class="n">undirected_edges</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PC.apply_orientation_rules">
+<a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.PC.apply_orientation_rules">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">apply_orientation_rules</span><span class="p">(</span><span class="n">pdag</span><span class="p">,</span> <span class="n">apply_r4</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Orients the edges of a graph skeleton based on information from</span>
+<span class="sd">        `separating_sets` to form a DAG pattern (CPDAG/MPDAG).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pdag: pgmpy.base.PDAG</span>
+<span class="sd">            A  partial DAG produced by orienting v-structures in</span>
+<span class="sd">            the skeleton.</span>
+
+<span class="sd">        apply_r4: boolean</span>
+<span class="sd">            If true, use Rule 4 of Meek&#39;s rules to integrate background knowledge into</span>
+<span class="sd">            the phase of orienting edges. Defaults to False.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -446,42 +559,46 @@
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import PC</span>
-<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 4, size=(5000, 3)), columns=list(&#39;ABD&#39;))</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 4, size=(5000, 4)), columns=list(&#39;ABDE&#39;))</span>
 <span class="sd">        &gt;&gt;&gt; data[&#39;C&#39;] = data[&#39;A&#39;] - data[&#39;B&#39;]</span>
 <span class="sd">        &gt;&gt;&gt; data[&#39;D&#39;] += data[&#39;A&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; data[&#39;E&#39;] += data[&#39;C&#39;]</span>
 <span class="sd">        &gt;&gt;&gt; c = PC(data)</span>
-<span class="sd">        &gt;&gt;&gt; pdag = c.skeleton_to_pdag(*c.build_skeleton())</span>
-<span class="sd">        &gt;&gt;&gt; pdag.edges() # edges: A-&gt;C, B-&gt;C, A--D (not directed)</span>
-<span class="sd">        [(&#39;B&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;D&#39;), (&#39;D&#39;, &#39;A&#39;)]</span>
+<span class="sd">        &gt;&gt;&gt; pdag = c.orient_colliders(*c.build_skeleton())</span>
+<span class="sd">        &gt;&gt;&gt; pdag.edges() # edges: A-&gt;C, B-&gt;C, A--D (not directed), C--E (not directed)</span>
+<span class="sd">        OutEdgeView([(&#39;B&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;E&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;D&#39;), (&#39;E&#39;, &#39;C&#39;), (&#39;D&#39;, &#39;A&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; pdag = c.apply_orientation_rules(pdag)</span>
+<span class="sd">        &gt;&gt;&gt; pdag.edges()</span>
+<span class="sd">        OutEdgeView([(&#39;C&#39;, &#39;E&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;D&#39;), (&#39;D&#39;, &#39;A&#39;)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="n">pdag</span> <span class="o">=</span> <span class="n">skeleton</span><span class="o">.</span><span class="n">to_directed</span><span class="p">()</span>
-        <span class="n">node_pairs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">permutations</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="mi">2</span><span class="p">))</span>
-
-        <span class="c1"># 1) for each X-Z-Y, if Z not in the separating set of X,Y, then orient edges as X-&gt;Z&lt;-Y</span>
-        <span class="c1"># (Algorithm 3.4 in Koller &amp; Friedman PGM, page 86)</span>
-        <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
-            <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">pair</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">skeleton</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">skeleton</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">skeleton</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">Y</span><span class="p">)):</span>
-                    <span class="k">if</span> <span class="n">Z</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">separating_sets</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">))]:</span>
-                        <span class="n">pdag</span><span class="o">.</span><span class="n">remove_edges_from</span><span class="p">([(</span><span class="n">Z</span><span class="p">,</span> <span class="n">X</span><span class="p">),</span> <span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">Y</span><span class="p">)])</span>
+        <span class="n">node_pairs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">permutations</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()),</span> <span class="mi">2</span><span class="p">))</span>
 
         <span class="n">progress</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">while</span> <span class="n">progress</span><span class="p">:</span>  <span class="c1"># as long as edges can be oriented (removed)</span>
             <span class="n">num_edges</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()</span>
 
-            <span class="c1"># 2) for each X-&gt;Z-Y, orient edges to Z-&gt;Y</span>
+            <span class="c1"># 1) for each X-&gt;Z-Y, orient edges to Z-&gt;Y</span>
             <span class="c1"># (Explanation in Koller &amp; Friedman PGM, page 88)</span>
             <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
                 <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">pair</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
                     <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">X</span><span class="p">)))</span> <span class="o">&amp;</span> <span class="p">(</span>
                         <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span>
                     <span class="p">):</span>
-                        <span class="n">pdag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">PC</span><span class="o">.</span><span class="n">_check_incoming_edges</span><span class="p">(</span><span class="n">pdag</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+                            <span class="n">any_directed</span> <span class="o">=</span> <span class="kc">False</span>
+                            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">all_simple_paths</span><span class="p">(</span><span class="n">pdag</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">):</span>
+                                <span class="n">is_directed</span> <span class="o">=</span> <span class="kc">True</span>
+                                <span class="k">for</span> <span class="n">src</span><span class="p">,</span> <span class="n">dst</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:])):</span>
+                                    <span class="k">if</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">):</span>
+                                        <span class="n">is_directed</span> <span class="o">=</span> <span class="kc">False</span>
+                                <span class="k">if</span> <span class="n">is_directed</span><span class="p">:</span>
+                                    <span class="n">any_directed</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">any_directed</span><span class="p">:</span>
+                                <span class="n">pdag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
 
-            <span class="c1"># 3) for each X-Y with a directed path from X to Y, orient edges to X-&gt;Y</span>
+            <span class="c1"># 2) for each X-Y with a directed path from X to Y, orient edges to X-&gt;Y</span>
             <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
                 <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">pair</span>
                 <span class="k">if</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
@@ -494,7 +611,7 @@
                             <span class="n">pdag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
                             <span class="k">break</span>
 
-            <span class="c1"># 4) for each X-Z-Y with X-&gt;W, Y-&gt;W, and Z-W, orient edges to Z-&gt;W</span>
+            <span class="c1"># 3) for each X-Z-Y with X-&gt;W, Y-&gt;W, and Z-W, orient edges to Z-&gt;W</span>
             <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
                 <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">pair</span>
                 <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="p">(</span>
@@ -508,11 +625,34 @@
                         <span class="o">&amp;</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">Y</span><span class="p">)))</span>
                         <span class="o">&amp;</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">Z</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">Z</span><span class="p">)))</span>
                     <span class="p">):</span>
+                        <span class="c1"># if not PC.check_incoming_edges(pdag, W):</span>
                         <span class="n">pdag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">W</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
+
+            <span class="c1"># This rule (rule 4 in Meek&#39;s rules) is only used in the case of a</span>
+            <span class="c1">#   knowledge base of required and forbidden edges.</span>
+            <span class="c1"># For a comprehensive explanation, check out Meek&#39;s original paper</span>
+            <span class="c1"># - https://doi.org/10.48550/arXiv.1302.4972</span>
+            <span class="k">if</span> <span class="n">apply_r4</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="c1"># 4) for each X-Z-Y with Z-Y-&gt;W and Z...W-&gt;X, orient edges to Z-&gt;X</span>
+                <span class="c1">#    the dotted line above represents the possibility of either a</span>
+                <span class="c1">#    directed or an undirected edge</span>
+                <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">node_pairs</span><span class="p">:</span>
+                    <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">pair</span>
+                    <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="p">(</span>
+                        <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
+                        <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
+                        <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span>
+                        <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span>
+                    <span class="p">):</span>
+                        <span class="k">for</span> <span class="n">W</span> <span class="ow">in</span> <span class="p">(</span>
+                            <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">Y</span><span class="p">)))</span>
+                            <span class="o">&amp;</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">Z</span><span class="p">))</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">Z</span><span class="p">)))</span>
+                            <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
+                        <span class="p">):</span>
+                            <span class="n">pdag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
 
             <span class="n">progress</span> <span class="o">=</span> <span class="n">num_edges</span> <span class="o">&gt;</span> <span class="n">pdag</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()</span>
 
-        <span class="c1"># TODO: This is temp fix to get a PDAG object.</span>
         <span class="n">edges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
         <span class="n">undirected_edges</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">directed_edges</span> <span class="o">=</span> <span class="p">[]</span>
@@ -521,6 +661,7 @@
                 <span class="n">undirected_edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">directed_edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+
         <span class="k">return</span> <span class="n">PDAG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="n">directed_edges</span><span class="p">,</span> <span class="n">undirected_ebunch</span><span class="o">=</span><span class="n">undirected_edges</span><span class="p">)</span></div>
 </div>
 
