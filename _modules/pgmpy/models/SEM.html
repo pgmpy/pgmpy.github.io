@@ -40,6 +40,7 @@
 
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">pgmpy.utils.parser</span> <span class="kn">import</span> <span class="n">parse_lavaan</span>
 
 
 <div class="viewcode-block" id="SEMGraph">
@@ -75,7 +76,8 @@
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
-<span class="sd">    Defining a model (Union sentiment model[1]) without setting any paramaters.</span>
+<span class="sd">    Defining a model (Union sentiment model[1]) without setting any paramaters:</span>
+
 <span class="sd">    &gt;&gt;&gt; from pgmpy.models import SEMGraph</span>
 <span class="sd">    &gt;&gt;&gt; sem = SEMGraph(ebunch=[(&#39;deferenc&#39;, &#39;unionsen&#39;), (&#39;laboract&#39;, &#39;unionsen&#39;),</span>
 <span class="sd">    ...                        (&#39;yrsmill&#39;, &#39;unionsen&#39;), (&#39;age&#39;, &#39;deferenc&#39;),</span>
@@ -86,6 +88,7 @@
 
 <span class="sd">    Defining a model (Education [2]) with all the parameters set. For not setting any</span>
 <span class="sd">    parameter `np.nan` can be explicitly passed.</span>
+
 <span class="sd">    &gt;&gt;&gt; sem_edu = SEMGraph(ebunch=[(&#39;intelligence&#39;, &#39;academic&#39;, 0.8), (&#39;intelligence&#39;, &#39;scale_1&#39;, 0.7),</span>
 <span class="sd">    ...                            (&#39;intelligence&#39;, &#39;scale_2&#39;, 0.64), (&#39;intelligence&#39;, &#39;scale_3&#39;, 0.73),</span>
 <span class="sd">    ...                            (&#39;intelligence&#39;, &#39;scale_4&#39;, 0.82), (&#39;academic&#39;, &#39;SAT_score&#39;, 0.98),</span>
@@ -1094,88 +1097,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">syntax</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;lavaan&quot;</span><span class="p">:</span>
             <span class="c1"># Create a SEMGraph model using the lavaan str.</span>
-            <span class="c1"># Step 0: Check if pyparsing is installed</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="kn">from</span> <span class="nn">pyparsing</span> <span class="kn">import</span> <span class="p">(</span>
-                    <span class="n">OneOrMore</span><span class="p">,</span>
-                    <span class="n">Optional</span><span class="p">,</span>
-                    <span class="n">Suppress</span><span class="p">,</span>
-                    <span class="n">Word</span><span class="p">,</span>
-                    <span class="n">alphanums</span><span class="p">,</span>
-                    <span class="n">nums</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
-                    <span class="n">e</span><span class="o">.</span><span class="n">msg</span>
-                    <span class="o">+</span> <span class="s2">&quot;. pyparsing is required for using lavaan syntax. Please install using: pip install pyparsing&quot;</span>
-                <span class="p">)</span>
+            <span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="p">,</span> <span class="n">err_corr</span><span class="p">,</span> <span class="n">err_var</span> <span class="o">=</span> <span class="n">parse_lavaan</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;lavaan_str&quot;</span><span class="p">])</span>
 
-            <span class="c1"># Step 1: Define the grammar for each type of string.</span>
-            <span class="n">var</span> <span class="o">=</span> <span class="n">Word</span><span class="p">(</span><span class="n">alphanums</span><span class="p">)</span>
-            <span class="n">reg_gram</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">OneOrMore</span><span class="p">(</span>
-                    <span class="n">var</span><span class="o">.</span><span class="n">setResultsName</span><span class="p">(</span><span class="s2">&quot;predictors&quot;</span><span class="p">,</span> <span class="n">listAllMatches</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                    <span class="o">+</span> <span class="n">Optional</span><span class="p">(</span><span class="n">Suppress</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">))</span>
-                <span class="p">)</span>
-                <span class="o">+</span> <span class="s2">&quot;~&quot;</span>
-                <span class="o">+</span> <span class="n">OneOrMore</span><span class="p">(</span>
-                    <span class="n">var</span><span class="o">.</span><span class="n">setResultsName</span><span class="p">(</span><span class="s2">&quot;covariates&quot;</span><span class="p">,</span> <span class="n">listAllMatches</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                    <span class="o">+</span> <span class="n">Optional</span><span class="p">(</span><span class="n">Suppress</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">))</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
-            <span class="n">intercept_gram</span> <span class="o">=</span> <span class="n">var</span><span class="p">(</span><span class="s2">&quot;inter_var&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;~&quot;</span> <span class="o">+</span> <span class="n">Word</span><span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">)</span>
-            <span class="n">covar_gram</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">var</span><span class="p">(</span><span class="s2">&quot;covar_var1&quot;</span><span class="p">)</span>
-                <span class="o">+</span> <span class="s2">&quot;~~&quot;</span>
-                <span class="o">+</span> <span class="n">OneOrMore</span><span class="p">(</span>
-                    <span class="n">var</span><span class="o">.</span><span class="n">setResultsName</span><span class="p">(</span><span class="s2">&quot;covar_var2&quot;</span><span class="p">,</span> <span class="n">listAllMatches</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                    <span class="o">+</span> <span class="n">Optional</span><span class="p">(</span><span class="n">Suppress</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">))</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
-            <span class="n">latent_gram</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">var</span><span class="p">(</span><span class="s2">&quot;latent&quot;</span><span class="p">)</span>
-                <span class="o">+</span> <span class="s2">&quot;=~&quot;</span>
-                <span class="o">+</span> <span class="n">OneOrMore</span><span class="p">(</span>
-                    <span class="n">var</span><span class="o">.</span><span class="n">setResultsName</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">listAllMatches</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                    <span class="o">+</span> <span class="n">Optional</span><span class="p">(</span><span class="n">Suppress</span><span class="p">(</span><span class="s2">&quot;+&quot;</span><span class="p">))</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
-
-            <span class="c1"># Step 2: Preprocess string to lines</span>
-            <span class="n">lines</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;lavaan_str&quot;</span><span class="p">]</span>
-
-            <span class="c1"># Step 3: Initialize arguments and fill them by parsing each line.</span>
-            <span class="n">ebunch</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">latents</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">err_corr</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">err_var</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
-                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">line</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)):</span>
-                    <span class="k">if</span> <span class="n">intercept_gram</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
-                        <span class="k">continue</span>
-                    <span class="k">elif</span> <span class="n">reg_gram</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
-                        <span class="n">results</span> <span class="o">=</span> <span class="n">reg_gram</span><span class="o">.</span><span class="n">parseString</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">parseAll</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">pred</span> <span class="ow">in</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;predictors&quot;</span><span class="p">]:</span>
-                            <span class="n">ebunch</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-                                <span class="p">[</span>
-                                    <span class="p">(</span><span class="n">covariate</span><span class="p">,</span> <span class="n">pred</span><span class="p">)</span>
-                                    <span class="k">for</span> <span class="n">covariate</span> <span class="ow">in</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;covariates&quot;</span><span class="p">]</span>
-                                <span class="p">]</span>
-                            <span class="p">)</span>
-                    <span class="k">elif</span> <span class="n">covar_gram</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
-                        <span class="n">results</span> <span class="o">=</span> <span class="n">covar_gram</span><span class="o">.</span><span class="n">parseString</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">parseAll</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;covar_var2&quot;</span><span class="p">]:</span>
-                            <span class="n">err_corr</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;covar_var1&quot;</span><span class="p">],</span> <span class="n">var</span><span class="p">))</span>
-
-                    <span class="k">elif</span> <span class="n">latent_gram</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
-                        <span class="n">results</span> <span class="o">=</span> <span class="n">latent_gram</span><span class="o">.</span><span class="n">parseString</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">parseAll</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                        <span class="n">latents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;latent&quot;</span><span class="p">])</span>
-                        <span class="n">ebunch</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-                            <span class="p">[(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;latent&quot;</span><span class="p">],</span> <span class="n">obs</span><span class="p">)</span> <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">results</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">]]</span>
-                        <span class="p">)</span>
-
-            <span class="c1"># Step 4: Call the parent __init__ with the arguments</span>
+            <span class="c1"># Call the parent __init__ with the arguments</span>
             <span class="nb">super</span><span class="p">(</span><span class="n">SEM</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">,</span> <span class="n">err_corr</span><span class="o">=</span><span class="n">err_corr</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">syntax</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;graph&quot;</span><span class="p">:</span>
@@ -1270,6 +1194,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        Defining a model (Union sentiment model[1]) without setting any paramaters.</span>
+
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import SEM</span>
 <span class="sd">        &gt;&gt;&gt; sem = SEM.from_graph(ebunch=[(&#39;deferenc&#39;, &#39;unionsen&#39;), (&#39;laboract&#39;, &#39;unionsen&#39;),</span>
 <span class="sd">        ...                              (&#39;yrsmill&#39;, &#39;unionsen&#39;), (&#39;age&#39;, &#39;deferenc&#39;),</span>
@@ -1280,6 +1205,7 @@
 
 <span class="sd">        Defining a model (Education [2]) with all the parameters set. For not setting any</span>
 <span class="sd">        parameter `np.nan` can be explicitly passed.</span>
+
 <span class="sd">        &gt;&gt;&gt; sem_edu = SEM.from_graph(ebunch=[(&#39;intelligence&#39;, &#39;academic&#39;, 0.8), (&#39;intelligence&#39;, &#39;scale_1&#39;, 0.7),</span>
 <span class="sd">        ...                                  (&#39;intelligence&#39;, &#39;scale_2&#39;, 0.64), (&#39;intelligence&#39;, &#39;scale_3&#39;, 0.73),</span>
 <span class="sd">        ...                                  (&#39;intelligence&#39;, &#39;scale_4&#39;, 0.82), (&#39;academic&#39;, &#39;SAT_score&#39;, 0.98),</span>

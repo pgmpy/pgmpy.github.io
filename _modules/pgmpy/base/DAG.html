@@ -42,6 +42,7 @@
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">UndirectedGraph</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="kn">import</span> <span class="n">Independencies</span>
+<span class="kn">from</span> <span class="nn">pgmpy.utils.parser</span> <span class="kn">import</span> <span class="n">parse_dagitty</span><span class="p">,</span> <span class="n">parse_lavaan</span>
 
 
 <div class="viewcode-block" id="DAG">
@@ -106,7 +107,22 @@
 <span class="sd">    3</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="nb">set</span><span class="p">()):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">latents</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span>
+        <span class="n">lavaan_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">dagitty_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">lavaan_str</span><span class="p">:</span>
+            <span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="p">,</span> <span class="n">err_corr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">parse_lavaan</span><span class="p">(</span><span class="n">lavaan_str</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">err_corr</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Residual correlations </span><span class="si">{</span><span class="n">err_corr</span><span class="si">}</span><span class="s2"> are ignored in DAG. Use the SEM class to keep them.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">dagitty_str</span><span class="p">:</span>
+            <span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span> <span class="o">=</span> <span class="n">parse_dagitty</span><span class="p">(</span><span class="n">dagitty_str</span><span class="p">)</span>
+
         <span class="nb">super</span><span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ebunch</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">latents</span><span class="p">)</span>
         <span class="n">cycles</span> <span class="o">=</span> <span class="p">[]</span>
@@ -119,6 +135,67 @@
             <span class="n">out_str</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Edges indicating the path taken for a loop: &quot;</span>
             <span class="n">out_str</span> <span class="o">+=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">) &quot;</span> <span class="k">for</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">cycles</span><span class="p">])</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">out_str</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DAG.from_lavaan">
+<a class="viewcode-back" href="../../../base/base.html#pgmpy.base.DAG.DAG.from_lavaan">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_lavaan</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a `DAG` instance using lavaan syntax.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        string: str (default: None)</span>
+<span class="sd">            A `lavaan` style multiline set of regression equation representing the model.</span>
+<span class="sd">            Refer http://lavaan.ugent.be/tutorial/syntax1.html for details.</span>
+
+<span class="sd">        filename: str (default: None)</span>
+<span class="sd">            The filename of the file containing the model in lavaan syntax.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">lavaan_str</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">string</span><span class="p">:</span>
+            <span class="n">lavaan_str</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either `filename` or `string` need to be specified&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">lavaan_str</span><span class="o">=</span><span class="n">lavaan_str</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DAG.from_dagitty">
+<a class="viewcode-back" href="../../../base/base.html#pgmpy.base.DAG.DAG.from_dagitty">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dagitty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a `DAG` instance using DAGitty syntax.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        string: str (default: None)</span>
+<span class="sd">            A `DAGitty` style multiline set of regression equation representing the model.</span>
+<span class="sd">            Refer https://www.dagitty.net/manual-3.x.pdf#page=3.58 and</span>
+<span class="sd">            https://github.com/jtextor/dagitty/blob/7a657776dc8f5e5ba4e323edb028e2c2aaf29327/gui/js/dagitty.js#L3417</span>
+
+<span class="sd">        filename: str (default: None)</span>
+<span class="sd">            The filename of the file containing the model in DAGitty syntax.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">dagitty_str</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">string</span><span class="p">:</span>
+            <span class="n">dagitty_str</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either `filename` or `string` need to be specified&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">dagitty_str</span><span class="o">=</span><span class="n">dagitty_str</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="DAG.add_node">
 <a class="viewcode-back" href="../../../base/base.html#pgmpy.base.DAG.DAG.add_node">[docs]</a>
@@ -146,9 +223,11 @@
 <span class="sd">        [&#39;A&#39;]</span>
 
 <span class="sd">        Adding a node with some weight.</span>
+
 <span class="sd">        &gt;&gt;&gt; G.add_node(node=&#39;B&#39;, weight=0.3)</span>
 
 <span class="sd">        The weight of these nodes can be accessed as:</span>
+
 <span class="sd">        &gt;&gt;&gt; G.nodes[&#39;B&#39;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.3}</span>
 <span class="sd">        &gt;&gt;&gt; G.nodes[&#39;A&#39;]</span>
@@ -200,6 +279,7 @@
 <span class="sd">        NodeView((&#39;A&#39;, &#39;B&#39;, &#39;C&#39;))</span>
 
 <span class="sd">        Adding nodes with weights:</span>
+
 <span class="sd">        &gt;&gt;&gt; G.add_nodes_from(nodes=[&#39;D&#39;, &#39;E&#39;], weights=[0.3, 0.6])</span>
 <span class="sd">        &gt;&gt;&gt; G.nodes[&#39;D&#39;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.3}</span>
@@ -256,6 +336,7 @@
 <span class="sd">        OutEdgeView([(&#39;Alice&#39;, &#39;Bob&#39;)])</span>
 
 <span class="sd">        When the node is not already present in the graph:</span>
+
 <span class="sd">        &gt;&gt;&gt; G.add_edge(u=&#39;Alice&#39;, v=&#39;Ankur&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; G.nodes()</span>
 <span class="sd">        NodeView((&#39;Alice&#39;, &#39;Ankur&#39;, &#39;Bob&#39;, &#39;Charles&#39;))</span>
@@ -263,6 +344,7 @@
 <span class="sd">        OutEdgeView([(&#39;Alice&#39;, &#39;Bob&#39;), (&#39;Alice&#39;, &#39;Ankur&#39;)])</span>
 
 <span class="sd">        Adding edges with weight:</span>
+
 <span class="sd">        &gt;&gt;&gt; G.add_edge(&#39;Ankur&#39;, &#39;Maria&#39;, weight=0.1)</span>
 <span class="sd">        &gt;&gt;&gt; G.edge[&#39;Ankur&#39;][&#39;Maria&#39;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.1}</span>
@@ -304,6 +386,7 @@
 <span class="sd">        OutEdgeView([(&#39;Alice&#39;, &#39;Bob&#39;), (&#39;Bob&#39;, &#39;Charles&#39;)])</span>
 
 <span class="sd">        When the node is not already in the model:</span>
+
 <span class="sd">        &gt;&gt;&gt; G.add_edges_from(ebunch=[(&#39;Alice&#39;, &#39;Ankur&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; G.nodes()</span>
 <span class="sd">        NodeView((&#39;Alice&#39;, &#39;Bob&#39;, &#39;Charles&#39;, &#39;Ankur&#39;))</span>
@@ -311,12 +394,17 @@
 <span class="sd">        OutEdgeView([(&#39;Alice&#39;, &#39;Bob&#39;), (&#39;Bob&#39;, &#39;Charles&#39;), (&#39;Alice&#39;, &#39;Ankur&#39;)])</span>
 
 <span class="sd">        Adding edges with weights:</span>
+
 <span class="sd">        &gt;&gt;&gt; G.add_edges_from([(&#39;Ankur&#39;, &#39;Maria&#39;), (&#39;Maria&#39;, &#39;Mason&#39;)],</span>
 <span class="sd">        ...                  weights=[0.3, 0.5])</span>
 <span class="sd">        &gt;&gt;&gt; G.edge[&#39;Ankur&#39;][&#39;Maria&#39;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.3}</span>
 <span class="sd">        &gt;&gt;&gt; G.edge[&#39;Maria&#39;][&#39;Mason&#39;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.5}</span>
+
+<span class="sd">        or</span>
+
+<span class="sd">        &gt;&gt;&gt; G.add_edges_from([(&#39;Ankur&#39;, &#39;Maria&#39;, 0.3), (&#39;Maria&#39;, &#39;Mason&#39;, 0.5)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ebunch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ebunch</span><span class="p">)</span>
 
@@ -922,6 +1010,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        Initialize a DAG</span>
+
 <span class="sd">        &gt;&gt;&gt; graph = DAG()</span>
 <span class="sd">        &gt;&gt;&gt; graph.add_edges_from([(&#39;X&#39;, &#39;A&#39;),</span>
 <span class="sd">        ...                       (&#39;A&#39;, &#39;Y&#39;),</span>
@@ -960,7 +1049,7 @@
     <span class="k">def</span> <span class="nf">get_ancestral_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the ancestral graph of the given `nodes`. The ancestral graph only</span>
-<span class="sd">        contains the nodes which are ancestors of atleast one of the variables in</span>
+<span class="sd">        contains the nodes which are ancestors of at least one of the variables in</span>
 <span class="sd">        node.</span>
 
 <span class="sd">        Parameters</span>
@@ -1269,7 +1358,16 @@
         <span class="n">cpds_list</span> <span class="o">=</span> <span class="n">_estimator</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">bn</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds_list</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">bn</span></div>
-</div>
+
+
+    <span class="k">def</span> <span class="nf">_variable_name_contains_non_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if the variable names contain any non-string values. Used only for CausalInference class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
 
 
 

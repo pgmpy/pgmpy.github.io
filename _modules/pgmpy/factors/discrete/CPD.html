@@ -39,6 +39,7 @@
 <span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">get_terminal_size</span>
 <span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
 
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
@@ -353,6 +354,48 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
             <span class="n">writer</span><span class="o">.</span><span class="n">writerows</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_make_table_str</span><span class="p">(</span><span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;grid&quot;</span><span class="p">,</span> <span class="n">return_list</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="TabularCPD.to_dataframe">
+<a class="viewcode-back" href="../../../../factors/discrete.html#pgmpy.factors.discrete.CPD.TabularCPD.to_dataframe">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Exports the CPD as a pandas dataframe.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
+<span class="sd">        &gt;&gt;&gt; model = get_example_model(&quot;insurance&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; cpd = model.get_cpds(&quot;ThisCarCost&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; df = cpd.to_dataframe()</span>
+<span class="sd">        &gt;&gt;&gt; df.query(&quot;CarValue==&#39;FiftyThou&#39; and Theft == &#39;True&#39;&quot;)</span>
+<span class="sd">        ThisCarCost                 HundredThou  Million   TenThou  Thousand</span>
+<span class="sd">        ThisCarDam CarValue  Theft</span>
+<span class="sd">        Mild       FiftyThou True      0.950000      0.0  0.020000  0.030000</span>
+<span class="sd">        Moderate   FiftyThou True      0.998000      0.0  0.001000  0.001000</span>
+<span class="sd">        None       FiftyThou True      0.950000      0.0  0.010000  0.040000</span>
+<span class="sd">        Severe     FiftyThou True      0.999998      0.0  0.000001  0.000001</span>
+<span class="sd">        &gt;&gt;&gt; # Probability sums up to zero, for every combination of evidence variables</span>
+<span class="sd">        &gt;&gt;&gt; df.sum(axis=1)</span>
+<span class="sd">        ThisCarDam  CarValue    Theft</span>
+<span class="sd">        Mild        FiftyThou   False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    FiveThou    False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    Million     False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">state_combinations_with_all_variables</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_product</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">],</span> <span class="n">names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span>
+        <span class="p">)</span>
+        <span class="n">df_with_1_column</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">&quot;probability&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">()},</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">state_combinations_with_all_variables</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">df_with_prob_rowsum_to_1</span> <span class="o">=</span> <span class="n">df_with_1_column</span><span class="p">[</span><span class="s2">&quot;probability&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">variable</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">df_with_prob_rowsum_to_1</span></div>
 
 
 <div class="viewcode-block" id="TabularCPD.copy">

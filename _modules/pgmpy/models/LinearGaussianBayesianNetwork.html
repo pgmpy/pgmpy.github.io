@@ -46,7 +46,7 @@
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork">[docs]</a>
 <span class="k">class</span> <span class="nc">LinearGaussianBayesianNetwork</span><span class="p">(</span><span class="n">DAG</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A Linear Gaussian Bayesian Network is a Bayesian Network, all</span>
+<span class="sd">    A linear Gaussian Bayesian Network is a Bayesian Network, all</span>
 <span class="sd">    of whose variables are continuous, and where all of the CPDs</span>
 <span class="sd">    are linear Gaussians.</span>
 
@@ -56,9 +56,12 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="nb">set</span><span class="p">()):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">lavaan_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dagitty_str</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">LinearGaussianBayesianNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">ebunch</span><span class="o">=</span><span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="n">latents</span>
+            <span class="n">ebunch</span><span class="o">=</span><span class="n">ebunch</span><span class="p">,</span>
+            <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">,</span>
+            <span class="n">lavaan_str</span><span class="o">=</span><span class="n">lavaan_str</span><span class="p">,</span>
+            <span class="n">dagitty_str</span><span class="o">=</span><span class="n">dagitty_str</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -85,7 +88,6 @@
 <span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2, cpd3)</span>
 <span class="sd">        &gt;&gt;&gt; for cpd in model.cpds:</span>
 <span class="sd">        ...     print(cpd)</span>
-
 <span class="sd">        P(x1) = N(1; 4)</span>
 <span class="sd">        P(x2| x1) = N(0.5*x1_mu); -5)</span>
 <span class="sd">        P(x3| x2) = N(-1*x2_mu); 4)</span>
@@ -114,8 +116,8 @@
 <span class="sd">        Returns the cpd of the node. If node is not specified returns all the CPDs</span>
 <span class="sd">        that have been added till now to the graph</span>
 
-<span class="sd">        Parameter</span>
-<span class="sd">        ---------</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
 <span class="sd">        node: any hashable python object (optional)</span>
 <span class="sd">            The node whose CPD we want. If node not specified returns all the</span>
 <span class="sd">            CPDs added to the model.</span>
@@ -209,17 +211,19 @@
 <span class="sd">        seed: int</span>
 <span class="sd">            The seed for the random number generator.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+        <span class="c1"># We want to provide a different seed for each cpd, therefore we force it to be integer and increment in a loop.</span>
+        <span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span> <span class="k">if</span> <span class="n">seed</span> <span class="k">else</span> <span class="mi">42</span>
 
         <span class="n">cpds</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
             <span class="n">parents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
             <span class="n">cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">LinearGaussianCPD</span><span class="p">(</span>
+                <span class="n">LinearGaussianCPD</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span>
                     <span class="n">variable</span><span class="o">=</span><span class="n">var</span><span class="p">,</span>
-                    <span class="n">beta</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)),</span>
-                    <span class="n">std</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)),</span>
                     <span class="n">evidence</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span>
+                    <span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span>
+                    <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span>
+                    <span class="n">seed</span><span class="o">=</span><span class="p">(</span><span class="n">seed</span> <span class="o">+</span> <span class="n">i</span><span class="p">),</span>
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>

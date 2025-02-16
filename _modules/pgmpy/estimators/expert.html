@@ -49,6 +49,7 @@
 <span class="k">class</span> <span class="nc">ExpertInLoop</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ExpertInLoop</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orientations_llm</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
 
 <div class="viewcode-block" id="ExpertInLoop.test_all">
 <a class="viewcode-back" href="../../../structure_estimator/expert.html#pgmpy.estimators.ExpertInLoop.test_all">[docs]</a>
@@ -100,6 +101,8 @@
         <span class="n">llm_model</span><span class="o">=</span><span class="s2">&quot;gemini/gemini-1.5-flash&quot;</span><span class="p">,</span>
         <span class="n">variable_descriptions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">orientations</span><span class="o">=</span><span class="nb">set</span><span class="p">([]),</span>
+        <span class="n">use_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -140,6 +143,12 @@
 
 <span class="sd">        show_progress: bool (default: True)</span>
 <span class="sd">            If True, prints info of the running status.</span>
+
+<span class="sd">        orientations: set</span>
+<span class="sd">            preferred orientation for edges</span>
+
+<span class="sd">        use_cache: bool</span>
+<span class="sd">            If False, ask LLM (the same question multiple times)</span>
 
 <span class="sd">        kwargs: kwargs</span>
 <span class="sd">            Any additional parameters to pass to litellm.completion method.</span>
@@ -218,32 +227,45 @@
                 <span class="k">break</span>
 
             <span class="n">selected_edge</span> <span class="o">=</span> <span class="n">nonedge_effects</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nonedge_effects</span><span class="o">.</span><span class="n">effect</span><span class="o">.</span><span class="n">argmax</span><span class="p">()]</span>
+            <span class="n">edge_direction</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="n">use_llm</span><span class="p">:</span>
-                <span class="n">edge_direction</span> <span class="o">=</span> <span class="n">llm_pairwise_orient</span><span class="p">(</span>
-                    <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span>
-                    <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span>
-                    <span class="n">variable_descriptions</span><span class="p">,</span>
-                    <span class="n">llm_model</span><span class="o">=</span><span class="n">llm_model</span><span class="p">,</span>
-                    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">use_cache</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientations_llm</span><span class="p">:</span>
+                        <span class="n">edge_direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientations_llm</span><span class="p">:</span>
+                        <span class="n">edge_direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">edge_direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">edge_direction</span> <span class="o">=</span> <span class="n">llm_pairwise_orient</span><span class="p">(</span>
+                        <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span>
+                        <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span>
+                        <span class="n">variable_descriptions</span><span class="p">,</span>
+                        <span class="n">llm_model</span><span class="o">=</span><span class="n">llm_model</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">orientations_llm</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span> <span class="ow">and</span> <span class="n">show_progress</span><span class="p">:</span>
                     <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">Queried for edge orientation between </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="si">}</span><span class="s2">. Got: </span><span class="si">{</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
                     <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-
-            <span class="k">else</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">orientations</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">orientations</span><span class="p">:</span>
+                    <span class="n">edge_direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">)</span> <span class="ow">in</span> <span class="n">orientations</span><span class="p">:</span>
+                    <span class="n">edge_direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">edge_direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">edge_direction</span> <span class="o">=</span> <span class="n">manual_pairwise_orient</span><span class="p">(</span>
                     <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span>
                 <span class="p">)</span>
+                <span class="n">orientations</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">)</span>
 
-            <span class="c1"># Step 3.3: Blacklist the edge if it creates a cycle, else add it to the DAG.</span>
+            <span class="c1"># Step 3.3: If the edge creates a cycle add the reverse edge. If no cycle, add the original edge.</span>
             <span class="k">if</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">dag</span><span class="p">,</span> <span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
                 <span class="n">blacklisted_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">)</span>
+                <span class="n">dag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">dag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([</span><span class="n">edge_direction</span><span class="p">])</span>
-
         <span class="k">return</span> <span class="n">dag</span></div>
 </div>
 

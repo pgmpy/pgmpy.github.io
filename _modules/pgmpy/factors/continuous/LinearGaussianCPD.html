@@ -162,7 +162,61 @@
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">str_repr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&lt;LinearGaussianCPD: </span><span class="si">{</span><span class="n">str_repr</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&lt;LinearGaussianCPD: </span><span class="si">{</span><span class="n">str_repr</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="LinearGaussianCPD.get_random">
+<a class="viewcode-back" href="../../../../factors/lineargauss.html#pgmpy.factors.continuous.LinearGaussianCPD.LinearGaussianCPD.get_random">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates a LinearGaussianCPD instance with random values on `variable` with</span>
+<span class="sd">        parents/evidence `evidence` with beta and std sampled from loc and scale</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        variable: str, int or any hashable python object.</span>
+<span class="sd">            The variable on which to define the TabularCPD.</span>
+
+<span class="sd">        evidence: list, array-like</span>
+<span class="sd">            A list of variable names which are the parents/evidence of `variable`.</span>
+
+<span class="sd">        loc: float</span>
+<span class="sd">            The mean of the normal distribution from which the coefficients are</span>
+<span class="sd">            sampled.</span>
+
+<span class="sd">        scale: float</span>
+<span class="sd">            The standard deviation of the normal distribution from which the</span>
+<span class="sd">            coefficients are sampled.</span>
+
+<span class="sd">        seed: int (default: None)</span>
+<span class="sd">            The seed for the random number generator.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Random CPD: pgmpy.factors.continuous.LinearGaussianCPD</span>
+<span class="sd">            A LinearGaussianCPD object on `variable` with `evidence` as evidence with random values.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.continuous import LinearGaussianCPD</span>
+<span class="sd">        &gt;&gt;&gt; LinearGaussianCPD.get_random(variable=&#39;Income&#39;, evidence=[&#39;Age&#39;, &#39;Experience&#39;],</span>
+<span class="sd">        ...            loc=2.0, scale=0.5, seed=5)</span>
+<span class="sd">        &lt;LinearGaussianCPD: P(Income | Age, Experience) = N(1.338*Age + 1.876*Experience + 1.599; 2.21) at 0x1795561e0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">))</span>
+
+        <span class="n">node_cpd</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span>
+            <span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span>
+            <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+            <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">,</span>
+            <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">node_cpd</span></div>
+</div>
 
 </pre></div>
 

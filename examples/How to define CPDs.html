@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>How to define TabularCPD and LinearGaussianCPD &#8212; pgmpy 0.1.23 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <script src="../_static/documentation_options.js?v=20522496"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="How-to-define-TabularCPD-and-LinearGaussianCPD">
+<h1>How to define TabularCPD and LinearGaussianCPD<a class="headerlink" href="#How-to-define-TabularCPD-and-LinearGaussianCPD" title="Link to this heading">¶</a></h1>
+<p>One can implement <code class="docutils literal notranslate"><span class="pre">TabularCPD</span></code> for discrete variables inside <code class="docutils literal notranslate"><span class="pre">BayesianNetwork</span></code>. and <code class="docutils literal notranslate"><span class="pre">LinearGaussianCPD</span></code> for continuous variables inside <code class="docutils literal notranslate"><span class="pre">LinearGaussianBayesianNetwork</span></code>.</p>
+<p>In this tutorial, we will demonstrate how to define each CPD.</p>
+<section id="TabularCPD-for-discrete-variables">
+<h2>TabularCPD for discrete variables<a class="headerlink" href="#TabularCPD-for-discrete-variables" title="Link to this heading">¶</a></h2>
+<p>In tabular CPD, the probability for discrete variable is given as a table. Let us start with examples for independent variables.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
+
+<span class="n">cpd_coin_fair</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;coin&quot;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">]],</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Coin&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Head&#39;</span><span class="p">,</span> <span class="s1">&#39;Tail&#39;</span><span class="p">]})</span>
+<span class="n">cpd_coin_biased</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;coin&quot;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.9</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">]],</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Coin&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Head&#39;</span><span class="p">,</span> <span class="s1">&#39;Tail&#39;</span><span class="p">]})</span>
+</pre></div>
+</div>
+</div>
+<p>For a coin flip, we have discrete number (2) possible outcomes, therefore <code class="docutils literal notranslate"><span class="pre">variable_card=2</span></code> is passed. <code class="docutils literal notranslate"><span class="pre">values</span></code> pass probabilities for each outcome, which sum up to 1. <code class="docutils literal notranslate"><span class="pre">state_names</span></code> is optional, it gives names for each outcome.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cpd_smoke</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Smoker&quot;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">]],</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Smoker&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Non-smoker&#39;</span><span class="p">,</span> <span class="s1">&#39;Smoker&#39;</span><span class="p">]})</span>
+<span class="n">cpd_pollution</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Pollution&quot;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.7</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.29</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">]],</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Pollution&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Clean&#39;</span><span class="p">,</span> <span class="s1">&#39;Bad&#39;</span><span class="p">,</span> <span class="s1">&#39;Fatal&#39;</span><span class="p">]})</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">Pollution</span></code> and <code class="docutils literal notranslate"><span class="pre">Smoker</span></code> variables do not depend on other variables. They take categorical values. <code class="docutils literal notranslate"><span class="pre">variable_card</span></code> denotes how many categories the variable can take. For example <code class="docutils literal notranslate"><span class="pre">Smoker</span></code> can take a binary value since <code class="docutils literal notranslate"><span class="pre">variable_card=2</span></code>. <code class="docutils literal notranslate"><span class="pre">values</span></code> is an array of probability values for each category. Note that the probability <code class="docutils literal notranslate"><span class="pre">values</span></code> sum up to 1.</p>
+<section id="Tabular-CPD-with-multiple-evidence.">
+<h3>Tabular CPD with multiple evidence.<a class="headerlink" href="#Tabular-CPD-with-multiple-evidence." title="Link to this heading">¶</a></h3>
+<p>We next consider another discrete variable <code class="docutils literal notranslate"><span class="pre">Cancer</span></code>, with a model assumption that it depends on <code class="docutils literal notranslate"><span class="pre">Pollution</span></code> and <code class="docutils literal notranslate"><span class="pre">Smoker</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cpd_cancer</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Cancer&quot;</span><span class="p">,</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.20</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.80</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">,</span> <span class="mf">0.97</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">]],</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Smoker&quot;</span><span class="p">,</span> <span class="s2">&quot;Pollution&quot;</span><span class="p">],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>For <code class="docutils literal notranslate"><span class="pre">Cancer</span></code> variable, we pass another <code class="docutils literal notranslate"><span class="pre">TabularCPD</span></code>. <code class="docutils literal notranslate"><span class="pre">evidence_card</span></code> denotes cardinality of each evidence variable. There are total <code class="docutils literal notranslate"><span class="pre">2*3=6</span></code> different combinations of evidence. Note the values of <code class="docutils literal notranslate"><span class="pre">evidence</span></code> affects probability of <code class="docutils literal notranslate"><span class="pre">Cancer</span></code>. We have 6 columns in <code class="docutils literal notranslate"><span class="pre">values</span></code> denoting conditional probabilities. <code class="docutils literal notranslate"><span class="pre">values</span></code> sums up to 1 columnwise. The columns are partitioned by the first evidence first. The first three columns correspond to non-smokers.</p>
+<p>We next consider another discrete variable <code class="docutils literal notranslate"><span class="pre">D</span></code>, with a model assumption that it depends on <code class="docutils literal notranslate"><span class="pre">A</span></code>, <code class="docutils literal notranslate"><span class="pre">B</span></code> and <code class="docutils literal notranslate"><span class="pre">C</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;D&quot;</span><span class="p">,</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.20</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.93</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.10</span><span class="p">,</span> <span class="mf">0.25</span> <span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.80</span><span class="p">,</span> <span class="mf">0.85</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">,</span> <span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">,</span> <span class="mf">0.98</span><span class="p">,</span> <span class="mf">0.90</span><span class="p">,</span> <span class="mf">0.75</span> <span class="p">]],</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">cpd</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+------+------+------+------+-------+------+------+------+
+| A    | A(0) | A(0) | A(0) | A(0) | A(1)  | A(1) | A(1) | A(1) |
++------+------+------+------+------+-------+------+------+------+
+| B    | B(0) | B(0) | B(1) | B(1) | B(0)  | B(0) | B(1) | B(1) |
++------+------+------+------+------+-------+------+------+------+
+| C    | C(0) | C(1) | C(0) | C(1) | C(0)  | C(1) | C(0) | C(1) |
++------+------+------+------+------+-------+------+------+------+
+| D(0) | 0.2  | 0.15 | 0.93 | 0.05 | 0.001 | 0.02 | 0.1  | 0.25 |
++------+------+------+------+------+-------+------+------+------+
+| D(1) | 0.8  | 0.85 | 0.07 | 0.95 | 0.999 | 0.98 | 0.9  | 0.75 |
++------+------+------+------+------+-------+------+------+------+
+</pre></div></div>
+</div>
+<p>Each column of <code class="docutils literal notranslate"><span class="pre">values</span></code> correspond to a different combinations of <code class="docutils literal notranslate"><span class="pre">evidence</span></code> variables. If the evidence variables were lexicographic as above <code class="docutils literal notranslate"><span class="pre">(A,</span> <span class="pre">B,</span> <span class="pre">C)</span></code>, then the columns will be also lexicographic.</p>
+<p><code class="docutils literal notranslate"><span class="pre">(A(0)B(0)C(0),</span> <span class="pre">A(0)B(0)C(1),</span> <span class="pre">A(0)B(1)C(0),</span> <span class="pre">A(0)B(1)C(1),</span> <span class="pre">...)</span></code></p>
+<p>It is as though we loop over A, and B, and C, in a nested order.</p>
+</section>
+<section id="CPD-with-random-values">
+<h3>CPD with random values<a class="headerlink" href="#CPD-with-random-values" title="Link to this heading">¶</a></h3>
+<p>It is also possible to create a random tabular CPD.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cpd_coin_random</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;coin&quot;</span><span class="p">,</span> <span class="n">cardinality</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;coin&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">},</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Coin&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Head&#39;</span><span class="p">,</span> <span class="s1">&#39;Tail&#39;</span><span class="p">]})</span>
+<span class="n">cpd_coin_random</span><span class="o">.</span><span class="n">get_values</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[0.55203474],
+       [0.44796526]])
+</pre></div></div>
+</div>
+<p>Note the probabilities can be retrieved by <code class="docutils literal notranslate"><span class="pre">get_values</span></code> and they add up to 1 again. If <code class="docutils literal notranslate"><span class="pre">cardinality</span></code> is missing, the discrete variable is assumed to be binary.</p>
+<p>When there are <code class="docutils literal notranslate"><span class="pre">evidence</span></code>, the cardinality of evidence needs to be also specified.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cpd_cancer_random</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Cancer&quot;</span><span class="p">,</span>
+    <span class="n">cardinality</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Cancer&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Smoker&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Pollution&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">},</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Smoker&quot;</span><span class="p">,</span> <span class="s2">&quot;Pollution&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">cpd_cancer_random</span><span class="o">.</span><span class="n">get_values</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[0.30404579, 0.99344749, 0.47933983, 0.58564998, 0.54269003,
+        0.28164646],
+       [0.69595421, 0.00655251, 0.52066017, 0.41435002, 0.45730997,
+        0.71835354]])
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cpd_cancer_random</span><span class="o">.</span><span class="n">get_values</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([1., 1., 1., 1., 1., 1.])
+</pre></div></div>
+</div>
+<p>Note again the probability table sums up to 1 for each column.</p>
+</section>
+</section>
+<section id="LinearGaussianCPD-for-continuous-variables">
+<h2>LinearGaussianCPD for continuous variables<a class="headerlink" href="#LinearGaussianCPD-for-continuous-variables" title="Link to this heading">¶</a></h2>
+<p>We define CPDs for each variable. <code class="docutils literal notranslate"><span class="pre">LinearGaussianCPD</span></code> assumes that each variable takes normal distribution. Assume <code class="docutils literal notranslate"><span class="pre">Healthy</span></code> and <code class="docutils literal notranslate"><span class="pre">Wealthy</span></code> variables have no parents (empty evidence).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Step 2: Define the CPDs.</span>
+<span class="kn">from</span> <span class="nn">pgmpy.factors.continuous</span> <span class="kn">import</span> <span class="n">LinearGaussianCPD</span>
+<span class="n">cpd_healthy</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Healthy&quot;</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">std</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[])</span>
+<span class="n">cpd_wealthy</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Wealthy&quot;</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">std</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[])</span>
+
+<span class="kn">import</span> <span class="nn">pprint</span>
+<span class="n">pprint</span><span class="o">.</span><span class="n">pp</span><span class="p">(</span><span class="n">cpd_healthy</span><span class="p">)</span>
+<span class="n">pprint</span><span class="o">.</span><span class="n">pp</span><span class="p">(</span><span class="n">cpd_wealthy</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;LinearGaussianCPD: P(Healthy) = N(4; 2) at 0x15735ed20
+&lt;LinearGaussianCPD: P(Wealthy) = N(2; 3) at 0x1566c2930
+</pre></div></div>
+</div>
+<p>Above we defined, Healthy as normal distribution with mean 4 and standard deviation 2, and wealthy with mean 2, and standard deviation 3. (Assume bigger variation in people’s wealth than health, bigger mean for health than wealth)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cpd_happy</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Happy&quot;</span><span class="p">,</span>
+    <span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+    <span class="n">std</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Healthy&quot;</span><span class="p">,</span> <span class="s2">&quot;Wealthy&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">pprint</span><span class="o">.</span><span class="n">pp</span><span class="p">(</span><span class="n">cpd_happy</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;LinearGaussianCPD: P(Happy | Healthy, Wealthy) = N(3*Healthy + 2*Wealthy + 1; 5) at 0x154160050
+</pre></div></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">Happy</span></code> variable has mean <code class="docutils literal notranslate"><span class="pre">3*Healthy</span> <span class="pre">+</span> <span class="pre">2*Wealthy</span> <span class="pre">+</span> <span class="pre">1</span></code>, this formula is determined by passing <code class="docutils literal notranslate"><span class="pre">beta</span></code> and <code class="docutils literal notranslate"><span class="pre">evidence</span></code> variables. Note that the first element of <code class="docutils literal notranslate"><span class="pre">beta</span></code> is the intercept (constant term). The rest of the elements in <code class="docutils literal notranslate"><span class="pre">beta</span></code> each match the evidence. The standard deviation of normal distribution of <code class="docutils literal notranslate"><span class="pre">Happy</span></code> is set by <code class="docutils literal notranslate"><span class="pre">std</span></code>.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../started/base.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../base/base.html">Base Model Structures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/base.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../factors/base.html">Parameterization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exact_infer/base.html">Exact Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exact_infer/model_testing.html">Model Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../approx_infer/base.html">Approximate Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structure_estimator/base.html">Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics/metrics.html">Metrics for testing models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Example Notebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/examples/How to define CPDs.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
