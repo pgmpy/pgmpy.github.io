@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Noisy OR CPD &#8212; pgmpy 0.1.23 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=7b53859b" />
+    <script src="../_static/documentation_options.js?v=20522496"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Linear Gaussian CPD" href="lineargauss.html" />
+    <link rel="prev" title="Discrete" href="discrete.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-pgmpy.factors.discrete.NoisyORCPD">
+<span id="noisy-or-cpd"></span><h1>Noisy OR CPD<a class="headerlink" href="#module-pgmpy.factors.discrete.NoisyORCPD" title="Link to this heading">¶</a></h1>
+<p>Initializes the NoisyORCPD class.</p>
+<p>The NoisyOR CPD is a special case of TabularCPD for binary variables
+where a given variable can be activated by each of the parent variables
+with a specified probability. This activation probability is defined
+in the <cite>prob_values</cite> argument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">param variable<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The variable for which the CPD is to be defined.</p>
+</dd>
+<dt class="field-even">type variable<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">param prob_values<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A list of probabilities values for each <cite>evidence</cite> variable
+to activate <cite>variable</cite>.</p>
+</dd>
+<dt class="field-even">type prob_values<span class="colon">:</span></dt>
+<dd class="field-even"><p>iterable</p>
+</dd>
+<dt class="field-odd">param evidence<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of evidence variables, i.e., conditional variables.</p>
+</dd>
+<dt class="field-even">type evidence<span class="colon">:</span></dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">NoisyORCPD</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cpd</span> <span class="o">=</span> <span class="n">NoisyORCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="n">prob_values</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;X1&#39;</span><span class="p">,</span> <span class="s1">&#39;X2&#39;</span><span class="p">])</span>
+<span class="go"># Defining a model containing NoisyORCPD</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">BayesianNetwork</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">])</span>
+<span class="go"># With nodes with no parents, we can not define a NoisyORCPD.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cpd_a</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">]],</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;True&#39;</span><span class="p">,</span> <span class="s1">&#39;False&#39;</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cpd_b</span> <span class="o">=</span> <span class="n">NoisyORCPD</span><span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_a</span><span class="p">,</span> <span class="n">cpd_b</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../started/base.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../base/base.html">Base Model Structures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/base.html">Models</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="base.html">Parameterization</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="discrete.html">Discrete</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Noisy OR CPD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lineargauss.html">Linear Gaussian CPD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functional.html">Functional CPD</a></li>
+<li class="toctree-l2"><a class="reference internal" href="discretize.html">Discretizing Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../exact_infer/base.html">Exact Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../exact_infer/model_testing.html">Model Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../approx_infer/base.html">Approximate Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structure_estimator/base.html">Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics/metrics.html">Metrics for testing models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Example Notebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="base.html">Parameterization</a><ul>
+      <li>Previous: <a href="discrete.html" title="previous chapter">Discrete</a></li>
+      <li>Next: <a href="lineargauss.html" title="next chapter">Linear Gaussian CPD</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/factors/noisyor.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

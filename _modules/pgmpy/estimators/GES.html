@@ -48,6 +48,7 @@
     <span class="n">BDs</span><span class="p">,</span>
     <span class="n">BICCondGauss</span><span class="p">,</span>
     <span class="n">BICGauss</span><span class="p">,</span>
+    <span class="n">ExpertKnowledge</span><span class="p">,</span>
     <span class="n">LogLikelihoodCondGauss</span><span class="p">,</span>
     <span class="n">LogLikelihoodGauss</span><span class="p">,</span>
     <span class="n">StructureEstimator</span><span class="p">,</span>
@@ -90,20 +91,34 @@
 
         <span class="nb">super</span><span class="p">(</span><span class="n">GES</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_legal_edge_additions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_legal_edge_additions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_model</span><span class="p">,</span> <span class="n">expert_knowledge</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a list of all edges that can be added to the graph such that it remains a DAG.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">current_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="mi">2</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">current_model</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">or</span> <span class="n">current_model</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)):</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">current_model</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">current_model</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">forbidden_edges</span>
+                <span class="p">):</span>
                     <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">current_model</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">current_model</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">forbidden_edges</span>
+                <span class="p">):</span>
                     <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">edges</span>
 
-    <span class="k">def</span> <span class="nf">_legal_edge_flips</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_legal_edge_removals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_model</span><span class="p">,</span> <span class="n">expert_knowledge</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of all edges that can be removed from the graph such that it remains a DAG.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">current_model</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">required_edges</span><span class="p">:</span>
+                <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">edges</span>
+
+    <span class="k">def</span> <span class="nf">_legal_edge_flips</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_model</span><span class="p">,</span> <span class="n">expert_knowledge</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a list of all the edges in the `current_model` that can be flipped such that the model</span>
 <span class="sd">        remains a DAG.</span>
@@ -111,17 +126,26 @@
         <span class="n">potential_flips</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">edges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">current_model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
         <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
-            <span class="n">current_model</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">current_model</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-                <span class="n">potential_flips</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">))</span>
+            <span class="k">if</span> <span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">required_edges</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">forbidden_edges</span>
+            <span class="p">):</span>
+                <span class="n">current_model</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">current_model</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+                    <span class="n">potential_flips</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">))</span>
 
-            <span class="c1"># Restore the edge to get to the original model</span>
-            <span class="n">current_model</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                <span class="c1"># Restore the edge to get to the original model</span>
+                <span class="n">current_model</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">potential_flips</span>
 
 <div class="viewcode-block" id="GES.estimate">
 <a class="viewcode-back" href="../../../structure_estimator/ges.html#pgmpy.estimators.GES.estimate">[docs]</a>
-    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scoring_method</span><span class="o">=</span><span class="s2">&quot;bic-d&quot;</span><span class="p">,</span> <span class="n">min_improvement</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">scoring_method</span><span class="o">=</span><span class="s2">&quot;bic-d&quot;</span><span class="p">,</span>
+        <span class="n">expert_knowledge</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">min_improvement</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span>
+        <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Estimates the DAG from the data.</span>
 
@@ -132,6 +156,11 @@
 <span class="sd">            structure scores: k2, bdeu, bds, bic-d, aic-d, ll-g, aic-g, bic-g,</span>
 <span class="sd">            ll-cg, aic-cg, bic-cg. Also accepts a custom score, but it should</span>
 <span class="sd">            be an instance of `StructureScore`.</span>
+
+<span class="sd">        expert_knowledge: pgmpy.estimators.ExpertKnowledge instance (default: None)</span>
+<span class="sd">            Expert knowledge to be used with the algorithm. Expert knowledge</span>
+<span class="sd">            allows specification of required and forbidden edges, as well as temporal</span>
+<span class="sd">            order of nodes.</span>
 
 <span class="sd">        min_improvement: float</span>
 <span class="sd">            The operation (edge addition, removal, or flipping) would only be performed if the</span>
@@ -166,10 +195,17 @@
         <span class="c1"># Step 1: Initialize an empty model.</span>
         <span class="n">current_model</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">()</span>
         <span class="n">current_model</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">expert_knowledge</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">()</span>
+        <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">_orient_temporal_forbidden_edges</span><span class="p">(</span>
+            <span class="n">current_model</span><span class="p">,</span> <span class="n">only_edges</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
 
         <span class="c1"># Step 2: Forward step: Iteratively add edges till score stops improving.</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">potential_edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_legal_edge_additions</span><span class="p">(</span><span class="n">current_model</span><span class="p">)</span>
+            <span class="n">potential_edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_legal_edge_additions</span><span class="p">(</span>
+                <span class="n">current_model</span><span class="p">,</span> <span class="n">expert_knowledge</span>
+            <span class="p">)</span>
             <span class="n">score_deltas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">potential_edges</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">potential_edges</span><span class="p">):</span>
                 <span class="n">current_parents</span> <span class="o">=</span> <span class="n">current_model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
@@ -190,7 +226,9 @@
 
         <span class="c1"># Step 3: Backward Step: Iteratively remove edges till score stops improving.</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">potential_removals</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">current_model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+            <span class="n">potential_removals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_legal_edge_removals</span><span class="p">(</span>
+                <span class="n">current_model</span><span class="p">,</span> <span class="n">expert_knowledge</span>
+            <span class="p">)</span>
             <span class="n">score_deltas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">potential_removals</span><span class="p">))</span>
 
             <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">potential_removals</span><span class="p">):</span>
@@ -211,7 +249,7 @@
 
         <span class="c1"># Step 4: Flip Edges: Iteratively try to flip edges till score stops improving.</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">potential_flips</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_legal_edge_flips</span><span class="p">(</span><span class="n">current_model</span><span class="p">)</span>
+            <span class="n">potential_flips</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_legal_edge_flips</span><span class="p">(</span><span class="n">current_model</span><span class="p">,</span> <span class="n">expert_knowledge</span><span class="p">)</span>
             <span class="n">score_deltas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">potential_flips</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">potential_flips</span><span class="p">):</span>
                 <span class="n">v_parents</span> <span class="o">=</span> <span class="n">current_model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>

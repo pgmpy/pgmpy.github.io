@@ -719,6 +719,8 @@
         <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="p">:</span>
             <span class="n">temp_var</span> <span class="o">=</span> <span class="n">DynamicNode</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
             <span class="n">parents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">temp_var</span><span class="p">)</span>
+            <span class="n">state_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">states</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">state_names</span><span class="p">[</span><span class="n">temp_var</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_names</span><span class="p">[</span><span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">]</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">variable</span> <span class="o">==</span> <span class="n">temp_var</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="p">):</span>
                 <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">parents</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">parents</span><span class="p">:</span>
@@ -731,6 +733,7 @@
                             <span class="p">),</span>
                             <span class="n">parents</span><span class="p">,</span>
                             <span class="n">evidence_card</span><span class="p">,</span>
+                            <span class="n">state_names</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
                         <span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="k">if</span> <span class="n">cpd</span><span class="o">.</span><span class="n">get_evidence</span><span class="p">():</span>
@@ -741,12 +744,14 @@
                                 <span class="n">temp_var</span><span class="p">,</span>
                                 <span class="n">cpd</span><span class="o">.</span><span class="n">variable_card</span><span class="p">,</span>
                                 <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">initial_cpd</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)),</span>
+                                <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
                             <span class="p">)</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">new_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
                                 <span class="n">temp_var</span><span class="p">,</span>
                                 <span class="n">cpd</span><span class="o">.</span><span class="n">variable_card</span><span class="p">,</span>
                                 <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)),</span>
+                                <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
                             <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">new_cpd</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span></div>
@@ -1274,7 +1279,23 @@
             <span class="p">)</span>
             <span class="n">sampled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">remaining_df</span><span class="p">,</span> <span class="n">new_samples</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_postprocess</span><span class="p">(</span><span class="n">sampled</span><span class="p">)</span></div>
-</div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">states</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a dictionary mapping each node to its list of possible states.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        state_dict: dict</span>
+<span class="sd">            Dictionary of nodes to possible states</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">state_names_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">cpd</span><span class="o">.</span><span class="n">state_names</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="p">]</span>
+        <span class="n">state_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">node</span><span class="p">:</span> <span class="n">states</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">state_names_list</span> <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">states</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">state_dict</span></div>
 
 </pre></div>
 
