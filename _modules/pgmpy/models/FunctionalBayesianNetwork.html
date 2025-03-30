@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pgmpy.models.FunctionalBayesianNetwork &#8212; pgmpy 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pgmpy.models.FunctionalBayesianNetwork</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">pgmpy.factors.hybrid</span> <span class="kn">import</span> <span class="n">FunctionalCPD</span>
+<span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span>
+
+
+<div class="viewcode-block" id="FunctionalBayesianNetwork">
+<a class="viewcode-back" href="../../../models/functionalbn.html#pgmpy.models.FunctionalBayesianNetwork.FunctionalBayesianNetwork">[docs]</a>
+<span class="k">class</span> <span class="nc">FunctionalBayesianNetwork</span><span class="p">(</span><span class="n">BayesianNetwork</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class for representing Functional Bayesian Network.</span>
+
+<span class="sd">    Functional Bayesian Networks allow for representation of any probability</span>
+<span class="sd">    distribution using CPDs in functional form (Functional CPD). Functional</span>
+<span class="sd">    CPDs return a pyro.distribution object allowing for flexible representation</span>
+<span class="sd">    of any distribution.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">lavaan_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dagitty_str</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a FunctionalBayesianNetwork.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ebunch: list</span>
+<span class="sd">            List of edges to build the Bayesian Network. Each edge should be a tuple (u, v)</span>
+<span class="sd">            where u, v are nodes representing the edge u -&gt; v.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import FunctionalBayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; model = FunctionalBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;), (&quot;x2&quot;, &quot;x3&quot;)])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">get_backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;numpy&quot;</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Functional BN requires pytorch backend. Switching.&quot;</span><span class="p">)</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">set_backend</span><span class="p">(</span><span class="s2">&quot;torch&quot;</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">FunctionalBayesianNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">ebunch</span><span class="o">=</span><span class="n">ebunch</span><span class="p">,</span>
+            <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">,</span>
+            <span class="n">lavaan_str</span><span class="o">=</span><span class="n">lavaan_str</span><span class="p">,</span>
+            <span class="n">dagitty_str</span><span class="o">=</span><span class="n">dagitty_str</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="FunctionalBayesianNetwork.add_cpds">
+<a class="viewcode-back" href="../../../models/functionalbn.html#pgmpy.models.FunctionalBayesianNetwork.FunctionalBayesianNetwork.add_cpds">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">cpds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds FunctionalCPDs to the Bayesian Network.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cpds: instances of FunctionalCPD</span>
+<span class="sd">            List of FunctionalCPDs which will be associated with the model</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.hybrid import FunctionalCPD</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import FunctionalBayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; import pyro.distributions as dist</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+
+<span class="sd">        &gt;&gt;&gt; model = FunctionalBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;), (&quot;x2&quot;, &quot;x3&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; cpd1 = FunctionalCPD(&quot;x1&quot;, lambda _: dist.Normal(0, 1))</span>
+<span class="sd">        &gt;&gt;&gt; cpd2 = FunctionalCPD(&quot;x2&quot;, lambda parent: dist.Normal(parent[&quot;x1&quot;] + 2.0, 1), parents=[&quot;x1&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; cpd3 = FunctionalCPD(&quot;x3&quot;, lambda parent: dist.Normal(parent[&quot;x2&quot;] + 0.3, 2), parents=[&quot;x2&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2, cpd3)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">cpds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cpd</span><span class="p">,</span> <span class="n">FunctionalCPD</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Only FunctionalCPD can be added to Functional Bayesian Network.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CPD defined on variable not in the model: </span><span class="si">{</span><span class="n">cpd</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">prev_cpd_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="p">[</span><span class="n">prev_cpd_index</span><span class="p">]</span><span class="o">.</span><span class="n">variable</span> <span class="o">==</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Replacing existing CPD for </span><span class="si">{</span><span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="p">[</span><span class="n">prev_cpd_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">cpd</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cpd</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FunctionalBayesianNetwork.get_cpds">
+<a class="viewcode-back" href="../../../models/functionalbn.html#pgmpy.models.FunctionalBayesianNetwork.FunctionalBayesianNetwork.get_cpds">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the cpd of the node. If node is not specified returns all the CPDs</span>
+<span class="sd">        that have been added till now to the graph</span>
+
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        node: any hashable python object (optional)</span>
+<span class="sd">            The node whose CPD we want. If node not specified returns all the</span>
+<span class="sd">            CPDs added to the model.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        A list of Functional CPDs.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.hybrid import FunctionalCPD</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import FunctionalBayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; import pyro.distributions as dist</span>
+
+<span class="sd">        &gt;&gt;&gt; model = FunctionalBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;), (&quot;x2&quot;, &quot;x3&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; cpd1 = FunctionalCPD(&quot;x1&quot;, lambda _: dist.Normal(0, 1))</span>
+<span class="sd">        &gt;&gt;&gt; cpd2 = FunctionalCPD(&quot;x2&quot;, lambda parent: dist.Normal(parent[&quot;x1&quot;] + 2.0, 1), parents=[&quot;x1&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; cpd3 = FunctionalCPD(&quot;x3&quot;, lambda parent: dist.Normal(parent[&quot;x2&quot;] + 0.3, 2), parents=[&quot;x2&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2, cpd3)</span>
+<span class="sd">        &gt;&gt;&gt; model.get_cpds()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">FunctionalBayesianNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FunctionalBayesianNetwork.remove_cpds">
+<a class="viewcode-back" href="../../../models/functionalbn.html#pgmpy.models.FunctionalBayesianNetwork.FunctionalBayesianNetwork.remove_cpds">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">cpds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes the given `cpds` from the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *cpds: FunctionalCPD objects</span>
+<span class="sd">            A list of FunctionalCPD objects that need to be removed from the model.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.hybrid import FunctionalCPD</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import FunctionalBayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; import pyro.distributions as dist</span>
+
+<span class="sd">        &gt;&gt;&gt; model = FunctionalBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;), (&quot;x2&quot;, &quot;x3&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; cpd1 = FunctionalCPD(&quot;x1&quot;, lambda _: dist.Normal(0, 1))</span>
+<span class="sd">        &gt;&gt;&gt; cpd2 = FunctionalCPD(&quot;x2&quot;, lambda parent: dist.Normal(parent[&quot;x1&quot;] + 2.0, 1), parents=[&quot;x1&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; cpd3 = FunctionalCPD(&quot;x3&quot;, lambda parent: dist.Normal(parent[&quot;x2&quot;] + 0.3, 2), parents=[&quot;x2&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2, cpd3)</span>
+<span class="sd">        &gt;&gt;&gt; for cpd in model.get_cpds():</span>
+<span class="sd">        ...     print(cpd)</span>
+
+<span class="sd">        &gt;&gt;&gt; model.remove_cpds(cpd2, cpd3)</span>
+<span class="sd">        &gt;&gt;&gt; for cpd in model.get_cpds():</span>
+<span class="sd">        ...     print(cpd)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">FunctionalBayesianNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">remove_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FunctionalBayesianNetwork.check_model">
+<a class="viewcode-back" href="../../../models/functionalbn.html#pgmpy.models.FunctionalBayesianNetwork.FunctionalBayesianNetwork.check_model">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks the model for various errors. This method checks for the following</span>
+<span class="sd">        error -</span>
+
+<span class="sd">        * Checks if the CPDs associated with nodes are consistent with their parents.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        check: boolean</span>
+<span class="sd">            True if all the checks pass.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+            <span class="n">cpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cpd</span><span class="p">,</span> <span class="n">FunctionalCPD</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">parents</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">node</span><span class="p">)):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;CPD associated with </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2"> doesn&#39;t have proper parents associated with it.&quot;</span>
+                    <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="FunctionalBayesianNetwork.simulate">
+<a class="viewcode-back" href="../../../models/functionalbn.html#pgmpy.models.FunctionalBayesianNetwork.FunctionalBayesianNetwork.simulate">[docs]</a>
+    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Simulate samples from the model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int, optional (default: 1000)</span>
+<span class="sd">            Number of samples to generate</span>
+
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            The seed value for the random number generator.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pandas.DataFrame</span>
+<span class="sd">            Simulated samples with columns corresponding to network variables</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.hybrid import FunctionalCPD</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import FunctionalBayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; import pyro.distributions as dist</span>
+
+<span class="sd">        &gt;&gt;&gt; model = FunctionalBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;), (&quot;x2&quot;, &quot;x3&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; cpd1 = FunctionalCPD(&quot;x1&quot;, lambda _: dist.Normal(0, 1))</span>
+<span class="sd">        &gt;&gt;&gt; cpd2 = FunctionalCPD(&quot;x2&quot;, lambda parent: dist.Normal(parent[&quot;x1&quot;] + 2.0, 1), parents=[&quot;x1&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; cpd3 = FunctionalCPD(&quot;x3&quot;, lambda parent: dist.Normal(parent[&quot;x2&quot;] + 0.3, 2), parents=[&quot;x2&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2, cpd3)</span>
+<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=1000)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+            <span class="n">cpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="n">parent_samples</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="n">cpd</span><span class="o">.</span><span class="n">parents</span><span class="p">]</span> <span class="k">if</span> <span class="n">cpd</span><span class="o">.</span><span class="n">parents</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">samples</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">parent_sample</span><span class="o">=</span><span class="n">parent_samples</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">samples</span></div>
+
+
+<div class="viewcode-block" id="FunctionalBayesianNetwork.fit">
+<a class="viewcode-back" href="../../../models/functionalbn.html#pgmpy.models.FunctionalBayesianNetwork.FunctionalBayesianNetwork.fit">[docs]</a>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">method</span><span class="o">=</span><span class="s2">&quot;SVI&quot;</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="o">=</span><span class="n">pyro</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">({</span><span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">1e-2</span><span class="p">}),</span>
+        <span class="n">prior_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">nuts_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">mcmc_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fit the Bayesian network to data using Pyro&#39;s stochastic variational inference.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data: pandas.DataFrame</span>
+<span class="sd">            DataFrame with observations of variables.</span>
+
+<span class="sd">        method: str (default: &quot;SVI&quot;)</span>
+<span class="sd">            Fitting method to use. Currently supports &quot;SVI&quot; and &quot;MCMC&quot;.</span>
+
+<span class="sd">        optimizer: Instance of pyro optimizer (default: pyro.optim.Adam({&quot;lr&quot;: 1e-2}))</span>
+<span class="sd">            Only used if method is &quot;SVI&quot;. The optimizer to use for optimization.</span>
+
+<span class="sd">        prior_fn: function</span>
+<span class="sd">            Only used if method is &quot;MCMC&quot;. A function that returns a dictionary of</span>
+<span class="sd">            pyro distributions for each parameter in the model.</span>
+
+<span class="sd">        num_steps: int (default: 100)</span>
+<span class="sd">            Number of optimization steps. For SVI it is the `num_steps`</span>
+<span class="sd">            argument for pyro.infer.SVI. For MCMC, it is the `num_samples`</span>
+<span class="sd">            argument for pyro.infer.MCMC.</span>
+
+<span class="sd">        seed: int (default: None)</span>
+<span class="sd">            Seed value for random number generator.</span>
+
+<span class="sd">        nuts_kwargs: dict (default: None)</span>
+<span class="sd">            Only used if method is &quot;MCMC&quot;. Additional arguments to pass to</span>
+<span class="sd">            pyro.infer.NUTS.</span>
+
+<span class="sd">        mcmc_kwargs: dict (default: None)</span>
+<span class="sd">            Only used if method is &quot;MCMC&quot;. Additional arguments to pass to</span>
+<span class="sd">            pyro.infer.MCMC.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict: If method is &quot;SVI&quot;, returns a dictionary of parameter values.</span>
+<span class="sd">              If method is &quot;MCMC&quot;, returns a dictionary of posterior samples for each parameter.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.hybrid import FunctionalCPD</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import FunctionalBayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">        &gt;&gt;&gt; import pyro.distributions as dist</span>
+
+<span class="sd">        &gt;&gt;&gt; model = FunctionalBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; x1 = np.random.normal(0.2, 0.8, size=10000)</span>
+<span class="sd">        &gt;&gt;&gt; x2 = np.random.normal(0.6 + x1, 1)</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame({&quot;x1&quot;: x1, &quot;x2&quot;: x2})</span>
+
+<span class="sd">        &gt;&gt;&gt; def x1_fn(parents):</span>
+<span class="sd">        ...    mu = pyro.param(&quot;x1_mu&quot;, torch.tensor(1.0))</span>
+<span class="sd">        ...    sigma = pyro.param(&quot;x1_sigma&quot;, torch.tensor(1.0), constraint=constraints.positive)</span>
+<span class="sd">        ...    return dist.Normal(mu, sigma)</span>
+
+<span class="sd">        &gt;&gt;&gt; def x2_fn(parents):</span>
+<span class="sd">        ...    intercept = pyro.param(&quot;x2_inter&quot;, torch.tensor(1.0))</span>
+<span class="sd">        ...    sigma = pyro.param(&quot;x2_sigma&quot;, torch.tensor(1.0), constraint=constraints.positive)</span>
+<span class="sd">        ...    return dist.Normal(intercept + parents[&#39;x1&#39;], sigma)</span>
+
+<span class="sd">        &gt;&gt;&gt; cpd1 = FunctionalCPD(&quot;x1&quot;, fn=x1_prior)</span>
+<span class="sd">        &gt;&gt;&gt; cpd2 = FunctionalCPD(&#39;x2&#39;, fn=x2_prior, parents=[&#39;x1&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2)</span>
+<span class="sd">        &gt;&gt;&gt; params = model.fit(data, method=&quot;SVI&quot;, num_steps=100)</span>
+<span class="sd">        &gt;&gt;&gt; print(params)</span>
+
+<span class="sd">        &gt;&gt;&gt; def prior_fn():</span>
+<span class="sd">        ...    return {&quot;x1_mu&quot;: dist.Uniform(0, 1), &quot;x1_sigma&quot;: dist.HalfNormal(5),</span>
+<span class="sd">        ...            &quot;x2_inter&quot;: dist.Normal(1.0), &quot;x2_sigma&quot;: dist.HalfNormal(1)}</span>
+
+<span class="sd">        &gt;&gt;&gt; def x1_fn(priors, parents):</span>
+<span class="sd">        ...    return dist.Normal(priors[&quot;x1_mu&quot;], priors[&quot;x1_sigma&quot;])</span>
+
+<span class="sd">        &gt;&gt;&gt; def x2_fn(priors, parents):</span>
+<span class="sd">        ...    return dist.Normal(priors[&quot;x2_inter&quot;] + parent[&#39;x1&#39;], priors[&quot;x2_sigma&quot;])</span>
+
+<span class="sd">        &gt;&gt;&gt; cpd1 = FunctionalCPD(&quot;x1&quot;, fn=x1_fn)</span>
+<span class="sd">        &gt;&gt;&gt; cpd2 = FunctionalCPD(&#39;x2&#39;, fn=x2_fn, parents=[&#39;x1&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2)</span>
+
+<span class="sd">        &gt;&gt;&gt; params = model.fit(data, method=&quot;MCMC&quot;, prior_fn=prior_fn, num_steps=100)</span>
+<span class="sd">        &gt;&gt;&gt; print(params[&quot;x1_mu&quot;].mean(), params[&quot;x1_std&quot;].mean())</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Step 0: Checks for specified arguments.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;data should be a pandas.DataFrame object. Got: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_steps</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;num_steps should be an integer. Got: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">num_steps</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;svi&quot;</span><span class="p">,</span> <span class="s2">&quot;mcmc&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Currently only SVI and MCMC methods are supported. method argument needs to be either &#39;SVI&#39; or &#39;MCMC&#39;.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Step 1: Preprocess the data and initialize data structures.</span>
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="n">sort_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+
+        <span class="n">tensor_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">sort_nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data doesn&#39;t contain column for the node: </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tensor_data</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">(),</span>
+                    <span class="n">device</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get_device</span><span class="p">(),</span>
+                <span class="p">)</span>
+
+        <span class="n">nuts_kwargs</span> <span class="o">=</span> <span class="n">nuts_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">mcmc_kwargs</span> <span class="o">=</span> <span class="n">mcmc_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+
+        <span class="n">cpds_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">sort_nodes</span><span class="p">}</span>
+
+        <span class="c1"># Step 2: Fit the model using the specified method.</span>
+        <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;svi&quot;</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">tensor_data</span><span class="p">):</span>
+                <span class="k">pass</span>
+
+            <span class="c1"># Step 2.1: Define the combined model for SVI.</span>
+            <span class="k">def</span> <span class="nf">combined_model_svi</span><span class="p">(</span><span class="n">tensor_data</span><span class="p">):</span>
+                <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">sort_nodes</span><span class="p">:</span>
+                        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="n">cpds_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">fn</span><span class="p">(</span>
+                                <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">tensor_data</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">cpds_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">parents</span><span class="p">}</span>
+                            <span class="p">),</span>
+                            <span class="n">obs</span><span class="o">=</span><span class="n">tensor_data</span><span class="p">[</span><span class="n">node</span><span class="p">],</span>
+                        <span class="p">)</span>
+
+            <span class="c1"># Step 2.2: Fit the model using SVI.</span>
+            <span class="n">svi</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">SVI</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="n">combined_model_svi</span><span class="p">,</span>
+                <span class="n">guide</span><span class="o">=</span><span class="n">guide</span><span class="p">,</span>
+                <span class="n">optim</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                <span class="n">loss</span><span class="o">=</span><span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">Trace_ELBO</span><span class="p">(),</span>
+            <span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_steps</span><span class="p">):</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">tensor_data</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">step</span> <span class="o">%</span> <span class="mi">50</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step </span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s2"> | Loss: </span><span class="si">{</span><span class="n">loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Step 3: Fit the model using specified method</span>
+        <span class="k">elif</span> <span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;mcmc&quot;</span><span class="p">:</span>
+            <span class="c1"># Step 3.1: Define the combined model for MCMC.</span>
+            <span class="k">def</span> <span class="nf">combined_model_mcmc</span><span class="p">(</span><span class="n">tensor_data</span><span class="p">):</span>
+                <span class="n">priors</span> <span class="o">=</span> <span class="n">prior_fn</span><span class="p">()</span>
+                <span class="k">with</span> <span class="n">pyro</span><span class="o">.</span><span class="n">plate</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">sort_nodes</span><span class="p">:</span>
+                        <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="n">cpds_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">fn</span><span class="p">(</span>
+                                <span class="n">priors</span><span class="p">,</span>
+                                <span class="p">{</span><span class="n">p</span><span class="p">:</span> <span class="n">tensor_data</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">cpds_dict</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">parents</span><span class="p">},</span>
+                            <span class="p">),</span>
+                            <span class="n">obs</span><span class="o">=</span><span class="n">tensor_data</span><span class="p">[</span><span class="n">node</span><span class="p">],</span>
+                        <span class="p">)</span>
+
+            <span class="c1"># Step 3.2: Fit the model using MCMC.</span>
+            <span class="n">nuts_kernel</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">NUTS</span><span class="p">(</span><span class="n">combined_model_mcmc</span><span class="p">,</span> <span class="o">**</span><span class="n">nuts_kwargs</span><span class="p">)</span>
+            <span class="n">mcmc</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">infer</span><span class="o">.</span><span class="n">MCMC</span><span class="p">(</span><span class="n">nuts_kernel</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_steps</span><span class="p">,</span> <span class="o">**</span><span class="n">mcmc_kwargs</span><span class="p">)</span>
+            <span class="n">mcmc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">tensor_data</span><span class="p">)</span>
+
+        <span class="c1"># Step 4: Return the fitted parameter values.</span>
+        <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;svi&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">get_samples</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../started/base.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../base/base.html">Base Model Structures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../factors/base.html">Parameterization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/base.html">Exact Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/base.html">Approximate Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for Testing Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
