@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pgmpy.estimators.MLE &#8212; pgmpy 0.1.23 documentation</title>
+    <title>pgmpy.estimators.MLE &#8212; pgmpy 1.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
-    <script src="../../../_static/documentation_options.js?v=20522496"></script>
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -38,11 +38,11 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
 
+<span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">ParameterEstimator</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="kn">import</span> <span class="n">FactorDict</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span><span class="p">,</span> <span class="n">JunctionTree</span>
-<span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">,</span> <span class="n">JunctionTree</span>
 
 
 <div class="viewcode-block" id="MaximumLikelihoodEstimator">
@@ -53,7 +53,7 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    model: A pgmpy.models.BayesianNetwork or pgmpy.models.JunctionTree instance</span>
+<span class="sd">    model: A pgmpy.models.DiscreteBayesianNetwork or pgmpy.models.JunctionTree instance</span>
 
 <span class="sd">    data: pandas DataFrame object</span>
 <span class="sd">        DataFrame object with column names identical to the variable names of the network.</span>
@@ -69,21 +69,21 @@
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">    &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.estimators import MaximumLikelihoodEstimator</span>
 <span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
 <span class="sd">    ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">    &gt;&gt;&gt; model = BayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">    &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
 <span class="sd">    &gt;&gt;&gt; estimator = MaximumLikelihoodEstimator(model, data)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">BayesianNetwork</span><span class="p">,</span> <span class="n">JunctionTree</span><span class="p">,</span> <span class="n">DAG</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">DiscreteBayesianNetwork</span><span class="p">,</span> <span class="n">JunctionTree</span><span class="p">,</span> <span class="n">DAG</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">&quot;Maximum Likelihood Estimate is only implemented for BayesianNetwork, JunctionTree, and DAG&quot;</span>
+                <span class="s2">&quot;Maximum Likelihood Estimate is only implemented for DiscreteBayesianNetwork, JunctionTree, and DAG&quot;</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="n">BayesianNetwork</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">)):</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;Found latent variables: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="si">}</span><span class="s2">. Maximum Likelihood doesn&#39;t support latent variables, please use ExpectationMaximization.&quot;</span>
@@ -131,11 +131,11 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import MaximumLikelihoodEstimator</span>
 <span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 4)),</span>
 <span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = BayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; estimator = MaximumLikelihoodEstimator(model, values)</span>
 <span class="sd">        &gt;&gt;&gt; estimator.get_parameters()</span>
 <span class="sd">        [&lt;TabularCPD representing P(C:2) at 0x7f7b534251d0&gt;,</span>
@@ -180,10 +180,10 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import BayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import MaximumLikelihoodEstimator</span>
 <span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(data={&#39;A&#39;: [0, 0, 1], &#39;B&#39;: [0, 1, 0], &#39;C&#39;: [1, 1, 0]})</span>
-<span class="sd">        &gt;&gt;&gt; model = BayesianNetwork([(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; cpd_A = MaximumLikelihoodEstimator(model, data).estimate_cpd(&#39;A&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; print(cpd_A)</span>
 <span class="sd">        ╒══════╤══════════╕</span>
@@ -365,11 +365,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../factors/base.html">Parameterization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/base.html">Exact Inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/model_testing.html">Model Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/base.html">Approximate Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../param_estimator/base.html">Parameter Estimation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Structure Learning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for testing models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for Testing Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
@@ -417,7 +416,7 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &#169;2023, Ankur Ankan.
+      &#169;2025, Ankur Ankan.
       
       |
       Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>

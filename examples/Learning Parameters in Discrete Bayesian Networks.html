@@ -51,11 +51,11 @@
 <h2>Step 0: Generate some simulated data and a model structure<a class="headerlink" href="#Step-0:-Generate-some-simulated-data-and-a-model-structure" title="Link to this heading">¶</a></h2>
 <p>To do parameter estimation we require two things: 1. <strong>Data</strong>: For the examples, we simulate some data from the alarm model (<a class="reference external" href="https://www.bnlearn.com/bnrepository/discrete-medium.html#alarm">https://www.bnlearn.com/bnrepository/discrete-medium.html#alarm</a>) and use it to learn back the model parameters. 2. <strong>Model structure</strong>: We also need to specify the model structure to which to fit the data to. In this example, we simply use the structure to the alarm model.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">get_example_model</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 
 <span class="c1"># Load the alarm model and simulate data from it.</span>
 <span class="n">alarm_model</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;alarm&quot;</span><span class="p">)</span>
@@ -64,7 +64,7 @@
 <span class="nb">print</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
 
 <span class="c1"># Define a new model with the same structure as the alarm model.</span>
-<span class="n">new_model</span> <span class="o">=</span> <span class="n">BayesianNetwork</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="n">new_model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -337,10 +337,10 @@ WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.110223
 <h2>Using Expectation Maximization<a class="headerlink" href="#Using-Expectation-Maximization" title="Link to this heading">¶</a></h2>
 <p>The Expectation Maximization (EM) estimator can work in the case when latent variables are present in the model. To simulate this scenario, we will specify some of the variables in our <code class="docutils literal notranslate"><span class="pre">new_model</span></code> as latents and drop those variables from <code class="docutils literal notranslate"><span class="pre">samples</span></code> to simulate missing data.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model_latent</span> <span class="o">=</span> <span class="n">BayesianNetwork</span><span class="p">(</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">(),</span> <span class="n">latents</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;HISTORY&#39;</span><span class="p">,</span> <span class="s1">&#39;CVP&#39;</span><span class="p">})</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model_latent</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">(),</span> <span class="n">latents</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;HISTORY&#39;</span><span class="p">,</span> <span class="s1">&#39;CVP&#39;</span><span class="p">})</span>
 <span class="n">samples_latent</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="s1">&#39;HISTORY&#39;</span><span class="p">,</span> <span class="s1">&#39;CVP&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -411,16 +411,16 @@ WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.110223
 <h2>Shortcut for learning and adding CPDs to the model<a class="headerlink" href="#Shortcut-for-learning-and-adding-CPDs-to-the-model" title="Link to this heading">¶</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">BayesianNetwork</span></code> class also provies a <code class="docutils literal notranslate"><span class="pre">fit</span></code> method that acts as a shortcut way to estimate and add CPDs to the model.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Shortcut for learning all the parameters and adding the CPDs to the model.</span>
 
-<span class="n">model_struct</span> <span class="o">=</span> <span class="n">BayesianNetwork</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="n">model_struct</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
 <span class="n">model_struct</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="n">MaximumLikelihoodEstimator</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model_struct</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="s2">&quot;FIO2&quot;</span><span class="p">))</span>
 
-<span class="n">model_struct</span> <span class="o">=</span> <span class="n">BayesianNetwork</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="n">model_struct</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
 <span class="n">model_struct</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
     <span class="n">data</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span>
     <span class="n">estimator</span><span class="o">=</span><span class="n">BayesianEstimator</span><span class="p">,</span>
@@ -488,6 +488,7 @@ WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.110223
 <li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Example Notebooks</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="Creating%20a%20Discrete%20Bayesian%20Network.html">Creating Discrete Bayesian Networks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Creating%20a%20Linear%20Gaussian%20Bayesian%20Network.html">Creating Linear Gaussian Bayesian Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="How%20to%20define%20CPDs.html">How to define TabularCPD and LinearGaussianCPD</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Basic%20Operations%20on%20Bayesian%20Network.html">Basic Operations on Bayesian Networks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Structure%20Learning%20in%20Bayesian%20Networks.html">Structure Learning in Bayesian Networks</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Structure%20Learning%20with%20Chow-Liu.html">Learning Tree Structure from Data using the Chow-Liu Algorithm</a></li>

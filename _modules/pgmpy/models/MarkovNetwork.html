@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pgmpy.models.MarkovNetwork &#8212; pgmpy 0.1.23 documentation</title>
+    <title>pgmpy.models.MarkovNetwork &#8212; pgmpy 1.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
-    <script src="../../../_static/documentation_options.js?v=20522496"></script>
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
@@ -580,6 +580,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">JunctionTree</span>
 
+        <span class="c1"># Get all the state names of the random variables</span>
+        <span class="n">all_state_names</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">factor</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">factors</span><span class="p">:</span>
+            <span class="n">all_state_names</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">factor</span><span class="o">.</span><span class="n">state_names</span><span class="p">)</span>
+
         <span class="c1"># Check whether the model is valid or not</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
 
@@ -633,7 +638,15 @@
             <span class="c1"># To compute clique potential, initially set it as unity factor</span>
             <span class="n">var_card</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">()[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">node</span><span class="p">]</span>
             <span class="n">clique_potential</span> <span class="o">=</span> <span class="n">DiscreteFactor</span><span class="p">(</span>
-                <span class="n">node</span><span class="p">,</span> <span class="n">var_card</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">var_card</span><span class="p">))</span>
+                <span class="n">node</span><span class="p">,</span>
+                <span class="n">var_card</span><span class="p">,</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">var_card</span><span class="p">)),</span>
+                <span class="n">state_names</span><span class="o">=</span><span class="p">{</span>
+                    <span class="n">var</span><span class="p">:</span> <span class="n">all_state_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="n">var</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">()[</span><span class="n">var</span><span class="p">]))</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">node</span>
+                <span class="p">},</span>
             <span class="p">)</span>
             <span class="c1"># multiply it with the factors associated with the variables present</span>
             <span class="c1"># in the clique (or node)</span>
@@ -744,12 +757,12 @@
 <span class="sd">        &gt;&gt;&gt; mm.add_factors(*phi)</span>
 <span class="sd">        &gt;&gt;&gt; bm = mm.to_bayesian_model()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">BayesianNetwork</span>
+        <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 
         <span class="c1"># If the graph is not connected, treat them as separate models and join them together in the end.</span>
         <span class="n">bms</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">node_set</span> <span class="ow">in</span> <span class="n">connected_components</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="n">bm</span> <span class="o">=</span> <span class="n">BayesianNetwork</span><span class="p">()</span>
+            <span class="n">bm</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">()</span>
             <span class="n">var_clique_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">tuple</span><span class="p">)</span>
             <span class="n">var_order</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -786,7 +799,7 @@
             <span class="n">bms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bm</span><span class="p">)</span>
 
         <span class="c1"># Join the bms in a single model.</span>
-        <span class="n">final_bm</span> <span class="o">=</span> <span class="n">BayesianNetwork</span><span class="p">()</span>
+        <span class="n">final_bm</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">bm</span> <span class="ow">in</span> <span class="n">bms</span><span class="p">:</span>
             <span class="n">final_bm</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">bm</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
             <span class="n">final_bm</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">bm</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
@@ -900,11 +913,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../factors/base.html">Parameterization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/base.html">Exact Inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/model_testing.html">Model Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/base.html">Approximate Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../param_estimator/base.html">Parameter Estimation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Structure Learning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for testing models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for Testing Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
@@ -952,7 +964,7 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &#169;2023, Ankur Ankan.
+      &#169;2025, Ankur Ankan.
       
       |
       Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
