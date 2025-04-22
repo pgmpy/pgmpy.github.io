@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Basic Operations on Bayesian Networks" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="examples/Basic_Operations_on_BN.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="This notebook shows examples of some basic operations that can be performed on a Bayesian Network. We use the Protein Signalling network from the bnlearn repository as the example model: https://ww..." />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="_images/social_previews/summary_examples_Basic_Operations_on_BN_dc3a4da6.png" />
+<meta property="og:image:alt" content="This notebook shows examples of some basic operations that can be performed on a Bayesian Network. We use the Protein Signalling network from the bnlearn repository as the example model: https://ww..." />
+<meta name="description" content="This notebook shows examples of some basic operations that can be performed on a Bayesian Network. We use the Protein Signalling network from the bnlearn repository as the example model: https://ww..." />
+<meta name="twitter:card" content="summary_large_image" />
+
+    <title>Basic Operations on Bayesian Networks &#8212; 1.0.0 | pgmpy docs</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <script src="../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/examples/Basic_Operations_on_BN.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Structure Learning in Bayesian Networks" href="Structure_Learning.html" />
+    <link rel="prev" title="How to define TabularCPD and LinearGaussianCPD" href="Defining_CPDs.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="Basic-Operations-on-Bayesian-Networks">
+<h1>Basic Operations on Bayesian Networks<a class="headerlink" href="#Basic-Operations-on-Bayesian-Networks" title="Link to this heading">¶</a></h1>
+<p>This notebook shows examples of some basic operations that can be performed on a Bayesian Network. We use the Protein Signalling network from the bnlearn repository as the example model: <a class="reference external" href="https://www.bnlearn.com/bnrepository/discrete-medium.html#sachs">https://www.bnlearn.com/bnrepository/discrete-medium.html#sachs</a></p>
+<p>The <code class="docutils literal notranslate"><span class="pre">DiscreteBayesianNetwork</span></code> class in pgmpy inherits the <code class="docutils literal notranslate"><span class="pre">networkx.DiGraph</span></code> class, hence all the methods defined for <code class="docutils literal notranslate"><span class="pre">networkx.DiGraph</span></code> should also work for <code class="docutils literal notranslate"><span class="pre">DiscreteBayesianNetwork</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pprint</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
+
+<span class="c1"># Load the sachs model.</span>
+<span class="c1"># For other ways to define a model, please refer: https://pgmpy.org/examples/Creating%20a%20Discrete%20Bayesian%20Network.html</span>
+<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">get_example_model</span>
+<span class="n">sachs_model</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="s1">&#39;sachs&#39;</span><span class="p">)</span>
+
+<span class="c1"># Visualize the model</span>
+<span class="n">viz</span> <span class="o">=</span> <span class="n">sachs_model</span><span class="o">.</span><span class="n">to_graphviz</span><span class="p">()</span>
+<span class="n">viz</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="s1">&#39;sachs.png&#39;</span><span class="p">,</span> <span class="n">prog</span><span class="o">=</span><span class="s1">&#39;dot&#39;</span><span class="p">)</span>
+<span class="n">Image</span><span class="p">(</span><span class="s1">&#39;sachs.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Basic_Operations_on_BN_2_0.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Basic_Operations_on_BN_2_0.png" />
+</div>
+</div>
+<section id="Attributes-of-the-Model-Structure">
+<h2>Attributes of the Model Structure<a class="headerlink" href="#Attributes-of-the-Model-Structure" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get all the nodes/random variables in the model</span>
+<span class="n">all_nodes</span> <span class="o">=</span> <span class="n">sachs_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Nodes: </span><span class="si">{</span><span class="n">all_nodes</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get all the edges in the model.</span>
+<span class="n">all_edges</span> <span class="o">=</span> <span class="n">sachs_model</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Edges: </span><span class="si">{</span><span class="n">all_edges</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get all the CPDs.</span>
+<span class="n">all_cpds</span> <span class="o">=</span> <span class="n">sachs_model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">()</span>
+
+<span class="c1"># Get parents of a specific node</span>
+<span class="n">akt_parents</span> <span class="o">=</span> <span class="n">sachs_model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="s1">&#39;Akt&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parents of Akt: </span><span class="si">{</span><span class="n">akt_parents</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get children of a specific node</span>
+<span class="n">pka_children</span> <span class="o">=</span> <span class="n">sachs_model</span><span class="o">.</span><span class="n">get_children</span><span class="p">(</span><span class="s1">&#39;PKA&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Children of PKA: </span><span class="si">{</span><span class="n">pka_children</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get all the leaf nodes of the model</span>
+<span class="n">leaves</span> <span class="o">=</span> <span class="n">sachs_model</span><span class="o">.</span><span class="n">get_leaves</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Leaf nodes in the model: </span><span class="si">{</span><span class="n">leaves</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get the root nodes of the model</span>
+<span class="n">roots</span> <span class="o">=</span> <span class="n">sachs_model</span><span class="o">.</span><span class="n">get_roots</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Root nodes in the model: </span><span class="si">{</span><span class="n">roots</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Nodes: [&#39;Akt&#39;, &#39;Erk&#39;, &#39;Jnk&#39;, &#39;Mek&#39;, &#39;P38&#39;, &#39;PIP2&#39;, &#39;PIP3&#39;, &#39;PKA&#39;, &#39;PKC&#39;, &#39;Plcg&#39;, &#39;Raf&#39;]
+
+Edges: [(&#39;Erk&#39;, &#39;Akt&#39;), (&#39;Mek&#39;, &#39;Erk&#39;), (&#39;PIP3&#39;, &#39;PIP2&#39;), (&#39;PKA&#39;, &#39;Akt&#39;), (&#39;PKA&#39;, &#39;Erk&#39;), (&#39;PKA&#39;, &#39;Jnk&#39;), (&#39;PKA&#39;, &#39;Mek&#39;), (&#39;PKA&#39;, &#39;P38&#39;), (&#39;PKA&#39;, &#39;Raf&#39;), (&#39;PKC&#39;, &#39;Jnk&#39;), (&#39;PKC&#39;, &#39;Mek&#39;), (&#39;PKC&#39;, &#39;P38&#39;), (&#39;PKC&#39;, &#39;PKA&#39;), (&#39;PKC&#39;, &#39;Raf&#39;), (&#39;Plcg&#39;, &#39;PIP2&#39;), (&#39;Plcg&#39;, &#39;PIP3&#39;), (&#39;Raf&#39;, &#39;Mek&#39;)]
+
+Parents of Akt: [&#39;Erk&#39;, &#39;PKA&#39;]
+
+Children of PKA: [&#39;Akt&#39;, &#39;Erk&#39;, &#39;Jnk&#39;, &#39;Mek&#39;, &#39;P38&#39;, &#39;Raf&#39;]
+
+Leaf nodes in the model: [&#39;Akt&#39;, &#39;Jnk&#39;, &#39;P38&#39;, &#39;PIP2&#39;]
+
+Root nodes in the model: [&#39;PKC&#39;, &#39;Plcg&#39;]
+
+</pre></div></div>
+</div>
+</section>
+<section id="Modifying-the-Model-Structure">
+<h2>Modifying the Model Structure<a class="headerlink" href="#Modifying-the-Model-Structure" title="Link to this heading">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Adding nodes to the model.</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;new_node&#39;</span><span class="p">)</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">([</span><span class="s1">&#39;new_node1&#39;</span><span class="p">,</span> <span class="s1">&#39;new_node2&#39;</span><span class="p">])</span>
+
+<span class="c1"># Adding edges to the model.</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s1">&#39;Akt&#39;</span><span class="p">,</span> <span class="s1">&#39;new_node&#39;</span><span class="p">)</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="s1">&#39;Akt&#39;</span><span class="p">,</span> <span class="s1">&#39;new_node1&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;Akt&#39;</span><span class="p">,</span> <span class="s1">&#39;new_node2&#39;</span><span class="p">)])</span>
+
+<span class="c1"># Removing edges from the model.</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="s1">&#39;Akt&#39;</span><span class="p">,</span> <span class="s1">&#39;new_node&#39;</span><span class="p">)</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">remove_edges_from</span><span class="p">([(</span><span class="s1">&#39;Akt&#39;</span><span class="p">,</span> <span class="s1">&#39;new_node1&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;Akt&#39;</span><span class="p">,</span> <span class="s1">&#39;new_node2&#39;</span><span class="p">)])</span>
+
+<span class="c1"># Removing nodes from the model</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="s1">&#39;new_node&#39;</span><span class="p">)</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">remove_nodes_from</span><span class="p">([</span><span class="s1">&#39;new_node1&#39;</span><span class="p">,</span> <span class="s1">&#39;new_node2&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># At any point, check_model can be called to check if the specified model is correct.</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
+</div>
+</section>
+<section id="Modifying-associated-parameterization">
+<h2>Modifying associated parameterization<a class="headerlink" href="#Modifying-associated-parameterization" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Getting an associated CPD</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="s1">&#39;Akt&#39;</span><span class="p">)</span>
+
+<span class="c1"># Adding new CPDs to the model</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;new_node&#39;</span><span class="p">)</span>
+<span class="n">new_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;new_node&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">]])</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">new_cpd</span><span class="p">)</span>
+
+<span class="c1"># Removing the CPD and the node</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">remove_cpds</span><span class="p">(</span><span class="s1">&#39;new_node&#39;</span><span class="p">)</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="s1">&#39;new_node&#39;</span><span class="p">)</span>
+
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
+</div>
+</section>
+<section id="D-Separation">
+<h2>D-Separation<a class="headerlink" href="#D-Separation" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check if two variables in the network are conditionally / unconditionally d-connected.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sachs_model</span><span class="o">.</span><span class="n">is_dconnected</span><span class="p">(</span><span class="s1">&#39;PKC&#39;</span><span class="p">,</span> <span class="s1">&#39;Akt&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sachs_model</span><span class="o">.</span><span class="n">is_dconnected</span><span class="p">(</span><span class="s1">&#39;PKC&#39;</span><span class="p">,</span> <span class="s1">&#39;Akt&#39;</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Mek&#39;</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sachs_model</span><span class="o">.</span><span class="n">is_dconnected</span><span class="p">(</span><span class="s1">&#39;PKC&#39;</span><span class="p">,</span> <span class="s1">&#39;Akt&#39;</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Mek&#39;</span><span class="p">,</span> <span class="s1">&#39;PKA&#39;</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+True
+False
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># List all the variables that are d-connected to a given variable.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sachs_model</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">(</span><span class="s1">&#39;PKA&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sachs_model</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">([</span><span class="s1">&#39;PKA&#39;</span><span class="p">,</span> <span class="s1">&#39;Raf&#39;</span><span class="p">]))</span>
+
+<span class="nb">print</span><span class="p">()</span>
+
+<span class="c1"># List all d-connected variables when conditioned on some other variables</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sachs_model</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">(</span><span class="s1">&#39;PKA&#39;</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Mek&#39;</span><span class="p">,</span> <span class="s1">&#39;PKC&#39;</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sachs_model</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">([</span><span class="s1">&#39;PKA&#39;</span><span class="p">,</span> <span class="s1">&#39;Raf&#39;</span><span class="p">],</span> <span class="n">observed</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Mek&#39;</span><span class="p">,</span> <span class="s1">&#39;PKC&#39;</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;PKA&#39;: {&#39;Akt&#39;, &#39;Mek&#39;, &#39;PKC&#39;, &#39;Jnk&#39;, &#39;P38&#39;, &#39;Erk&#39;, &#39;PKA&#39;, &#39;Raf&#39;}}
+{&#39;PKA&#39;: {&#39;Akt&#39;, &#39;Mek&#39;, &#39;PKC&#39;, &#39;Jnk&#39;, &#39;P38&#39;, &#39;Erk&#39;, &#39;PKA&#39;, &#39;Raf&#39;}, &#39;Raf&#39;: {&#39;Akt&#39;, &#39;Mek&#39;, &#39;Jnk&#39;, &#39;P38&#39;, &#39;Erk&#39;, &#39;PKA&#39;, &#39;PKC&#39;, &#39;Raf&#39;}}
+
+{&#39;PKA&#39;: {&#39;Akt&#39;, &#39;Erk&#39;, &#39;Jnk&#39;, &#39;P38&#39;, &#39;Raf&#39;, &#39;PKA&#39;}}
+{&#39;PKA&#39;: {&#39;Akt&#39;, &#39;Erk&#39;, &#39;Jnk&#39;, &#39;P38&#39;, &#39;Raf&#39;, &#39;PKA&#39;}, &#39;Raf&#39;: {&#39;Akt&#39;, &#39;Erk&#39;, &#39;Jnk&#39;, &#39;P38&#39;, &#39;Raf&#39;, &#39;PKA&#39;}}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find the minimal d-separator of any two variables</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sachs_model</span><span class="o">.</span><span class="n">minimal_dseparator</span><span class="p">(</span><span class="s1">&#39;PKC&#39;</span><span class="p">,</span> <span class="s1">&#39;Akt&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;Erk&#39;, &#39;PKA&#39;}
+</pre></div></div>
+</div>
+</section>
+<section id="Other-Methods">
+<h2>Other Methods<a class="headerlink" href="#Other-Methods" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get the Markov blanket of a variable</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">get_markov_blanket</span><span class="p">(</span><span class="s1">&#39;Raf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;PKA&#39;, &#39;Mek&#39;, &#39;PKC&#39;]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># List all local indpeendencies of a node</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">local_independencies</span><span class="p">(</span><span class="s1">&#39;Raf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(Raf ⟂ PIP3, Plcg, Jnk, P38, PIP2 | PKA, PKC)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># List all implied independencies in the network</span>
+<span class="n">sachs_model</span><span class="o">.</span><span class="n">get_independencies</span><span class="p">()</span><span class="o">.</span><span class="n">independencies</span><span class="p">[:</span><span class="mi">10</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[(Akt ⟂ PIP3, PIP2, Plcg),
+ (Akt ⟂ PIP3, PIP2, Plcg | Mek),
+ (Akt ⟂ PIP3, PIP2, Plcg | Jnk),
+ (Akt ⟂ PIP3, PIP2, Plcg | P38),
+ (Akt ⟂ PIP3, PIP2, Plcg | Erk),
+ (Akt ⟂ Plcg, PIP3 | PIP2),
+ (Akt ⟂ PIP3, PIP2, Plcg | PKA),
+ (Akt ⟂ Plcg, PIP2 | PIP3),
+ (Akt ⟂ PIP3, PIP2 | Plcg),
+ (Akt ⟂ PIP3, PIP2, Plcg | PKC)]
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../started/base.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Examples</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../examples.html#defining-bayesian-networks">Defining Bayesian Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#causal-discovery-structure-learning">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#parameter-estimation">Parameter Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#probabilistic-inference">Probabilistic Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#causal-inference">Causal Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#simulations">Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#extending-pgmpy">Extending pgmpy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../models/base.html">Supported Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../factors/base.html">Parameterization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../causal_infer/base.html">Causal Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics/metrics.html">Metrics for Testing Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../examples.html">Examples</a><ul>
+      <li>Previous: <a href="Defining_CPDs.html" title="previous chapter">How to define TabularCPD and LinearGaussianCPD</a></li>
+      <li>Next: <a href="Structure_Learning.html" title="next chapter">Structure Learning in Bayesian Networks</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/examples/Basic_Operations_on_BN.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

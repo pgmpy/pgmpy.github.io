@@ -7,10 +7,16 @@
     <title>pgmpy.sampling.Sampling &#8212; pgmpy 1.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <script src="../../../_static/documentation_options.js?v=8d563738"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="icon" href="../../../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -43,7 +49,7 @@
 
 <span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="kn">import</span> <span class="n">factor_product</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">,</span> <span class="n">MarkovChain</span><span class="p">,</span> <span class="n">MarkovNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">,</span> <span class="n">DiscreteMarkovNetwork</span><span class="p">,</span> <span class="n">MarkovChain</span>
 <span class="kn">from</span> <span class="nn">pgmpy.sampling</span> <span class="kn">import</span> <span class="n">BayesianModelInference</span><span class="p">,</span> <span class="n">_return_samples</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils.mathext</span> <span class="kn">import</span> <span class="n">sample_discrete</span><span class="p">,</span> <span class="n">sample_discrete_maps</span>
 
@@ -444,7 +450,7 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    model: DiscreteBayesianNetwork or MarkovNetwork</span>
+<span class="sd">    model: DiscreteBayesianNetwork or DiscreteMarkovNetwork</span>
 <span class="sd">        Model from which variables are inherited and transition probabilities computed.</span>
 
 <span class="sd">    Examples</span>
@@ -472,7 +478,7 @@
         <span class="nb">super</span><span class="p">(</span><span class="n">GibbsSampling</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_get_kernel_from_bayesian_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">MarkovNetwork</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteMarkovNetwork</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_get_kernel_from_markov_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_get_kernel_from_bayesian_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
@@ -513,7 +519,7 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        model: MarkovNetwork</span>
+<span class="sd">        model: DiscreteMarkovNetwork</span>
 <span class="sd">            The model from which probabilities will be computed.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
@@ -577,8 +583,8 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import DiscreteFactor</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.sampling import GibbsSampling</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import MarkovNetwork</span>
-<span class="sd">        &gt;&gt;&gt; model = MarkovNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteMarkovNetwork</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteMarkovNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; factor_ab = DiscreteFactor([&#39;A&#39;, &#39;B&#39;], [2, 2], [1, 2, 3, 4])</span>
 <span class="sd">        &gt;&gt;&gt; factor_cb = DiscreteFactor([&#39;C&#39;, &#39;B&#39;], [2, 2], [5, 6, 7, 8])</span>
 <span class="sd">        &gt;&gt;&gt; model.add_factors(factor_ab, factor_cb)</span>
@@ -633,8 +639,8 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import DiscreteFactor</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.sampling import GibbsSampling</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import MarkovNetwork</span>
-<span class="sd">        &gt;&gt;&gt; model = MarkovNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteMarkovNetwork</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteMarkovNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;)])</span>
 <span class="sd">        &gt;&gt;&gt; factor_ab = DiscreteFactor([&#39;A&#39;, &#39;B&#39;], [2, 2], [1, 2, 3, 4])</span>
 <span class="sd">        &gt;&gt;&gt; factor_cb = DiscreteFactor([&#39;C&#39;, &#39;B&#39;], [2, 2], [5, 6, 7, 8])</span>
 <span class="sd">        &gt;&gt;&gt; model.add_factors(factor_ab, factor_cb)</span>

@@ -4,15 +4,33 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="A Bayesian Network to model the influence of energy consumption on greenhouse gases in Italy" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="detailed_notebooks/11.%20A%20Bayesian%20Network%20to%20model%20the%20influence%20of%20energy%20consumption%20on%20greenhouse%20gases%20in%20Italy.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="by Lorenzo Mario Amorosa: Fundamentals of Artificial Intelligence and Knowledge Representation (Mod. 3) - Alma Mater Studiorum Università di Bologna: Abstract:|651120a5bf8d4474ac7a0fef0f6f42e3| Now..." />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="_images/social_previews/summary_detailed_notebooks_11. A Bayesian Network to model the influence of energy consumption on greenhouse gases in Italy_9fce22cc.png" />
+<meta property="og:image:alt" content="by Lorenzo Mario Amorosa: Fundamentals of Artificial Intelligence and Knowledge Representation (Mod. 3) - Alma Mater Studiorum Università di Bologna: Abstract:|651120a5bf8d4474ac7a0fef0f6f42e3| Now..." />
+<meta name="description" content="by Lorenzo Mario Amorosa: Fundamentals of Artificial Intelligence and Knowledge Representation (Mod. 3) - Alma Mater Studiorum Università di Bologna: Abstract:|651120a5bf8d4474ac7a0fef0f6f42e3| Now..." />
+<meta name="twitter:card" content="summary_large_image" />
 
-    <title>A Bayesian Network to model the influence of energy consumption on greenhouse gases in Italy &#8212; pgmpy 1.0.0 documentation</title>
+    <title>A Bayesian Network to model the influence of energy consumption on greenhouse gases in Italy &#8212; 1.0.0 | pgmpy docs</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
     <script src="../_static/documentation_options.js?v=8d563738"></script>
-    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/detailed_notebooks/11.%20A%20Bayesian%20Network%20to%20model%20the%20influence%20of%20energy%20consumption%20on%20greenhouse%20gases%20in%20Italy.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="prev" title="Learning Bayesian Networks from Data" href="10.%20Learning%20Bayesian%20Networks%20from%20Data.html" />
@@ -43,7 +61,7 @@
 </section>
 <section id="Abstract">
 <h2>Abstract<a class="headerlink" href="#Abstract" title="Link to this heading">¶</a></h2>
-<p><a href="#id1"><span class="problematic" id="id2">|b2c5f56afec74f66995fd2bf743217a5|</span></a> Nowadays it is well established that <strong>global warming</strong> is hugely caused by greenhouse gases, which are indeed responsible for trapping heat in the atmosphere. The 3 most common gases are carbon dioxide (<strong>CO</strong>2), methane (<strong>CH</strong>4) and nitrous oxide (<strong>N</strong>2<strong>O</strong>) [1].</p>
+<p><a href="#id1"><span class="problematic" id="id2">|651120a5bf8d4474ac7a0fef0f6f42e3|</span></a> Nowadays it is well established that <strong>global warming</strong> is hugely caused by greenhouse gases, which are indeed responsible for trapping heat in the atmosphere. The 3 most common gases are carbon dioxide (<strong>CO</strong>2), methane (<strong>CH</strong>4) and nitrous oxide (<strong>N</strong>2<strong>O</strong>) [1].</p>
 <p>There are several sources of greenhouse gases, such as transportation, industry, commercial and residental. In this document I will tackle the problem in a general way, considering the impact of energy consumption on greenhouse gases emissions. Energy is indeed strictly related to almost all source factors. In particular, I will face the modelling of <strong>causal relations</strong> between <strong>energy consumption and greenhouse gases in Italy</strong> using a <strong>Bayesian network</strong>. The aim is to learn a model that
 can provide <strong>probabilistic results given</strong> some input <strong>evidence</strong>. The causal relations and their relative probabilities will be estimated by analyzing <strong>annual growth factors</strong> of several indicators from open source datasets of the World Bank Group (WBG) [3]. The choice of analyzing the annual growth aims to capture how the variation of an indicator can affect the others.</p>
 <p>This work starts from a paper by Cinar and Kayakutlu (2010) [2] in which the authors produced estimates about energy investments in Turkey given historical data. Their work helped me to come up with interesting measures to be investigated and to be represented in the Bayesian network. I could extend their work adding: a more comprehensive analysis of network properties (<strong>conditional independencies, active trails, Markov blankets</strong>), concise and effective high level functions (such
@@ -51,7 +69,7 @@ as <code class="docutils literal notranslate"><span class="pre">query_report</sp
 </section>
 <section id="Network-definition">
 <h2>Network definition<a class="headerlink" href="#Network-definition" title="Link to this heading">¶</a></h2>
-<p>Generally we can expect that the increase of fossil fuel consumption determines the growth of greenhouse gases diffusion, whereas a wider use of renewable energies leads to a reduction of greenhouse gases emissions. In [2] it is suggested that growth rate factors about population, urbanization and gross domestic product (GDP) can all influence the overall energy use in a nation. Given these assumptions, the Bayesian network is defined as follows: <a href="#id3"><span class="problematic" id="id4">|e06ad0a42fb84dab9b7c99b1683c64ab|</span></a>
+<p>Generally we can expect that the increase of fossil fuel consumption determines the growth of greenhouse gases diffusion, whereas a wider use of renewable energies leads to a reduction of greenhouse gases emissions. In [2] it is suggested that growth rate factors about population, urbanization and gross domestic product (GDP) can all influence the overall energy use in a nation. Given these assumptions, the Bayesian network is defined as follows: <a href="#id3"><span class="problematic" id="id4">|ae441dfd7bdf4536b1a8c0ba13ba4e0b|</span></a>
 The terms in the nodes have the following labels in [3]:</p>
 <p>Pop = Population growth (annual %)</p>
 <p>Urb = Urban population growth (annual %)</p>
@@ -1518,20 +1536,29 @@ Probability of N2O increase with:
 
 
 
-<h3>Navigation</h3>
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../started/base.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../base/base.html">Base Model Structures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../models/base.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/base.html">Supported Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../factors/base.html">Parameterization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../exact_infer/base.html">Exact Inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../approx_infer/base.html">Approximate Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../causal_infer/base.html">Causal Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../param_estimator/base.html">Parameter Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../metrics/metrics.html">Metrics for Testing Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../readwrite/base.html">Reading/Writing to File</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting Models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../examples.html">Example Notebooks</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="1.%20Introduction%20to%20Probabilistic%20Graphical%20Models.html">Introduction to Probabilitic Graphical Models</a></li>
 <li class="toctree-l2"><a class="reference internal" href="2.%20Bayesian%20Networks.html">Bayesian Network</a></li>
@@ -1557,15 +1584,7 @@ Probability of N2O increase with:
   </ul></li>
   </ul></li>
 </ul>
-</div>
-
-
-
-
-
-
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>
@@ -1575,16 +1594,6 @@ Probability of N2O increase with:
 
   gtag('config', 'G-HCFR07M31W');
 </script>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -1593,7 +1602,7 @@ Probability of N2O increase with:
       &#169;2025, Ankur Ankan.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
       |

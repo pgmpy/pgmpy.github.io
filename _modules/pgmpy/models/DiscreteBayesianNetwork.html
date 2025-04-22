@@ -7,10 +7,16 @@
     <title>pgmpy.models.DiscreteBayesianNetwork &#8212; pgmpy 1.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <script src="../../../_static/documentation_options.js?v=8d563738"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="icon" href="../../../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -51,7 +57,7 @@
     <span class="n">TabularCPD</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models.MarkovNetwork</span> <span class="kn">import</span> <span class="n">MarkovNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models.DiscreteMarkovNetwork</span> <span class="kn">import</span> <span class="n">DiscreteMarkovNetwork</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">compat_fns</span>
 
 
@@ -542,7 +548,7 @@
 <span class="sd">        EdgeView([(&#39;diff&#39;, &#39;grade&#39;), (&#39;diff&#39;, &#39;intel&#39;), (&#39;grade&#39;, &#39;letter&#39;), (&#39;grade&#39;, &#39;intel&#39;), (&#39;intel&#39;, &#39;SAT&#39;)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">moral_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">moralize</span><span class="p">()</span>
-        <span class="n">mm</span> <span class="o">=</span> <span class="n">MarkovNetwork</span><span class="p">(</span><span class="n">moral_graph</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+        <span class="n">mm</span> <span class="o">=</span> <span class="n">DiscreteMarkovNetwork</span><span class="p">(</span><span class="n">moral_graph</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
         <span class="n">mm</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">moral_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
         <span class="n">mm</span><span class="o">.</span><span class="n">add_factors</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">cpd</span><span class="o">.</span><span class="n">to_factor</span><span class="p">()</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="p">])</span>
 
@@ -787,7 +793,7 @@
             <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
         <span class="p">)</span>
         <span class="n">data_unique</span> <span class="o">=</span> <span class="n">data_unique_indexes</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
-        <span class="n">pred_values</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)(</span>
+        <span class="n">pred_values</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">require</span><span class="o">=</span><span class="s2">&quot;sharedmem&quot;</span><span class="p">)(</span>
             <span class="n">delayed</span><span class="p">(</span><span class="n">model_inference</span><span class="o">.</span><span class="n">query</span> <span class="k">if</span> <span class="n">stochastic</span> <span class="k">else</span> <span class="n">model_inference</span><span class="o">.</span><span class="n">map_query</span><span class="p">)(</span>
                 <span class="n">variables</span><span class="o">=</span><span class="n">missing_variables</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
                     <span class="nb">set</span><span class="p">(</span><span class="n">data_point</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">data_point</span><span class="o">.</span><span class="n">isna</span><span class="p">()])</span>

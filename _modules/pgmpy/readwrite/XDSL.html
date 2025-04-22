@@ -7,10 +7,16 @@
     <title>pgmpy.readwrite.XDSL &#8212; pgmpy 1.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <script src="../../../_static/documentation_options.js?v=8d563738"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="icon" href="../../../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -34,14 +40,13 @@
 <span></span><span class="kn">import</span> <span class="nn">random</span>
 <span class="kn">import</span> <span class="nn">xml.dom.minidom</span> <span class="k">as</span> <span class="nn">md</span>
 <span class="kn">import</span> <span class="nn">xml.etree.ElementTree</span> <span class="k">as</span> <span class="nn">etree</span>
-<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">State</span><span class="p">,</span> <span class="n">TabularCPD</span>
+<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">compat_fns</span>
 
 
 <div class="viewcode-block" id="XDSLReader">
@@ -358,7 +363,7 @@
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; writer = XMLBIFWriter(model)</span>
+<span class="sd">        &gt;&gt;&gt; writer = XDSLWriter(model)</span>
 <span class="sd">        &gt;&gt;&gt; writer.get_variables()</span>
 <span class="sd">        {&#39;asia&#39;: &lt;Element &#39;cpt&#39; at 0x000001DC6BFA1350&gt;,</span>
 <span class="sd">        &#39;tub&#39;: &lt;Element &#39;cpt&#39; at 0x000001DC6BFA35B0&gt;,</span>
@@ -390,7 +395,7 @@
 
 <span class="sd">        Examples</span>
 <span class="sd">        -------</span>
-<span class="sd">        &gt;&gt;&gt; writer = XMLBIFWriter(model)</span>
+<span class="sd">        &gt;&gt;&gt; writer = XDSLWriter(model)</span>
 <span class="sd">        &gt;&gt;&gt; writer.get_values()</span>
 <span class="sd">        {&#39;asia&#39;: &lt;TabularCPD representing P(asia:2) at 0x1885817c830&gt;,</span>
 <span class="sd">        &#39;tub&#39;: &lt;TabularCPD representing P(tub:2 | asia:2) at 0x1885a7e57c0&gt;,</span>
@@ -422,10 +427,10 @@
 
             <span class="c1"># Add the &lt;probabilities&gt; element.</span>
             <span class="n">probs_elem</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">cpt_elem</span><span class="p">,</span> <span class="s2">&quot;probabilities&quot;</span><span class="p">)</span>
-            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">get_values</span><span class="p">())</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">get_values</span><span class="p">()</span>
 
             <span class="c1"># Flatten in column-major order so that for each parent configuration the probabilities for all states are listed.</span>
-            <span class="n">flat_values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;F&quot;</span><span class="p">)</span>
+            <span class="n">flat_values</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">ravel_f</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
             <span class="n">probs_elem</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:.16f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">flat_values</span><span class="p">)</span>
 
             <span class="n">outcome_tag</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">cpd</span>

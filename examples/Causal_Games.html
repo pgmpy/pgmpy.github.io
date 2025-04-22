@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Causal Games" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="examples/Causal_Games.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="Open In Colab Causal Inference is a new feature for pgmpy, so I wanted to develop a few examples which show off the features that we’re developing! This particular notebook walks through the 5 game..." />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="_images/social_previews/summary_examples_Causal_Games_55220adb.png" />
+<meta property="og:image:alt" content="Open In Colab Causal Inference is a new feature for pgmpy, so I wanted to develop a few examples which show off the features that we’re developing! This particular notebook walks through the 5 game..." />
+<meta name="description" content="Open In Colab Causal Inference is a new feature for pgmpy, so I wanted to develop a few examples which show off the features that we’re developing! This particular notebook walks through the 5 game..." />
+<meta name="twitter:card" content="summary_large_image" />
+
+    <title>Causal Games &#8212; 1.0.0 | pgmpy docs</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <script src="../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/examples/Causal_Games.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Simulating Data From Bayesian Networks" href="Simulating_Data.html" />
+    <link rel="prev" title="Causal Inference Examples" href="Causal_Inference.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <p><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></p>
+<section id="Causal-Games">
+<h1>Causal Games<a class="headerlink" href="#Causal-Games" title="Link to this heading">¶</a></h1>
+<p>Causal Inference is a new feature for pgmpy, so I wanted to develop a few examples which show off the features that we’re developing!</p>
+<p>This particular notebook walks through the 5 games that used as examples for building intuition about backdoor paths in <em>The Book of Why</em> by Judea Peal. I have consistently been using them to test different implementations of backdoor adjustment from different libraries and include them as unit tests in pgmpy, so I wanted to walk through them and a few other related games as a potential resource to both understand the implementation of CausalInference in pgmpy, as well as develope some useful
+intuitions about backdoor paths.</p>
+<section id="Objective-of-the-Games">
+<h2>Objective of the Games<a class="headerlink" href="#Objective-of-the-Games" title="Link to this heading">¶</a></h2>
+<p>For each game we get a causal graph, and our goal is to identify the set of deconfounders (often denoted <img class="math" src="../_images/math/95f028ab2b20b895fa12d986e0d9f40f7b6e52d3.png" alt="Z"/>) which will close all backdoor paths from nodes <img class="math" src="../_images/math/ed38fa24f1c94891bd312012aab3f6673be3eb83.png" alt="X"/> to <img class="math" src="../_images/math/7daf0d4815e763eb90f0d5f1dc406f668c1e21db.png" alt="Y"/>. For the time being, I’ll assume that you’re familiar with the concept of backdoor paths, though I may expand this portion to explain it.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="o">!</span>pip3<span class="w"> </span>install<span class="w"> </span>-q<span class="w"> </span>daft
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="kn">import</span> <span class="nn">daft</span>
+<span class="kn">from</span> <span class="nn">daft</span> <span class="kn">import</span> <span class="n">PGM</span>
+
+<span class="c1"># We can now import the development version of pgmpy</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.inference.CausalInference</span> <span class="kn">import</span> <span class="n">CausalInference</span>
+
+
+<span class="k">def</span> <span class="nf">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes a Daft PGM object and converts it to a pgmpy DiscreteBayesianNetwork&quot;&quot;&quot;</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="p">[(</span><span class="n">edge</span><span class="o">.</span><span class="n">node1</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">node2</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">pgm</span><span class="o">.</span><span class="n">_edges</span><span class="p">]</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># @title # Game 1</span>
+<span class="c1"># @markdown While this is a &quot;trivial&quot; example, many statisticians would consider including either or both A and B in their models &quot;just for good measure&quot;.  Notice though how controlling for A would close off the path of causal information from X to Y, actually *impeding* your effort to measure that effect.</span>
+<span class="n">pgm</span> <span class="o">=</span> <span class="n">PGM</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">)</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_3_0.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_3_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># @markdown Notice how there are no nodes with arrows pointing into X.  Said another way, X has no parents.  Therefore, there can&#39;t be any backdoor paths confounding X and Y.  pgmpy will confirm this in the following way:</span>
+<span class="n">game1</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
+<span class="n">inference1</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">game1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span><span class="w"> </span><span class="n">inference1</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+<span class="n">adj_sets</span> <span class="o">=</span> <span class="n">inference1</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Are there are active backdoor paths? False
+If so, what&#39;s the possible backdoor adjustment sets? frozenset()
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/ankur/pgmpy/examples/pgmpy/models/BayesianModel.py:8: FutureWarning: BayesianModel has been renamed to BayesianNetwork. Please use BayesianNetwork class, BayesianModel will be removed in future.
+  warnings.warn(
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># @title # Game 2</span>
+<span class="c1"># @markdown This graph looks harder, but actualy is also trivial to solve.  The key is noticing the one backdoor path, which goes from X &lt;- A -&gt; B &lt;- D -&gt; E -&gt; Y, has a collider at B (or a &#39;V structure&#39;), and therefore the backdoor path is closed.</span>
+<span class="n">pgm</span> <span class="o">=</span> <span class="n">PGM</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_5_0.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_5_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
+<span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span><span class="w"> </span><span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+<span class="n">adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Are there are active backdoor paths? False
+If so, what&#39;s the possible backdoor adjustment sets? frozenset()
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># @title # Game 3</span>
+<span class="c1"># @markdown This game actually requires some action.  Notice the backdoor path X &lt;- B -&gt; Y.  This is a confounding pattern, is one of the clearest signs that we&#39;ll need to control for something, in this case B.</span>
+<span class="n">pgm</span> <span class="o">=</span> <span class="n">PGM</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">1.75</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_7_0.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_7_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
+<span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span><span class="w"> </span><span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+<span class="n">adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Are there are active backdoor paths? True
+If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&#39;B&#39;})})
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># @title # Game 4</span>
+<span class="c1"># @markdown Pearl named this particular configuration &quot;M Bias&quot;, not only because of it&#39;s shape, but also because of the common practice of statisticians to want to control for B in many situations.  However, notice how in this configuration X and Y start out as *not confounded* and how by controlling for B we would actually introduce confounding by opening the path at the collider, B.</span>
+<span class="n">pgm</span> <span class="o">=</span> <span class="n">PGM</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_9_0.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_9_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
+<span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span><span class="w"> </span><span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+<span class="n">adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Are there are active backdoor paths? False
+If so, what&#39;s the possible backdoor adjustment sets? frozenset()
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># @title # Game 5</span>
+<span class="c1"># @markdown This is the last game in The Book of Why is the most complex.  In this case we have two backdoor paths, one going through A and the other through B, and it&#39;s important to notice that if we only control for B that the path: X &lt;- A -&gt; B &lt;- C -&gt; Y (which starts out as closed because B is a collider) actually is opened.  Therefore we have to either close both A and B or, as astute observers will notice, we can also just close C and completely close both backdoor paths.  pgmpy will nicely confirm these results for us.</span>
+<span class="n">pgm</span> <span class="o">=</span> <span class="n">PGM</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_11_0.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_11_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
+<span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span><span class="w"> </span><span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+<span class="n">adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Are there are active backdoor paths? True
+If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&#39;A&#39;, &#39;B&#39;}), frozenset({&#39;C&#39;})})
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># @title # Game 6</span>
+<span class="c1"># @markdown So these are no longer drawn from The Book of Why, but were either drawn from another source (which I will reference) or a developed to try to induce a specific bug.</span>
+<span class="c1"># @markdown This example is drawn from Causality by Pearl on p. 80. This example is kind of interesting because there are many possible combinations of nodes which will close the two backdoor paths which exist in this graph.  In turns out that D plus any other node in {A, B, C, E} will deconfound X and Y.</span>
+
+<span class="n">pgm</span> <span class="o">=</span> <span class="n">PGM</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;F&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_13_0.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_13_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
+<span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span><span class="w"> </span><span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+<span class="n">bd_adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">bd_adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">fd_adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_frontdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ehat&#39;s the possible front adjustment sets? </span><span class="si">{</span><span class="n">fd_adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Are there are active backdoor paths? True
+If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&#39;A&#39;, &#39;D&#39;}), frozenset({&#39;E&#39;, &#39;D&#39;}), frozenset({&#39;B&#39;, &#39;D&#39;}), frozenset({&#39;D&#39;, &#39;C&#39;})})
+Ehat&#39;s the possible front adjustment sets? frozenset({frozenset({&#39;F&#39;})})
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># @title # Game 7</span>
+<span class="c1"># @markdown This game tests the front door adjustment.  B is taken to be unobserved, and therfore we cannot close the backdoor path X &lt;- B -&gt; Y.</span>
+<span class="n">pgm</span> <span class="o">=</span> <span class="n">PGM</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">daft</span><span class="o">.</span><span class="n">Node</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
+<span class="n">pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+
+<span class="n">pgm</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_15_0.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Games_15_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">graph</span> <span class="o">=</span> <span class="n">convert_pgm_to_pgmpy</span><span class="p">(</span><span class="n">pgm</span><span class="p">)</span>
+<span class="n">inference</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;Are there are active backdoor paths? </span><span class="si">{</span><span class="ow">not</span><span class="w"> </span><span class="n">inference</span><span class="o">.</span><span class="n">is_valid_backdoor_adjustment_set</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Y&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+<span class="n">bd_adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_backdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If so, what&#39;s the possible backdoor adjustment sets? </span><span class="si">{</span><span class="n">bd_adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">fd_adj_sets</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">get_all_frontdoor_adjustment_sets</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ehat&#39;s the possible front adjustment sets? </span><span class="si">{</span><span class="n">fd_adj_sets</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Are there are active backdoor paths? True
+If so, what&#39;s the possible backdoor adjustment sets? frozenset({frozenset({&#39;B&#39;})})
+Ehat&#39;s the possible front adjustment sets? frozenset({frozenset({&#39;A&#39;})})
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../started/base.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#defining-bayesian-networks">Defining Bayesian Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#causal-discovery-structure-learning">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#parameter-estimation">Parameter Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#probabilistic-inference">Probabilistic Inference</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../examples.html#causal-inference">Causal Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#simulations">Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#extending-pgmpy">Extending pgmpy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../models/base.html">Supported Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../factors/base.html">Parameterization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../causal_infer/base.html">Causal Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics/metrics.html">Metrics for Testing Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../examples.html">Examples</a><ul>
+      <li>Previous: <a href="Causal_Inference.html" title="previous chapter">Causal Inference Examples</a></li>
+      <li>Next: <a href="Simulating_Data.html" title="next chapter">Simulating Data From Bayesian Networks</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/examples/Causal_Games.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

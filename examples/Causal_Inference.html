@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Causal Inference Examples" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="examples/Causal_Inference.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="Simpson’s paradox: Model Definition: Inference conditioning on T: Inference with do-operation on T: Specifying adjustment sets:" />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="_images/social_previews/summary_examples_Causal_Inference_228bb422.png" />
+<meta property="og:image:alt" content="Simpson’s paradox: Model Definition: Inference conditioning on T: Inference with do-operation on T: Specifying adjustment sets:" />
+<meta name="description" content="Simpson’s paradox: Model Definition: Inference conditioning on T: Inference with do-operation on T: Specifying adjustment sets:" />
+<meta name="twitter:card" content="summary_large_image" />
+
+    <title>Causal Inference Examples &#8212; 1.0.0 | pgmpy docs</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <script src="../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/examples/Causal_Inference.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Causal Games" href="Causal_Games.html" />
+    <link rel="prev" title="Monty Hall Problem" href="Monty_Hall.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="Causal-Inference-Examples">
+<h1>Causal Inference Examples<a class="headerlink" href="#Causal-Inference-Examples" title="Link to this heading">¶</a></h1>
+<section id="Simpson's-paradox">
+<h2>Simpson’s paradox<a class="headerlink" href="#Simpson's-paradox" title="Link to this heading">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">VariableElimination</span>
+<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
+<span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">CausalInference</span>
+</pre></div>
+</div>
+</div>
+<section id="Model-Definition">
+<h3>Model Definition<a class="headerlink" href="#Model-Definition" title="Link to this heading">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simp_model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">([(</span><span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">)])</span>
+<span class="n">simp_model</span><span class="o">.</span><span class="n">to_daft</span><span class="p">(</span><span class="n">node_pos</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;S&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)})</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.axes._axes.Axes at 0x7f1761cbb700&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Inference_4_1.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Inference_4_1.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cpd_s</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">]],</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;S&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;m&quot;</span><span class="p">,</span> <span class="s2">&quot;f&quot;</span><span class="p">]}</span>
+<span class="p">)</span>
+<span class="n">cpd_t</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">,</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.75</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">]],</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;S&quot;</span><span class="p">],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+    <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;S&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;m&quot;</span><span class="p">,</span> <span class="s2">&quot;f&quot;</span><span class="p">],</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]},</span>
+<span class="p">)</span>
+<span class="n">cpd_c</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">,</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]],</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+    <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;S&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;m&quot;</span><span class="p">,</span> <span class="s2">&quot;f&quot;</span><span class="p">],</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]},</span>
+<span class="p">)</span>
+
+<span class="n">simp_model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_s</span><span class="p">,</span> <span class="n">cpd_t</span><span class="p">,</span> <span class="n">cpd_c</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Inference-conditioning-on-T">
+<h3>Inference conditioning on T<a class="headerlink" href="#Inference-conditioning-on-T" title="Link to this heading">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Non adjusted inference</span>
+<span class="n">infer_non_adjust</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">simp_model</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">infer_non_adjust</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">infer_non_adjust</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "6890d595b5cd4adfa75861277cfd474c", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "6952911a320f4ddc9295692786078edb", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+----------+
+| C    |   phi(C) |
++======+==========+
+| C(0) |   0.5000 |
++------+----------+
+| C(1) |   0.5000 |
++------+----------+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "b186d036897e4ace8fdc23be8ee153d4", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "fa69a019d7a14821915d56dedcfd956b", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+----------+
+| C    |   phi(C) |
++======+==========+
+| C(0) |   0.6000 |
++------+----------+
+| C(1) |   0.4000 |
++------+----------+
+</pre></div></div>
+</div>
+</section>
+<section id="Inference-with-do-operation-on-T">
+<h3>Inference with do-operation on T<a class="headerlink" href="#Inference-with-do-operation-on-T" title="Link to this heading">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">infer_adjusted</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">simp_model</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">infer_adjusted</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">],</span> <span class="n">do</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">infer_adjusted</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">],</span> <span class="n">do</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "65e8e0dd710b4ca49493d37697e18779", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+----------+
+| C    |   phi(C) |
++======+==========+
+| C(0) |   0.6000 |
++------+----------+
+| C(1) |   0.4000 |
++------+----------+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "ce1703d2795b4be29fbccd75e848e491", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+----------+
+| C    |   phi(C) |
++======+==========+
+| C(0) |   0.5000 |
++------+----------+
+| C(1) |   0.5000 |
++------+----------+
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Specifying-adjustment-sets">
+<h2>Specifying adjustment sets<a class="headerlink" href="#Specifying-adjustment-sets" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">([(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;W&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;W&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)])</span>
+<span class="n">cpd_z</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">]])</span>
+
+<span class="n">cpd_x</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;X&quot;</span><span class="p">,</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]],</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">cpd_w</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;W&quot;</span><span class="p">,</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">]],</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">cpd_y</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]],</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;W&quot;</span><span class="p">],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_z</span><span class="p">,</span> <span class="n">cpd_x</span><span class="p">,</span> <span class="n">cpd_w</span><span class="p">,</span> <span class="n">cpd_y</span><span class="p">)</span>
+
+<span class="n">model</span><span class="o">.</span><span class="n">to_daft</span><span class="p">(</span><span class="n">node_pos</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;Y&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;Z&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="s2">&quot;W&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)})</span><span class="o">.</span><span class="n">render</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.axes._axes.Axes at 0x7f1760a8ce20&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Inference_11_1.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Causal_Inference_11_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Do operation with a specified adjustment set.</span>
+<span class="n">infer</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">do_X_W</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s2">&quot;Y&quot;</span><span class="p">],</span> <span class="n">do</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="n">adjustment_set</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;W&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">do_X_W</span><span class="p">)</span>
+
+<span class="n">do_X_Z</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s2">&quot;Y&quot;</span><span class="p">],</span> <span class="n">do</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="n">adjustment_set</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">do_X_Z</span><span class="p">)</span>
+
+<span class="n">do_X_WZ</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s2">&quot;Y&quot;</span><span class="p">],</span> <span class="n">do</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="n">adjustment_set</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;W&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">do_X_WZ</span><span class="p">)</span>
+
+<span class="n">infer_simp</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">simp_model</span><span class="p">)</span>
+<span class="n">do_simpson</span> <span class="o">=</span> <span class="n">infer_simp</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s2">&quot;C&quot;</span><span class="p">],</span> <span class="n">do</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="n">adjustment_set</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;S&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">do_simpson</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "64df707c71d34aa192f465fffcdd2d1d", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+----------+
+| Y    |   phi(Y) |
++======+==========+
+| Y(0) |   0.7240 |
++------+----------+
+| Y(1) |   0.2760 |
++------+----------+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "351bed21a88b49d8ac1d06c72a0ce751", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+----------+
+| Y    |   phi(Y) |
++======+==========+
+| Y(0) |   0.7240 |
++------+----------+
+| Y(1) |   0.2760 |
++------+----------+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "193a7875ffcb4a80a193e7d1d1d57f76", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+----------+
+| Y    |   phi(Y) |
++======+==========+
+| Y(0) |   0.7240 |
++------+----------+
+| Y(1) |   0.2760 |
++------+----------+
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "aabdcce521ca42d8b7180019aac16b66", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+----------+
+| C    |   phi(C) |
++======+==========+
+| C(0) |   0.6000 |
++------+----------+
+| C(1) |   0.4000 |
++------+----------+
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Adjustment without do operation.</span>
+<span class="n">infer</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">adj_W</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s2">&quot;Y&quot;</span><span class="p">],</span> <span class="n">adjustment_set</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;W&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adj_W</span><span class="p">)</span>
+
+<span class="n">adj_Z</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s2">&quot;Y&quot;</span><span class="p">],</span> <span class="n">adjustment_set</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adj_Z</span><span class="p">)</span>
+
+<span class="n">adj_WZ</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s2">&quot;Y&quot;</span><span class="p">],</span> <span class="n">adjustment_set</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;W&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adj_WZ</span><span class="p">)</span>
+
+<span class="n">infer_simp</span> <span class="o">=</span> <span class="n">CausalInference</span><span class="p">(</span><span class="n">simp_model</span><span class="p">)</span>
+<span class="n">adj_simpson</span> <span class="o">=</span> <span class="n">infer_simp</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s2">&quot;C&quot;</span><span class="p">],</span> <span class="n">adjustment_set</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;S&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adj_simpson</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+----------+
+| Y    |   phi(Y) |
++======+==========+
+| Y(0) |   0.6200 |
++------+----------+
+| Y(1) |   0.3800 |
++------+----------+
++------+----------+
+| Y    |   phi(Y) |
++======+==========+
+| Y(0) |   0.6200 |
++------+----------+
+| Y(1) |   0.3800 |
++------+----------+
++------+----------+
+| Y    |   phi(Y) |
++======+==========+
+| Y(0) |   0.6200 |
++------+----------+
+| Y(1) |   0.3800 |
++------+----------+
++------+----------+
+| C    |   phi(C) |
++======+==========+
+| C(0) |   0.5500 |
++------+----------+
+| C(1) |   0.4500 |
++------+----------+
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../started/base.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#defining-bayesian-networks">Defining Bayesian Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#causal-discovery-structure-learning">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#parameter-estimation">Parameter Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#probabilistic-inference">Probabilistic Inference</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../examples.html#causal-inference">Causal Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#simulations">Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#extending-pgmpy">Extending pgmpy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../models/base.html">Supported Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../factors/base.html">Parameterization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../causal_infer/base.html">Causal Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics/metrics.html">Metrics for Testing Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../examples.html">Examples</a><ul>
+      <li>Previous: <a href="Monty_Hall.html" title="previous chapter">Monty Hall Problem</a></li>
+      <li>Next: <a href="Causal_Games.html" title="next chapter">Causal Games</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/examples/Causal_Inference.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

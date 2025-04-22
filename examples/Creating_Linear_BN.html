@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Creating Linear Gaussian Bayesian Networks" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="examples/Creating_Linear_BN.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="Similar to defining a Discrete Bayesian Network (BN), defining a Linear Gaussian BN also involves specifying the network structure and its parameterization. There are a few ways to define a Linear ..." />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="_images/social_previews/summary_examples_Creating_Linear_BN_81550cf6.png" />
+<meta property="og:image:alt" content="Similar to defining a Discrete Bayesian Network (BN), defining a Linear Gaussian BN also involves specifying the network structure and its parameterization. There are a few ways to define a Linear ..." />
+<meta name="description" content="Similar to defining a Discrete Bayesian Network (BN), defining a Linear Gaussian BN also involves specifying the network structure and its parameterization. There are a few ways to define a Linear ..." />
+<meta name="twitter:card" content="summary_large_image" />
+
+    <title>Creating Linear Gaussian Bayesian Networks &#8212; 1.0.0 | pgmpy docs</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <script src="../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/examples/Creating_Linear_BN.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="Dynamic_BN.html" />
+    <link rel="prev" title="Creating Discrete Bayesian Networks" href="Creating_Discrete_BN.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="Creating-Linear-Gaussian-Bayesian-Networks">
+<h1>Creating Linear Gaussian Bayesian Networks<a class="headerlink" href="#Creating-Linear-Gaussian-Bayesian-Networks" title="Link to this heading">¶</a></h1>
+<p>Similar to defining a Discrete Bayesian Network (BN), defining a Linear Gaussian BN also involves specifying the network structure and its parameterization.</p>
+<p>There are a few ways to define a Linear Gaussian BN in pgmpy: 1. Load an example model from bnlearn repository (<a class="reference external" href="https://www.bnlearn.com/bnrepository/">https://www.bnlearn.com/bnrepository/</a>). 2. Define the network manually. 3. Generate a random network.</p>
+<section id="1.-Load-an-Example-Model">
+<h2>1. Load an Example Model<a class="headerlink" href="#1.-Load-an-Example-Model" title="Link to this heading">¶</a></h2>
+<p>pgmpy provides a method <code class="docutils literal notranslate"><span class="pre">pgmpy.utils.get_example_model</span></code> to quickly load any model from the bnlearn repository: <a class="reference external" href="https://www.bnlearn.com/bnrepository/">https://www.bnlearn.com/bnrepository/</a></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">get_example_model</span>
+
+<span class="c1"># Load the model</span>
+<span class="n">ecoli_model</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="s1">&#39;ecoli70&#39;</span><span class="p">)</span>
+
+<span class="c1"># Visualize the network</span>
+<span class="n">viz</span> <span class="o">=</span> <span class="n">ecoli_model</span><span class="o">.</span><span class="n">to_graphviz</span><span class="p">()</span>
+<span class="n">viz</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="s1">&#39;ecoli.png&#39;</span><span class="p">,</span> <span class="n">prog</span><span class="o">=</span><span class="s1">&#39;dot&#39;</span><span class="p">)</span>
+<span class="n">Image</span><span class="p">(</span><span class="s1">&#39;ecoli.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Creating_Linear_BN_3_0.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Creating_Linear_BN_3_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pprint</span>
+
+<span class="c1"># Access attributes of the model</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">ecoli_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+<span class="n">edges</span> <span class="o">=</span> <span class="n">ecoli_model</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+<span class="n">cpds</span> <span class="o">=</span> <span class="n">ecoli_model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Nodes in the model: </span><span class="si">{</span><span class="n">nodes</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Edges in the model: </span><span class="si">{</span><span class="n">edges</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A subset of CPDs in the model: &quot;</span><span class="p">)</span>
+<span class="n">pprint</span><span class="o">.</span><span class="n">pp</span><span class="p">(</span><span class="n">cpds</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Nodes in the model: [&#39;asnA&#39;, &#39;icdA&#39;, &#39;lacA&#39;, &#39;lacY&#39;, &#39;lacZ&#39;, &#39;atpD&#39;, &#39;yheI&#39;, &#39;b1191&#39;, &#39;fixC&#39;, &#39;tnaA&#39;, &#39;ygcE&#39;, &#39;cspA&#39;, &#39;hupB&#39;, &#39;yfiA&#39;, &#39;cspG&#39;, &#39;pspA&#39;, &#39;pspB&#39;, &#39;yaeM&#39;, &#39;yecO&#39;, &#39;yedE&#39;, &#39;dnaK&#39;, &#39;mopB&#39;, &#39;eutG&#39;, &#39;ibpB&#39;, &#39;sucA&#39;, &#39;yceP&#39;, &#39;yfaD&#39;, &#39;cchB&#39;, &#39;ycgX&#39;, &#39;ygbD&#39;, &#39;yjbO&#39;, &#39;aceB&#39;, &#39;b1583&#39;, &#39;nuoM&#39;, &#39;ftsJ&#39;, &#39;nmpC&#39;, &#39;atpG&#39;, &#39;dnaJ&#39;, &#39;flgD&#39;, &#39;gltA&#39;, &#39;sucD&#39;, &#39;yhdM&#39;, &#39;dnaG&#39;, &#39;lpdA&#39;, &#39;b1963&#39;, &#39;folK&#39;]
+
+Edges in the model: [(&#39;asnA&#39;, &#39;icdA&#39;), (&#39;asnA&#39;, &#39;lacA&#39;), (&#39;asnA&#39;, &#39;lacY&#39;), (&#39;asnA&#39;, &#39;lacZ&#39;), (&#39;icdA&#39;, &#39;aceB&#39;), (&#39;lacA&#39;, &#39;b1583&#39;), (&#39;lacA&#39;, &#39;lacY&#39;), (&#39;lacA&#39;, &#39;lacZ&#39;), (&#39;lacA&#39;, &#39;yaeM&#39;), (&#39;lacY&#39;, &#39;lacZ&#39;), (&#39;lacY&#39;, &#39;nuoM&#39;), (&#39;lacZ&#39;, &#39;b1583&#39;), (&#39;lacZ&#39;, &#39;mopB&#39;), (&#39;lacZ&#39;, &#39;yaeM&#39;), (&#39;atpD&#39;, &#39;yheI&#39;), (&#39;yheI&#39;, &#39;b1963&#39;), (&#39;yheI&#39;, &#39;dnaG&#39;), (&#39;yheI&#39;, &#39;dnaK&#39;), (&#39;yheI&#39;, &#39;folK&#39;), (&#39;yheI&#39;, &#39;ycgX&#39;), (&#39;b1191&#39;, &#39;fixC&#39;), (&#39;b1191&#39;, &#39;tnaA&#39;), (&#39;b1191&#39;, &#39;ygcE&#39;), (&#39;fixC&#39;, &#39;cchB&#39;), (&#39;fixC&#39;, &#39;tnaA&#39;), (&#39;fixC&#39;, &#39;yceP&#39;), (&#39;fixC&#39;, &#39;ycgX&#39;), (&#39;fixC&#39;, &#39;ygbD&#39;), (&#39;fixC&#39;, &#39;yjbO&#39;), (&#39;ygcE&#39;, &#39;asnA&#39;), (&#39;ygcE&#39;, &#39;atpD&#39;), (&#39;ygcE&#39;, &#39;icdA&#39;), (&#39;cspA&#39;, &#39;hupB&#39;), (&#39;cspA&#39;, &#39;yfiA&#39;), (&#39;yfiA&#39;, &#39;hupB&#39;), (&#39;cspG&#39;, &#39;cspA&#39;), (&#39;cspG&#39;, &#39;lacA&#39;), (&#39;cspG&#39;, &#39;lacY&#39;), (&#39;cspG&#39;, &#39;pspA&#39;), (&#39;cspG&#39;, &#39;pspB&#39;), (&#39;cspG&#39;, &#39;yaeM&#39;), (&#39;cspG&#39;, &#39;yecO&#39;), (&#39;cspG&#39;, &#39;yedE&#39;), (&#39;pspA&#39;, &#39;nmpC&#39;), (&#39;pspB&#39;, &#39;pspA&#39;), (&#39;yedE&#39;, &#39;lpdA&#39;), (&#39;yedE&#39;, &#39;pspA&#39;), (&#39;yedE&#39;, &#39;pspB&#39;), (&#39;yedE&#39;, &#39;yheI&#39;), (&#39;dnaK&#39;, &#39;mopB&#39;), (&#39;mopB&#39;, &#39;ftsJ&#39;), (&#39;eutG&#39;, &#39;ibpB&#39;), (&#39;eutG&#39;, &#39;lacY&#39;), (&#39;eutG&#39;, &#39;sucA&#39;), (&#39;eutG&#39;, &#39;yceP&#39;), (&#39;eutG&#39;, &#39;yfaD&#39;), (&#39;sucA&#39;, &#39;atpD&#39;), (&#39;sucA&#39;, &#39;atpG&#39;), (&#39;sucA&#39;, &#39;dnaJ&#39;), (&#39;sucA&#39;, &#39;flgD&#39;), (&#39;sucA&#39;, &#39;gltA&#39;), (&#39;sucA&#39;, &#39;sucD&#39;), (&#39;sucA&#39;, &#39;tnaA&#39;), (&#39;sucA&#39;, &#39;yfaD&#39;), (&#39;sucA&#39;, &#39;ygcE&#39;), (&#39;sucA&#39;, &#39;yhdM&#39;), (&#39;yceP&#39;, &#39;b1583&#39;), (&#39;yceP&#39;, &#39;ibpB&#39;), (&#39;yceP&#39;, &#39;yfaD&#39;), (&#39;ycgX&#39;, &#39;dnaG&#39;)]
+
+A subset of CPDs in the model:
+[&lt;LinearGaussianCPD: P(aceB | icdA) = N(1.046*icdA + 0.132; 0.085) at 0x7f3343678740,
+ &lt;LinearGaussianCPD: P(asnA | ygcE) = N(0.798*ygcE + 0.349; 0.091) at 0x7f334210bef0,
+ &lt;LinearGaussianCPD: P(atpD | sucA, ygcE) = N(0.26*sucA + -0.725*ygcE + -0.04; 0.413) at 0x7f334210bbf0,
+ &lt;LinearGaussianCPD: P(atpG | sucA) = N(0.618*sucA + -0.891; 0.394) at 0x7f34713ca000,
+ &lt;LinearGaussianCPD: P(b1191) = N(1.273; 0.609) at 0x7f3342fd7650,
+ &lt;LinearGaussianCPD: P(b1583 | lacA, lacZ, yceP) = N(-0.246*lacA + 0.342*lacZ + 0.241*yceP + 1.382; 1.109) at 0x7f345e0fc440,
+ &lt;LinearGaussianCPD: P(b1963 | yheI) = N(1.038*yheI + 0.965; 0.377) at 0x7f345e0fc6b0,
+ &lt;LinearGaussianCPD: P(cchB | fixC) = N(0.618*fixC + 1.07; 0.641) at 0x7f345e0fc500,
+ &lt;LinearGaussianCPD: P(cspA | cspG) = N(0.289*cspG + -0.426; 1.537) at 0x7f345e0fc590,
+ &lt;LinearGaussianCPD: P(cspG) = N(2.026; 1.075) at 0x7f345e0fc800]
+</pre></div></div>
+</div>
+</section>
+<section id="2.-Defining-the-Model-Manually">
+<h2>2. Defining the Model Manually<a class="headerlink" href="#2.-Defining-the-Model-Manually" title="Link to this heading">¶</a></h2>
+<p>Defining a network in pgmpy involves two steps: 1. Define the network structure 2. Define the parameterization, i.e. Linear Gaussian CPDs.</p>
+<p>And lastly, CPDs can be associated with the network. Taking an example of the Cancer network from the bnlearn repository as shown below.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;images/cancer.png&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Creating_Linear_BN_6_0.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Creating_Linear_BN_6_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">LinearGaussianBayesianNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.factors.continuous</span> <span class="kn">import</span> <span class="n">LinearGaussianCPD</span>
+
+<span class="c1"># Step 1: Define the network structure.</span>
+<span class="n">cancer_model</span> <span class="o">=</span> <span class="n">LinearGaussianBayesianNetwork</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;Pollution&quot;</span><span class="p">,</span> <span class="s2">&quot;Cancer&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;Smoker&quot;</span><span class="p">,</span> <span class="s2">&quot;Cancer&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;Cancer&quot;</span><span class="p">,</span> <span class="s2">&quot;Xray&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;Cancer&quot;</span><span class="p">,</span> <span class="s2">&quot;Dyspnoea&quot;</span><span class="p">),</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># Step 2: Define the CPDs.</span>
+<span class="n">cpd_poll</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Pollution&quot;</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">std</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[])</span>
+<span class="n">cpd_smoke</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Smoker&quot;</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">std</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[])</span>
+<span class="n">cpd_cancer</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Cancer&quot;</span><span class="p">,</span>
+    <span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span>
+    <span class="n">std</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Pollution&quot;</span><span class="p">,</span> <span class="s2">&quot;Smoker&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">cpd_xray</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Xray&quot;</span><span class="p">,</span>
+    <span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+    <span class="n">std</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Cancer&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">cpd_dysp</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Dyspnoea&quot;</span><span class="p">,</span>
+    <span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+    <span class="n">std</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Cancer&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="c1"># Step 3: Add the CPDs to the model.</span>
+<span class="n">cancer_model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_poll</span><span class="p">,</span> <span class="n">cpd_smoke</span><span class="p">,</span> <span class="n">cpd_cancer</span><span class="p">,</span> <span class="n">cpd_xray</span><span class="p">,</span> <span class="n">cpd_dysp</span><span class="p">)</span>
+
+<span class="c1"># Step 4: Check if the model is correctly defined.</span>
+<span class="n">cancer_model</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
+</div>
+</section>
+<section id="3.-Generating-a-Random-Model">
+<h2>3. Generating a Random Model<a class="headerlink" href="#3.-Generating-a-Random-Model" title="Link to this heading">¶</a></h2>
+<p>pgmpy offers methods to: 1. Generate a completely random network 2. Given a network structure, generate random CPDs.</p>
+<section id="Generate-a-completely-random-model">
+<h3>Generate a completely random model<a class="headerlink" href="#Generate-a-completely-random-model" title="Link to this heading">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">LinearGaussianBayesianNetwork</span>
+
+<span class="n">random_model</span> <span class="o">=</span> <span class="n">LinearGaussianBayesianNetwork</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">edge_prob</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Visualize the network</span>
+<span class="n">viz</span> <span class="o">=</span> <span class="n">random_model</span><span class="o">.</span><span class="n">to_graphviz</span><span class="p">()</span>
+<span class="n">viz</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="s1">&#39;random.png&#39;</span><span class="p">,</span> <span class="n">prog</span><span class="o">=</span><span class="s1">&#39;dot&#39;</span><span class="p">)</span>
+<span class="n">Image</span><span class="p">(</span><span class="s1">&#39;random.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Creating_Linear_BN_9_0.png" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Creating_Linear_BN_9_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pprint</span>
+
+<span class="c1"># Access attributes of the model</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">random_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+<span class="n">edges</span> <span class="o">=</span> <span class="n">random_model</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+<span class="n">cpds</span> <span class="o">=</span> <span class="n">random_model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Nodes in the model: </span><span class="si">{</span><span class="n">nodes</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Edges in the model: </span><span class="si">{</span><span class="n">edges</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CPDs in the model: &quot;</span><span class="p">)</span>
+<span class="n">pprint</span><span class="o">.</span><span class="n">pp</span><span class="p">(</span><span class="n">cpds</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Nodes in the model: [1, 3, 4, 6, 2, 5, 0, 7]
+
+Edges in the model: [(1, 3), (1, 4), (1, 6), (3, 4), (3, 6), (2, 3), (2, 5), (2, 6), (5, 6)]
+
+CPDs in the model:
+[&lt;LinearGaussianCPD: P(1) = N(-2.21; 0.827) at 0x7f3343d135c0,
+ &lt;LinearGaussianCPD: P(3 | 1, 2) = N(0.175*1 + 0.239*2 + -0.613; 1.104) at 0x7f3343de9220,
+ &lt;LinearGaussianCPD: P(4 | 1, 3) = N(-1.934*1 + -0.129*3 + 2.26; 0.161) at 0x7f3342fa41d0,
+ &lt;LinearGaussianCPD: P(6 | 1, 2, 3, 5) = N(-0.155*1 + -1.011*2 + 1.768*3 + 1.358*5 + 0.152; 1.428) at 0x7f334210bd70,
+ &lt;LinearGaussianCPD: P(2) = N(0.627; 0.696) at 0x7f3342109ca0,
+ &lt;LinearGaussianCPD: P(5 | 2) = N(2.181*2 + 0.738; 1.892) at 0x7f3342109370,
+ &lt;LinearGaussianCPD: P(0) = N(-0.218; 1.09) at 0x7f334210a6c0,
+ &lt;LinearGaussianCPD: P(7) = N(0.815; 2.665) at 0x7f334210b770]
+</pre></div></div>
+</div>
+</section>
+<section id="Generate-random-CPDs-for-a-given-network-structure">
+<h3>Generate random CPDs for a given network structure<a class="headerlink" href="#Generate-random-CPDs-for-a-given-network-structure" title="Link to this heading">¶</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Taking the example of the cancer model.</span>
+
+<span class="n">cancer_random</span> <span class="o">=</span> <span class="n">LinearGaussianBayesianNetwork</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;Pollution&quot;</span><span class="p">,</span> <span class="s2">&quot;Cancer&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;Smoker&quot;</span><span class="p">,</span> <span class="s2">&quot;Cancer&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;Cancer&quot;</span><span class="p">,</span> <span class="s2">&quot;Xray&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;Cancer&quot;</span><span class="p">,</span> <span class="s2">&quot;Dyspnoea&quot;</span><span class="p">),</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">cancer_random</span><span class="o">.</span><span class="n">get_random_cpds</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Access attributes of the model</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">cancer_random</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+<span class="n">edges</span> <span class="o">=</span> <span class="n">cancer_random</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
+<span class="n">cpds</span> <span class="o">=</span> <span class="n">cancer_random</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Nodes in the model: </span><span class="si">{</span><span class="n">nodes</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Edges in the model: </span><span class="si">{</span><span class="n">edges</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CPDs in the model: &quot;</span><span class="p">)</span>
+<span class="n">pprint</span><span class="o">.</span><span class="n">pp</span><span class="p">(</span><span class="n">cpds</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Nodes in the model: [&#39;Pollution&#39;, &#39;Cancer&#39;, &#39;Smoker&#39;, &#39;Xray&#39;, &#39;Dyspnoea&#39;]
+
+Edges in the model: [(&#39;Pollution&#39;, &#39;Cancer&#39;), (&#39;Cancer&#39;, &#39;Xray&#39;), (&#39;Cancer&#39;, &#39;Dyspnoea&#39;), (&#39;Smoker&#39;, &#39;Cancer&#39;)]
+
+CPDs in the model:
+[&lt;LinearGaussianCPD: P(Pollution) = N(-1.376; 0.535) at 0x7f33421092e0,
+ &lt;LinearGaussianCPD: P(Cancer | Pollution, Smoker) = N(0.962*Pollution + -1.622*Smoker + -2.056; 0.313) at 0x7f345df37410,
+ &lt;LinearGaussianCPD: P(Smoker) = N(1.722; 0.653) at 0x7f345df364e0,
+ &lt;LinearGaussianCPD: P(Xray | Cancer) = N(-1.351*Cancer + 0.498; 1.734) at 0x7f345df35cd0,
+ &lt;LinearGaussianCPD: P(Dyspnoea | Cancer) = N(-0.058*Cancer + -0.241; 2.068) at 0x7f345df36870]
+</pre></div></div>
+</div>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../started/base.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Examples</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../examples.html#defining-bayesian-networks">Defining Bayesian Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#causal-discovery-structure-learning">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#parameter-estimation">Parameter Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#probabilistic-inference">Probabilistic Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#causal-inference">Causal Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#simulations">Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#extending-pgmpy">Extending pgmpy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../models/base.html">Supported Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../factors/base.html">Parameterization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../causal_infer/base.html">Causal Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics/metrics.html">Metrics for Testing Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../examples.html">Examples</a><ul>
+      <li>Previous: <a href="Creating_Discrete_BN.html" title="previous chapter">Creating Discrete Bayesian Networks</a></li>
+      <li>Next: <a href="Dynamic_BN.html" title="next chapter">&lt;no title&gt;</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/examples/Creating_Linear_BN.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

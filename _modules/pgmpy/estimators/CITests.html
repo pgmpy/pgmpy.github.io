@@ -4,13 +4,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pgmpy.estimators.CITests &#8212; pgmpy 0.1.23 documentation</title>
+    <title>pgmpy.estimators.CITests &#8212; pgmpy 1.0.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
-    <script src="../../../_static/documentation_options.js?v=20522496"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="icon" href="../../../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -35,7 +41,6 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
 <span class="kn">from</span> <span class="nn">sklearn.cross_decomposition</span> <span class="kn">import</span> <span class="n">CCA</span>
-<span class="kn">from</span> <span class="nn">statsmodels.multivariate.manova</span> <span class="kn">import</span> <span class="n">MANOVA</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="kn">import</span> <span class="n">IndependenceAssertion</span>
@@ -53,6 +58,7 @@
         <span class="s2">&quot;modified_log_likelihood&quot;</span><span class="p">:</span> <span class="n">modified_log_likelihood</span><span class="p">,</span>
         <span class="s2">&quot;pearsonr&quot;</span><span class="p">:</span> <span class="n">pearsonr</span><span class="p">,</span>
         <span class="s2">&quot;pillai&quot;</span><span class="p">:</span> <span class="n">pillai_trace</span><span class="p">,</span>
+        <span class="s2">&quot;gcm&quot;</span><span class="p">:</span> <span class="n">gcm</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">full</span><span class="p">:</span>
         <span class="n">supported_tests</span><span class="p">[</span><span class="s2">&quot;power_divergence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">power_divergence</span>
@@ -576,7 +582,7 @@
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
             <span class="n">e</span><span class="o">.</span><span class="n">msg</span>
             <span class="o">+</span> <span class="s2">&quot;. xgboost is required for using pillai_trace test. Please install using: pip install xgboost&quot;</span>
-        <span class="p">)</span>
+        <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
 
     <span class="c1"># Step 1: Check if any of the conditional variables are categorical</span>
     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">):</span>
@@ -742,6 +748,88 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">coef</span><span class="p">,</span> <span class="n">p_value</span></div>
 
+
+
+<div class="viewcode-block" id="gcm">
+<a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.CITests.gcm">[docs]</a>
+<span class="k">def</span> <span class="nf">gcm</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The Generalized Covariance Measure(GCM) test for CI.</span>
+
+<span class="sd">    It performs linear regressions on the conditioning variable and then tests</span>
+<span class="sd">    for a vanishing covariance between the resulting residuals. Details of the</span>
+<span class="sd">    method can be found in [1].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    X: str</span>
+<span class="sd">        The first variable for testing the independence condition X \u27c2 Y | Z</span>
+
+<span class="sd">    Y: str</span>
+<span class="sd">        The second variable for testing the independence condition X \u27c2 Y | Z</span>
+
+<span class="sd">    Z: list/array-like</span>
+<span class="sd">        A list of conditional variable for testing the condition X \u27c2 Y | Z</span>
+
+<span class="sd">    data: pandas.DataFrame</span>
+<span class="sd">        The dataset in which to test the indepenedence condition.</span>
+
+<span class="sd">    boolean: bool</span>
+<span class="sd">        If boolean=True, an additional argument `significance_level` must</span>
+<span class="sd">            be specified. If p_value of the test is greater than equal to</span>
+<span class="sd">            `significance_level`, returns True. Otherwise returns False.</span>
+
+<span class="sd">        If boolean=False, returns the pearson correlation coefficient and p_value</span>
+<span class="sd">            of the test.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    CI Test results: tuple or bool</span>
+<span class="sd">        If boolean=True, returns True if p-value &gt;= significance_level, else False. If</span>
+<span class="sd">        boolean=False, returns a tuple of (Pearson&#39;s correlation Coefficient, p-value)</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    [1] Rajen D. Shah, and Jonas Peters. &quot;The Hardness of Conditional Independence Testing and the Generalised Covariance Measure&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Step 1: Test if the inputs are correct</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Variable Z. Expected type: iterable. Got type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Variable data. Expected type: pandas.DataFrame. Got type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Step 1.1: Add another column with constant values to handle intercepts. When Z=[],</span>
+    <span class="c1">#           this can act as the constant vector.</span>
+    <span class="n">Z</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;intercept&quot;</span><span class="p">]</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">intercept</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="c1"># Step 2: Compute the linear regression and the residuals</span>
+    <span class="n">X_coef</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">],</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">],</span> <span class="n">rcond</span><span class="o">=</span><span class="kc">None</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">Y_coef</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">],</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">],</span> <span class="n">rcond</span><span class="o">=</span><span class="kc">None</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">res_x</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">]</span> <span class="o">-</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">]</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X_coef</span><span class="p">)</span>
+    <span class="n">res_y</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">]</span> <span class="o">-</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">]</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Y_coef</span><span class="p">)</span>
+
+    <span class="c1"># Step 3: Compute the Generalised Covariance Measure.</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">t_stat</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">res_x</span><span class="p">,</span> <span class="n">res_y</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">res_x</span> <span class="o">*</span> <span class="n">res_y</span><span class="p">)</span>
+
+    <span class="c1"># Step 4: Compute p-value using standard normal distribution.</span>
+    <span class="n">p_value</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t_stat</span><span class="p">)))</span>
+
+    <span class="c1"># Step 6: Return</span>
+    <span class="k">if</span> <span class="n">boolean</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">p_value</span> <span class="o">&gt;=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;significance_level&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">t_stat</span><span class="p">,</span> <span class="n">p_value</span></div>
+
 </pre></div>
 
           </div>
@@ -771,11 +859,10 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../factors/base.html">Parameterization</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/base.html">Exact Inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/model_testing.html">Model Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/base.html">Approximate Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../param_estimator/base.html">Parameter Estimation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Structure Learning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for testing models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for Testing Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
@@ -823,7 +910,7 @@
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &#169;2023, Ankur Ankan.
+      &#169;2025, Ankur Ankan.
       
       |
       Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>

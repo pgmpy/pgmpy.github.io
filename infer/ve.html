@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Variable Elimination" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="infer/ve.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="Elimination Ordering:" />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="_images/social_previews/summary_infer_ve_6e6f1db7.png" />
+<meta property="og:image:alt" content="Elimination Ordering:" />
+<meta name="description" content="Elimination Ordering:" />
+<meta name="twitter:card" content="summary_large_image" />
+
+    <title>Variable Elimination &#8212; 1.0.0 | pgmpy docs</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/infer/ve.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Belief Propagation" href="bp.html" />
+    <link rel="prev" title="Probabilistic Inference" href="base.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="variable-elimination">
+<h1>Variable Elimination<a class="headerlink" href="#variable-elimination" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pgmpy.inference.ExactInference.VariableElimination">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.inference.ExactInference.</span></span><span class="sig-name descname"><span class="pre">VariableElimination</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/ExactInference.html#VariableElimination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.ExactInference.VariableElimination" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.ExactInference.VariableElimination.induced_graph">
+<span class="sig-name descname"><span class="pre">induced_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elimination_order</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/ExactInference.html#VariableElimination.induced_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.ExactInference.VariableElimination.induced_graph" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the induced graph formed by running Variable Elimination on the network.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>elimination_order</strong> (<em>list</em><em>, </em><em>array like</em>) – List of variables in the order in which they are to be eliminated.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">VariableElimination</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">5</span><span class="p">)),</span>
+<span class="gp">... </span>                      <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">([(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span><span class="o">.</span><span class="n">induced_graph</span><span class="p">([</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.ExactInference.VariableElimination.induced_width">
+<span class="sig-name descname"><span class="pre">induced_width</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elimination_order</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/ExactInference.html#VariableElimination.induced_width"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.ExactInference.VariableElimination.induced_width" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the width (integer) of the induced graph formed by running Variable Elimination on the network.
+The width is the defined as the number of nodes in the largest clique in the graph minus 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>elimination_order</strong> (<em>list</em><em>, </em><em>array like</em>) – List of variables in the order in which they are to be eliminated.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">VariableElimination</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">5</span><span class="p">)),</span>
+<span class="gp">... </span>                      <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">([(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span><span class="o">.</span><span class="n">induced_width</span><span class="p">([</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">])</span>
+<span class="go">3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.ExactInference.VariableElimination.map_query">
+<span class="sig-name descname"><span class="pre">map_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">virtual_evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elimination_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'MinFill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/ExactInference.html#VariableElimination.map_query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.ExactInference.VariableElimination.map_query" title="Link to this definition">¶</a></dt>
+<dd><p>Computes the MAP Query over the variables given the evidence. Returns the
+highest probable state in the joint distribution of <cite>variables</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variables</strong> (<em>list</em>) – list of variables over which we want to compute the max-marginal.</p></li>
+<li><p><strong>evidence</strong> (<em>dict</em>) – a dict key, value pair as {var: state_of_var_observed}
+None if no evidence</p></li>
+<li><p><strong>virtual_evidence</strong> (<em>list</em><em> (</em><em>default:None</em><em>)</em>) – A list of pgmpy.factors.discrete.TabularCPD representing the virtual
+evidences.</p></li>
+<li><p><strong>elimination_order</strong> (<em>list</em>) – order of variable eliminations (if nothing is provided) order is
+computed automatically</p></li>
+<li><p><strong>show_progress</strong> (<em>boolean</em>) – If True, shows a progress bar.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">VariableElimination</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">5</span><span class="p">)),</span>
+<span class="gp">... </span>                      <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">([(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phi_query</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">map_query</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.ExactInference.VariableElimination.max_marginal">
+<span class="sig-name descname"><span class="pre">max_marginal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elimination_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'MinFill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/ExactInference.html#VariableElimination.max_marginal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.ExactInference.VariableElimination.max_marginal" title="Link to this definition">¶</a></dt>
+<dd><p>Computes the max-marginal over the variables given the evidence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variables</strong> (<em>list</em>) – list of variables over which we want to compute the max-marginal.</p></li>
+<li><p><strong>evidence</strong> (<em>dict</em>) – a dict key, value pair as {var: state_of_var_observed}
+None if no evidence</p></li>
+<li><p><strong>elimination_order</strong> (<em>list</em>) – order of variable eliminations (if nothing is provided) order is
+computed automatically</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">VariableElimination</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">5</span><span class="p">)),</span>
+<span class="gp">... </span>                      <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">([(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phi_query</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">max_marginal</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.ExactInference.VariableElimination.query">
+<span class="sig-name descname"><span class="pre">query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">virtual_evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elimination_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'greedy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">joint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/ExactInference.html#VariableElimination.query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.ExactInference.VariableElimination.query" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variables</strong> (<em>list</em>) – list of variables for which you want to compute the probability</p></li>
+<li><p><strong>evidence</strong> (<em>dict</em>) – a dict key, value pair as {var: state_of_var_observed}
+None if no evidence</p></li>
+<li><p><strong>virtual_evidence</strong> (<em>list</em><em> (</em><em>default:None</em><em>)</em>) – A list of pgmpy.factors.discrete.TabularCPD representing the virtual
+evidences.</p></li>
+<li><p><strong>elimination_order</strong> (<em>str</em><em> or </em><em>list</em><em> (</em><em>default='greedy'</em><em>)</em>) – Order in which to eliminate the variables in the algorithm. If list is provided,
+should contain all variables in the model except the ones in <cite>variables</cite>. str options
+are: <cite>greedy</cite>, <cite>WeightedMinFill</cite>, <cite>MinNeighbors</cite>, <cite>MinWeight</cite>, <cite>MinFill</cite>. Please
+refer <a class="reference external" href="https://pgmpy.org/exact_infer/ve.html#module-pgmpy.inference.EliminationOrder">https://pgmpy.org/exact_infer/ve.html#module-pgmpy.inference.EliminationOrder</a>
+for details.</p></li>
+<li><p><strong>joint</strong> (<em>boolean</em><em> (</em><em>default: True</em><em>)</em>) – If True, returns a Joint Distribution over <cite>variables</cite>.
+If False, returns a dict of distributions over each of the <cite>variables</cite>.</p></li>
+<li><p><strong>show_progress</strong> (<em>boolean</em>) – If True, shows a progress bar.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">VariableElimination</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">5</span><span class="p">)),</span>
+<span class="gp">... </span>                      <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">([(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;E&#39;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">inference</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">phi_query</span> <span class="o">=</span> <span class="n">inference</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-pgmpy.inference.EliminationOrder">
+<span id="elimination-ordering"></span><h1>Elimination Ordering<a class="headerlink" href="#module-pgmpy.inference.EliminationOrder" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.BaseEliminationOrder">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.inference.EliminationOrder.</span></span><span class="sig-name descname"><span class="pre">BaseEliminationOrder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#BaseEliminationOrder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.BaseEliminationOrder" title="Link to this definition">¶</a></dt>
+<dd><p>Init method for the base class of Elimination Orders.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> (<em>DiscreteBayesianNetwork instance</em>) – The model on which we want to compute the elimination orders.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.BaseEliminationOrder.cost">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#BaseEliminationOrder.cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.BaseEliminationOrder.cost" title="Link to this definition">¶</a></dt>
+<dd><p>The cost function to compute the cost of elimination of each node.
+This method is just a dummy and returns 0 for all the nodes. Actual cost functions
+are implemented in the classes inheriting BaseEliminationOrder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>node</strong> (<em>string</em><em>, </em><em>any hashable python object.</em>) – The node whose cost is to be computed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.BaseEliminationOrder.fill_in_edges">
+<span class="sig-name descname"><span class="pre">fill_in_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#BaseEliminationOrder.fill_in_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.BaseEliminationOrder.fill_in_edges" title="Link to this definition">¶</a></dt>
+<dd><p>Return edges needed to be added to the graph if a node is removed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>node</strong> (<em>string</em><em> (</em><em>any hashable python object</em><em>)</em>) – Node to be removed from the graph.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.BaseEliminationOrder.get_elimination_order">
+<span class="sig-name descname"><span class="pre">get_elimination_order</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#BaseEliminationOrder.get_elimination_order"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.BaseEliminationOrder.get_elimination_order" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the optimal elimination order based on the cost function.
+The node having the least cost is removed first.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nodes</strong> (<em>list</em><em>, </em><em>tuple</em><em>, </em><em>set</em><em> (</em><em>array-like</em><em>)</em>) – The variables which are to be eliminated.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.inference.EliminationOrder</span> <span class="kn">import</span> <span class="n">WeightedMinFill</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">([(</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">),</span>
+<span class="gp">... </span>                         <span class="p">(</span><span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="s1">&#39;j&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;l&#39;</span><span class="p">),</span>
+<span class="gp">... </span>                       <span class="p">(</span><span class="s1">&#39;l&#39;</span><span class="p">,</span> <span class="s1">&#39;j&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;j&#39;</span><span class="p">,</span> <span class="s1">&#39;h&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;h&#39;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cpd_c</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cpd_d</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;d&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+<span class="gp">... </span>                  <span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cpd_g</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+<span class="gp">... </span>                  <span class="p">[</span><span class="s1">&#39;d&#39;</span><span class="p">,</span> <span class="s1">&#39;i&#39;</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cpd_i</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cpd_s</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+<span class="gp">... </span>                  <span class="p">[</span><span class="s1">&#39;i&#39;</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cpd_j</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;j&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+<span class="gp">... </span>                  <span class="p">[</span><span class="s1">&#39;l&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cpd_l</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;l&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+<span class="gp">... </span>                  <span class="p">[</span><span class="s1">&#39;g&#39;</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cpd_h</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s1">&#39;h&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+<span class="gp">... </span>                  <span class="p">[</span><span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;j&#39;</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_c</span><span class="p">,</span> <span class="n">cpd_d</span><span class="p">,</span> <span class="n">cpd_g</span><span class="p">,</span> <span class="n">cpd_i</span><span class="p">,</span> <span class="n">cpd_s</span><span class="p">,</span> <span class="n">cpd_j</span><span class="p">,</span>
+<span class="gp">... </span>               <span class="n">cpd_l</span><span class="p">,</span> <span class="n">cpd_h</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">WeightedMinFill</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_elimination_order</span><span class="p">([</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;l&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">])</span>
+<span class="go">[&#39;c&#39;, &#39;s&#39;, &#39;l&#39;, &#39;d&#39;, &#39;g&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">WeightedMinFill</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_elimination_order</span><span class="p">([</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;l&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">])</span>
+<span class="go">[&#39;c&#39;, &#39;s&#39;, &#39;l&#39;, &#39;d&#39;, &#39;g&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">WeightedMinFill</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_elimination_order</span><span class="p">([</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;l&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">])</span>
+<span class="go">[&#39;c&#39;, &#39;s&#39;, &#39;l&#39;, &#39;d&#39;, &#39;g&#39;]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.MinFill">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.inference.EliminationOrder.</span></span><span class="sig-name descname"><span class="pre">MinFill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#MinFill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.MinFill" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.MinFill.cost">
+<span class="sig-name descname"><span class="pre">cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#MinFill.cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.MinFill.cost" title="Link to this definition">¶</a></dt>
+<dd><p>The cost of eliminating a node is the number of edges that need to be added
+(fill in edges) to the graph due to its elimination</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.MinNeighbors">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.inference.EliminationOrder.</span></span><span class="sig-name descname"><span class="pre">MinNeighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#MinNeighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.MinNeighbors" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.MinNeighbors.cost">
+<span class="sig-name descname"><span class="pre">cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#MinNeighbors.cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.MinNeighbors.cost" title="Link to this definition">¶</a></dt>
+<dd><p>The cost of eliminating a node is the number of neighbors it has in the
+current graph.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.MinWeight">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.inference.EliminationOrder.</span></span><span class="sig-name descname"><span class="pre">MinWeight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#MinWeight"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.MinWeight" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.MinWeight.cost">
+<span class="sig-name descname"><span class="pre">cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#MinWeight.cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.MinWeight.cost" title="Link to this definition">¶</a></dt>
+<dd><p>The cost of eliminating a node is the product of weights, domain cardinality,
+of its neighbors.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.WeightedMinFill">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.inference.EliminationOrder.</span></span><span class="sig-name descname"><span class="pre">WeightedMinFill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#WeightedMinFill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.WeightedMinFill" title="Link to this definition">¶</a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.WeightedMinFill.cost">
+<span class="sig-name descname"><span class="pre">cost</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/inference/EliminationOrder.html#WeightedMinFill.cost"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.WeightedMinFill.cost" title="Link to this definition">¶</a></dt>
+<dd><p>Cost function for WeightedMinFill.
+The cost of eliminating a node is the sum of weights of the edges that need to
+be added to the graph due to its elimination, where a weight of an edge is the
+product of the weights, domain cardinality, of its constituent vertices.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../started/base.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/base.html">Supported Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../factors/base.html">Parameterization</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="base.html">Probabilistic Inference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="base.html#exact-inference">Exact Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="base.html#approximate-inference">Approximate Inference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../causal_infer/base.html">Causal Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics/metrics.html">Metrics for Testing Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="base.html">Probabilistic Inference</a><ul>
+      <li>Previous: <a href="base.html" title="previous chapter">Probabilistic Inference</a></li>
+      <li>Next: <a href="bp.html" title="next chapter">Belief Propagation</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/infer/ve.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Parameter Learning in Discrete Bayesian Networks" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="examples/Parameter_Learning_Discrete_BN.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="In this notebook, we demonstrate examples of learning the parameters (CPDs) of a Discrete Bayesian Network given the data and the model structure. pgmpy has three main algorithms for learning model..." />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="_images/social_previews/summary_examples_Parameter_Learning_Discrete_BN_8bdb2847.png" />
+<meta property="og:image:alt" content="In this notebook, we demonstrate examples of learning the parameters (CPDs) of a Discrete Bayesian Network given the data and the model structure. pgmpy has three main algorithms for learning model..." />
+<meta name="description" content="In this notebook, we demonstrate examples of learning the parameters (CPDs) of a Discrete Bayesian Network given the data and the model structure. pgmpy has three main algorithms for learning model..." />
+<meta name="twitter:card" content="summary_large_image" />
+
+    <title>Parameter Learning in Discrete Bayesian Networks &#8212; 1.0.0 | pgmpy docs</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <script src="../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/examples/Parameter_Learning_Discrete_BN.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Marginal Learning in Discrete Markov Networks" href="Parameter_Learning_Factor_Graphs.html" />
+    <link rel="prev" title="Learning Tree-augmented Naive Bayes (TAN) Structure from Data" href="Structure_Learning_TAN.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="Parameter-Learning-in-Discrete-Bayesian-Networks">
+<h1>Parameter Learning in Discrete Bayesian Networks<a class="headerlink" href="#Parameter-Learning-in-Discrete-Bayesian-Networks" title="Link to this heading">¶</a></h1>
+<p>In this notebook, we demonstrate examples of learning the parameters (CPDs) of a Discrete Bayesian Network given the data and the model structure. pgmpy has three main algorithms for learning model parameters:</p>
+<ol class="arabic simple">
+<li><p><strong>Maximum Likelihood Estimator</strong> (<code class="docutils literal notranslate"><span class="pre">pgmpy.estimators.MaximumLikelihoodEstimator</span></code>): Simply estimates the Maximum Likelihood estimates of the parameters.</p></li>
+<li><p><strong>Bayesian Estimator</strong> (<code class="docutils literal notranslate"><span class="pre">pgmpy.estimators.BayesianEstimator</span></code>): Allows users to specify priors.</p></li>
+<li><p><strong>Expectation Maximization</strong> (<code class="docutils literal notranslate"><span class="pre">pgmpy.estimators.ExpectationMaximization</span></code>): Enables learning model parameters when latent variables are present in the model.</p></li>
+</ol>
+<p>Each of the parameter estimation classes have the following two methods:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">estimate_cpd</span></code>: Estimates the CPD of the specified variable.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_parameters</span></code>: Estimates the CPDs of all the variables in the model.</p></li>
+</ol>
+<section id="Step-0:-Generate-some-simulated-data-and-a-model-structure">
+<h2>Step 0: Generate some simulated data and a model structure<a class="headerlink" href="#Step-0:-Generate-some-simulated-data-and-a-model-structure" title="Link to this heading">¶</a></h2>
+<p>To do parameter estimation we require two things: 1. <strong>Data</strong>: For the examples, we simulate some data from the alarm model (<a class="reference external" href="https://www.bnlearn.com/bnrepository/discrete-medium.html#alarm">https://www.bnlearn.com/bnrepository/discrete-medium.html#alarm</a>) and use it to learn back the model parameters. 2. <strong>Model structure</strong>: We also need to specify the model structure to which to fit the data to. In this example, we simply use the structure to the alarm model.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">get_example_model</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+
+<span class="c1"># Load the alarm model and simulate data from it.</span>
+<span class="n">alarm_model</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;alarm&quot;</span><span class="p">)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">alarm_model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+
+<span class="c1"># Define a new model with the same structure as the alarm model.</span>
+<span class="n">new_model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "07163638093f43efa83db9a97b16347b", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: -1.4901161193847656e-08. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1175870895385742e-08. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1175870895385742e-08. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 2.2351741790771484e-08. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 2.2351741790771484e-08. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: -9.313225746154785e-09. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 2.2351741790771484e-08. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1175870895385742e-08. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: -9.313225746154785e-09. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: -1.6763806343078613e-08. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 2.2351741790771484e-08. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 2.2351741790771484e-08. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+WARNING:pgmpy:Probability values don&#39;t exactly sum to 1. Differ by: 1.1102230246251565e-16. Adjusting values.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+   EXPCO2  INTUBATION    PCWP   HREKG VENTLUNG  SAO2 VENTALV PULMEMBOLUS  \
+0     LOW      NORMAL  NORMAL    HIGH     ZERO   LOW    ZERO       FALSE
+1     LOW      NORMAL  NORMAL  NORMAL     ZERO   LOW    ZERO       FALSE
+2     LOW      NORMAL    HIGH    HIGH      LOW  HIGH    HIGH       FALSE
+3  NORMAL    ONESIDED  NORMAL    HIGH      LOW   LOW     LOW       FALSE
+4     LOW  ESOPHAGEAL     LOW    HIGH     ZERO   LOW     LOW       FALSE
+
+  ERRLOWOUTPUT      HR  ... LVFAILURE KINKEDTUBE HISTORY HYPOVOLEMIA  \
+0        FALSE  NORMAL  ...     FALSE      FALSE   FALSE       FALSE
+1        FALSE    HIGH  ...     FALSE      FALSE   FALSE       FALSE
+2         TRUE    HIGH  ...     FALSE      FALSE   FALSE        TRUE
+3        FALSE    HIGH  ...     FALSE      FALSE   FALSE       FALSE
+4        FALSE    HIGH  ...     FALSE      FALSE   FALSE       FALSE
+
+  STROKEVOLUME VENTMACH VENTTUBE     CVP   SHUNT MINVOLSET
+0       NORMAL   NORMAL      LOW  NORMAL  NORMAL    NORMAL
+1       NORMAL      LOW     ZERO  NORMAL  NORMAL    NORMAL
+2       NORMAL     HIGH     HIGH    HIGH  NORMAL    NORMAL
+3       NORMAL   NORMAL      LOW  NORMAL    HIGH    NORMAL
+4       NORMAL   NORMAL     ZERO     LOW  NORMAL    NORMAL
+
+[5 rows x 37 columns]
+</pre></div></div>
+</div>
+</section>
+<section id="Using-the-Maximumum-Likelihood-Estimator">
+<h2>Using the Maximumum Likelihood Estimator<a class="headerlink" href="#Using-the-Maximumum-Likelihood-Estimator" title="Link to this heading">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">MaximumLikelihoodEstimator</span>
+
+<span class="c1"># Initialize the estimator object.</span>
+<span class="n">mle_est</span> <span class="o">=</span> <span class="n">MaximumLikelihoodEstimator</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">new_model</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Estimate the CPD of the node FIO2.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mle_est</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="s2">&quot;FIO2&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++--------------+-------+
+| FIO2(LOW)    | 0.058 |
++--------------+-------+
+| FIO2(NORMAL) | 0.942 |
++--------------+-------+
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Estimate the CPD of node CVP</span>
+<span class="n">mle_est</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="s2">&quot;CVP&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;TabularCPD representing P(CVP:3 | LVEDVOLUME:3) at 0x7b043ec68860&gt;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Estimate all the CPDs for `new_model`</span>
+<span class="n">all_cpds</span> <span class="o">=</span> <span class="n">mle_est</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Add the estimated CPDs to the model.</span>
+<span class="n">new_model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">all_cpds</span><span class="p">)</span>
+
+<span class="c1"># Check if the CPDs are added to the model</span>
+<span class="n">new_model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="s1">&#39;PCWP&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;TabularCPD representing P(PCWP:3 | LVEDVOLUME:3) at 0x7b0427cb85f0&gt;
+</pre></div></div>
+</div>
+</section>
+<section id="Using-the-Bayesian-Estimator">
+<h2>Using the Bayesian Estimator<a class="headerlink" href="#Using-the-Bayesian-Estimator" title="Link to this heading">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize the Bayesian Estimator</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">BayesianEstimator</span>
+
+<span class="n">be_est</span> <span class="o">=</span> <span class="n">BayesianEstimator</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">new_model</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The estimator methods in <code class="docutils literal notranslate"><span class="pre">BayesianEstimator</span></code> class allows for a few different ways to specify the priors. The prior type can be chosen by specifying the <code class="docutils literal notranslate"><span class="pre">prior_type</span></code> argument. Please refer the documentation for details on different ways these priors can be specified: <a class="reference external" href="https://pgmpy.org/param_estimator/bayesian_est.html#bayesian-estimator">https://pgmpy.org/param_estimator/bayesian_est.html#bayesian-estimator</a></p>
+<ol class="arabic simple">
+<li><p><strong>Dirichlet prior</strong> (<code class="docutils literal notranslate"><span class="pre">prior_type=&quot;dirichlet&quot;</span></code>): Requires specifying <code class="docutils literal notranslate"><span class="pre">pseudo_counts</span></code> argument. The pseudo_counts arguments specifies the priors to use for the CPD estimation.</p></li>
+<li><p><strong>BDeu prior</strong> (<code class="docutils literal notranslate"><span class="pre">prior_type=&quot;BDeu&quot;</span></code>): Requires specifying <code class="docutils literal notranslate"><span class="pre">equivalent_sample_size</span></code> arguemnt. The equivaluent_sample_size is used to compute the priors to use for CPD estimation.</p></li>
+<li><p><strong>K2</strong> (<code class="docutils literal notranslate"><span class="pre">prior_type=&quot;K2&quot;</span></code>): Short hand for dirichlet prior with pseudo_count=1.</p></li>
+</ol>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">be_est</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="s2">&quot;FIO2&quot;</span><span class="p">,</span> <span class="n">prior_type</span><span class="o">=</span><span class="s2">&quot;BDeu&quot;</span><span class="p">,</span> <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">be_est</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="s2">&quot;CVP&quot;</span><span class="p">,</span> <span class="n">prior_type</span><span class="o">=</span><span class="s2">&quot;dirichlet&quot;</span><span class="p">,</span> <span class="n">pseudo_counts</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++--------------+-------+
+| FIO2(LOW)    | 0.279 |
++--------------+-------+
+| FIO2(NORMAL) | 0.721 |
++--------------+-------+
++-------------+---------------------+-----+---------------------+
+| LVEDVOLUME  | LVEDVOLUME(HIGH)    | ... | LVEDVOLUME(NORMAL)  |
++-------------+---------------------+-----+---------------------+
+| CVP(HIGH)   | 0.48841698841698844 | ... | 0.10685483870967742 |
++-------------+---------------------+-----+---------------------+
+| CVP(LOW)    | 0.19884169884169883 | ... | 0.13709677419354838 |
++-------------+---------------------+-----+---------------------+
+| CVP(NORMAL) | 0.3127413127413127  | ... | 0.7560483870967742  |
++-------------+---------------------+-----+---------------------+
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">be_est</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span><span class="n">prior_type</span><span class="o">=</span><span class="s2">&quot;K2&quot;</span><span class="p">,</span> <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;TabularCPD representing P(HYPOVOLEMIA:2) at 0x7b050bad4590&gt;,
+ &lt;TabularCPD representing P(LVEDVOLUME:3 | HYPOVOLEMIA:2, LVFAILURE:2) at 0x7b0427cb9c40&gt;,
+ &lt;TabularCPD representing P(STROKEVOLUME:3 | HYPOVOLEMIA:2, LVFAILURE:2) at 0x7b0427cb9250&gt;,
+ &lt;TabularCPD representing P(CVP:3 | LVEDVOLUME:3) at 0x7b0427cb9070&gt;,
+ &lt;TabularCPD representing P(PCWP:3 | LVEDVOLUME:3) at 0x7b0427cbb080&gt;,
+ &lt;TabularCPD representing P(LVFAILURE:2) at 0x7b0427cbb110&gt;,
+ &lt;TabularCPD representing P(HISTORY:2 | LVFAILURE:2) at 0x7b0427cbaf90&gt;,
+ &lt;TabularCPD representing P(CO:3 | HR:3, STROKEVOLUME:3) at 0x7b0427cbaa20&gt;,
+ &lt;TabularCPD representing P(ERRLOWOUTPUT:2) at 0x7b0427cbb020&gt;,
+ &lt;TabularCPD representing P(HRBP:3 | ERRLOWOUTPUT:2, HR:3) at 0x7b0427cbb2c0&gt;,
+ &lt;TabularCPD representing P(ERRCAUTER:2) at 0x7b0427cbb4d0&gt;,
+ &lt;TabularCPD representing P(HREKG:3 | ERRCAUTER:2, HR:3) at 0x7b0427cbb1a0&gt;,
+ &lt;TabularCPD representing P(HRSAT:3 | ERRCAUTER:2, HR:3) at 0x7b0427cbac00&gt;,
+ &lt;TabularCPD representing P(INSUFFANESTH:2) at 0x7b0427cba3c0&gt;,
+ &lt;TabularCPD representing P(CATECHOL:2 | ARTCO2:3, INSUFFANESTH:2, SAO2:3, TPR:3) at 0x7b0427cbb170&gt;,
+ &lt;TabularCPD representing P(ANAPHYLAXIS:2) at 0x7b0427cbaea0&gt;,
+ &lt;TabularCPD representing P(TPR:3 | ANAPHYLAXIS:2) at 0x7b0427cbb200&gt;,
+ &lt;TabularCPD representing P(BP:3 | CO:3, TPR:3) at 0x7b0427cbb0b0&gt;,
+ &lt;TabularCPD representing P(KINKEDTUBE:2) at 0x7b0427cba1b0&gt;,
+ &lt;TabularCPD representing P(PRESS:4 | INTUBATION:3, KINKEDTUBE:2, VENTTUBE:4) at 0x7b0427cb98e0&gt;,
+ &lt;TabularCPD representing P(VENTLUNG:4 | INTUBATION:3, KINKEDTUBE:2, VENTTUBE:4) at 0x7b0427cbb350&gt;,
+ &lt;TabularCPD representing P(FIO2:2) at 0x7b0427cbade0&gt;,
+ &lt;TabularCPD representing P(PVSAT:3 | FIO2:2, VENTALV:4) at 0x7b0427cba900&gt;,
+ &lt;TabularCPD representing P(SAO2:3 | PVSAT:3, SHUNT:2) at 0x7b0427cb8d70&gt;,
+ &lt;TabularCPD representing P(PULMEMBOLUS:2) at 0x7b0427cbb2f0&gt;,
+ &lt;TabularCPD representing P(PAP:3 | PULMEMBOLUS:2) at 0x7b0427cb9790&gt;,
+ &lt;TabularCPD representing P(SHUNT:2 | INTUBATION:3, PULMEMBOLUS:2) at 0x7b0427cbb3e0&gt;,
+ &lt;TabularCPD representing P(INTUBATION:3) at 0x7b0427cbb4a0&gt;,
+ &lt;TabularCPD representing P(MINVOL:4 | INTUBATION:3, VENTLUNG:4) at 0x7b0427cbb530&gt;,
+ &lt;TabularCPD representing P(VENTALV:4 | INTUBATION:3, VENTLUNG:4) at 0x7b0427cbb560&gt;,
+ &lt;TabularCPD representing P(DISCONNECT:2) at 0x7b0427cbb590&gt;,
+ &lt;TabularCPD representing P(VENTTUBE:4 | DISCONNECT:2, VENTMACH:4) at 0x7b0427cbb5c0&gt;,
+ &lt;TabularCPD representing P(MINVOLSET:3) at 0x7b0427cbb5f0&gt;,
+ &lt;TabularCPD representing P(VENTMACH:4 | MINVOLSET:3) at 0x7b0427cbb620&gt;,
+ &lt;TabularCPD representing P(EXPCO2:4 | ARTCO2:3, VENTLUNG:4) at 0x7b0427cbb650&gt;,
+ &lt;TabularCPD representing P(ARTCO2:3 | VENTALV:4) at 0x7b0427cbb680&gt;,
+ &lt;TabularCPD representing P(HR:3 | CATECHOL:2) at 0x7b0427cbb6b0&gt;]
+</pre></div></div>
+</div>
+</section>
+<section id="Using-Expectation-Maximization">
+<h2>Using Expectation Maximization<a class="headerlink" href="#Using-Expectation-Maximization" title="Link to this heading">¶</a></h2>
+<p>The Expectation Maximization (EM) estimator can work in the case when latent variables are present in the model. To simulate this scenario, we will specify some of the variables in our <code class="docutils literal notranslate"><span class="pre">new_model</span></code> as latents and drop those variables from <code class="docutils literal notranslate"><span class="pre">samples</span></code> to simulate missing data.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model_latent</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">(),</span> <span class="n">latents</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;HISTORY&#39;</span><span class="p">,</span> <span class="s1">&#39;CVP&#39;</span><span class="p">})</span>
+<span class="n">samples_latent</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">drop</span><span class="p">([</span><span class="s1">&#39;HISTORY&#39;</span><span class="p">,</span> <span class="s1">&#39;CVP&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">ExpectationMaximization</span> <span class="k">as</span> <span class="n">EM</span>
+<span class="n">em_est</span> <span class="o">=</span> <span class="n">EM</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model_latent</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">samples_latent</span><span class="p">)</span>
+<span class="n">em_est</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "9ce6966d366a427798a81f190072b282", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;TabularCPD representing P(EXPCO2:4 | ARTCO2:3, VENTLUNG:4) at 0x7b0427e26930&gt;,
+ &lt;TabularCPD representing P(INTUBATION:3) at 0x7b0427cbbe90&gt;,
+ &lt;TabularCPD representing P(PCWP:3 | LVEDVOLUME:3) at 0x7b0427e27590&gt;,
+ &lt;TabularCPD representing P(HREKG:3 | ERRCAUTER:2, HR:3) at 0x7b0427d01fd0&gt;,
+ &lt;TabularCPD representing P(VENTLUNG:4 | INTUBATION:3, KINKEDTUBE:2, VENTTUBE:4) at 0x7b0427cb9eb0&gt;,
+ &lt;TabularCPD representing P(SAO2:3 | PVSAT:3, SHUNT:2) at 0x7b0427e27d10&gt;,
+ &lt;TabularCPD representing P(VENTALV:4 | INTUBATION:3, VENTLUNG:4) at 0x7b0427d019a0&gt;,
+ &lt;TabularCPD representing P(PULMEMBOLUS:2) at 0x7b0427e260f0&gt;,
+ &lt;TabularCPD representing P(ERRLOWOUTPUT:2) at 0x7b0427d01910&gt;,
+ &lt;TabularCPD representing P(HR:3 | CATECHOL:2) at 0x7b0427d01bb0&gt;,
+ &lt;TabularCPD representing P(HRSAT:3 | ERRCAUTER:2, HR:3) at 0x7b0427d02480&gt;,
+ &lt;TabularCPD representing P(DISCONNECT:2) at 0x7b0427ca7290&gt;,
+ &lt;TabularCPD representing P(ERRCAUTER:2) at 0x7b0427d01f40&gt;,
+ &lt;TabularCPD representing P(CO:3 | HR:3, STROKEVOLUME:3) at 0x7b0427cba150&gt;,
+ &lt;TabularCPD representing P(BP:3 | CO:3, TPR:3) at 0x7b0427d02720&gt;,
+ &lt;TabularCPD representing P(LVEDVOLUME:3 | HYPOVOLEMIA:2, LVFAILURE:2) at 0x7b0427d02870&gt;,
+ &lt;TabularCPD representing P(ANAPHYLAXIS:2) at 0x7b0427ca6c90&gt;,
+ &lt;TabularCPD representing P(TPR:3 | ANAPHYLAXIS:2) at 0x7b0427d025a0&gt;,
+ &lt;TabularCPD representing P(HRBP:3 | ERRLOWOUTPUT:2, HR:3) at 0x7b0427cba0c0&gt;,
+ &lt;TabularCPD representing P(PVSAT:3 | FIO2:2, VENTALV:4) at 0x7b0427d02b10&gt;,
+ &lt;TabularCPD representing P(CATECHOL:2 | ARTCO2:3, INSUFFANESTH:2, SAO2:3, TPR:3) at 0x7b0427cb96d0&gt;,
+ &lt;TabularCPD representing P(INSUFFANESTH:2) at 0x7b0427cba8d0&gt;,
+ &lt;TabularCPD representing P(FIO2:2) at 0x7b0427d02390&gt;,
+ &lt;TabularCPD representing P(ARTCO2:3 | VENTALV:4) at 0x7b0427d02ab0&gt;,
+ &lt;TabularCPD representing P(PAP:3 | PULMEMBOLUS:2) at 0x7b0427d01af0&gt;,
+ &lt;TabularCPD representing P(MINVOL:4 | INTUBATION:3, VENTLUNG:4) at 0x7b0427d02fc0&gt;,
+ &lt;TabularCPD representing P(PRESS:4 | INTUBATION:3, KINKEDTUBE:2, VENTTUBE:4) at 0x7b0427cbadb0&gt;,
+ &lt;TabularCPD representing P(LVFAILURE:2) at 0x7b044b06f4a0&gt;,
+ &lt;TabularCPD representing P(KINKEDTUBE:2) at 0x7b0427d02e10&gt;,
+ &lt;TabularCPD representing P(HYPOVOLEMIA:2) at 0x7b0427d03170&gt;,
+ &lt;TabularCPD representing P(STROKEVOLUME:3 | HYPOVOLEMIA:2, LVFAILURE:2) at 0x7b0427cbafc0&gt;,
+ &lt;TabularCPD representing P(VENTMACH:4 | MINVOLSET:3) at 0x7b0427d02f30&gt;,
+ &lt;TabularCPD representing P(VENTTUBE:4 | DISCONNECT:2, VENTMACH:4) at 0x7b0427d01ca0&gt;,
+ &lt;TabularCPD representing P(SHUNT:2 | INTUBATION:3, PULMEMBOLUS:2) at 0x7b0427ca6e10&gt;,
+ &lt;TabularCPD representing P(MINVOLSET:3) at 0x7b0427e256d0&gt;,
+ &lt;TabularCPD representing P(CVP:2 | LVEDVOLUME:3) at 0x7b043ef333b0&gt;,
+ &lt;TabularCPD representing P(HISTORY:2 | LVFAILURE:2) at 0x7b043ec68b60&gt;]
+</pre></div></div>
+</div>
+</section>
+<section id="Shortcut-for-learning-and-adding-CPDs-to-the-model">
+<h2>Shortcut for learning and adding CPDs to the model<a class="headerlink" href="#Shortcut-for-learning-and-adding-CPDs-to-the-model" title="Link to this heading">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">BayesianNetwork</span></code> class also provies a <code class="docutils literal notranslate"><span class="pre">fit</span></code> method that acts as a shortcut way to estimate and add CPDs to the model.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Shortcut for learning all the parameters and adding the CPDs to the model.</span>
+
+<span class="n">model_struct</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="n">model_struct</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="n">MaximumLikelihoodEstimator</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model_struct</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="s2">&quot;FIO2&quot;</span><span class="p">))</span>
+
+<span class="n">model_struct</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">alarm_model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="n">model_struct</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span>
+    <span class="n">estimator</span><span class="o">=</span><span class="n">BayesianEstimator</span><span class="p">,</span>
+    <span class="n">prior_type</span><span class="o">=</span><span class="s2">&quot;BDeu&quot;</span><span class="p">,</span>
+    <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model_struct</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="s2">&quot;FIO2&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++--------------+-------+
+| FIO2(LOW)    | 0.058 |
++--------------+-------+
+| FIO2(NORMAL) | 0.942 |
++--------------+-------+
++--------------+-------+
+| FIO2(LOW)    | 0.279 |
++--------------+-------+
+| FIO2(NORMAL) | 0.721 |
++--------------+-------+
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../started/base.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#defining-bayesian-networks">Defining Bayesian Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#causal-discovery-structure-learning">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../examples.html#parameter-estimation">Parameter Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#probabilistic-inference">Probabilistic Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#causal-inference">Causal Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#simulations">Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#extending-pgmpy">Extending pgmpy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../models/base.html">Supported Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../factors/base.html">Parameterization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../causal_infer/base.html">Causal Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics/metrics.html">Metrics for Testing Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../examples.html">Examples</a><ul>
+      <li>Previous: <a href="Structure_Learning_TAN.html" title="previous chapter">Learning Tree-augmented Naive Bayes (TAN) Structure from Data</a></li>
+      <li>Next: <a href="Parameter_Learning_Factor_Graphs.html" title="next chapter">Marginal Learning in Discrete Markov Networks</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../_sources/examples/Parameter_Learning_Discrete_BN.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
