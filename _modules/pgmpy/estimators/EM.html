@@ -4,18 +4,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pgmpy.estimators.EM &#8212; pgmpy 1.0.0 documentation</title>
+    <title>pgmpy.estimators.EM &#8212; 1.0.0 | pgmpy docs</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <script src="../../../_static/documentation_options.js?v=8d563738"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/_modules/pgmpy/estimators/EM.html" />
     <link rel="icon" href="../../../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -49,6 +50,7 @@
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">MaximumLikelihoodEstimator</span><span class="p">,</span> <span class="n">ParameterEstimator</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
+<span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 
 
@@ -102,6 +104,29 @@
             <span class="n">model_bn</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
             <span class="n">model_bn</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">latents</span>
             <span class="n">model</span> <span class="o">=</span> <span class="n">model_bn</span>
+
+        <span class="c1"># Drop fully missing columns and treat them as latent if not already</span>
+        <span class="n">original_cols</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+        <span class="n">dropped_cols</span> <span class="o">=</span> <span class="n">original_cols</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="n">new_latents</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">dropped_cols</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">new_latents</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Columns </span><span class="si">{</span><span class="n">new_latents</span><span class="si">}</span><span class="s2"> have all missing values and are not marked as latent. &quot;</span>
+                <span class="s2">&quot;Treating them as latent variables.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_latents</span><span class="p">)</span>
+
+        <span class="c1"># Drop rows with any missing values in partially observed columns</span>
+        <span class="n">original_rows_count</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="n">dropped_rows_count</span> <span class="o">=</span> <span class="n">original_rows_count</span> <span class="o">-</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">dropped_rows_count</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dropped_rows_count</span><span class="si">}</span><span class="s2"> rows with missing values in partially missing columns were dropped from the dataset.&quot;</span>
+            <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">ExpectationMaximization</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -223,12 +248,15 @@
 <span class="sd">        seed: int</span>
 <span class="sd">            The random seed to use for generating the intial values.</span>
 
-<span class="sd">        init_cpds: dict</span>
-<span class="sd">            A dictionary of the form {variable: instance of TabularCPD}</span>
+<span class="sd">        init_cpds: dict or str</span>
+<span class="sd">            dict: A dictionary of the form {variable: instance of TabularCPD}</span>
 <span class="sd">            specifying the initial CPD values for the EM optimizer to start</span>
 <span class="sd">            with. If not specified, CPDs involving latent variables are</span>
 <span class="sd">            initialized randomly, and CPDs involving only observed variables are</span>
 <span class="sd">            initialized with their MLE estimates.</span>
+
+<span class="sd">            str: `uniform`, all CPDs will be initialized to have a uniform distribution.</span>
+<span class="sd">                 `random`, all CPDs will be initialized randomly.</span>
 
 <span class="sd">        show_progress: boolean (default: True)</span>
 <span class="sd">            Whether to show a progress bar for iterations.</span>
@@ -265,6 +293,46 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_states_dict</span><span class="p">[</span><span class="n">var</span><span class="p">]))</span>
 
         <span class="c1"># Step 3: Initialize CPDs.</span>
+        <span class="c1"># Step 3.0: Check if init_cpds is a string and if so, initialize the CPDs.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">init_cpds</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">parents_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">init_cpds</span> <span class="o">==</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
+                <span class="n">init_cpds</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">var</span><span class="p">:</span> <span class="n">TabularCPD</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span>
+                        <span class="n">variable</span><span class="o">=</span><span class="n">var</span><span class="p">,</span>
+                        <span class="n">evidence</span><span class="o">=</span><span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">],</span>
+                        <span class="n">cardinality</span><span class="o">=</span><span class="p">{</span>
+                            <span class="n">v</span><span class="p">:</span> <span class="n">n_states_dict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">([</span><span class="n">var</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+                        <span class="p">},</span>
+                        <span class="n">state_names</span><span class="o">=</span><span class="p">{</span>
+                            <span class="n">v</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">([</span><span class="n">var</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+                        <span class="p">},</span>
+                        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+                <span class="p">}</span>
+            <span class="k">elif</span> <span class="n">init_cpds</span> <span class="o">==</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span>
+                <span class="n">init_cpds</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">var</span><span class="p">:</span> <span class="n">TabularCPD</span><span class="o">.</span><span class="n">get_uniform</span><span class="p">(</span>
+                        <span class="n">variable</span><span class="o">=</span><span class="n">var</span><span class="p">,</span>
+                        <span class="n">evidence</span><span class="o">=</span><span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">],</span>
+                        <span class="n">cardinality</span><span class="o">=</span><span class="p">{</span>
+                            <span class="n">v</span><span class="p">:</span> <span class="n">n_states_dict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">([</span><span class="n">var</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+                        <span class="p">},</span>
+                        <span class="n">state_names</span><span class="o">=</span><span class="p">{</span>
+                            <span class="n">v</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">([</span><span class="n">var</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+                        <span class="p">},</span>
+                        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+                <span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;If `init_cpds` is a string, it must be either &#39;random&#39; or &#39;uniform&#39;. Got: </span><span class="si">{</span><span class="n">init_cpds</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
         <span class="c1"># Step 3.1: Learn the CPDs of variables which don&#39;t involve</span>
         <span class="c1">#           latent variables using MLE if their init_cpd is</span>
         <span class="c1">#           not specified.</span>
@@ -360,20 +428,29 @@
 
 
 
-<h3>Navigation</h3>
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../started/base.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../base/base.html">Base Model Structures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Supported Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../factors/base.html">Parameterization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/base.html">Exact Inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/base.html">Approximate Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../causal_infer/base.html">Causal Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../param_estimator/base.html">Parameter Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for Testing Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial Notebooks</a></li>
 </ul>
 
@@ -385,13 +462,9 @@
   </ul></li>
   </ul></li>
 </ul>
-</div>
-
-
-
-
-
-
+</div><head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
+</head>
 
 <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
@@ -403,16 +476,6 @@
 
   gtag('config', 'G-HCFR07M31W');
 </script>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -421,7 +484,7 @@
       &#169;2025, Ankur Ankan.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
     </div>

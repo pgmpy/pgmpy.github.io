@@ -76,52 +76,6 @@ values in the data are missing the data cells should be set to
 </dl>
 <p>[2] Neapolitan, Learning Bayesian Networks, Section 10.1.2 for the PC algorithm (page 550), <a class="reference external" href="http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf">http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf</a></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.estimators.PC.apply_orientation_rules">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">apply_orientation_rules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pdag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_r4</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/PC.html#PC.apply_orientation_rules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.PC.apply_orientation_rules" title="Link to this definition">¶</a></dt>
-<dd><p>Orients the edges of a graph skeleton based on information from
-<cite>separating_sets</cite> to form a DAG pattern (CPDAG/MPDAG).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>pdag</strong> (<a class="reference internal" href="../models/pdag.html#pgmpy.base.PDAG" title="pgmpy.base.PDAG"><em>pgmpy.base.PDAG</em></a>) – A  partial DAG produced by orienting v-structures in
-the skeleton.</p></li>
-<li><p><strong>apply_r4</strong> (<em>boolean</em>) – If true, use Rule 4 of Meek’s rules to integrate background knowledge into
-the phase of orienting edges. Defaults to False.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>Model after edge orientation</strong> – An estimate for the DAG pattern of the BN underlying the data. The
-graph might contain some nodes with both-way edges (X-&gt;Y and Y-&gt;X).
-Any completion by (removing one of the both-way edges for each such
-pair) results in a I-equivalent Bayesian network DAG.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="../models/dag.html#pgmpy.base.DAG" title="pgmpy.base.DAG">pgmpy.base.DAG</a></p>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<p>Neapolitan, Learning Bayesian Networks, Section 10.1.2, Algorithm 10.2 (page 550)
-<a class="reference external" href="http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf">http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf</a></p>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">PC</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">5000</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="s1">&#39;ABDE&#39;</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;D&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;E&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;C&#39;</span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">PC</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">orient_colliders</span><span class="p">(</span><span class="o">*</span><span class="n">c</span><span class="o">.</span><span class="n">build_skeleton</span><span class="p">())</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span> <span class="c1"># edges: A-&gt;C, B-&gt;C, A--D (not directed), C--E (not directed)</span>
-<span class="go">OutEdgeView([(&#39;B&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;E&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;D&#39;), (&#39;E&#39;, &#39;C&#39;), (&#39;D&#39;, &#39;A&#39;)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">apply_orientation_rules</span><span class="p">(</span><span class="n">pdag</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
-<span class="go">OutEdgeView([(&#39;C&#39;, &#39;E&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;D&#39;), (&#39;D&#39;, &#39;A&#39;)])</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.estimators.PC.build_skeleton">
 <span class="sig-name descname"><span class="pre">build_skeleton</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'stable'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ci_test</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'chi_square'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">significance_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cond_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expert_knowledge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enforce_expert_knowledge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/PC.html#PC.build_skeleton"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.PC.build_skeleton" title="Link to this definition">¶</a></dt>
 <dd><p>Estimates a graph skeleton (UndirectedGraph) from a set of independencies
@@ -835,7 +789,11 @@ than <cite>significance_level</cite> else returns False.</p>
   </ul></li>
   </ul></li>
 </ul>
-</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
+</head>
+
+<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>

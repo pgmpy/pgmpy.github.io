@@ -567,6 +567,65 @@ otherwise returns a new instance.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.edge_strength">
+<span class="sig-name descname"><span class="pre">edge_strength</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.edge_strength" title="Link to this definition">¶</a></dt>
+<dd><p>Computes the strength of each edge in <cite>edges</cite>. The strength is bounded
+between 0 and 1, with 1 signifying strong effect.</p>
+<p>The edge strength is defined as the effect size measure of a
+Conditional Independence test using the parents as the conditional set.
+The strength quantifies the effect of edge[0] on edge[1] after
+controlling for any other influence paths. We use a residualization-based
+CI test[1] to compute the strengths.</p>
+<p>Interpretation:
+- The strength is the Pillai’s Trace effect size of partial correlation.
+- Measures the strength of linear relationship between the residuals.
+- Works for any mixture of categorical and continuous variables.
+- The value is bounded between 0 and 1:
+- Strength close to 1 → strong dependence.
+- Strength close to 0 → conditional independence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>pandas.DataFrame</em>) – Dataset to compute edge strengths on.</p></li>
+<li><p><strong>edges</strong> (<em>tuple</em><em>, </em><em>list</em><em>, or </em><em>None</em><em> (</em><em>default: None</em><em>)</em>) – <ul>
+<li><p>None: Compute for all DAG edges.</p></li>
+<li><p>Tuple (X, Y): Compute for edge X → Y.</p></li>
+<li><p>List of tuples: Compute for selected edges.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary mapping edges to their strength values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">LinearGaussianBayesianNetwork</span> <span class="k">as</span> <span class="n">LGBN</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create a linear Gaussian Bayesian network</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">linear_model</span> <span class="o">=</span> <span class="n">LGBN</span><span class="p">([(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create CPDs with specific beta values</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x_cpd</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">std</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_cpd</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">],</span> <span class="n">std</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">z_cpd</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">std</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Add CPDs to the model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">linear_model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">x_cpd</span><span class="p">,</span> <span class="n">y_cpd</span><span class="p">,</span> <span class="n">z_cpd</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Simulate data from the model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">linear_model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e4</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Create DAG and compute edge strengths</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">([(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">strengths</span> <span class="o">=</span> <span class="n">dag</span><span class="o">.</span><span class="n">edge_strength</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="go">{(&#39;X&#39;, &#39;Y&#39;): np.float64(0.14587166611282304),</span>
+<span class="go"> (&#39;Z&#39;, &#39;Y&#39;): np.float64(0.25683780900125613)}</span>
+</pre></div>
+</div>
+<p class="rubric">References</p>
+<p>[1] Ankan, Ankur, and Johannes Textor. “A simple unified approach to testing high-dimensional conditional independences for categorical and ordinal data.” Proceedings of the AAAI Conference on Artificial Intelligence.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.edge_subgraph">
 <span class="sig-name descname"><span class="pre">edge_subgraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.edge_subgraph" title="Link to this definition">¶</a></dt>
 <dd><p>Returns the subgraph induced by the specified edges.</p>
@@ -2440,6 +2499,30 @@ visualizing the network structure.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.to_pdag">
+<span class="sig-name descname"><span class="pre">to_pdag</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.to_pdag" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the CPDAG (Completed Partial DAG) of the DAG representing the equivalence class that the given DAG belongs to.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>CPDAG</strong> – An instance of pgmpy.base.PDAG representing the CPDAG of the given DAG.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="pdag.html#pgmpy.base.PDAG" title="pgmpy.base.PDAG">pgmpy.base.PDAG</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">([(</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span> <span class="o">=</span> <span class="n">dag</span><span class="o">.</span><span class="n">to_pdag</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span><span class="o">.</span><span class="n">directed_edges</span>
+<span class="go">{(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;D&#39;)}</span>
+</pre></div>
+</div>
+<p class="rubric">References</p>
+<p>[1] Chickering, David Maxwell. “Learning equivalence classes of Bayesian-network structures.” Journal of machine learning research 2.Feb (2002): 445-498. Figure 4 and 5.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.to_undirected">
 <span class="sig-name descname"><span class="pre">to_undirected</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reciprocal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_view</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.to_undirected" title="Link to this definition">¶</a></dt>
 <dd><p>Returns an undirected representation of the digraph.</p>
@@ -2707,7 +2790,11 @@ be slightly different and require tweaks of these examples:</p>
   </ul></li>
   </ul></li>
 </ul>
-</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
+</head>
+
+<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>

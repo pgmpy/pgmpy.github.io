@@ -4,13 +4,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pgmpy.estimators.expert &#8212; pgmpy 0.1.23 documentation</title>
+    <title>pgmpy.estimators.expert &#8212; 1.0.0 | pgmpy docs</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
-    <script src="../../../_static/documentation_options.js?v=20522496"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/_modules/pgmpy/estimators/expert.html" />
+    <link rel="icon" href="../../../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -49,7 +56,7 @@
 <span class="k">class</span> <span class="nc">ExpertInLoop</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ExpertInLoop</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">orientations_llm</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orientation_cache</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
 
 <div class="viewcode-block" id="ExpertInLoop.test_all">
 <a class="viewcode-back" href="../../../structure_estimator/expert.html#pgmpy.estimators.ExpertInLoop.test_all">[docs]</a>
@@ -97,9 +104,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">pval_threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
         <span class="n">effect_size_threshold</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
-        <span class="n">use_llm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">llm_model</span><span class="o">=</span><span class="s2">&quot;gemini/gemini-1.5-flash&quot;</span><span class="p">,</span>
-        <span class="n">variable_descriptions</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">orientation_fn</span><span class="o">=</span><span class="n">llm_pairwise_orient</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">orientations</span><span class="o">=</span><span class="nb">set</span><span class="p">([]),</span>
         <span class="n">use_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -129,30 +134,36 @@
 <span class="sd">            And if the effect size for an edge is less than the threshold,</span>
 <span class="sd">            would suggest to remove the edge.</span>
 
-<span class="sd">        use_llm: bool</span>
-<span class="sd">            Whether to use a Large Language Model for edge orientation. If</span>
-<span class="sd">            False, prompts the user to specify the direction between the edges.</span>
+<span class="sd">        orientation_fn: callable, (default: pgmpy.utils.llm_pairwise_orient)</span>
+<span class="sd">            A function to determine edge orientation. The function should at least take two arguments</span>
+<span class="sd">            (the names of the two variables) and return a tuple (source, target) representing</span>
+<span class="sd">            the directed edge from source to target.</span>
+<span class="sd">            Any additional keyword arguments passed to estimate() will be forwarded to this function.</span>
 
-<span class="sd">        llm_model: str (default: gemini/gemini-1.5-flash)</span>
-<span class="sd">            The LLM model to use. Please refer to litellm documentation (https://docs.litellm.ai/docs/providers)</span>
-<span class="sd">            for available model options. Default is gemini-1.5-flash</span>
+<span class="sd">            Built-in functions that can be used:</span>
+<span class="sd">            - pgmpy.utils.manual_pairwise_orient: Prompts the user to specify the direction</span>
+<span class="sd">              between two variables by presenting options and taking input.</span>
 
-<span class="sd">        variable_descriptions: dict</span>
-<span class="sd">            A dict of the form {var: description} giving a text description of</span>
-<span class="sd">            each variable in the model.</span>
+<span class="sd">            - pgmpy.utils.llm_pairwise_orient: Uses a Large Language Model to determine direction.</span>
+<span class="sd">              Requires additional parameters:</span>
+<span class="sd">              * variable_descriptions: dict of {var_name: description} for context</span>
+<span class="sd">              * llm_model: name of the LLM model (default: &quot;gemini/gemini-1.5-flash&quot;)</span>
+<span class="sd">              * system_prompt: optional custom system prompt</span>
+
+<span class="sd">            Custom functions can be provided that implement any desired logic for determining</span>
+<span class="sd">            edge orientation, including using local LLMs or domain-specific heuristics.</span>
 
 <span class="sd">        show_progress: bool (default: True)</span>
 <span class="sd">            If True, prints info of the running status.</span>
 
 <span class="sd">        orientations: set</span>
-<span class="sd">            preferred orientation for edges</span>
+<span class="sd">            Preferred orientations for edges over the output of orientation_fn.</span>
 
 <span class="sd">        use_cache: bool</span>
-<span class="sd">            If False, ask LLM (the same question multiple times)</span>
+<span class="sd">            If False, calls the orientation_fn directly(the same (u, v) multiple times)</span>
 
 <span class="sd">        kwargs: kwargs</span>
-<span class="sd">            Any additional parameters to pass to litellm.completion method.</span>
-<span class="sd">            Please refer documentation at: https://docs.litellm.ai/docs/completion/input#input-params-1</span>
+<span class="sd">            Any additional parameters to pass to orientation_fn</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -160,20 +171,55 @@
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model, llm_pairwise_orient, manual_pairwise_orient</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ExpertInLoop</span>
 <span class="sd">        &gt;&gt;&gt; model = get_example_model(&#39;cancer&#39;)</span>
 <span class="sd">        &gt;&gt;&gt; df = model.simulate(int(1e3))</span>
+
+<span class="sd">        &gt;&gt;&gt; # Using manual orientation</span>
+<span class="sd">        &gt;&gt;&gt; dag = ExpertInLoop(df).estimate(</span>
+<span class="sd">        ...     effect_size_threshold=0.0001,</span>
+<span class="sd">        ...     orientation_fn=manual_pairwise_orient</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">        &gt;&gt;&gt; # Using LLM-based orientation</span>
 <span class="sd">        &gt;&gt;&gt; variable_descriptions = {</span>
 <span class="sd">        ...     &quot;Smoker&quot;: &quot;A binary variable representing whether a person smokes or not.&quot;,</span>
-<span class="sd">        ...     &quot;Cancer&quot;: &quot;A binary variable representing whether a person has cancer. &quot;,</span>
+<span class="sd">        ...     &quot;Cancer&quot;: &quot;A binary variable representing whether a person has cancer.&quot;,</span>
 <span class="sd">        ...     &quot;Xray&quot;: &quot;A binary variable representing the result of an X-ray test.&quot;,</span>
-<span class="sd">        ...     &quot;Pollution&quot;: &quot;A binary variable representing whether the person is in a high-pollution area or not.&quot;</span>
-<span class="sd">        ...     &quot;Dyspnoea&quot;: &quot;A binary variable representing whether a person has shortness of breath. &quot;}</span>
+<span class="sd">        ...     &quot;Pollution&quot;: &quot;A binary variable representing whether the person is in a high-pollution area or not.&quot;,</span>
+<span class="sd">        ...     &quot;Dyspnoea&quot;: &quot;A binary variable representing whether a person has shortness of breath.&quot;</span>
+<span class="sd">        ... }</span>
 <span class="sd">        &gt;&gt;&gt; dag = ExpertInLoop(df).estimate(</span>
-<span class="sd">        ...                 effect_size_threshold=0.0001,</span>
-<span class="sd">        ...                 use_llm=True,</span>
-<span class="sd">        ...                 variable_descriptions=variable_descriptions)</span>
+<span class="sd">        ...     effect_size_threshold=0.0001,</span>
+<span class="sd">        ...     orientation_fn=llm_pairwise_orient,</span>
+<span class="sd">        ...     variable_descriptions=variable_descriptions,</span>
+<span class="sd">        ...     llm_model=&quot;gemini/gemini-1.5-flash&quot;</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; dag.edges()</span>
+<span class="sd">        OutEdgeView([(&#39;Smoker&#39;, &#39;Cancer&#39;), (&#39;Cancer&#39;, &#39;Xray&#39;), (&#39;Cancer&#39;, &#39;Dyspnoea&#39;), (&#39;Pollution&#39;, &#39;Cancer&#39;)])</span>
+
+<span class="sd">        &gt;&gt;&gt; # Using a custom orientation function</span>
+<span class="sd">        &gt;&gt;&gt; def my_orientation_func(var1, var2, **kwargs):</span>
+<span class="sd">        ...     # Custom logic to determine edge orientation</span>
+<span class="sd">        ...     if var1 == &quot;Pollution&quot; and var2 == &quot;Cancer&quot;:</span>
+<span class="sd">        ...         return (&quot;Pollution&quot;, &quot;Cancer&quot;)  # Pollution -&gt; Cancer</span>
+<span class="sd">        ...     elif var1 == &quot;Cancer&quot; and var2 == &quot;Pollution&quot;:</span>
+<span class="sd">        ...         return (&quot;Pollution&quot;, &quot;Cancer&quot;)  # Pollution -&gt; Cancer</span>
+<span class="sd">        ...     elif &quot;Smoker&quot; in (var1, var2) and &quot;Cancer&quot; in (var1, var2):</span>
+<span class="sd">        ...         return (&quot;Smoker&quot;, &quot;Cancer&quot;)  # Smoker -&gt; Cancer</span>
+<span class="sd">        ...     # For edges involving Xray, always orient from other variable to Xray</span>
+<span class="sd">        ...     elif &quot;Xray&quot; in (var1, var2):</span>
+<span class="sd">        ...         if var1 == &quot;Xray&quot;:</span>
+<span class="sd">        ...             return (var2, var1)</span>
+<span class="sd">        ...         else:</span>
+<span class="sd">        ...             return (var1, var2)</span>
+<span class="sd">        ...     # Default: use alphabetical ordering</span>
+<span class="sd">        ...     return (var1, var2) if var1 &lt; var2 else (var2, var1)</span>
+<span class="sd">        &gt;&gt;&gt; dag = ExpertInLoop(df).estimate(</span>
+<span class="sd">        ...     effect_size_threshold=0.0001,</span>
+<span class="sd">        ...     orientation_fn=my_orientation_func</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; dag.edges()</span>
 <span class="sd">        OutEdgeView([(&#39;Smoker&#39;, &#39;Cancer&#39;), (&#39;Cancer&#39;, &#39;Xray&#39;), (&#39;Cancer&#39;, &#39;Dyspnoea&#39;), (&#39;Pollution&#39;, &#39;Cancer&#39;)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -228,37 +274,55 @@
 
             <span class="n">selected_edge</span> <span class="o">=</span> <span class="n">nonedge_effects</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">nonedge_effects</span><span class="o">.</span><span class="n">effect</span><span class="o">.</span><span class="n">argmax</span><span class="p">()]</span>
             <span class="n">edge_direction</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="k">if</span> <span class="n">use_llm</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">use_cache</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientations_llm</span><span class="p">:</span>
-                        <span class="n">edge_direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientations_llm</span><span class="p">:</span>
-                        <span class="n">edge_direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">edge_direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">edge_direction</span> <span class="o">=</span> <span class="n">llm_pairwise_orient</span><span class="p">(</span>
-                        <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span>
-                        <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span>
-                        <span class="n">variable_descriptions</span><span class="p">,</span>
-                        <span class="n">llm_model</span><span class="o">=</span><span class="n">llm_model</span><span class="p">,</span>
-                        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-                    <span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">orientations_llm</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span> <span class="ow">and</span> <span class="n">show_progress</span><span class="p">:</span>
-                    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">Queried for edge orientation between </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="si">}</span><span class="s2">. Got: </span><span class="si">{</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span>
-                    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-            <span class="k">elif</span> <span class="n">orientations</span><span class="p">:</span>
+            <span class="c1"># Edge orientation logic flow (part of step 3.2):</span>
+            <span class="c1"># 1. If pre-defined orientations are provided, use those first</span>
+            <span class="c1"># 2. Otherwise, try to use cached orientations if use_cache=True</span>
+            <span class="c1"># 3. If no cached orientation, call the orientation_fn and validate result</span>
+            <span class="c1">#    - Validate that it returns a valid edge direction tuple</span>
+            <span class="c1">#    - Cache the orientation and add the edge to the DAG</span>
+
+            <span class="k">if</span> <span class="n">orientations</span><span class="p">:</span>
                 <span class="k">if</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">orientations</span><span class="p">:</span>
                     <span class="n">edge_direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">)</span> <span class="ow">in</span> <span class="n">orientations</span><span class="p">:</span>
                     <span class="n">edge_direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">edge_direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">edge_direction</span> <span class="o">=</span> <span class="n">manual_pairwise_orient</span><span class="p">(</span>
-                    <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span>
-                <span class="p">)</span>
-                <span class="n">orientations</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">use_cache</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation_cache</span><span class="p">:</span>
+                        <span class="n">edge_direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="p">(</span>
+                        <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span>
+                        <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span>
+                    <span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation_cache</span><span class="p">:</span>
+                        <span class="n">edge_direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">edge_direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">edge_direction</span> <span class="o">=</span> <span class="n">orientation_fn</span><span class="p">(</span>
+                        <span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span>
+                        <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                    <span class="c1"># Validate that the orientation function returned a valid tuple</span>
+                    <span class="k">if</span> <span class="p">(</span>
+                        <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span>
+                        <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span>
+                        <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+                        <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+                        <span class="ow">or</span> <span class="nb">set</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">)</span>
+                        <span class="o">!=</span> <span class="nb">set</span><span class="p">([</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">])</span>
+                    <span class="p">):</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Orientation function returned an invalid value: </span><span class="si">{</span><span class="n">edge_direction</span><span class="si">}</span><span class="s2">. &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;Must return a tuple containing exactly </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="si">}</span><span class="s2">.&quot;</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">orientation_cache</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span> <span class="ow">and</span> <span class="n">show_progress</span><span class="p">:</span>
+                            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">Queried for edge orientation between </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="si">}</span><span class="s2">. Got: </span><span class="si">{</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="p">)</span>
+                            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
 
             <span class="c1"># Step 3.3: If the edge creates a cycle add the reverse edge. If no cycle, add the original edge.</span>
             <span class="k">if</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">dag</span><span class="p">,</span> <span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
@@ -291,21 +355,29 @@
 
 
 
-<h3>Navigation</h3>
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../started/base.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../base/base.html">Base Model Structures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Supported Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../factors/base.html">Parameterization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/base.html">Exact Inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/model_testing.html">Model Testing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/base.html">Approximate Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../causal_infer/base.html">Causal Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../param_estimator/base.html">Parameter Estimation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Structure Learning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for testing models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for Testing Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial Notebooks</a></li>
 </ul>
 
@@ -317,13 +389,9 @@
   </ul></li>
   </ul></li>
 </ul>
-</div>
-
-
-
-
-
-
+</div><head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
+</head>
 
 <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
@@ -335,25 +403,15 @@
 
   gtag('config', 'G-HCFR07M31W');
 </script>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &#169;2023, Ankur Ankan.
+      &#169;2025, Ankur Ankan.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
     </div>

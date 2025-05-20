@@ -4,18 +4,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pgmpy.readwrite.XDSL &#8212; pgmpy 1.0.0 documentation</title>
+    <title>pgmpy.readwrite.XDSL &#8212; 1.0.0 | pgmpy docs</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <script src="../../../_static/documentation_options.js?v=8d563738"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/_modules/pgmpy/readwrite/XDSL.html" />
     <link rel="icon" href="../../../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -45,6 +46,7 @@
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
+<span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">compat_fns</span>
 
@@ -54,6 +56,8 @@
 <span class="k">class</span> <span class="nc">XDSLReader</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Initializes the reader object for XDSL file formats[1] created through GeNIe[2].</span>
+<span class="sd">    Note that XDSLReader only supports cpt blocks from the XDSL file format; elements like</span>
+<span class="sd">    &#39;deterministic&#39; need to be aapropriately converted into &#39;cpt&#39; elements before usage.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -86,6 +90,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Must specify either path or string&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">network_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cpt_elements</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;cpt&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_variables</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">variable_parents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">edge_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_edges</span><span class="p">()</span>
@@ -104,8 +109,13 @@
 <span class="sd">        &gt;&gt;&gt; reader.get_variables()</span>
 <span class="sd">        [&#39;asia&#39;, &#39;tub&#39;, &#39;smoke&#39;, &#39;lung&#39;, &#39;either&#39;, &#39;xray&#39;, &#39;bronc&#39;, &#39;dysp&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">)</span>
-        <span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">variable</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">nodes</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;cpt&quot;</span><span class="p">)]</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">variable</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpt_elements</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s2">&quot; &quot;</span> <span class="ow">in</span> <span class="n">var</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;XDSLReader does not support models with node names that contain whitespaces. Failed to process node: </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
         <span class="k">return</span> <span class="n">variables</span></div>
 
 
@@ -130,8 +140,7 @@
 <span class="sd">        }</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">variable_parents</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;cpt&quot;</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpt_elements</span><span class="p">:</span>
             <span class="n">parents</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;parents&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">parents</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">variable_parents</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">parents</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
@@ -189,9 +198,8 @@
 <span class="sd">        dysp&#39;: [&#39;Absent&#39;, &#39;Present&#39;]</span>
 <span class="sd">        }</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;cpt&quot;</span><span class="p">)</span>
         <span class="n">variable_states</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">cpt</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">cpt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpt_elements</span><span class="p">:</span>
             <span class="n">variable_states</span><span class="p">[</span><span class="n">cpt</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="n">state</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">cpt</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;state&quot;</span><span class="p">)</span>
             <span class="p">]</span>
@@ -219,8 +227,7 @@
 <span class="sd">        }</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">variable_CPD</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;cpt&quot;</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">cpt</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">cpt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpt_elements</span><span class="p">:</span>
 
             <span class="n">combined_prob</span> <span class="o">=</span> <span class="n">cpt</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;probabilities&quot;</span><span class="p">)</span>
             <span class="n">num_states</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">state</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">cpt</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;state&quot;</span><span class="p">)])</span>
@@ -378,6 +385,10 @@
         <span class="n">nodes_elem</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;nodes&quot;</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot; &quot;</span> <span class="ow">in</span> <span class="n">var</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot; Node &#39;</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">&#39; contains whitespaces. This could cause issues, especially when using pgmpy.readwrite.XDSLReader&quot;</span>
+                <span class="p">)</span>
             <span class="n">variable_tag</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">nodes_elem</span><span class="p">,</span> <span class="s2">&quot;cpt&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">var</span><span class="p">})</span>
 
         <span class="k">return</span> <span class="n">variable_tag</span></div>
@@ -531,20 +542,29 @@
 
 
 
-<h3>Navigation</h3>
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../started/base.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../base/base.html">Base Model Structures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Supported Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../factors/base.html">Parameterization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/base.html">Exact Inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/base.html">Approximate Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../causal_infer/base.html">Causal Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../param_estimator/base.html">Parameter Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for Testing Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial Notebooks</a></li>
 </ul>
 
@@ -556,13 +576,9 @@
   </ul></li>
   </ul></li>
 </ul>
-</div>
-
-
-
-
-
-
+</div><head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
+</head>
 
 <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
@@ -574,16 +590,6 @@
 
   gtag('config', 'G-HCFR07M31W');
 </script>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -592,7 +598,7 @@
       &#169;2025, Ankur Ankan.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
     </div>
