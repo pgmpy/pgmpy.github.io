@@ -38,36 +38,70 @@
           <div class="body" role="main">
             
   <h1>Source code for pgmpy.estimators.CITests</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">stats</span>
 <span class="kn">from</span> <span class="nn">sklearn.cross_decomposition</span> <span class="kn">import</span> <span class="n">CCA</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="kn">import</span> <span class="n">IndependenceAssertion</span>
+<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">get_dataset_type</span>
 
 
-<span class="k">def</span> <span class="nf">get_ci_test</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">independencies</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">get_callable_ci_test</span><span class="p">(</span>
+    <span class="n">test</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Callable</span><span class="p">],</span>
+    <span class="n">full</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">independencies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+    <span class="c1"># renamed to specify you are obtaining a Callable</span>
     <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">test</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">test</span>
 
-    <span class="n">test</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="n">supported_tests</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;chi_square&quot;</span><span class="p">:</span> <span class="n">chi_square</span><span class="p">,</span>
-        <span class="s2">&quot;g_sq&quot;</span><span class="p">:</span> <span class="n">g_sq</span><span class="p">,</span>
-        <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="n">log_likelihood</span><span class="p">,</span>
-        <span class="s2">&quot;modified_log_likelihood&quot;</span><span class="p">:</span> <span class="n">modified_log_likelihood</span><span class="p">,</span>
-        <span class="s2">&quot;pearsonr&quot;</span><span class="p">:</span> <span class="n">pearsonr</span><span class="p">,</span>
-        <span class="s2">&quot;pillai&quot;</span><span class="p">:</span> <span class="n">pillai_trace</span><span class="p">,</span>
-        <span class="s2">&quot;gcm&quot;</span><span class="p">:</span> <span class="n">gcm</span><span class="p">,</span>
+        <span class="s2">&quot;continuous&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;pearsonr&quot;</span><span class="p">:</span> <span class="n">pearsonr</span><span class="p">,</span>
+            <span class="s2">&quot;gcm&quot;</span><span class="p">:</span> <span class="n">gcm</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;discrete&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;chi_square&quot;</span><span class="p">:</span> <span class="n">chi_square</span><span class="p">,</span>
+            <span class="s2">&quot;g_sq&quot;</span><span class="p">:</span> <span class="n">g_sq</span><span class="p">,</span>
+            <span class="s2">&quot;log_likelihood&quot;</span><span class="p">:</span> <span class="n">log_likelihood</span><span class="p">,</span>
+            <span class="s2">&quot;modified_log_likelihood&quot;</span><span class="p">:</span> <span class="n">modified_log_likelihood</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;mixed&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;pillai&quot;</span><span class="p">:</span> <span class="n">pillai_trace</span><span class="p">,</span>
+        <span class="p">},</span>
     <span class="p">}</span>
-    <span class="k">if</span> <span class="n">full</span><span class="p">:</span>
-        <span class="n">supported_tests</span><span class="p">[</span><span class="s2">&quot;power_divergence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">power_divergence</span>
-        <span class="n">supported_tests</span><span class="p">[</span><span class="s2">&quot;independence_match&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">independence_match</span>
+    <span class="n">flattened_supported_methods</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">key</span><span class="p">:</span> <span class="n">value</span>
+        <span class="k">for</span> <span class="n">subdict</span> <span class="ow">in</span> <span class="n">supported_tests</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">subdict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
 
-    <span class="k">if</span> <span class="n">test</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported_tests</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Automatically determine method</span>
+            <span class="n">var_type</span> <span class="o">=</span> <span class="n">get_dataset_type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">test</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">supported_tests</span><span class="p">[</span><span class="n">var_type</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot determine a suitable CI test for the data. &quot;</span>
+                <span class="s2">&quot;Please specify CI test to use&quot;</span>
+            <span class="p">)</span>
+
+    <span class="n">test</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">full</span><span class="p">:</span>
+        <span class="n">flattened_supported_methods</span><span class="p">[</span><span class="s2">&quot;power_divergence&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">power_divergence</span>
+        <span class="n">flattened_supported_methods</span><span class="p">[</span><span class="s2">&quot;independence_match&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">independence_match</span>
+
+    <span class="k">if</span> <span class="n">test</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">flattened_supported_methods</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;ci_test must either be one of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">supported_tests</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">, or a function. Got: </span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;ci_test must either be one of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">flattened_supported_methods</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">, or a function. Got: </span><span class="si">{</span><span class="n">test</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">full</span><span class="p">:</span>
@@ -81,7 +115,7 @@
                 <span class="s2">&quot;For using Chi Square or Pearsonr, data argument must be specified&quot;</span>
             <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">supported_tests</span><span class="p">[</span><span class="n">test</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">flattened_supported_methods</span><span class="p">[</span><span class="n">test</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="independence_match">
@@ -102,7 +136,7 @@
 <span class="sd">    Z: list/array-like</span>
 <span class="sd">        A list of conditional variable for testing the condition X \u27c2 Y | Z</span>
 
-<span class="sd">    data: pandas.DataFrame The dataset in which to test the indepenedence condition.</span>
+<span class="sd">    data: pandas.DataFrame The dataset in which to test the independence condition.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -165,14 +199,21 @@
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">    &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 2, size=(50000, 4)), columns=list(&#39;ABCD&#39;))</span>
-<span class="sd">    &gt;&gt;&gt; data[&#39;E&#39;] = data[&#39;A&#39;] + data[&#39;B&#39;] + data[&#39;C&#39;]</span>
-<span class="sd">    &gt;&gt;&gt; chi_square(X=&#39;A&#39;, Y=&#39;C&#39;, Z=[], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; chi_square(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; chi_square(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;, &#39;E&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; np.random.seed(42)</span>
+<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(</span>
+<span class="sd">    ...     np.random.randint(0, 2, size=(50000, 4)), columns=list(&quot;ABCD&quot;)</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; data[&quot;E&quot;] = data[&quot;A&quot;] + data[&quot;B&quot;] + data[&quot;C&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; chi_square(X=&quot;A&quot;, Y=&quot;C&quot;, Z=[], data=data, boolean=True, significance_level=0.05)</span>
+<span class="sd">    np.True_</span>
+<span class="sd">    &gt;&gt;&gt; chi_square(</span>
+<span class="sd">    ...     X=&quot;A&quot;, Y=&quot;B&quot;, Z=[&quot;D&quot;], data=data, boolean=True, significance_level=0.05</span>
+<span class="sd">    ... )</span>
+<span class="sd">    np.True_</span>
+<span class="sd">    &gt;&gt;&gt; chi_square(</span>
+<span class="sd">    ...     X=&quot;A&quot;, Y=&quot;B&quot;, Z=[&quot;D&quot;, &quot;E&quot;], data=data, boolean=True, significance_level=0.05</span>
+<span class="sd">    ... )</span>
+<span class="sd">    np.False_</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">power_divergence</span><span class="p">(</span>
         <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="n">boolean</span><span class="p">,</span> <span class="n">lambda_</span><span class="o">=</span><span class="s2">&quot;pearson&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
@@ -228,14 +269,19 @@
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">    &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 2, size=(50000, 4)), columns=list(&#39;ABCD&#39;))</span>
-<span class="sd">    &gt;&gt;&gt; data[&#39;E&#39;] = data[&#39;A&#39;] + data[&#39;B&#39;] + data[&#39;C&#39;]</span>
-<span class="sd">    &gt;&gt;&gt; g_sq(X=&#39;A&#39;, Y=&#39;C&#39;, Z=[], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; g_sq(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; g_sq(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;, &#39;E&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; np.random.seed(42)</span>
+<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(</span>
+<span class="sd">    ...     np.random.randint(0, 2, size=(50000, 4)), columns=list(&quot;ABCD&quot;)</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; data[&quot;E&quot;] = data[&quot;A&quot;] + data[&quot;B&quot;] + data[&quot;C&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; g_sq(X=&quot;A&quot;, Y=&quot;C&quot;, Z=[], data=data, boolean=True, significance_level=0.05)</span>
+<span class="sd">    np.True_</span>
+<span class="sd">    &gt;&gt;&gt; g_sq(X=&quot;A&quot;, Y=&quot;B&quot;, Z=[&quot;D&quot;], data=data, boolean=True, significance_level=0.05)</span>
+<span class="sd">    np.True_</span>
+<span class="sd">    &gt;&gt;&gt; g_sq(</span>
+<span class="sd">    ...     X=&quot;A&quot;, Y=&quot;B&quot;, Z=[&quot;D&quot;, &quot;E&quot;], data=data, boolean=True, significance_level=0.05</span>
+<span class="sd">    ... )</span>
+<span class="sd">    np.False_</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">power_divergence</span><span class="p">(</span>
         <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="n">boolean</span><span class="p">,</span> <span class="n">lambda_</span><span class="o">=</span><span class="s2">&quot;log-likelihood&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
@@ -291,14 +337,23 @@
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">    &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 2, size=(50000, 4)), columns=list(&#39;ABCD&#39;))</span>
-<span class="sd">    &gt;&gt;&gt; data[&#39;E&#39;] = data[&#39;A&#39;] + data[&#39;B&#39;] + data[&#39;C&#39;]</span>
-<span class="sd">    &gt;&gt;&gt; log_likelihood(X=&#39;A&#39;, Y=&#39;C&#39;, Z=[], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; log_likelihood(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; log_likelihood(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;, &#39;E&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; np.random.seed(42)</span>
+<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(</span>
+<span class="sd">    ...     np.random.randint(0, 2, size=(50000, 4)), columns=list(&quot;ABCD&quot;)</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; data[&quot;E&quot;] = data[&quot;A&quot;] + data[&quot;B&quot;] + data[&quot;C&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; log_likelihood(</span>
+<span class="sd">    ...     X=&quot;A&quot;, Y=&quot;C&quot;, Z=[], data=data, boolean=True, significance_level=0.05</span>
+<span class="sd">    ... )</span>
+<span class="sd">    np.True_</span>
+<span class="sd">    &gt;&gt;&gt; log_likelihood(</span>
+<span class="sd">    ...     X=&quot;A&quot;, Y=&quot;B&quot;, Z=[&quot;D&quot;], data=data, boolean=True, significance_level=0.05</span>
+<span class="sd">    ... )</span>
+<span class="sd">    np.True_</span>
+<span class="sd">    &gt;&gt;&gt; log_likelihood(</span>
+<span class="sd">    ...     X=&quot;A&quot;, Y=&quot;B&quot;, Z=[&quot;D&quot;, &quot;E&quot;], data=data, boolean=True, significance_level=0.05</span>
+<span class="sd">    ... )</span>
+<span class="sd">    np.False_</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">power_divergence</span><span class="p">(</span>
         <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="n">boolean</span><span class="p">,</span> <span class="n">lambda_</span><span class="o">=</span><span class="s2">&quot;log-likelihood&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
@@ -349,14 +404,23 @@
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">    &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 2, size=(50000, 4)), columns=list(&#39;ABCD&#39;))</span>
-<span class="sd">    &gt;&gt;&gt; data[&#39;E&#39;] = data[&#39;A&#39;] + data[&#39;B&#39;] + data[&#39;C&#39;]</span>
-<span class="sd">    &gt;&gt;&gt; modified_log_likelihood(X=&#39;A&#39;, Y=&#39;C&#39;, Z=[], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; modified_log_likelihood(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; modified_log_likelihood(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;, &#39;E&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; np.random.seed(42)</span>
+<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(</span>
+<span class="sd">    ...     np.random.randint(0, 2, size=(50000, 4)), columns=list(&quot;ABCD&quot;)</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; data[&quot;E&quot;] = data[&quot;A&quot;] + data[&quot;B&quot;] + data[&quot;C&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; modified_log_likelihood(</span>
+<span class="sd">    ...     X=&quot;A&quot;, Y=&quot;C&quot;, Z=[], data=data, boolean=True, significance_level=0.05</span>
+<span class="sd">    ... )</span>
+<span class="sd">    np.True_</span>
+<span class="sd">    &gt;&gt;&gt; modified_log_likelihood(</span>
+<span class="sd">    ...     X=&quot;A&quot;, Y=&quot;B&quot;, Z=[&quot;D&quot;], data=data, boolean=True, significance_level=0.05</span>
+<span class="sd">    ... )</span>
+<span class="sd">    np.True_</span>
+<span class="sd">    &gt;&gt;&gt; modified_log_likelihood(</span>
+<span class="sd">    ...     X=&quot;A&quot;, Y=&quot;B&quot;, Z=[&quot;D&quot;, &quot;E&quot;], data=data, boolean=True, significance_level=0.05</span>
+<span class="sd">    ... )</span>
+<span class="sd">    np.False_</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">power_divergence</span><span class="p">(</span>
         <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span>
@@ -424,20 +488,28 @@
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
-<span class="sd">    [1] Cressie, Noel, and Timothy RC Read. &quot;Multinomial goodness‐of‐fit tests.&quot; Journal of the Royal Statistical Society: Series B (Methodological) 46.3 (1984): 440-464.</span>
+<span class="sd">    [1] Cressie, Noel, and Timothy RC Read. &quot;Multinomial goodness‐of‐fit tests.&quot;</span>
+<span class="sd">      Journal of the Royal Statistical Society: Series B (Methodological) 46.3 (1984): 440-464.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">    &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 2, size=(50000, 4)), columns=list(&#39;ABCD&#39;))</span>
-<span class="sd">    &gt;&gt;&gt; data[&#39;E&#39;] = data[&#39;A&#39;] + data[&#39;B&#39;] + data[&#39;C&#39;]</span>
-<span class="sd">    &gt;&gt;&gt; chi_square(X=&#39;A&#39;, Y=&#39;C&#39;, Z=[], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; chi_square(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    True</span>
-<span class="sd">    &gt;&gt;&gt; chi_square(X=&#39;A&#39;, Y=&#39;B&#39;, Z=[&#39;D&#39;, &#39;E&#39;], data=data, boolean=True, significance_level=0.05)</span>
-<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; np.random.seed(42)</span>
+<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(</span>
+<span class="sd">    ...     np.random.randint(0, 2, size=(50000, 4)), columns=list(&quot;ABCD&quot;)</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; data[&quot;E&quot;] = data[&quot;A&quot;] + data[&quot;B&quot;] + data[&quot;C&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; chi_square(X=&quot;A&quot;, Y=&quot;C&quot;, Z=[], data=data, boolean=True, significance_level=0.05)</span>
+<span class="sd">    np.True_</span>
+<span class="sd">    &gt;&gt;&gt; chi_square(</span>
+<span class="sd">    ...     X=&quot;A&quot;, Y=&quot;B&quot;, Z=[&quot;D&quot;], data=data, boolean=True, significance_level=0.05</span>
+<span class="sd">    ... )</span>
+<span class="sd">    np.True_</span>
+<span class="sd">    &gt;&gt;&gt; chi_square(</span>
+<span class="sd">    ...     X=&quot;A&quot;, Y=&quot;B&quot;, Z=[&quot;D&quot;, &quot;E&quot;], data=data, boolean=True, significance_level=0.05</span>
+<span class="sd">    ... )</span>
+<span class="sd">    np.False_</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Step 1: Check if the arguments are valid and type conversions.</span>
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
@@ -517,7 +589,7 @@
 <span class="sd">        A list of conditional variable for testing the condition X \u27c2 Y | Z</span>
 
 <span class="sd">    data: pandas.DataFrame</span>
-<span class="sd">        The dataset in which to test the indepenedence condition.</span>
+<span class="sd">        The dataset in which to test the independence condition.</span>
 
 <span class="sd">    boolean: bool</span>
 <span class="sd">        If boolean=True, an additional argument `significance_level` must</span>
@@ -581,8 +653,7 @@
         <span class="kn">from</span> <span class="nn">xgboost</span> <span class="kn">import</span> <span class="n">XGBClassifier</span><span class="p">,</span> <span class="n">XGBRegressor</span>
     <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
-            <span class="n">e</span><span class="o">.</span><span class="n">msg</span>
-            <span class="o">+</span> <span class="s2">&quot;. xgboost is required for using pillai_trace test. Please install using: pip install xgboost&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. xgboost is required for using pillai_trace test. Please install using: pip install xgboost&quot;</span>
         <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
 
     <span class="c1"># Step 1: Check if any of the conditional variables are categorical</span>
@@ -658,7 +729,7 @@
 <span class="sd">        A list of conditional variable for testing the condition X \u27c2 Y | Z</span>
 
 <span class="sd">    data: pandas.DataFrame</span>
-<span class="sd">        The dataset in which to test the indepenedence condition.</span>
+<span class="sd">        The dataset in which to test the independence condition.</span>
 
 <span class="sd">    boolean: bool</span>
 <span class="sd">        If boolean=True, an additional argument `significance_level` must</span>
@@ -676,9 +747,16 @@
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
-<span class="sd">    [1] Ankan, Ankur, and Johannes Textor. &quot;A simple unified approach to testing high-dimensional conditional independences for categorical and ordinal data.&quot; Proceedings of the AAAI Conference on Artificial Intelligence.</span>
-<span class="sd">    [2] Li, C.; and Shepherd, B. E. 2010. Test of Association Between Two Ordinal Variables While Adjusting for Covariates. Journal of the American Statistical Association.</span>
-<span class="sd">    [3] Muller, K. E. and Peterson B. L. (1984) Practical Methods for computing power in testing the multivariate general linear hypothesis. Computational Statistics &amp; Data Analysis.</span>
+<span class="sd">    [1] Ankan, Ankur, and Johannes Textor.</span>
+<span class="sd">        &quot;A simple unified approach to testing high-dimensional&quot;</span>
+<span class="sd">        &quot;conditional independences for categorical and ordinal data.&quot;</span>
+<span class="sd">        Proceedings of the AAAI Conference on Artificial Intelligence.</span>
+<span class="sd">    [2] Li, C.; and Shepherd, B. E. 2010.</span>
+<span class="sd">      Test of Association Between Two Ordinal Variables While Adjusting for Covariates.</span>
+<span class="sd">      Journal of the American Statistical Association.</span>
+<span class="sd">    [3] Muller, K. E. and Peterson B. L. (1984) Practical Methods for computing power</span>
+<span class="sd">      in testing the multivariate general linear hypothesis.</span>
+<span class="sd">      Computational Statistics &amp; Data Analysis.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Step 1: Test if the inputs are correct</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
@@ -773,7 +851,7 @@
 <span class="sd">        A list of conditional variable for testing the condition X \u27c2 Y | Z</span>
 
 <span class="sd">    data: pandas.DataFrame</span>
-<span class="sd">        The dataset in which to test the indepenedence condition.</span>
+<span class="sd">        The dataset in which to test the independence condition.</span>
 
 <span class="sd">    boolean: bool</span>
 <span class="sd">        If boolean=True, an additional argument `significance_level` must</span>
@@ -791,7 +869,9 @@
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
-<span class="sd">    [1] Rajen D. Shah, and Jonas Peters. &quot;The Hardness of Conditional Independence Testing and the Generalised Covariance Measure&quot;.</span>
+<span class="sd">    [1] Rajen D. Shah, and Jonas Peters.</span>
+<span class="sd">      &quot;The Hardness of Conditional Independence</span>
+<span class="sd">        Testing and the Generalised Covariance Measure&quot;.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Step 1: Test if the inputs are correct</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
@@ -887,11 +967,7 @@
   </ul></li>
   </ul></li>
 </ul>
-</div><head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
-</head>
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>

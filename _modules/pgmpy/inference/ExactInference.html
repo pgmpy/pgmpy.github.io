@@ -42,6 +42,7 @@
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -64,9 +65,9 @@
     <span class="n">FactorGraph</span><span class="p">,</span>
     <span class="n">FunctionalBayesianNetwork</span><span class="p">,</span>
     <span class="n">JunctionTree</span><span class="p">,</span>
+    <span class="n">LinearGaussianBayesianNetwork</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">compat_fns</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">LinearGaussianBayesianNetwork</span>
 
 
 <div class="viewcode-block" id="VariableElimination">
@@ -287,9 +288,9 @@
 <a class="viewcode-back" href="../../../infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.query">[docs]</a>
     <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">variables</span><span class="p">,</span>
-        <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">],</span>
+        <span class="n">evidence</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">virtual_evidence</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">elimination_order</span><span class="o">=</span><span class="s2">&quot;greedy&quot;</span><span class="p">,</span>
         <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -328,12 +329,16 @@
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
-<span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 5)),</span>
+<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;D&quot;), (&quot;B&quot;, &quot;E&quot;)]</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
-<span class="sd">        &gt;&gt;&gt; phi_query = inference.query([&#39;A&#39;, &#39;B&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; phi_query = inference.query([&quot;A&quot;, &quot;B&quot;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
 
@@ -526,12 +531,16 @@
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import VariableElimination</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
-<span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 5)),</span>
+<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;D&quot;), (&quot;B&quot;, &quot;E&quot;)]</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
-<span class="sd">        &gt;&gt;&gt; phi_query = inference.max_marginal([&#39;A&#39;, &#39;B&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; phi_query = inference.max_marginal([&quot;A&quot;, &quot;B&quot;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">variables</span><span class="p">:</span>
             <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span>
@@ -603,12 +612,16 @@
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
-<span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 5)),</span>
+<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;D&quot;), (&quot;B&quot;, &quot;E&quot;)]</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
-<span class="sd">        &gt;&gt;&gt; phi_query = inference.map_query([&#39;A&#39;, &#39;B&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; phi_query = inference.map_query([&quot;A&quot;, &quot;B&quot;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">variables</span>
         <span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
@@ -677,12 +690,16 @@
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import VariableElimination</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
-<span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 5)),</span>
+<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;D&quot;), (&quot;B&quot;, &quot;E&quot;)]</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
-<span class="sd">        &gt;&gt;&gt; inference.induced_graph([&#39;C&#39;, &#39;D&#39;, &#39;A&#39;, &#39;B&#39;, &#39;E&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; inference.induced_graph([&quot;C&quot;, &quot;D&quot;, &quot;A&quot;, &quot;B&quot;, &quot;E&quot;])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
 
@@ -744,12 +761,16 @@
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import VariableElimination</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
-<span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 5)),</span>
+<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;D&quot;), (&quot;B&quot;, &quot;E&quot;)]</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = VariableElimination(model)</span>
-<span class="sd">        &gt;&gt;&gt; inference.induced_width([&#39;C&#39;, &#39;D&#39;, &#39;A&#39;, &#39;B&#39;, &#39;E&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; inference.induced_width([&quot;C&quot;, &quot;D&quot;, &quot;A&quot;, &quot;B&quot;, &quot;E&quot;])</span>
 <span class="sd">        3</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">induced_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">induced_graph</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">)</span>
@@ -952,24 +973,41 @@
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import BeliefPropagation</span>
-<span class="sd">        &gt;&gt;&gt; G = DiscreteBayesianNetwork([(&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;),</span>
-<span class="sd">        ...                    (&#39;intel&#39;, &#39;SAT&#39;), (&#39;grade&#39;, &#39;letter&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; diff_cpd = TabularCPD(&#39;diff&#39;, 2, [[0.2], [0.8]])</span>
-<span class="sd">        &gt;&gt;&gt; intel_cpd = TabularCPD(&#39;intel&#39;, 3, [[0.5], [0.3], [0.2]])</span>
-<span class="sd">        &gt;&gt;&gt; grade_cpd = TabularCPD(&#39;grade&#39;, 3,</span>
-<span class="sd">        ...                        [[0.1, 0.1, 0.1, 0.1, 0.1, 0.1],</span>
-<span class="sd">        ...                         [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],</span>
-<span class="sd">        ...                         [0.8, 0.8, 0.8, 0.8, 0.8, 0.8]],</span>
-<span class="sd">        ...                        evidence=[&#39;diff&#39;, &#39;intel&#39;],</span>
-<span class="sd">        ...                        evidence_card=[2, 3])</span>
-<span class="sd">        &gt;&gt;&gt; sat_cpd = TabularCPD(&#39;SAT&#39;, 2,</span>
-<span class="sd">        ...                      [[0.1, 0.2, 0.7],</span>
-<span class="sd">        ...                       [0.9, 0.8, 0.3]],</span>
-<span class="sd">        ...                      evidence=[&#39;intel&#39;], evidence_card=[3])</span>
-<span class="sd">        &gt;&gt;&gt; letter_cpd = TabularCPD(&#39;letter&#39;, 2,</span>
-<span class="sd">        ...                         [[0.1, 0.4, 0.8],</span>
-<span class="sd">        ...                          [0.9, 0.6, 0.2]],</span>
-<span class="sd">        ...                         evidence=[&#39;grade&#39;], evidence_card=[3])</span>
+<span class="sd">        &gt;&gt;&gt; G = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [</span>
+<span class="sd">        ...         (&quot;diff&quot;, &quot;grade&quot;),</span>
+<span class="sd">        ...         (&quot;intel&quot;, &quot;grade&quot;),</span>
+<span class="sd">        ...         (&quot;intel&quot;, &quot;SAT&quot;),</span>
+<span class="sd">        ...         (&quot;grade&quot;, &quot;letter&quot;),</span>
+<span class="sd">        ...     ]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; diff_cpd = TabularCPD(&quot;diff&quot;, 2, [[0.2], [0.8]])</span>
+<span class="sd">        &gt;&gt;&gt; intel_cpd = TabularCPD(&quot;intel&quot;, 3, [[0.5], [0.3], [0.2]])</span>
+<span class="sd">        &gt;&gt;&gt; grade_cpd = TabularCPD(</span>
+<span class="sd">        ...     &quot;grade&quot;,</span>
+<span class="sd">        ...     3,</span>
+<span class="sd">        ...     [</span>
+<span class="sd">        ...         [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],</span>
+<span class="sd">        ...         [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],</span>
+<span class="sd">        ...         [0.8, 0.8, 0.8, 0.8, 0.8, 0.8],</span>
+<span class="sd">        ...     ],</span>
+<span class="sd">        ...     evidence=[&quot;diff&quot;, &quot;intel&quot;],</span>
+<span class="sd">        ...     evidence_card=[2, 3],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; sat_cpd = TabularCPD(</span>
+<span class="sd">        ...     &quot;SAT&quot;,</span>
+<span class="sd">        ...     2,</span>
+<span class="sd">        ...     [[0.1, 0.2, 0.7], [0.9, 0.8, 0.3]],</span>
+<span class="sd">        ...     evidence=[&quot;intel&quot;],</span>
+<span class="sd">        ...     evidence_card=[3],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; letter_cpd = TabularCPD(</span>
+<span class="sd">        ...     &quot;letter&quot;,</span>
+<span class="sd">        ...     2,</span>
+<span class="sd">        ...     [[0.1, 0.4, 0.8], [0.9, 0.6, 0.2]],</span>
+<span class="sd">        ...     evidence=[&quot;grade&quot;],</span>
+<span class="sd">        ...     evidence_card=[3],</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; G.add_cpds(diff_cpd, intel_cpd, grade_cpd, sat_cpd, letter_cpd)</span>
 <span class="sd">        &gt;&gt;&gt; bp = BeliefPropagation(G)</span>
 <span class="sd">        &gt;&gt;&gt; bp.calibrate()</span>
@@ -988,24 +1026,41 @@
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import BeliefPropagation</span>
-<span class="sd">        &gt;&gt;&gt; G = DiscreteBayesianNetwork([(&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;),</span>
-<span class="sd">        ...                    (&#39;intel&#39;, &#39;SAT&#39;), (&#39;grade&#39;, &#39;letter&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; diff_cpd = TabularCPD(&#39;diff&#39;, 2, [[0.2], [0.8]])</span>
-<span class="sd">        &gt;&gt;&gt; intel_cpd = TabularCPD(&#39;intel&#39;, 3, [[0.5], [0.3], [0.2]])</span>
-<span class="sd">        &gt;&gt;&gt; grade_cpd = TabularCPD(&#39;grade&#39;, 3,</span>
-<span class="sd">        ...                        [[0.1, 0.1, 0.1, 0.1, 0.1, 0.1],</span>
-<span class="sd">        ...                         [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],</span>
-<span class="sd">        ...                         [0.8, 0.8, 0.8, 0.8, 0.8, 0.8]],</span>
-<span class="sd">        ...                        evidence=[&#39;diff&#39;, &#39;intel&#39;],</span>
-<span class="sd">        ...                        evidence_card=[2, 3])</span>
-<span class="sd">        &gt;&gt;&gt; sat_cpd = TabularCPD(&#39;SAT&#39;, 2,</span>
-<span class="sd">        ...                      [[0.1, 0.2, 0.7],</span>
-<span class="sd">        ...                       [0.9, 0.8, 0.3]],</span>
-<span class="sd">        ...                      evidence=[&#39;intel&#39;], evidence_card=[3])</span>
-<span class="sd">        &gt;&gt;&gt; letter_cpd = TabularCPD(&#39;letter&#39;, 2,</span>
-<span class="sd">        ...                         [[0.1, 0.4, 0.8],</span>
-<span class="sd">        ...                          [0.9, 0.6, 0.2]],</span>
-<span class="sd">        ...                         evidence=[&#39;grade&#39;], evidence_card=[3])</span>
+<span class="sd">        &gt;&gt;&gt; G = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [</span>
+<span class="sd">        ...         (&quot;diff&quot;, &quot;grade&quot;),</span>
+<span class="sd">        ...         (&quot;intel&quot;, &quot;grade&quot;),</span>
+<span class="sd">        ...         (&quot;intel&quot;, &quot;SAT&quot;),</span>
+<span class="sd">        ...         (&quot;grade&quot;, &quot;letter&quot;),</span>
+<span class="sd">        ...     ]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; diff_cpd = TabularCPD(&quot;diff&quot;, 2, [[0.2], [0.8]])</span>
+<span class="sd">        &gt;&gt;&gt; intel_cpd = TabularCPD(&quot;intel&quot;, 3, [[0.5], [0.3], [0.2]])</span>
+<span class="sd">        &gt;&gt;&gt; grade_cpd = TabularCPD(</span>
+<span class="sd">        ...     &quot;grade&quot;,</span>
+<span class="sd">        ...     3,</span>
+<span class="sd">        ...     [</span>
+<span class="sd">        ...         [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],</span>
+<span class="sd">        ...         [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],</span>
+<span class="sd">        ...         [0.8, 0.8, 0.8, 0.8, 0.8, 0.8],</span>
+<span class="sd">        ...     ],</span>
+<span class="sd">        ...     evidence=[&quot;diff&quot;, &quot;intel&quot;],</span>
+<span class="sd">        ...     evidence_card=[2, 3],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; sat_cpd = TabularCPD(</span>
+<span class="sd">        ...     &quot;SAT&quot;,</span>
+<span class="sd">        ...     2,</span>
+<span class="sd">        ...     [[0.1, 0.2, 0.7], [0.9, 0.8, 0.3]],</span>
+<span class="sd">        ...     evidence=[&quot;intel&quot;],</span>
+<span class="sd">        ...     evidence_card=[3],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; letter_cpd = TabularCPD(</span>
+<span class="sd">        ...     &quot;letter&quot;,</span>
+<span class="sd">        ...     2,</span>
+<span class="sd">        ...     [[0.1, 0.4, 0.8], [0.9, 0.6, 0.2]],</span>
+<span class="sd">        ...     evidence=[&quot;grade&quot;],</span>
+<span class="sd">        ...     evidence_card=[3],</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; G.add_cpds(diff_cpd, intel_cpd, grade_cpd, sat_cpd, letter_cpd)</span>
 <span class="sd">        &gt;&gt;&gt; bp = BeliefPropagation(G)</span>
 <span class="sd">        &gt;&gt;&gt; bp.max_calibrate()</span>
@@ -1035,12 +1090,16 @@
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
-<span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 5)),</span>
+<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;D&quot;), (&quot;B&quot;, &quot;E&quot;)]</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(values)</span>
 <span class="sd">        &gt;&gt;&gt; inference = BeliefPropagation(model)</span>
-<span class="sd">        &gt;&gt;&gt; phi_query = inference.query([&#39;A&#39;, &#39;B&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; phi_query = inference.query([&quot;A&quot;, &quot;B&quot;])</span>
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
@@ -1167,27 +1226,28 @@
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import BeliefPropagation</span>
-<span class="sd">        &gt;&gt;&gt; bayesian_model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;J&#39;), (&#39;R&#39;, &#39;J&#39;), (&#39;J&#39;, &#39;Q&#39;),</span>
-<span class="sd">        ...                                 (&#39;J&#39;, &#39;L&#39;), (&#39;G&#39;, &#39;L&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_a = TabularCPD(&#39;A&#39;, 2, [[0.2], [0.8]])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_r = TabularCPD(&#39;R&#39;, 2, [[0.4], [0.6]])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_j = TabularCPD(&#39;J&#39;, 2,</span>
-<span class="sd">        ...                    [[0.9, 0.6, 0.7, 0.1],</span>
-<span class="sd">        ...                     [0.1, 0.4, 0.3, 0.9]],</span>
-<span class="sd">        ...                    [&#39;R&#39;, &#39;A&#39;], [2, 2])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_q = TabularCPD(&#39;Q&#39;, 2,</span>
-<span class="sd">        ...                    [[0.9, 0.2],</span>
-<span class="sd">        ...                     [0.1, 0.8]],</span>
-<span class="sd">        ...                    [&#39;J&#39;], [2])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_l = TabularCPD(&#39;L&#39;, 2,</span>
-<span class="sd">        ...                    [[0.9, 0.45, 0.8, 0.1],</span>
-<span class="sd">        ...                     [0.1, 0.55, 0.2, 0.9]],</span>
-<span class="sd">        ...                    [&#39;G&#39;, &#39;J&#39;], [2, 2])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_g = TabularCPD(&#39;G&#39;, 2, [[0.6], [0.4]])</span>
+<span class="sd">        &gt;&gt;&gt; bayesian_model = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [(&quot;A&quot;, &quot;J&quot;), (&quot;R&quot;, &quot;J&quot;), (&quot;J&quot;, &quot;Q&quot;), (&quot;J&quot;, &quot;L&quot;), (&quot;G&quot;, &quot;L&quot;)]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; cpd_a = TabularCPD(&quot;A&quot;, 2, [[0.2], [0.8]])</span>
+<span class="sd">        &gt;&gt;&gt; cpd_r = TabularCPD(&quot;R&quot;, 2, [[0.4], [0.6]])</span>
+<span class="sd">        &gt;&gt;&gt; cpd_j = TabularCPD(</span>
+<span class="sd">        ...     &quot;J&quot;, 2, [[0.9, 0.6, 0.7, 0.1], [0.1, 0.4, 0.3, 0.9]], [&quot;R&quot;, &quot;A&quot;], [2, 2]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; cpd_q = TabularCPD(&quot;Q&quot;, 2, [[0.9, 0.2], [0.1, 0.8]], [&quot;J&quot;], [2])</span>
+<span class="sd">        &gt;&gt;&gt; cpd_l = TabularCPD(</span>
+<span class="sd">        ...     &quot;L&quot;,</span>
+<span class="sd">        ...     2,</span>
+<span class="sd">        ...     [[0.9, 0.45, 0.8, 0.1], [0.1, 0.55, 0.2, 0.9]],</span>
+<span class="sd">        ...     [&quot;G&quot;, &quot;J&quot;],</span>
+<span class="sd">        ...     [2, 2],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; cpd_g = TabularCPD(&quot;G&quot;, 2, [[0.6], [0.4]])</span>
 <span class="sd">        &gt;&gt;&gt; bayesian_model.add_cpds(cpd_a, cpd_r, cpd_j, cpd_q, cpd_l, cpd_g)</span>
 <span class="sd">        &gt;&gt;&gt; belief_propagation = BeliefPropagation(bayesian_model)</span>
-<span class="sd">        &gt;&gt;&gt; belief_propagation.query(variables=[&#39;J&#39;, &#39;Q&#39;],</span>
-<span class="sd">        ...                          evidence={&#39;A&#39;: 0, &#39;R&#39;: 0, &#39;G&#39;: 0, &#39;L&#39;: 1})</span>
+<span class="sd">        &gt;&gt;&gt; belief_propagation.query(</span>
+<span class="sd">        ...     variables=[&quot;J&quot;, &quot;Q&quot;], evidence={&quot;A&quot;: 0, &quot;R&quot;: 0, &quot;G&quot;: 0, &quot;L&quot;: 1}</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -1266,27 +1326,28 @@
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.inference import BeliefPropagation</span>
-<span class="sd">        &gt;&gt;&gt; bayesian_model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;J&#39;), (&#39;R&#39;, &#39;J&#39;), (&#39;J&#39;, &#39;Q&#39;),</span>
-<span class="sd">        ...                                 (&#39;J&#39;, &#39;L&#39;), (&#39;G&#39;, &#39;L&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_a = TabularCPD(&#39;A&#39;, 2, [[0.2], [0.8]])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_r = TabularCPD(&#39;R&#39;, 2, [[0.4], [0.6]])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_j = TabularCPD(&#39;J&#39;, 2,</span>
-<span class="sd">        ...                    [[0.9, 0.6, 0.7, 0.1],</span>
-<span class="sd">        ...                     [0.1, 0.4, 0.3, 0.9]],</span>
-<span class="sd">        ...                    [&#39;R&#39;, &#39;A&#39;], [2, 2])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_q = TabularCPD(&#39;Q&#39;, 2,</span>
-<span class="sd">        ...                    [[0.9, 0.2],</span>
-<span class="sd">        ...                     [0.1, 0.8]],</span>
-<span class="sd">        ...                    [&#39;J&#39;], [2])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_l = TabularCPD(&#39;L&#39;, 2,</span>
-<span class="sd">        ...                    [[0.9, 0.45, 0.8, 0.1],</span>
-<span class="sd">        ...                     [0.1, 0.55, 0.2, 0.9]],</span>
-<span class="sd">        ...                    [&#39;G&#39;, &#39;J&#39;], [2, 2])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_g = TabularCPD(&#39;G&#39;, 2, [[0.6], [0.4]])</span>
+<span class="sd">        &gt;&gt;&gt; bayesian_model = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [(&quot;A&quot;, &quot;J&quot;), (&quot;R&quot;, &quot;J&quot;), (&quot;J&quot;, &quot;Q&quot;), (&quot;J&quot;, &quot;L&quot;), (&quot;G&quot;, &quot;L&quot;)]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; cpd_a = TabularCPD(&quot;A&quot;, 2, [[0.2], [0.8]])</span>
+<span class="sd">        &gt;&gt;&gt; cpd_r = TabularCPD(&quot;R&quot;, 2, [[0.4], [0.6]])</span>
+<span class="sd">        &gt;&gt;&gt; cpd_j = TabularCPD(</span>
+<span class="sd">        ...     &quot;J&quot;, 2, [[0.9, 0.6, 0.7, 0.1], [0.1, 0.4, 0.3, 0.9]], [&quot;R&quot;, &quot;A&quot;], [2, 2]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; cpd_q = TabularCPD(&quot;Q&quot;, 2, [[0.9, 0.2], [0.1, 0.8]], [&quot;J&quot;], [2])</span>
+<span class="sd">        &gt;&gt;&gt; cpd_l = TabularCPD(</span>
+<span class="sd">        ...     &quot;L&quot;,</span>
+<span class="sd">        ...     2,</span>
+<span class="sd">        ...     [[0.9, 0.45, 0.8, 0.1], [0.1, 0.55, 0.2, 0.9]],</span>
+<span class="sd">        ...     [&quot;G&quot;, &quot;J&quot;],</span>
+<span class="sd">        ...     [2, 2],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; cpd_g = TabularCPD(&quot;G&quot;, 2, [[0.6], [0.4]])</span>
 <span class="sd">        &gt;&gt;&gt; bayesian_model.add_cpds(cpd_a, cpd_r, cpd_j, cpd_q, cpd_l, cpd_g)</span>
 <span class="sd">        &gt;&gt;&gt; belief_propagation = BeliefPropagation(bayesian_model)</span>
-<span class="sd">        &gt;&gt;&gt; belief_propagation.map_query(variables=[&#39;J&#39;, &#39;Q&#39;],</span>
-<span class="sd">        ...                              evidence={&#39;A&#39;: 0, &#39;R&#39;: 0, &#39;G&#39;: 0, &#39;L&#39;: 1})</span>
+<span class="sd">        &gt;&gt;&gt; belief_propagation.map_query(</span>
+<span class="sd">        ...     variables=[&quot;J&quot;, &quot;Q&quot;], evidence={&quot;A&quot;: 0, &quot;R&quot;: 0, &quot;G&quot;: 0, &quot;L&quot;: 1}</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">variables</span>
         <span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
@@ -1324,7 +1385,7 @@
 
         <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
-            <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;marginalize&quot;</span><span class="p">,</span>
+            <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;maximize&quot;</span><span class="p">,</span>
             <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
             <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
@@ -1332,17 +1393,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">orig_model</span><span class="p">)</span>
 
-        <span class="c1"># To handle the case when no argument is passed then</span>
-        <span class="c1"># _variable_elimination returns a dict.</span>
-        <span class="n">argmax</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
-        <span class="n">assignment</span> <span class="o">=</span> <span class="n">final_distribution</span><span class="o">.</span><span class="n">assignment</span><span class="p">([</span><span class="n">argmax</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="n">map_query_results</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">var_assignment</span> <span class="ow">in</span> <span class="n">assignment</span><span class="p">:</span>
-            <span class="n">var</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">var_assignment</span>
-            <span class="n">map_query_results</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-
-        <span class="k">return</span> <span class="n">map_query_results</span></div>
+        <span class="k">return</span> <span class="n">final_distribution</span></div>
 </div>
 
 
@@ -1555,7 +1606,9 @@
 <span class="sd">        &gt;&gt;&gt; phi2 = DiscreteFactor(</span>
 <span class="sd">        ...     [&quot;B&quot;, &quot;A&quot;], [3, 2], [[0.2, 0.05], [0.3, 0.15], [0.5, 0.8]]</span>
 <span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; phi3 = DiscreteFactor([&quot;C&quot;, &quot;B&quot;], [2, 3], [[0.4, 0.5, 0.1], [0.6, 0.5, 0.9]])</span>
+<span class="sd">        &gt;&gt;&gt; phi3 = DiscreteFactor(</span>
+<span class="sd">        ...     [&quot;C&quot;, &quot;B&quot;], [2, 3], [[0.4, 0.5, 0.1], [0.6, 0.5, 0.9]]</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; phi4 = DiscreteFactor(</span>
 <span class="sd">        ...     [&quot;D&quot;, &quot;B&quot;], [3, 3], [[0.1, 0.1, 0.2], [0.3, 0.2, 0.1], [0.6, 0.7, 0.7]]</span>
 <span class="sd">        ... )</span>
@@ -1572,9 +1625,11 @@
 <span class="sd">        ...     ]</span>
 <span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; belief_propagation = BeliefPropagation(factor_graph)</span>
-<span class="sd">        &gt;&gt;&gt; belief_propagation.query(variables=[&#39;B&#39;, &#39;C&#39;],</span>
-<span class="sd">        ...                          evidence={&#39;D&#39;: 0},</span>
-<span class="sd">        ...                          virtual_evidence=[TabularCPD([&#39;A&#39;], 2, [[0.3], [0.7]])])</span>
+<span class="sd">        &gt;&gt;&gt; belief_propagation.query(</span>
+<span class="sd">        ...     variables=[&quot;B&quot;, &quot;C&quot;],</span>
+<span class="sd">        ...     evidence={&quot;D&quot;: 0},</span>
+<span class="sd">        ...     virtual_evidence=[TabularCPD([&quot;A&quot;], 2, [[0.3], [0.7]])],</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
             <span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
@@ -1591,7 +1646,8 @@
             <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">ve_names</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">common_vars</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `evidence` and `virtual_evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Can&#39;t have the same variables in both `evidence` and &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;`virtual_evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
 
         <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RecursiveMessageSchedulingQuery</span><span class="p">(</span>
@@ -1650,7 +1706,8 @@
 
         <span class="k">assert</span> <span class="p">(</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">incoming_messages</span><span class="p">)</span> <span class="o">==</span> <span class="n">cpt</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span>
-        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Error computing factor node message for </span><span class="si">{</span><span class="n">target_var</span><span class="si">}</span><span class="s2">. The number of incoming messages must equal the card(CPT) - 1&quot;</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Error computing factor node message for </span><span class="si">{</span><span class="n">target_var</span><span class="si">}</span><span class="s2">. &quot;</span>
+        <span class="s2">&quot;The number of incoming messages must equal the card(CPT) - 1&quot;</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">incoming_messages</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">cpt</span>
@@ -1729,11 +1786,7 @@
   </ul></li>
   </ul></li>
 </ul>
-</div><head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
-</head>
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>

@@ -4,18 +4,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pgmpy.readwrite.BIF &#8212; pgmpy 1.0.0 documentation</title>
+    <title>pgmpy.readwrite.BIF &#8212; 1.0.0 | pgmpy docs</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <script src="../../../_static/documentation_options.js?v=8d563738"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/_modules/pgmpy/readwrite/BIF.html" />
     <link rel="icon" href="../../../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -39,7 +40,6 @@
   <h1>Source code for pgmpy.readwrite.BIF</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">collections</span>
 <span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
 <span class="kn">from</span> <span class="nn">string</span> <span class="kn">import</span> <span class="n">Template</span>
 
@@ -56,18 +56,17 @@
         <span class="n">Suppress</span><span class="p">,</span>
         <span class="n">Word</span><span class="p">,</span>
         <span class="n">ZeroOrMore</span><span class="p">,</span>
-        <span class="n">alphanums</span><span class="p">,</span>
         <span class="n">cppStyleComment</span><span class="p">,</span>
         <span class="n">nums</span><span class="p">,</span>
         <span class="n">printables</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
-        <span class="n">e</span><span class="o">.</span><span class="n">msg</span>
-        <span class="o">+</span> <span class="s2">&quot;. pyparsing is required for using read/write methods. Please install using: pip install pyparsing.&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. pyparsing is required for using read/write methods. Please install using: pip install pyparsing.&quot;</span>
     <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
+<span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">compat_fns</span>
 
@@ -510,11 +509,11 @@
 <span class="sd">    ---------</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.readwrite import BIFWriter</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
-<span class="sd">    &gt;&gt;&gt; asia = get_example_model(&#39;asia&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; asia = get_example_model(&quot;asia&quot;)</span>
 <span class="sd">    &gt;&gt;&gt; writer = BIFWriter(asia)</span>
 <span class="sd">    &gt;&gt;&gt; writer</span>
 <span class="sd">    &lt;writer_BIF.BIFWriter at 0x7f05e5ea27b8&gt;</span>
-<span class="sd">    &gt;&gt;&gt; writer.write_bif(&#39;asia.bif&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; writer.write_bif(&quot;asia.bif&quot;)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">round_values</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -617,8 +616,9 @@
                 <span class="n">cpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
                 <span class="n">cpd_values_transpose</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">get_values</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
 
+                <span class="c1"># Get the sanitized state names for parents from self.variable_states</span>
                 <span class="n">parent_states</span> <span class="o">=</span> <span class="n">product</span><span class="p">(</span>
-                    <span class="o">*</span><span class="p">[</span><span class="n">cpd</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
+                    <span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_states</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
                 <span class="p">)</span>
                 <span class="n">all_cpd</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
                 <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parent_states</span><span class="p">):</span>
@@ -655,7 +655,7 @@
 <span class="sd">        Example</span>
 <span class="sd">        -------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.readwrite import BIFReader, BIFWriter</span>
-<span class="sd">        &gt;&gt;&gt; model = BIFReader(&#39;dog-problem.bif&#39;).get_model()</span>
+<span class="sd">        &gt;&gt;&gt; model = BIFReader(&quot;dog-problem.bif&quot;).get_model()</span>
 <span class="sd">        &gt;&gt;&gt; writer = BIFWriter(model)</span>
 <span class="sd">        &gt;&gt;&gt; writer.get_variables()</span>
 <span class="sd">        [&#39;bowel-problem&#39;, &#39;family-out&#39;, &#39;hear-bark&#39;, &#39;light-on&#39;, &#39;dog-out&#39;]</span>
@@ -668,7 +668,7 @@
 <a class="viewcode-back" href="../../../readwrite/bif.html#pgmpy.readwrite.BIF.BIFWriter.get_states">[docs]</a>
     <span class="k">def</span> <span class="nf">get_states</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Add states to variable of BIF</span>
+<span class="sd">        Add states to variable of BIF, handling commas in state names by replacing them with underscores.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -677,7 +677,7 @@
 <span class="sd">        Example</span>
 <span class="sd">        -------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.readwrite import BIFReader, BIFWriter</span>
-<span class="sd">        &gt;&gt;&gt; model = BIFReader(&#39;dog-problem.bif&#39;).get_model()</span>
+<span class="sd">        &gt;&gt;&gt; model = BIFReader(&quot;dog-problem.bif&quot;).get_model()</span>
 <span class="sd">        &gt;&gt;&gt; writer = BIFWriter(model)</span>
 <span class="sd">        &gt;&gt;&gt; writer.get_states()</span>
 <span class="sd">        {&#39;bowel-problem&#39;: [&#39;bowel-problem_0&#39;, &#39;bowel-problem_1&#39;],</span>
@@ -692,7 +692,15 @@
             <span class="n">variable</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span>
             <span class="n">variable_states</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">cpd</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">]:</span>
-                <span class="n">variable_states</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">state</span><span class="p">))</span>
+                <span class="n">state_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+
+                <span class="c1"># Warn users if any commas in state names</span>
+                <span class="k">if</span> <span class="s2">&quot;,&quot;</span> <span class="ow">in</span> <span class="n">state_str</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;State name &#39;</span><span class="si">{</span><span class="n">state_str</span><span class="si">}</span><span class="s2">&#39; for variable &#39;</span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2">&#39; contains commas. &quot;</span>
+                        <span class="s2">&quot;This may cause issues when loading the file. Consider removing any special characters.&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">variable_states</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state_str</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">variable_states</span></div>
 
 
@@ -709,7 +717,7 @@
 <span class="sd">        Example</span>
 <span class="sd">        -------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.readwrite import BIFReader, BIFWriter</span>
-<span class="sd">        &gt;&gt;&gt; model = BIFReader(&#39;dog-problem.bif&#39;).get_model()</span>
+<span class="sd">        &gt;&gt;&gt; model = BIFReader(&quot;dog-problem.bif&quot;).get_model()</span>
 <span class="sd">        &gt;&gt;&gt; writer = BIFWriter(model)</span>
 <span class="sd">        &gt;&gt;&gt; writer.get_properties()</span>
 <span class="sd">        {&#39;bowel-problem&#39;: [&#39;position = (335, 99)&#39;],</span>
@@ -742,7 +750,7 @@
 <span class="sd">        Example</span>
 <span class="sd">        -------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.readwrite import BIFReader, BIFWriter</span>
-<span class="sd">        &gt;&gt;&gt; model = BIFReader(&#39;dog-problem.bif&#39;).get_model()</span>
+<span class="sd">        &gt;&gt;&gt; model = BIFReader(&quot;dog-problem.bif&quot;).get_model()</span>
 <span class="sd">        &gt;&gt;&gt; writer = BIFWriter(model)</span>
 <span class="sd">        &gt;&gt;&gt; writer.get_parents()</span>
 <span class="sd">        {&#39;bowel-problem&#39;: [],</span>
@@ -771,7 +779,7 @@
 <span class="sd">        Example</span>
 <span class="sd">        -------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.readwrite import BIFReader, BIFWriter</span>
-<span class="sd">        &gt;&gt;&gt; model = BIFReader(&#39;dog-problem.bif&#39;).get_model()</span>
+<span class="sd">        &gt;&gt;&gt; model = BIFReader(&quot;dog-problem.bif&quot;).get_model()</span>
 <span class="sd">        &gt;&gt;&gt; writer = BIFWriter(model)</span>
 <span class="sd">        &gt;&gt;&gt; writer.get_cpds()</span>
 <span class="sd">        {&#39;bowel-problem&#39;: array([ 0.01,  0.99]),</span>
@@ -803,9 +811,9 @@
 <span class="sd">        -------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.readwrite import BIFReader, BIFWriter</span>
-<span class="sd">        &gt;&gt;&gt; asia = get_example_model(&#39;asia&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; asia = get_example_model(&quot;asia&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; writer = BIFWriter(asia)</span>
-<span class="sd">        &gt;&gt;&gt; writer.write_bif(filename=&#39;asia.bif&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; writer.write_bif(filename=&quot;asia.bif&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
@@ -834,20 +842,29 @@
 
 
 
-<h3>Navigation</h3>
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../started/base.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../base/base.html">Base Model Structures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Supported Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../factors/base.html">Parameterization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/base.html">Exact Inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/base.html">Approximate Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../causal_infer/base.html">Causal Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../param_estimator/base.html">Parameter Estimation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for Testing Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial Notebooks</a></li>
 </ul>
 
@@ -859,15 +876,7 @@
   </ul></li>
   </ul></li>
 </ul>
-</div>
-
-
-
-
-
-
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>
@@ -877,16 +886,6 @@
 
   gtag('config', 'G-HCFR07M31W');
 </script>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -895,7 +894,7 @@
       &#169;2025, Ankur Ankan.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
     </div>

@@ -40,6 +40,7 @@
   <h1>Source code for pgmpy.estimators.EM</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">product</span>
 <span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">log</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -87,13 +88,22 @@
 <span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.estimators import ExpectationMaximization</span>
-<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 5)),</span>
-<span class="sd">    ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;, &#39;E&#39;])</span>
-<span class="sd">    &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;), (&#39;B&#39;, &#39;E&#39;)])</span>
+<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame(</span>
+<span class="sd">    ...     np.random.randint(low=0, high=2, size=(1000, 5)),</span>
+<span class="sd">    ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;],</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; model = DiscreteBayesianNetwork(</span>
+<span class="sd">    ...     [(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;D&quot;), (&quot;B&quot;, &quot;E&quot;)]</span>
+<span class="sd">    ... )</span>
 <span class="sd">    &gt;&gt;&gt; estimator = ExpectationMaximization(model, data)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DAG</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">],</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
                 <span class="s2">&quot;Expectation Maximization is only implemented for DAG or DiscreteBayesianNetwork&quot;</span>
@@ -125,13 +135,14 @@
 
         <span class="k">if</span> <span class="n">dropped_rows_count</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dropped_rows_count</span><span class="si">}</span><span class="s2"> rows with missing values in partially missing columns were dropped from the dataset.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dropped_rows_count</span><span class="si">}</span><span class="s2"> rows with missing values in partially &quot;</span>
+                <span class="s2">&quot;missing columns were dropped from the dataset.&quot;</span>
             <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">ExpectationMaximization</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_get_log_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datapoint</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_log_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datapoint</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the likelihood of a given datapoint. Goes through each</span>
 <span class="sd">        CPD matching the combination of states to get the value and multiplies</span>
@@ -155,10 +166,14 @@
         <span class="k">return</span> <span class="n">likelihood</span>
 
     <span class="k">def</span> <span class="nf">_parallel_compute_weights</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">data_unique</span><span class="p">,</span> <span class="n">latent_card</span><span class="p">,</span> <span class="n">n_counts</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">batch_size</span>
-    <span class="p">):</span>
-        <span class="n">cache</span> <span class="o">=</span> <span class="p">[]</span>
-
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data_unique</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">latent_card</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="n">n_counts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">offset</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">data_unique</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
             <span class="n">v</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">range</span><span class="p">(</span><span class="n">card</span><span class="p">)</span> <span class="k">for</span> <span class="n">card</span> <span class="ow">in</span> <span class="n">latent_card</span><span class="o">.</span><span class="n">values</span><span class="p">()]))</span>
             <span class="n">latent_combinations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
@@ -177,7 +192,12 @@
 
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_compute_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_jobs</span><span class="p">,</span> <span class="n">latent_card</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_compute_weights</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">latent_card</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        For each data point, creates extra data points for each possible combination</span>
 <span class="sd">        of states of latent variables and assigns weights to each of them.</span>
@@ -197,7 +217,11 @@
 
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">cache</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_is_converged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_cpds</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-08</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_is_converged</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">new_cpds</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">TabularCPD</span><span class="p">],</span>
+        <span class="n">atol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-08</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Checks if the values of `new_cpds` is within tolerance limits of current</span>
 <span class="sd">        model cpds.</span>
@@ -211,15 +235,15 @@
 <a class="viewcode-back" href="../../../param_estimator/em.html#pgmpy.estimators.ExpectationMaximization.get_parameters">[docs]</a>
     <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">latent_card</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
-        <span class="n">atol</span><span class="o">=</span><span class="mf">1e-08</span><span class="p">,</span>
-        <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">batch_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">init_cpds</span><span class="o">=</span><span class="p">{},</span>
-        <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="p">):</span>
+        <span class="n">latent_card</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">max_iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">atol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-08</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">init_cpds</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TabularCPD</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{},</span>
+        <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">TabularCPD</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to estimate all model parameters (CPDs) using Expecation Maximization.</span>
 
@@ -272,15 +296,21 @@
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ExpectationMaximization as EM</span>
-<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 3)),</span>
-<span class="sd">        ...                       columns=[&#39;A&#39;, &#39;C&#39;, &#39;D&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;)], latents={&#39;B&#39;})</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 3)),</span>
+<span class="sd">        ...     columns=[&quot;A&quot;, &quot;C&quot;, &quot;D&quot;],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;D&quot;)], latents={&quot;B&quot;}</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; estimator = EM(model, data)</span>
-<span class="sd">        &gt;&gt;&gt; estimator.get_parameters(latent_card={&#39;B&#39;: 3})</span>
-<span class="sd">        [&lt;TabularCPD representing P(C:2) at 0x7f7b534251d0&gt;,</span>
-<span class="sd">        &lt;TabularCPD representing P(B:3 | C:2, A:2) at 0x7f7b4dfd4da0&gt;,</span>
-<span class="sd">        &lt;TabularCPD representing P(A:2) at 0x7f7b4dfd4fd0&gt;,</span>
-<span class="sd">        &lt;TabularCPD representing P(D:2 | C:2) at 0x7f7b4df822b0&gt;]</span>
+<span class="sd">        &gt;&gt;&gt; params = estimator.get_parameters(latent_card={&quot;B&quot;: 3})</span>
+<span class="sd">        &gt;&gt;&gt; # Sorting the CPDs by variable name to ensure consistent order for doctest comparison</span>
+<span class="sd">        &gt;&gt;&gt; sorted(params, key=lambda cpd: cpd.variable)</span>
+<span class="sd">        [&lt;TabularCPD representing P(A:2) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(B:3 | A:2, C:2) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(C:2) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(D:2 | C:2) at 0x...&gt;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Step 1: Parameter checks</span>
         <span class="k">if</span> <span class="n">latent_card</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -462,11 +492,7 @@
   </ul></li>
   </ul></li>
 </ul>
-</div><head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
-</head>
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>

@@ -42,8 +42,10 @@
 <span class="sd">&quot;&quot;&quot;Contains the different formats of CPDs used in PGM&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">csv</span>
 <span class="kn">import</span> <span class="nn">numbers</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">product</span>
 <span class="kn">from</span> <span class="nn">shutil</span> <span class="kn">import</span> <span class="n">get_terminal_size</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -108,35 +110,43 @@
 <span class="sd">     [0.1,0.1,0.1,0.1,0.1,0.1],</span>
 <span class="sd">     [0.8,0.8,0.8,0.8,0.8,0.8]]</span>
 
-<span class="sd">    &gt;&gt;&gt; cpd = TabularCPD(variable=&#39;grade&#39;,</span>
-<span class="sd">    ...                  variable_card=3,</span>
-<span class="sd">    ...                  values=[[0.1,0.1,0.1,0.1,0.1,0.1],</span>
-<span class="sd">    ...                          [0.1,0.1,0.1,0.1,0.1,0.1],</span>
-<span class="sd">    ...                          [0.8,0.8,0.8,0.8,0.8,0.8]],</span>
-<span class="sd">    ...                  evidence=[&#39;diff&#39;, &#39;intel&#39;],</span>
-<span class="sd">    ...                  evidence_card=[2, 3],</span>
-<span class="sd">    ...                  state_names={&#39;diff&#39;: [&#39;easy&#39;, &#39;hard&#39;],</span>
-<span class="sd">    ...                               &#39;intel&#39;: [&#39;low&#39;, &#39;mid&#39;, &#39;high&#39;],</span>
-<span class="sd">    ...                               &#39;grade&#39;: [&#39;A&#39;, &#39;B&#39;, &#39;C&#39;]})</span>
+<span class="sd">    &gt;&gt;&gt; cpd = TabularCPD(</span>
+<span class="sd">    ...     variable=&quot;grade&quot;,</span>
+<span class="sd">    ...     variable_card=3,</span>
+<span class="sd">    ...     values=[</span>
+<span class="sd">    ...         [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],</span>
+<span class="sd">    ...         [0.1, 0.1, 0.1, 0.1, 0.1, 0.1],</span>
+<span class="sd">    ...         [0.8, 0.8, 0.8, 0.8, 0.8, 0.8],</span>
+<span class="sd">    ...     ],</span>
+<span class="sd">    ...     evidence=[&quot;diff&quot;, &quot;intel&quot;],</span>
+<span class="sd">    ...     evidence_card=[2, 3],</span>
+<span class="sd">    ...     state_names={</span>
+<span class="sd">    ...         &quot;diff&quot;: [&quot;easy&quot;, &quot;hard&quot;],</span>
+<span class="sd">    ...         &quot;intel&quot;: [&quot;low&quot;, &quot;mid&quot;, &quot;high&quot;],</span>
+<span class="sd">    ...         &quot;grade&quot;: [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;],</span>
+<span class="sd">    ...     },</span>
+<span class="sd">    ... )</span>
 <span class="sd">    &gt;&gt;&gt; print(cpd)</span>
-<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
-<span class="sd">    | diff    |diff(easy)|diff(easy)|diff(easy) |diff(hard)|diff(hard)|diff(hard) |</span>
-<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
-<span class="sd">    | intel   |intel(low)|intel(mid)|intel(high)|intel(low)|intel(mid)|intel(high)|</span>
-<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
-<span class="sd">    | grade(A)| 0.1      | 0.1      | 0.1       | 0.1      | 0.1      | 0.1       |</span>
-<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
-<span class="sd">    | grade(B)| 0.1      | 0.1      | 0.1       | 0.1      | 0.1      | 0.1       |</span>
-<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
-<span class="sd">    | grade(C)| 0.8      | 0.8      | 0.8       | 0.8      | 0.8      | 0.8       |</span>
-<span class="sd">    +---------+----------+----------+-----------+----------+----------+-----------+</span>
+<span class="sd">    +----------+------------+-----+------------+-------------+</span>
+<span class="sd">    | diff     | diff(easy) | ... | diff(hard) | diff(hard)  |</span>
+<span class="sd">    +----------+------------+-----+------------+-------------+</span>
+<span class="sd">    | intel    | intel(low) | ... | intel(mid) | intel(high) |</span>
+<span class="sd">    +----------+------------+-----+------------+-------------+</span>
+<span class="sd">    | grade(A) | 0.1        | ... | 0.1        | 0.1         |</span>
+<span class="sd">    +----------+------------+-----+------------+-------------+</span>
+<span class="sd">    | grade(B) | 0.1        | ... | 0.1        | 0.1         |</span>
+<span class="sd">    +----------+------------+-----+------------+-------------+</span>
+<span class="sd">    | grade(C) | 0.8        | ... | 0.8        | 0.8         |</span>
+<span class="sd">    +----------+------------+-----+------------+-------------+</span>
 <span class="sd">    &gt;&gt;&gt; cpd.values</span>
-<span class="sd">    array([[[ 0.1,  0.1,  0.1],</span>
-<span class="sd">            [ 0.1,  0.1,  0.1]],</span>
-<span class="sd">           [[ 0.1,  0.1,  0.1],</span>
-<span class="sd">            [ 0.1,  0.1,  0.1]],</span>
-<span class="sd">           [[ 0.8,  0.8,  0.8],</span>
-<span class="sd">            [ 0.8,  0.8,  0.8]]])</span>
+<span class="sd">    array([[[0.1, 0.1, 0.1],</span>
+<span class="sd">            [0.1, 0.1, 0.1]],</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">           [[0.1, 0.1, 0.1],</span>
+<span class="sd">            [0.1, 0.1, 0.1]],</span>
+<span class="sd">    &lt;BLANKLINE&gt;</span>
+<span class="sd">           [[0.8, 0.8, 0.8],</span>
+<span class="sd">            [0.8, 0.8, 0.8]]])</span>
 <span class="sd">    &gt;&gt;&gt; cpd.variables</span>
 <span class="sd">    [&#39;grade&#39;, &#39;diff&#39;, &#39;intel&#39;]</span>
 <span class="sd">    &gt;&gt;&gt; cpd.cardinality</span>
@@ -149,11 +159,11 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">variable</span><span class="p">,</span>
-        <span class="n">variable_card</span><span class="p">,</span>
-        <span class="n">values</span><span class="p">,</span>
-        <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">evidence_card</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">variable</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span>
+        <span class="n">variable_card</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">values</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">typing</span><span class="o">.</span><span class="n">ArrayLike</span><span class="p">,</span>
+        <span class="n">evidence</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">evidence_card</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">state_names</span><span class="o">=</span><span class="p">{},</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">variable</span> <span class="o">=</span> <span class="n">variable</span>
@@ -174,27 +184,32 @@
         <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">evidence</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Evidence must be list, tuple or array of strings.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">evidence_card</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Evidence card must be provided if Evidence is provided!&quot;</span>
+                <span class="p">)</span>
             <span class="n">variables</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">evidence_card</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">evidence</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="s2">&quot;Length of evidence_card doesn&#39;t match length of evidence&quot;</span>
                 <span class="p">)</span>
 
+        <span class="n">values_casted</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">BACKEND</span> <span class="o">==</span> <span class="s2">&quot;numpy&quot;</span><span class="p">:</span>
-            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
+            <span class="n">values_casted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">object</span><span class="o">=</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">values</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get_device</span><span class="p">())</span>
+            <span class="n">values_casted</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get_device</span><span class="p">())</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">values</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">values_casted</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Values must be a 2D list/array&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">expected_cpd_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">variable_card</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">expected_cpd_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">variable_card</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">evidence_card</span><span class="p">))</span>
-        <span class="k">if</span> <span class="n">values</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">expected_cpd_shape</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">values_casted</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">expected_cpd_shape</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;values must be of shape </span><span class="si">{</span><span class="n">expected_cpd_shape</span><span class="si">}</span><span class="s2">. Got shape: </span><span class="si">{</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
@@ -205,7 +220,7 @@
             <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">TabularCPD</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="n">variables</span><span class="p">,</span> <span class="n">cardinality</span><span class="p">,</span> <span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span>
+            <span class="n">variables</span><span class="p">,</span> <span class="n">cardinality</span><span class="p">,</span> <span class="n">values_casted</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -232,14 +247,17 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; cpd = TabularCPD(&#39;grade&#39;, 3, [[0.1, 0.1],</span>
-<span class="sd">        ...                               [0.1, 0.1],</span>
-<span class="sd">        ...                               [0.8, 0.8]],</span>
-<span class="sd">        ...                  evidence=&#39;evi1&#39;, evidence_card=2)</span>
+<span class="sd">        &gt;&gt;&gt; cpd = TabularCPD(</span>
+<span class="sd">        ...     variable=&quot;grade&quot;,</span>
+<span class="sd">        ...     variable_card=3,</span>
+<span class="sd">        ...     values=[[0.1, 0.1], [0.1, 0.1], [0.8, 0.8]],</span>
+<span class="sd">        ...     evidence=[&quot;evi1&quot;],</span>
+<span class="sd">        ...     evidence_card=[2],</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; cpd.get_values()</span>
-<span class="sd">        array([[ 0.1,  0.1],</span>
-<span class="sd">               [ 0.1,  0.1],</span>
-<span class="sd">               [ 0.8,  0.8]])</span>
+<span class="sd">        array([[0.1, 0.1],</span>
+<span class="sd">               [0.1, 0.1],</span>
+<span class="sd">               [0.8, 0.8]])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
@@ -257,7 +275,7 @@
 
     <span class="k">def</span> <span class="nf">_make_table_str</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;fancy_grid&quot;</span><span class="p">,</span> <span class="n">print_state_names</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">return_list</span><span class="o">=</span><span class="kc">False</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="n">headers_list</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># Build column headers</span>
@@ -310,12 +328,12 @@
 
         <span class="k">return</span> <span class="n">cdf_str</span>
 
-    <span class="k">def</span> <span class="nf">_truncate_strtable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cdf_str</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_truncate_strtable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cdf_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">terminal_width</span><span class="p">,</span> <span class="n">terminal_height</span> <span class="o">=</span> <span class="n">get_terminal_size</span><span class="p">()</span>
 
         <span class="n">list_rows_str</span> <span class="o">=</span> <span class="n">cdf_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="n">table_width</span><span class="p">,</span> <span class="n">table_height</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_rows_str</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_rows_str</span><span class="p">)</span>
+        <span class="n">table_width</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_rows_str</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
         <span class="n">colstr_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span><span class="n">pos</span> <span class="k">for</span> <span class="n">pos</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">list_rows_str</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="n">char</span> <span class="o">==</span> <span class="s2">&quot;+&quot;</span><span class="p">]</span>
@@ -347,15 +365,15 @@
 
 <div class="viewcode-block" id="TabularCPD.to_csv">
 <a class="viewcode-back" href="../../../../factors/discrete.html#pgmpy.factors.discrete.CPD.TabularCPD.to_csv">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Exports the CPD to a CSV file.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
-<span class="sd">        &gt;&gt;&gt; model = get_example_model(&quot;alarm&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; cpd = model.get_cpds(&quot;SAO2&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; model = get_example_model(model=&quot;alarm&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; cpd = model.get_cpds(node=&quot;SAO2&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; cpd.to_csv(filename=&quot;sao2.cs&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -372,10 +390,12 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
-<span class="sd">        &gt;&gt;&gt; model = get_example_model(&quot;insurance&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; cpd = model.get_cpds(&quot;ThisCarCost&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; model = get_example_model(model=&quot;insurance&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; cpd = model.get_cpds(node=&quot;ThisCarCost&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; df = cpd.to_dataframe()</span>
-<span class="sd">        &gt;&gt;&gt; df.query(&quot;CarValue==&#39;FiftyThou&#39; and Theft == &#39;True&#39;&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; df.query(</span>
+<span class="sd">        ...     &quot;CarValue==&#39;FiftyThou&#39; and Theft == &#39;True&#39;&quot;</span>
+<span class="sd">        ... )  # doctest: +NORMALIZE_WHITESPACE</span>
 <span class="sd">        ThisCarCost                 HundredThou  Million   TenThou  Thousand</span>
 <span class="sd">        ThisCarDam CarValue  Theft</span>
 <span class="sd">        Mild       FiftyThou True      0.950000      0.0  0.020000  0.030000</span>
@@ -391,6 +411,41 @@
 <span class="sd">                                True     1.0</span>
 <span class="sd">                    Million     False    1.0</span>
 <span class="sd">                                True     1.0</span>
+<span class="sd">                    TenThou     False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    TwentyThou  False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">        Moderate    FiftyThou   False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    FiveThou    False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    Million     False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    TenThou     False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    TwentyThou  False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">        None        FiftyThou   False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    FiveThou    False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    Million     False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    TenThou     False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    TwentyThou  False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">        Severe      FiftyThou   False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    FiveThou    False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    Million     False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    TenThou     False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">                    TwentyThou  False    1.0</span>
+<span class="sd">                                True     1.0</span>
+<span class="sd">        dtype: float64</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">state_combinations_with_all_variables</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_product</span><span class="p">(</span>
             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">],</span> <span class="n">names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span>
@@ -414,21 +469,24 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; cpd = TabularCPD(&#39;grade&#39;, 2,</span>
-<span class="sd">        ...                  [[0.7, 0.6, 0.6, 0.2],[0.3, 0.4, 0.4, 0.8]],</span>
-<span class="sd">        ...                  [&#39;intel&#39;, &#39;diff&#39;], [2, 2])</span>
+<span class="sd">        &gt;&gt;&gt; cpd = TabularCPD(</span>
+<span class="sd">        ...     variable=&quot;grade&quot;,</span>
+<span class="sd">        ...     variable_card=2,</span>
+<span class="sd">        ...     values=[[0.7, 0.6, 0.6, 0.2], [0.3, 0.4, 0.4, 0.8]],</span>
+<span class="sd">        ...     evidence=[&quot;intel&quot;, &quot;diff&quot;],</span>
+<span class="sd">        ...     evidence_card=[2, 2],</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; copy = cpd.copy()</span>
 <span class="sd">        &gt;&gt;&gt; copy.variable</span>
 <span class="sd">        &#39;grade&#39;</span>
 <span class="sd">        &gt;&gt;&gt; copy.variable_card</span>
 <span class="sd">        2</span>
-<span class="sd">        &gt;&gt;&gt; copy.evidence</span>
-<span class="sd">        [&#39;intel&#39;, &#39;diff&#39;]</span>
 <span class="sd">        &gt;&gt;&gt; copy.values</span>
-<span class="sd">        array([[[ 0.7,  0.6],</span>
-<span class="sd">                [ 0.6,  0.2]],</span>
-<span class="sd">               [[ 0.3,  0.4],</span>
-<span class="sd">                [ 0.4,  0.8]]])</span>
+<span class="sd">        array([[[0.7, 0.6],</span>
+<span class="sd">                [0.6, 0.2]],</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+<span class="sd">               [[0.3, 0.4],</span>
+<span class="sd">                [0.4, 0.8]]])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="n">evidence_card</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
@@ -458,13 +516,17 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; cpd_table = TabularCPD(&#39;grade&#39;, 2,</span>
-<span class="sd">        ...                        [[0.7, 0.2, 0.6, 0.2],[0.4, 0.4, 0.4, 0.8]],</span>
-<span class="sd">        ...                        [&#39;intel&#39;, &#39;diff&#39;], [2, 2])</span>
+<span class="sd">        &gt;&gt;&gt; cpd_table = TabularCPD(</span>
+<span class="sd">        ...     variable=&quot;grade&quot;,</span>
+<span class="sd">        ...     variable_card=2,</span>
+<span class="sd">        ...     values=[[0.7, 0.2, 0.6, 0.2], [0.4, 0.4, 0.4, 0.8]],</span>
+<span class="sd">        ...     evidence=[&quot;intel&quot;, &quot;diff&quot;],</span>
+<span class="sd">        ...     evidence_card=[2, 2],</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; cpd_table.normalize()</span>
 <span class="sd">        &gt;&gt;&gt; cpd_table.get_values()</span>
-<span class="sd">        array([[ 0.63636364,  0.33333333,  0.6       ,  0.2       ],</span>
-<span class="sd">               [ 0.36363636,  0.66666667,  0.4       ,  0.8       ]])</span>
+<span class="sd">        array([[0.63636364, 0.33333333, 0.6       , 0.2       ],</span>
+<span class="sd">               [0.36363636, 0.66666667, 0.4       , 0.8       ]])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">tabular_cpd</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">inplace</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">cpd</span> <span class="o">=</span> <span class="n">tabular_cpd</span><span class="o">.</span><span class="n">get_values</span><span class="p">()</span>
@@ -495,13 +557,17 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; cpd_table = TabularCPD(&#39;grade&#39;, 2,</span>
-<span class="sd">        ...                        [[0.7, 0.6, 0.6, 0.2],[0.3, 0.4, 0.4, 0.8]],</span>
-<span class="sd">        ...                        [&#39;intel&#39;, &#39;diff&#39;], [2, 2])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_table.marginalize([&#39;diff&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; cpd_table = TabularCPD(</span>
+<span class="sd">        ...     variable=&quot;grade&quot;,</span>
+<span class="sd">        ...     variable_card=2,</span>
+<span class="sd">        ...     values=[[0.7, 0.6, 0.6, 0.2], [0.3, 0.4, 0.4, 0.8]],</span>
+<span class="sd">        ...     evidence=[&quot;intel&quot;, &quot;diff&quot;],</span>
+<span class="sd">        ...     evidence_card=[2, 2],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; cpd_table.marginalize(variables=[&quot;diff&quot;])</span>
 <span class="sd">        &gt;&gt;&gt; cpd_table.get_values()</span>
-<span class="sd">        array([[ 0.65,  0.4 ],</span>
-<span class="sd">               [ 0.35,  0.6 ]])</span>
+<span class="sd">        array([[0.65, 0.4 ],</span>
+<span class="sd">               [0.35, 0.6 ]])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -537,13 +603,17 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; cpd_table = TabularCPD(&#39;grade&#39;, 2,</span>
-<span class="sd">        ...                        [[0.7, 0.6, 0.6, 0.2],[0.3, 0.4, 0.4, 0.8]],</span>
-<span class="sd">        ...                        [&#39;intel&#39;, &#39;diff&#39;], [2, 2])</span>
-<span class="sd">        &gt;&gt;&gt; cpd_table.reduce([(&#39;diff&#39;, 0)])</span>
+<span class="sd">        &gt;&gt;&gt; cpd_table = TabularCPD(</span>
+<span class="sd">        ...     variable=&quot;grade&quot;,</span>
+<span class="sd">        ...     variable_card=2,</span>
+<span class="sd">        ...     values=[[0.7, 0.6, 0.6, 0.2], [0.3, 0.4, 0.4, 0.8]],</span>
+<span class="sd">        ...     evidence=[&quot;intel&quot;, &quot;diff&quot;],</span>
+<span class="sd">        ...     evidence_card=[2, 2],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; cpd_table.reduce(values=[(&quot;diff&quot;, 0)])</span>
 <span class="sd">        &gt;&gt;&gt; cpd_table.get_values()</span>
-<span class="sd">        array([[ 0.7,  0.6],</span>
-<span class="sd">               [ 0.3,  0.4]])</span>
+<span class="sd">        array([[0.7, 0.6],</span>
+<span class="sd">               [0.3, 0.4]])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable</span> <span class="ow">in</span> <span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -570,13 +640,16 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; cpd = TabularCPD(&#39;grade&#39;, 3, [[0.1, 0.1],</span>
-<span class="sd">        ...                               [0.1, 0.1],</span>
-<span class="sd">        ...                               [0.8, 0.8]],</span>
-<span class="sd">        ...                  evidence=&#39;evi1&#39;, evidence_card=2)</span>
+<span class="sd">        &gt;&gt;&gt; cpd = TabularCPD(</span>
+<span class="sd">        ...     variable=&quot;grade&quot;,</span>
+<span class="sd">        ...     variable_card=3,</span>
+<span class="sd">        ...     values=[[0.1, 0.1], [0.1, 0.1], [0.8, 0.8]],</span>
+<span class="sd">        ...     evidence=[&quot;evi1&quot;],</span>
+<span class="sd">        ...     evidence_card=[2],</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; factor = cpd.to_factor()</span>
 <span class="sd">        &gt;&gt;&gt; factor</span>
-<span class="sd">        &lt;DiscreteFactor representing phi(grade:3, evi1:2) at 0x7f847a4f2d68&gt;</span>
+<span class="sd">        &lt;DiscreteFactor representing phi(grade:3, evi1:2) at 0x...&gt;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">factor</span> <span class="o">=</span> <span class="n">DiscreteFactor</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">DiscreteFactor</span><span class="p">)</span>
         <span class="n">factor</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -590,7 +663,7 @@
 
 <div class="viewcode-block" id="TabularCPD.reorder_parents">
 <a class="viewcode-back" href="../../../../factors/discrete.html#pgmpy.factors.discrete.CPD.TabularCPD.reorder_parents">[docs]</a>
-    <span class="k">def</span> <span class="nf">reorder_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_order</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">reorder_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_order</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a new cpd table according to provided parent/evidence order.</span>
 
@@ -608,10 +681,17 @@
 
 <span class="sd">        Consider a CPD P(grade| diff, intel)</span>
 
-<span class="sd">        &gt;&gt;&gt; cpd = TabularCPD(&#39;grade&#39;,3,[[0.1,0.1,0.0,0.4,0.2,0.1],</span>
-<span class="sd">        ...                             [0.3,0.2,0.1,0.4,0.3,0.2],</span>
-<span class="sd">        ...                             [0.6,0.7,0.9,0.2,0.5,0.7]],</span>
-<span class="sd">        ...                  evidence=[&#39;diff&#39;, &#39;intel&#39;], evidence_card=[2,3])</span>
+<span class="sd">        &gt;&gt;&gt; cpd = TabularCPD(</span>
+<span class="sd">        ...     variable=&quot;grade&quot;,</span>
+<span class="sd">        ...     variable_card=3,</span>
+<span class="sd">        ...     values=[</span>
+<span class="sd">        ...         [0.1, 0.1, 0.0, 0.4, 0.2, 0.1],</span>
+<span class="sd">        ...         [0.3, 0.2, 0.1, 0.4, 0.3, 0.2],</span>
+<span class="sd">        ...         [0.6, 0.7, 0.9, 0.2, 0.5, 0.7],</span>
+<span class="sd">        ...     ],</span>
+<span class="sd">        ...     evidence=[&quot;diff&quot;, &quot;intel&quot;],</span>
+<span class="sd">        ...     evidence_card=[2, 3],</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; print(cpd)</span>
 <span class="sd">        +----------+----------+----------+----------+----------+----------+----------+</span>
 <span class="sd">        | diff     | diff(0)  | diff(0)  | diff(0)  | diff(1)  | diff(1)  | diff(1)  |</span>
@@ -625,12 +705,14 @@
 <span class="sd">        | grade(2) | 0.6      | 0.7      | 0.9      | 0.2      | 0.5      | 0.7      |</span>
 <span class="sd">        +----------+----------+----------+----------+----------+----------+----------+</span>
 <span class="sd">        &gt;&gt;&gt; cpd.values</span>
-<span class="sd">        array([[[ 0.1,  0.1,  0. ],</span>
-<span class="sd">                [ 0.4,  0.2,  0.1]],</span>
-<span class="sd">               [[ 0.3,  0.2,  0.1],</span>
-<span class="sd">                [ 0.4,  0.3,  0.2]],</span>
-<span class="sd">               [[ 0.6,  0.7,  0.9],</span>
-<span class="sd">                [ 0.2,  0.5,  0.7]]])</span>
+<span class="sd">        array([[[0.1, 0.1, 0. ],</span>
+<span class="sd">                [0.4, 0.2, 0.1]],</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+<span class="sd">               [[0.3, 0.2, 0.1],</span>
+<span class="sd">                [0.4, 0.3, 0.2]],</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
+<span class="sd">               [[0.6, 0.7, 0.9],</span>
+<span class="sd">                [0.2, 0.5, 0.7]]])</span>
 <span class="sd">        &gt;&gt;&gt; cpd.variables</span>
 <span class="sd">        [&#39;grade&#39;, &#39;diff&#39;, &#39;intel&#39;]</span>
 <span class="sd">        &gt;&gt;&gt; cpd.cardinality</span>
@@ -639,7 +721,7 @@
 <span class="sd">        &#39;grade&#39;</span>
 <span class="sd">        &gt;&gt;&gt; cpd.variable_card</span>
 <span class="sd">        3</span>
-<span class="sd">        &gt;&gt;&gt; cpd.reorder_parents([&#39;intel&#39;, &#39;diff&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; cpd.reorder_parents(new_order=[&quot;intel&quot;, &quot;diff&quot;])</span>
 <span class="sd">        array([[0.1, 0.4, 0.1, 0.2, 0. , 0.1],</span>
 <span class="sd">               [0.3, 0.4, 0.2, 0.3, 0.1, 0.2],</span>
 <span class="sd">               [0.6, 0.2, 0.7, 0.5, 0.9, 0.7]])</span>
@@ -659,9 +741,11 @@
 <span class="sd">        array([[[0.1, 0.4],</span>
 <span class="sd">                [0.1, 0.2],</span>
 <span class="sd">                [0. , 0.1]],</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
 <span class="sd">               [[0.3, 0.4],</span>
 <span class="sd">                [0.2, 0.3],</span>
 <span class="sd">                [0.1, 0.2]],</span>
+<span class="sd">        &lt;BLANKLINE&gt;</span>
 <span class="sd">               [[0.6, 0.2],</span>
 <span class="sd">                [0.7, 0.5],</span>
 <span class="sd">                [0.9, 0.7]]])</span>
@@ -758,14 +842,17 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; TabularCPD.get_random(variable=&#39;A&#39;, evidence=[&#39;C&#39;, &#39;D&#39;],</span>
-<span class="sd">        ...                       cardinality={&#39;A&#39;: 3, &#39;B&#39;: 2, &#39;C&#39;: 4})</span>
-<span class="sd">        &lt;TabularCPD representing P(A:3 | C:4, B:2) at 0x7f95e22b8040&gt;</span>
-<span class="sd">        &gt;&gt;&gt; TabularCPD.get_random(variable=&#39;A&#39;, evidence=[&#39;C&#39;, &#39;D&#39;],</span>
-<span class="sd">        ...                       cardinality={&#39;A&#39;: 2, &#39;B&#39;: 2, &#39;C&#39;: 2},</span>
-<span class="sd">        ...                       state_names={&#39;A&#39;: [&#39;a1&#39;, &#39;a2&#39;],</span>
-<span class="sd">        ...                                    &#39;B&#39;: [&#39;b1&#39;, &#39;b2&#39;],</span>
-<span class="sd">        ...                                    &#39;C&#39;: [&#39;c1&#39;, &#39;c2&#39;]})</span>
+<span class="sd">        &gt;&gt;&gt; TabularCPD.get_random(</span>
+<span class="sd">        ...     variable=&quot;A&quot;, evidence=[&quot;B&quot;, &quot;C&quot;], cardinality={&quot;A&quot;: 3, &quot;B&quot;: 2, &quot;C&quot;: 4}</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &lt;TabularCPD representing P(A:3 | ...) at 0x...&gt;</span>
+<span class="sd">        &gt;&gt;&gt; TabularCPD.get_random(</span>
+<span class="sd">        ...     variable=&quot;A&quot;,</span>
+<span class="sd">        ...     evidence=[&quot;B&quot;, &quot;C&quot;],</span>
+<span class="sd">        ...     cardinality={&quot;A&quot;: 2, &quot;B&quot;: 2, &quot;C&quot;: 2},</span>
+<span class="sd">        ...     state_names={&quot;A&quot;: [&quot;a1&quot;, &quot;a2&quot;], &quot;B&quot;: [&quot;b1&quot;, &quot;b2&quot;], &quot;C&quot;: [&quot;c1&quot;, &quot;c2&quot;]},</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &lt;TabularCPD representing P(A:2 | B:2, C:2) at 0x...&gt;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">generator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
 
@@ -842,17 +929,18 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; TabularCPD.get_uniform(variable=&#39;A&#39;, evidence=[&#39;C&#39;, &#39;D&#39;],</span>
-<span class="sd">        ...                        cardinality={&#39;A&#39;: 3, &#39;B&#39;: 2, &#39;C&#39;: 4})</span>
-<span class="sd">        &lt;TabularCPD representing P(A:3 | C:4, B:2) at 0x7f95e22b8040&gt;</span>
-<span class="sd">        &gt;&gt;&gt; TabularCPD.get_uniform(variable=&#39;A&#39;, evidence=[&#39;C&#39;, &#39;D&#39;],</span>
-<span class="sd">        ...                        cardinality={&#39;A&#39;: 2, &#39;B&#39;: 2, &#39;C&#39;: 2},</span>
-<span class="sd">        ...                        state_names={&#39;A&#39;: [&#39;a1&#39;, &#39;a2&#39;],</span>
-<span class="sd">        ...                                     &#39;B&#39;: [&#39;b1&#39;, &#39;b2&#39;],</span>
-<span class="sd">        ...                                     &#39;C&#39;: [&#39;c1&#39;, &#39;c2&#39;]})</span>
+<span class="sd">        &gt;&gt;&gt; TabularCPD.get_uniform(</span>
+<span class="sd">        ...     variable=&quot;A&quot;, evidence=[&quot;B&quot;, &quot;C&quot;], cardinality={&quot;A&quot;: 3, &quot;B&quot;: 2, &quot;C&quot;: 4}</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &lt;TabularCPD representing P(A:3 | ...) at 0x...&gt;</span>
+<span class="sd">        &gt;&gt;&gt; TabularCPD.get_uniform(</span>
+<span class="sd">        ...     variable=&quot;A&quot;,</span>
+<span class="sd">        ...     evidence=[&quot;B&quot;, &quot;C&quot;],</span>
+<span class="sd">        ...     cardinality={&quot;A&quot;: 2, &quot;B&quot;: 2, &quot;C&quot;: 2},</span>
+<span class="sd">        ...     state_names={&quot;A&quot;: [&quot;a1&quot;, &quot;a2&quot;], &quot;B&quot;: [&quot;b1&quot;, &quot;b2&quot;], &quot;C&quot;: [&quot;c1&quot;, &quot;c2&quot;]},</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &lt;TabularCPD representing P(A:2 | B:2, C:2) at 0x...&gt;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">generator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
-
         <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">evidence</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -944,11 +1032,7 @@
   </ul></li>
   </ul></li>
 </ul>
-</div><head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
-</head>
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>

@@ -42,8 +42,10 @@
 
 <span class="kn">import</span> <span class="nn">numbers</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
@@ -61,7 +63,12 @@
 <span class="sd">    See `MaximumLikelihoodEstimator` for constructor parameters.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">DAG</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">],</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
                 <span class="s2">&quot;Bayesian Parameter Estimation is only implemented for DAG or DiscreteBayesianNetwork&quot;</span>
@@ -70,7 +77,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Bayesian Parameter Estimation works only on models with all observed variables. Found latent variables: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Bayesian Parameter Estimation works only &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;on models with all observed variables. Found latent variables: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
 
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DAG</span><span class="p">):</span>
@@ -83,12 +91,12 @@
 <a class="viewcode-back" href="../../../param_estimator/bayesian_est.html#pgmpy.estimators.BayesianEstimator.get_parameters">[docs]</a>
     <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">prior_type</span><span class="o">=</span><span class="s2">&quot;BDeu&quot;</span><span class="p">,</span>
-        <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-        <span class="n">pseudo_counts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">weighted</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="p">):</span>
+        <span class="n">prior_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;BDeu&quot;</span><span class="p">,</span>
+        <span class="n">equivalent_sample_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">pseudo_counts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">TabularCPD</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to estimate the model parameters (CPDs).</span>
 
@@ -136,18 +144,21 @@
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import BayesianEstimator</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(np.random.randint(low=0, high=2, size=(1000, 4)),</span>
-<span class="sd">        ...                       columns=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;D&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;D&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; np.random.seed(42)</span>
+<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 4)),</span>
+<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;D&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; estimator = BayesianEstimator(model, values)</span>
-<span class="sd">        &gt;&gt;&gt; estimator.get_parameters(prior_type=&#39;BDeu&#39;, equivalent_sample_size=5)</span>
-<span class="sd">        [&lt;TabularCPD representing P(C:2) at 0x7f7b534251d0&gt;,</span>
-<span class="sd">        &lt;TabularCPD representing P(B:2 | C:2, A:2) at 0x7f7b4dfd4da0&gt;,</span>
-<span class="sd">        &lt;TabularCPD representing P(A:2) at 0x7f7b4dfd4fd0&gt;,</span>
-<span class="sd">        &lt;TabularCPD representing P(D:2 | C:2) at 0x7f7b4df822b0&gt;]</span>
+<span class="sd">        &gt;&gt;&gt; estimator.get_parameters(prior_type=&quot;BDeu&quot;, equivalent_sample_size=5)</span>
+<span class="sd">        [&lt;TabularCPD representing P(A:2) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(B:2 | A:2, C:2) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(C:2) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(D:2 | C:2) at 0x...&gt;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">def</span> <span class="nf">_get_node_param</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">_get_node_param</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TabularCPD</span><span class="p">:</span>
             <span class="n">_equivalent_sample_size</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">equivalent_sample_size</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">equivalent_sample_size</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
@@ -180,12 +191,12 @@
 <a class="viewcode-back" href="../../../param_estimator/bayesian_est.html#pgmpy.estimators.BayesianEstimator.estimate_cpd">[docs]</a>
     <span class="k">def</span> <span class="nf">estimate_cpd</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">node</span><span class="p">,</span>
-        <span class="n">prior_type</span><span class="o">=</span><span class="s2">&quot;BDeu&quot;</span><span class="p">,</span>
-        <span class="n">pseudo_counts</span><span class="o">=</span><span class="p">[],</span>
-        <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-        <span class="n">weighted</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="p">):</span>
+        <span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span>
+        <span class="n">prior_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;BDeu&quot;</span><span class="p">,</span>
+        <span class="n">pseudo_counts</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">equivalent_sample_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TabularCPD</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to estimate the CPD for a given variable.</span>
 
@@ -224,23 +235,24 @@
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import BayesianEstimator</span>
-<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(data={&#39;A&#39;: [0, 0, 1], &#39;B&#39;: [0, 1, 0], &#39;C&#39;: [1, 1, 0]})</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(data={&quot;A&quot;: [0, 0, 1], &quot;B&quot;: [0, 1, 0], &quot;C&quot;: [1, 1, 0]})</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&quot;A&quot;, &quot;C&quot;), (&quot;B&quot;, &quot;C&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; estimator = BayesianEstimator(model, data)</span>
-<span class="sd">        &gt;&gt;&gt; cpd_C = estimator.estimate_cpd(&#39;C&#39;, prior_type=&quot;dirichlet&quot;,</span>
-<span class="sd">        ...                                pseudo_counts=[[1, 1, 1, 1],</span>
-<span class="sd">        ...                                               [2, 2, 2, 2]])</span>
+<span class="sd">        &gt;&gt;&gt; cpd_C = estimator.estimate_cpd(</span>
+<span class="sd">        ...     node=&quot;C&quot;,</span>
+<span class="sd">        ...     prior_type=&quot;dirichlet&quot;,</span>
+<span class="sd">        ...     pseudo_counts=[[1, 1, 1, 1], [2, 2, 2, 2]],</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; print(cpd_C)</span>
-<span class="sd">        ╒══════╤══════╤══════╤══════╤════════════════════╕</span>
-<span class="sd">        │ A    │ A(0) │ A(0) │ A(1) │ A(1)               │</span>
-<span class="sd">        ├──────┼──────┼──────┼──────┼────────────────────┤</span>
-<span class="sd">        │ B    │ B(0) │ B(1) │ B(0) │ B(1)               │</span>
-<span class="sd">        ├──────┼──────┼──────┼──────┼────────────────────┤</span>
-<span class="sd">        │ C(0) │ 0.25 │ 0.25 │ 0.5  │ 0.3333333333333333 │</span>
-<span class="sd">        ├──────┼──────┼──────┼──────┼────────────────────┤</span>
-<span class="sd">        │ C(1) │ 0.75 │ 0.75 │ 0.5  │ 0.6666666666666666 │</span>
-<span class="sd">        ╘══════╧══════╧══════╧══════╧════════════════════╛</span>
-
+<span class="sd">        +------+------+------+------+--------------------+</span>
+<span class="sd">        | A    | A(0) | A(0) | A(1) | A(1)               |</span>
+<span class="sd">        +------+------+------+------+--------------------+</span>
+<span class="sd">        | B    | B(0) | B(1) | B(0) | B(1)               |</span>
+<span class="sd">        +------+------+------+------+--------------------+</span>
+<span class="sd">        | C(0) | 0.25 | 0.25 | 0.5  | 0.3333333333333333 |</span>
+<span class="sd">        +------+------+------+------+--------------------+</span>
+<span class="sd">        | C(1) | 0.75 | 0.75 | 0.5  | 0.6666666666666666 |</span>
+<span class="sd">        +------+------+------+------+--------------------+</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">node_cardinality</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
         <span class="n">parents</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
@@ -258,7 +270,8 @@
             <span class="ow">and</span> <span class="p">(</span><span class="n">prior_type</span> <span class="o">!=</span> <span class="s2">&quot;dirichlet&quot;</span><span class="p">)</span>
         <span class="p">):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;pseudo count specified with </span><span class="si">{</span><span class="n">prior_type</span><span class="si">}</span><span class="s2"> prior. It will be ignored, use dirichlet prior for specifying pseudo_counts&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;pseudo count specified with </span><span class="si">{</span><span class="n">prior_type</span><span class="si">}</span><span class="s2"> prior. It will be ignored, &quot;</span>
+                <span class="s2">&quot;use dirichlet prior for specifying pseudo_counts&quot;</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">prior_type</span> <span class="o">==</span> <span class="s2">&quot;k2&quot;</span><span class="p">:</span>
@@ -352,11 +365,7 @@
   </ul></li>
   </ul></li>
 </ul>
-</div><head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
-</head>
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>

@@ -38,7 +38,9 @@
           <div class="body" role="main">
             
   <h1>Source code for pgmpy.models.LinearGaussianBayesianNetwork</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">LinearRegression</span>
@@ -46,7 +48,6 @@
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span> <span class="nn">pgmpy.factors.continuous</span> <span class="kn">import</span> <span class="n">LinearGaussianCPD</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork">
@@ -63,18 +64,22 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">lavaan_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dagitty_str</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ebunch</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">latents</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
+        <span class="n">lavaan_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">dagitty_str</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">LinearGaussianBayesianNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">ebunch</span><span class="o">=</span><span class="n">ebunch</span><span class="p">,</span>
             <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">,</span>
-            <span class="n">lavaan_str</span><span class="o">=</span><span class="n">lavaan_str</span><span class="p">,</span>
-            <span class="n">dagitty_str</span><span class="o">=</span><span class="n">dagitty_str</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span> <span class="o">=</span> <span class="p">[]</span>
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.add_cpds">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.add_cpds">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">cpds</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">add_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">cpds</span><span class="p">:</span> <span class="n">LinearGaussianCPD</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add linear Gaussian CPD (Conditional Probability Distribution)</span>
 <span class="sd">        to the Bayesian Network.</span>
@@ -88,13 +93,14 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import LinearGaussianBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.continuous import LinearGaussianCPD</span>
-<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&#39;x1&#39;, &#39;x2&#39;), (&#39;x2&#39;, &#39;x3&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; cpd1 = LinearGaussianCPD(&#39;x1&#39;, [1], 4)</span>
-<span class="sd">        &gt;&gt;&gt; cpd2 = LinearGaussianCPD(&#39;x2&#39;, [-5, 0.5], 4, [&#39;x1&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; cpd3 = LinearGaussianCPD(&#39;x3&#39;, [4, -1], 3, [&#39;x2&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;), (&quot;x2&quot;, &quot;x3&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; cpd1 = LinearGaussianCPD(&quot;x1&quot;, [1], 4)</span>
+<span class="sd">        &gt;&gt;&gt; cpd2 = LinearGaussianCPD(&quot;x2&quot;, [-5, 0.5], 4, [&quot;x1&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; cpd3 = LinearGaussianCPD(&quot;x3&quot;, [4, -1], 3, [&quot;x2&quot;])</span>
 <span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2, cpd3)</span>
 <span class="sd">        &gt;&gt;&gt; for cpd in model.cpds:</span>
 <span class="sd">        ...     print(cpd)</span>
+<span class="sd">        ...</span>
 <span class="sd">        P(x1) = N(1; 4)</span>
 <span class="sd">        P(x2| x1) = N(0.5*x1_mu); -5)</span>
 <span class="sd">        P(x3| x2) = N(-1*x2_mu); 4)</span>
@@ -118,7 +124,9 @@
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.get_cpds">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.get_cpds">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_cpds</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">LinearGaussianCPD</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">LinearGaussianCPD</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the cpd of the node. If node is not specified returns all the CPDs</span>
 <span class="sd">        that have been added till now to the graph</span>
@@ -137,10 +145,10 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import LinearGaussianBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.continuous import LinearGaussianCPD</span>
-<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&#39;x1&#39;, &#39;x2&#39;), (&#39;x2&#39;, &#39;x3&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; cpd1 = LinearGaussianCPD(&#39;x1&#39;, [1], 4)</span>
-<span class="sd">        &gt;&gt;&gt; cpd2 = LinearGaussianCPD(&#39;x2&#39;, [-5, 0.5], 4, [&#39;x1&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; cpd3 = LinearGaussianCPD(&#39;x3&#39;, [4, -1], 3, [&#39;x2&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;), (&quot;x2&quot;, &quot;x3&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; cpd1 = LinearGaussianCPD(&quot;x1&quot;, [1], 4)</span>
+<span class="sd">        &gt;&gt;&gt; cpd2 = LinearGaussianCPD(&quot;x2&quot;, [-5, 0.5], 4, [&quot;x1&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; cpd3 = LinearGaussianCPD(&quot;x3&quot;, [4, -1], 3, [&quot;x2&quot;])</span>
 <span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2, cpd3)</span>
 <span class="sd">        &gt;&gt;&gt; model.get_cpds()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -157,7 +165,7 @@
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.remove_cpds">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.remove_cpds">[docs]</a>
-    <span class="k">def</span> <span class="nf">remove_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">cpds</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">remove_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">cpds</span><span class="p">:</span> <span class="n">LinearGaussianCPD</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Removes the cpds that are provided in the argument.</span>
 
@@ -171,13 +179,14 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import LinearGaussianBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.continuous import LinearGaussianCPD</span>
-<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&#39;x1&#39;, &#39;x2&#39;), (&#39;x2&#39;, &#39;x3&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; cpd1 = LinearGaussianCPD(&#39;x1&#39;, [1], 4)</span>
-<span class="sd">        &gt;&gt;&gt; cpd2 = LinearGaussianCPD(&#39;x2&#39;, [-5, 0.5], 4, [&#39;x1&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; cpd3 = LinearGaussianCPD(&#39;x3&#39;, [4, -1], 3, [&#39;x2&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;), (&quot;x2&quot;, &quot;x3&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; cpd1 = LinearGaussianCPD(&quot;x1&quot;, [1], 4)</span>
+<span class="sd">        &gt;&gt;&gt; cpd2 = LinearGaussianCPD(&quot;x2&quot;, [-5, 0.5], 4, [&quot;x1&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; cpd3 = LinearGaussianCPD(&quot;x3&quot;, [4, -1], 3, [&quot;x2&quot;])</span>
 <span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2, cpd3)</span>
 <span class="sd">        &gt;&gt;&gt; for cpd in model.get_cpds():</span>
 <span class="sd">        ...     print(cpd)</span>
+<span class="sd">        ...</span>
 
 <span class="sd">        P(x1) = N(1; 4)</span>
 <span class="sd">        P(x2| x1) = N(0.5*x1_mu); -5)</span>
@@ -186,16 +195,26 @@
 <span class="sd">        &gt;&gt;&gt; model.remove_cpds(cpd2, cpd3)</span>
 <span class="sd">        &gt;&gt;&gt; for cpd in model.get_cpds():</span>
 <span class="sd">        ...     print(cpd)</span>
+<span class="sd">        ...</span>
 
 <span class="sd">        P(x1) = N(1; 4)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">LinearGaussianBayesianNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">remove_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds</span><span class="p">)</span></div>
+        <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">cpds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cpd</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+                <span class="n">cpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">cpd</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">cpd</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.get_random_cpds">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.get_random_cpds">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_random_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_random_cpds</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">loc</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">LinearGaussianCPD</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generates random Linear Gaussian CPDs for the model. The coefficients</span>
 <span class="sd">        are sampled from a normal distribution with mean `loc` and standard</span>
@@ -241,7 +260,7 @@
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.to_joint_gaussian">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.to_joint_gaussian">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_joint_gaussian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">to_joint_gaussian</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Linear Gaussian Bayesian Networks can be represented using a joint</span>
 <span class="sd">        Gaussian distribution over all the variables. This method gives</span>
@@ -256,10 +275,10 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import LinearGaussianBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.continuous import LinearGaussianCPD</span>
-<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&#39;x1&#39;, &#39;x2&#39;), (&#39;x2&#39;, &#39;x3&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; cpd1 = LinearGaussianCPD(&#39;x1&#39;, [1], 4)</span>
-<span class="sd">        &gt;&gt;&gt; cpd2 = LinearGaussianCPD(&#39;x2&#39;, [-5, 0.5], 4, [&#39;x1&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; cpd3 = LinearGaussianCPD(&#39;x3&#39;, [4, -1], 3, [&#39;x2&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;), (&quot;x2&quot;, &quot;x3&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; cpd1 = LinearGaussianCPD(&quot;x1&quot;, [1], 4)</span>
+<span class="sd">        &gt;&gt;&gt; cpd2 = LinearGaussianCPD(&quot;x2&quot;, [-5, 0.5], 4, [&quot;x1&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; cpd3 = LinearGaussianCPD(&quot;x3&quot;, [4, -1], 3, [&quot;x2&quot;])</span>
 <span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2, cpd3)</span>
 <span class="sd">        &gt;&gt;&gt; mean, cov = model.to_joint_gaussian()</span>
 <span class="sd">        &gt;&gt;&gt; mean</span>
@@ -293,17 +312,65 @@
             <span class="n">omega</span><span class="p">[</span><span class="n">var_to_index</span><span class="p">[</span><span class="n">var</span><span class="p">],</span> <span class="n">var_to_index</span><span class="p">[</span><span class="n">var</span><span class="p">]]</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">std</span>
 
         <span class="c1"># Step 3: Compute the implied covariance matrix</span>
-        <span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)</span>
-        <span class="n">inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">((</span><span class="n">I</span> <span class="o">-</span> <span class="n">B</span><span class="p">))</span>
+        <span class="n">identity_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)</span>
+        <span class="n">inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">((</span><span class="n">identity_matrix</span> <span class="o">-</span> <span class="n">B</span><span class="p">))</span>
         <span class="n">implied_cov</span> <span class="o">=</span> <span class="n">inv</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">omega</span> <span class="o">@</span> <span class="n">inv</span>
 
         <span class="c1"># Round because numerical errors can lead to non-symmetric cov matrix.</span>
         <span class="k">return</span> <span class="n">mean</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">decimals</span><span class="o">=</span><span class="mi">8</span><span class="p">),</span> <span class="n">implied_cov</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">decimals</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="LinearGaussianBayesianNetwork.copy">
+<a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.copy">[docs]</a>
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a copy of the model.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Model&#39;s copy: pgmpy.models.LinearGaussianBayesianNetwork</span>
+<span class="sd">            Copy of the model on which the method was called.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import LinearGaussianBayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.continuous import LinearGaussianCPD</span>
+<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&quot;A&quot;, &quot;B&quot;), (&quot;B&quot;, &quot;C&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; cpd_a = LinearGaussianCPD(variable=&quot;A&quot;, beta=[1], std=4)</span>
+<span class="sd">        &gt;&gt;&gt; cpd_b = LinearGaussianCPD(</span>
+<span class="sd">        ...     variable=&quot;B&quot;, beta=[-5, 0.5], std=4, evidence=[&quot;A&quot;]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; cpd_c = LinearGaussianCPD(</span>
+<span class="sd">        ...     variable=&quot;C&quot;, beta=[4, -1], std=3, evidence=[&quot;x2&quot;]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd_a, cpd_b, cpd_c)</span>
+<span class="sd">        &gt;&gt;&gt; copy_model = model.copy()</span>
+<span class="sd">        &gt;&gt;&gt; copy_model.nodes()</span>
+<span class="sd">        NodeView((&#39;A&#39;, &#39;B&#39;, &#39;C&#39;))</span>
+<span class="sd">        &gt;&gt;&gt; copy_model.edges()</span>
+<span class="sd">        OutEdgeView([(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; len(copy_model.get_cpds())</span>
+<span class="sd">        3</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">model_copy</span> <span class="o">=</span> <span class="n">LinearGaussianBayesianNetwork</span><span class="p">()</span>
+        <span class="n">model_copy</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="n">model_copy</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="p">:</span>
+            <span class="n">model_copy</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">cpd</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">model_copy</span></div>
+
+
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.simulate">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.simulate">[docs]</a>
-    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+        <span class="n">do</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">evidence</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">virtual_intervention</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">LinearGaussianCPD</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">include_latents</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Simulates data from the given model.</span>
 
@@ -311,6 +378,22 @@
 <span class="sd">        ----------</span>
 <span class="sd">        n_samples: int</span>
 <span class="sd">            The number of samples to draw from the model.</span>
+
+<span class="sd">        do: dict (default: None)</span>
+<span class="sd">            The interventions to apply to the model. dict should be of the form</span>
+<span class="sd">            {variable_name: value}</span>
+
+<span class="sd">        evidence: dict (default: None)</span>
+<span class="sd">            Observed evidence to apply to the model. dict should be of the form</span>
+<span class="sd">            {variable_name: value}</span>
+
+<span class="sd">        virtual_intervention: list</span>
+<span class="sd">            Also known as soft intervention. `virtual_intervention` should be a list</span>
+<span class="sd">            of `pgmpy.factors.discrete.LinearGaussianCPD` objects specifying the virtual/soft</span>
+<span class="sd">            intervention probabilities.</span>
+
+<span class="sd">        include_latents: boolean</span>
+<span class="sd">            Whether to include the latent variable values in the generated samples.</span>
 
 <span class="sd">        seed: int (default: None)</span>
 <span class="sd">            Seed for the random number generator.</span>
@@ -324,30 +407,163 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import LinearGaussianBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.continuous import LinearGaussianCPD</span>
-<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&#39;x1&#39;, &#39;x2&#39;), (&#39;x2&#39;, &#39;x3&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; cpd1 = LinearGaussianCPD(&#39;x1&#39;, [1], 4)</span>
-<span class="sd">        &gt;&gt;&gt; cpd2 = LinearGaussianCPD(&#39;x2&#39;, [-5, 0.5], 4, [&#39;x1&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; cpd3 = LinearGaussianCPD(&#39;x3&#39;, [4, -1], 3, [&#39;x2&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;), (&quot;x2&quot;, &quot;x3&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; cpd1 = LinearGaussianCPD(&quot;x1&quot;, [1], 4)</span>
+<span class="sd">        &gt;&gt;&gt; cpd2 = LinearGaussianCPD(&quot;x2&quot;, [-5, 0.5], 4, [&quot;x1&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; cpd3 = LinearGaussianCPD(&quot;x3&quot;, [4, -1], 3, [&quot;x2&quot;])</span>
 <span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd1, cpd2, cpd3)</span>
-<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=500, seed=42)</span>
+
+<span class="sd">        Simple forward sampling</span>
+<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, seed=42)</span>
+
+<span class="sd">        Sampling with intervention (do)</span>
+<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, seed=42, do={&quot;x2&quot;: 0.0})</span>
+
+<span class="sd">        Sampling with evidence</span>
+<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, seed=42, evidence={&quot;x1&quot;: 2.0})</span>
+
+<span class="sd">        Sampling with both intervention and evidence</span>
+<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, seed=42, do={&quot;x2&quot;: 1.0}, evidence={&quot;x1&quot;: 0.0})</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cpds</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
+        <span class="c1"># Step 1: Check if all arguments are specified and valid</span>
+        <span class="n">evidence</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">evidence</span>
+
+        <span class="n">do</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">do</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">do</span>
+
+        <span class="n">virtual_intervention</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[]</span> <span class="k">if</span> <span class="n">virtual_intervention</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">virtual_intervention</span>
+        <span class="p">)</span>
+
+        <span class="n">do_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">do</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">evidence_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="n">invalid_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">do_nodes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">do_nodes</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Each node in the model should have a CPD associated with it&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;The following do-nodes are not present in the model: </span><span class="si">{</span><span class="n">invalid_nodes</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;do argument contains: </span><span class="si">{</span><span class="n">do_nodes</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-        <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_joint_gaussian</span><span class="p">()</span>
-        <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
-        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-            <span class="n">rng</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">),</span>
-            <span class="n">columns</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
-        <span class="p">)</span></div>
+        <span class="n">invalid_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence_nodes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence_nodes</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The following evidence-nodes are not present in the model: </span><span class="si">{</span><span class="n">invalid_nodes</span><span class="si">}</span><span class="s2">. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;evidence argument contains: </span><span class="si">{</span><span class="n">evidence_nodes</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">common_vars</span> <span class="o">:=</span> <span class="nb">set</span><span class="p">(</span><span class="n">do</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Variable(s) can&#39;t be in both do and evidence: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">common_vars</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">virtual_intervention</span> <span class="o">!=</span> <span class="p">[]:</span>
+            <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_intervention</span><span class="p">:</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span>
+                <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Virtual intervention provided for variable which is not in the model: </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;The following nodes are present in the model: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="c1"># Step 2: If do is specified, modify the network structure.</span>
+        <span class="k">if</span> <span class="n">do</span> <span class="o">!=</span> <span class="p">{}:</span>
+            <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">do</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># Step 2.1: Remove incoming edges to the intervened</span>
+                <span class="c1">#  node as well as remove the CPD&#39;s of the intervened nodes.</span>
+                <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">var</span><span class="p">)):</span>
+                    <span class="n">model</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">var</span><span class="p">)</span>
+
+                <span class="n">model</span><span class="o">.</span><span class="n">remove_cpds</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">var</span><span class="p">))</span>
+
+                <span class="c1"># Step 2.2 : For each children of an intervened node, change its CPD to remove</span>
+                <span class="c1">#  the parent (intervened node) from the evidence and update its intercept accordingly</span>
+                <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">get_children</span><span class="p">(</span><span class="n">var</span><span class="p">):</span>
+                    <span class="n">child_cpd</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+
+                    <span class="n">new_evidence</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">child_cpd</span><span class="o">.</span><span class="n">evidence</span><span class="p">)</span>
+                    <span class="n">new_beta</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">child_cpd</span><span class="o">.</span><span class="n">beta</span><span class="p">)</span>
+
+                    <span class="n">parent_idx</span> <span class="o">=</span> <span class="n">child_cpd</span><span class="o">.</span><span class="n">evidence</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+                    <span class="n">new_beta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">new_beta</span><span class="p">[</span><span class="n">parent_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">val</span>
+
+                    <span class="k">del</span> <span class="n">new_evidence</span><span class="p">[</span><span class="n">parent_idx</span><span class="p">]</span>
+                    <span class="k">del</span> <span class="n">new_beta</span><span class="p">[</span><span class="n">parent_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+                    <span class="n">new_cpd</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span>
+                        <span class="n">variable</span><span class="o">=</span><span class="n">child_cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">,</span>
+                        <span class="n">beta</span><span class="o">=</span><span class="n">new_beta</span><span class="p">,</span>
+                        <span class="n">std</span><span class="o">=</span><span class="n">child_cpd</span><span class="o">.</span><span class="n">std</span><span class="p">,</span>
+                        <span class="n">evidence</span><span class="o">=</span><span class="n">new_evidence</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                    <span class="n">model</span><span class="o">.</span><span class="n">remove_cpds</span><span class="p">(</span><span class="n">child_cpd</span><span class="p">)</span>
+                    <span class="n">model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">new_cpd</span><span class="p">)</span>
+
+                <span class="n">model</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+
+        <span class="c1"># Step 3: If virtual_interventions are specified, change the CPD&#39;s of intervened variables</span>
+        <span class="c1"># to specified ones and remove the incoming nodes</span>
+        <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_intervention</span><span class="p">:</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variable</span>
+            <span class="n">old_cpd</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">remove_cpds</span><span class="p">(</span><span class="n">old_cpd</span><span class="p">)</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">var</span><span class="p">)):</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">var</span><span class="p">)</span>
+
+        <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_joint_gaussian</span><span class="p">()</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="n">model</span><span class="p">))</span>
+
+        <span class="c1"># Step 4: Sample according to evidence</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                <span class="n">rng</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="o">=</span><span class="n">cov</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">),</span>
+                <span class="n">columns</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">df_evidence</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">([</span><span class="n">evidence</span><span class="p">])</span>
+            <span class="n">missing_vars</span><span class="p">,</span> <span class="n">mean_cond</span><span class="p">,</span> <span class="n">cov_cond</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df_evidence</span><span class="p">)</span>
+
+            <span class="n">sorted_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">missing_vars</span><span class="p">)</span>
+            <span class="n">missing_vars</span> <span class="o">=</span> <span class="p">[</span><span class="n">missing_vars</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sorted_indices</span><span class="p">]</span>
+            <span class="n">mean_cond</span> <span class="o">=</span> <span class="n">mean_cond</span><span class="p">[:,</span> <span class="n">sorted_indices</span><span class="p">]</span>
+            <span class="n">cov_cond</span> <span class="o">=</span> <span class="n">cov_cond</span><span class="p">[</span><span class="n">sorted_indices</span><span class="p">][:,</span> <span class="n">sorted_indices</span><span class="p">]</span>
+
+            <span class="n">samples_missing</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span>
+                <span class="n">mean</span><span class="o">=</span><span class="n">mean_cond</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">cov</span><span class="o">=</span><span class="n">cov_cond</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span>
+            <span class="p">)</span>
+            <span class="n">df_missing</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">samples_missing</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">missing_vars</span><span class="p">)</span>
+
+            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="n">variables</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">ev_var</span><span class="p">,</span> <span class="n">ev_val</span> <span class="ow">in</span> <span class="n">evidence</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">df</span><span class="p">[</span><span class="n">ev_var</span><span class="p">]</span> <span class="o">=</span> <span class="n">ev_val</span>
+
+            <span class="k">for</span> <span class="n">mv</span> <span class="ow">in</span> <span class="n">missing_vars</span><span class="p">:</span>
+                <span class="n">df</span><span class="p">[</span><span class="n">mv</span><span class="p">]</span> <span class="o">=</span> <span class="n">df_missing</span><span class="p">[</span><span class="n">mv</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">variables</span><span class="p">]</span>
+
+        <span class="c1"># Step 5: Add do variables to the final dataframe</span>
+        <span class="k">for</span> <span class="n">do_var</span><span class="p">,</span> <span class="n">do_val</span> <span class="ow">in</span> <span class="n">do</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">df</span><span class="p">[</span><span class="n">do_var</span><span class="p">]</span> <span class="o">=</span> <span class="n">do_val</span>
+
+        <span class="c1"># Step 6: Remove latent variables if specified</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">df</span></div>
 
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.check_model">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.check_model">[docs]</a>
-    <span class="k">def</span> <span class="nf">check_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">check_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Checks the model for various errors. This method checks for the following</span>
 <span class="sd">        error -</span>
@@ -374,7 +590,7 @@
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.get_cardinality">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.get_cardinality">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_cardinality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Cardinality is not defined for continuous variables.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -383,7 +599,9 @@
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.fit">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.fit">[docs]</a>
-    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;mle&quot;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mle&quot;</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;LinearGaussianBayesianNetwork&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Estimates the parameters of the model using the given `data`.</span>
 
@@ -403,8 +621,10 @@
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import LinearGaussianBayesianNetwork</span>
-<span class="sd">        &gt;&gt;&gt; df = pd.DataFrame(np.random.normal(0, 1, (100, 3)), columns=[&#39;x1&#39;, &#39;x2&#39;, &#39;x3&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&#39;x1&#39;, &#39;x2&#39;), (&#39;x2&#39;, &#39;x3&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; df = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.normal(0, 1, (100, 3)), columns=[&quot;x1&quot;, &quot;x2&quot;, &quot;x3&quot;]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([(&quot;x1&quot;, &quot;x2&quot;), (&quot;x2&quot;, &quot;x3&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; model.fit(df)</span>
 <span class="sd">        &gt;&gt;&gt; model.cpds</span>
 <span class="sd">        [&lt;LinearGaussianCPD: P(x1) = N(-0.114; 0.911) at 0x7eb77d30cec0,</span>
@@ -455,7 +675,9 @@
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.predict">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.predict">[docs]</a>
-    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="s2">&quot;joint&quot;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">distribution</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;joint&quot;</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Predicts the distribution of the missing variable (i.e. missing columns) in the given dataset.</span>
 
@@ -470,7 +692,8 @@
 <span class="sd">            The list of variables on which the returned conditional distribution is defined on.</span>
 
 <span class="sd">        mu: np.array</span>
-<span class="sd">            The mean array of the conditional joint distribution over the missing variables corresponding to each row of data.</span>
+<span class="sd">            The mean array of the conditional joint distribution over</span>
+<span class="sd">              the missing variables corresponding to each row of data.</span>
 
 <span class="sd">        cov: np.array</span>
 <span class="sd">            The covariance of the conditional joint distribution over the missing variables.</span>
@@ -525,7 +748,7 @@
         <span class="k">return</span> <span class="p">([</span><span class="n">variable_order</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">missing_indexes</span><span class="p">],</span> <span class="n">mu_cond</span><span class="p">,</span> <span class="n">cov_cond</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">to_markov_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">to_markov_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        For now, to_markov_model method has not been implemented for LinearGaussianBayesianNetwork.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -536,7 +759,7 @@
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.is_imap">
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.is_imap">[docs]</a>
-    <span class="k">def</span> <span class="nf">is_imap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">JPD</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">is_imap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">JPD</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        For now, is_imap method has not been implemented for LinearGaussianBayesianNetwork.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -549,14 +772,14 @@
 <a class="viewcode-back" href="../../../models/gaussianbn.html#pgmpy.models.LinearGaussianBayesianNetwork.LinearGaussianBayesianNetwork.get_random">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span>
-        <span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-        <span class="n">edge_prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
-        <span class="n">node_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
+        <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">edge_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">node_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">latents</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">loc</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;LinearGaussianBayesianNetwork&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a randomly generated Linear Gaussian Bayesian Network on `n_nodes` variables</span>
 <span class="sd">        with edge probabiliy of `edge_prob` between variables.</span>
@@ -676,11 +899,7 @@
   </ul></li>
   </ul></li>
 </ul>
-</div><head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
-</head>
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>

@@ -4,13 +4,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pgmpy.estimators.ExhaustiveSearch &#8212; pgmpy 0.1.23 documentation</title>
+    <title>pgmpy.estimators.ExhaustiveSearch &#8212; 1.0.0 | pgmpy docs</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
-    <script src="../../../_static/documentation_options.js?v=20522496"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/_modules/pgmpy/estimators/ExhaustiveSearch.html" />
+    <link rel="icon" href="../../../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
    
@@ -38,7 +45,8 @@
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
-<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">StructureEstimator</span><span class="p">,</span> <span class="n">get_scoring_method</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">StructureEstimator</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators.StructureScore</span> <span class="kn">import</span> <span class="n">get_scoring_method</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span> <span class="nn">pgmpy.utils.mathext</span> <span class="kn">import</span> <span class="n">powerset</span>
 
@@ -72,7 +80,7 @@
 <span class="sd">        give wrong results in case of custom scoring methods.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">scoring_method</span><span class="o">=</span><span class="s2">&quot;k2&quot;</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">scoring_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ExhaustiveSearch</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span> <span class="o">=</span> <span class="n">get_scoring_method</span><span class="p">(</span>
             <span class="n">scoring_method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">use_cache</span>
@@ -101,18 +109,18 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ExhaustiveSearch</span>
-<span class="sd">        &gt;&gt;&gt; s = ExhaustiveSearch(pd.DataFrame(data={&#39;Temperature&#39;: [23, 19],</span>
-<span class="sd">                                                    &#39;Weather&#39;: [&#39;sunny&#39;, &#39;cloudy&#39;],</span>
-<span class="sd">                                                    &#39;Humidity&#39;: [65, 75]}))</span>
-<span class="sd">        &gt;&gt;&gt; list(s.all_dags())</span>
-<span class="sd">        [&lt;networkx.classes.digraph.DiGraph object at 0x7f6955216438&gt;,</span>
-<span class="sd">         &lt;networkx.classes.digraph.DiGraph object at 0x7f6955216518&gt;,</span>
-<span class="sd">        ....</span>
-<span class="sd">        &gt;&gt;&gt; [dag.edges() for dag in s.all_dags()]</span>
-<span class="sd">        [[], [(&#39;Humidity&#39;, &#39;Temperature&#39;)], [(&#39;Humidity&#39;, &#39;Weather&#39;)],</span>
-<span class="sd">        [(&#39;Temperature&#39;, &#39;Weather&#39;)], [(&#39;Temperature&#39;, &#39;Humidity&#39;)],</span>
-<span class="sd">        ....</span>
-<span class="sd">        [(&#39;Weather&#39;, &#39;Humidity&#39;), (&#39;Weather&#39;, &#39;Temperature&#39;), (&#39;Temperature&#39;, &#39;Humidity&#39;)]]</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(</span>
+<span class="sd">        ...     data={</span>
+<span class="sd">        ...         &quot;Temperature&quot;: [23, 19],</span>
+<span class="sd">        ...         &quot;Weather&quot;: [&quot;sunny&quot;, &quot;cloudy&quot;],</span>
+<span class="sd">        ...         &quot;Humidity&quot;: [65, 75],</span>
+<span class="sd">        ...     }</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; est = ExhaustiveSearch(data)</span>
+<span class="sd">        &gt;&gt;&gt; list(est.all_dags())</span>
+<span class="sd">        [&lt;networkx.classes.digraph.DiGraph object at 0x...&gt;, &lt;networkx.classes.digraph.DiGraph object at 0x...&gt;, ...]</span>
+<span class="sd">        &gt;&gt;&gt; [list(dag.edges()) for dag in est.all_dags()]</span>
+<span class="sd">        [[], [(&#39;Humidity&#39;, &#39;Temperature&#39;)], [(&#39;Humidity&#39;, &#39;Weather&#39;)], [(&#39;Temperature&#39;, &#39;Weather&#39;)], ...</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -153,37 +161,42 @@
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ExhaustiveSearch, K2</span>
+<span class="sd">        &gt;&gt;&gt; # Setting the random seed for reproducibility</span>
+<span class="sd">        &gt;&gt;&gt; np.random.seed(42)</span>
 <span class="sd">        &gt;&gt;&gt; # create random data sample with 3 variables, where B and C are identical:</span>
-<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 5, size=(5000, 2)), columns=list(&#39;AB&#39;))</span>
-<span class="sd">        &gt;&gt;&gt; data[&#39;C&#39;] = data[&#39;B&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.randint(low=0, high=5, size=(5000, 2)), columns=list(&quot;AB&quot;)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; data[&quot;C&quot;] = data[&quot;B&quot;]</span>
 <span class="sd">        &gt;&gt;&gt; searcher = ExhaustiveSearch(data, scoring_method=K2(data))</span>
 <span class="sd">        &gt;&gt;&gt; for score, model in searcher.all_scores():</span>
-<span class="sd">        ...   print(&quot;{0}\t{1}&quot;.format(score, model.edges()))</span>
-<span class="sd">        -24234.44977974726      [(&#39;A&#39;, &#39;B&#39;), (&#39;A&#39;, &#39;C&#39;)]</span>
-<span class="sd">        -24234.449760691063     [(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;A&#39;)]</span>
-<span class="sd">        -24234.449760691063     [(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;A&#39;)]</span>
-<span class="sd">        -24203.700955937973     [(&#39;A&#39;, &#39;B&#39;)]</span>
-<span class="sd">        -24203.700955937973     [(&#39;A&#39;, &#39;C&#39;)]</span>
-<span class="sd">        -24203.700936881774     [(&#39;B&#39;, &#39;A&#39;)]</span>
-<span class="sd">        -24203.700936881774     [(&#39;C&#39;, &#39;A&#39;)]</span>
-<span class="sd">        -24203.700936881774     [(&#39;B&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;A&#39;)]</span>
-<span class="sd">        -24172.952132128685     []</span>
-<span class="sd">        -16597.30920265254      [(&#39;A&#39;, &#39;B&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;)]</span>
-<span class="sd">        -16597.30920265254      [(&#39;A&#39;, &#39;B&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
-<span class="sd">        -16597.309183596342     [(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
-<span class="sd">        -16597.309183596342     [(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;A&#39;), (&#39;B&#39;, &#39;C&#39;)]</span>
-<span class="sd">        -16566.560378843253     [(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
-<span class="sd">        -16566.560378843253     [(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;)]</span>
-<span class="sd">        -16268.324549347722     [(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;)]</span>
-<span class="sd">        -16268.324549347722     [(&#39;A&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
-<span class="sd">        -16268.324530291524     [(&#39;B&#39;, &#39;A&#39;), (&#39;B&#39;, &#39;C&#39;)]</span>
-<span class="sd">        -16268.324530291524     [(&#39;B&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;A&#39;)]</span>
-<span class="sd">        -16268.324530291524     [(&#39;B&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
-<span class="sd">        -16268.324530291524     [(&#39;C&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
-<span class="sd">        -16268.324530291524     [(&#39;B&#39;, &#39;A&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;A&#39;)]</span>
-<span class="sd">        -16268.324530291524     [(&#39;B&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
-<span class="sd">        -16237.575725538434     [(&#39;B&#39;, &#39;C&#39;)]</span>
-<span class="sd">        -16237.575725538434     [(&#39;C&#39;, &#39;B&#39;)]</span>
+<span class="sd">        ...     print(&quot;{0}\t{1}&quot;.format(score, model.edges()))</span>
+<span class="sd">        ...</span>
+<span class="sd">        -24240.048463058432        [(&#39;A&#39;, &#39;B&#39;), (&#39;A&#39;, &#39;C&#39;)]</span>
+<span class="sd">        -24240.03793877268        [(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;A&#39;)]</span>
+<span class="sd">        -24240.03793877268        [(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;A&#39;)]</span>
+<span class="sd">        -24207.21672011369        [(&#39;A&#39;, &#39;B&#39;)]</span>
+<span class="sd">        -24207.21672011369        [(&#39;A&#39;, &#39;C&#39;)]</span>
+<span class="sd">        -24207.20619582794        [(&#39;B&#39;, &#39;A&#39;)]</span>
+<span class="sd">        -24207.20619582794        [(&#39;C&#39;, &#39;A&#39;)]</span>
+<span class="sd">        -24174.38497716895        []</span>
+<span class="sd">        -24143.64511922098        [(&#39;B&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;A&#39;)]</span>
+<span class="sd">        -16601.326068342074        [(&#39;A&#39;, &#39;B&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
+<span class="sd">        -16601.32606834207        [(&#39;A&#39;, &#39;B&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;)]</span>
+<span class="sd">        -16601.31554405632        [(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
+<span class="sd">        -16601.31554405632        [(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;A&#39;)]</span>
+<span class="sd">        -16568.494325397332        [(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
+<span class="sd">        -16568.494325397332        [(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;)]</span>
+<span class="sd">        -16272.269477532585        [(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;)]</span>
+<span class="sd">        -16272.269477532585        [(&#39;A&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
+<span class="sd">        -16272.258953246836        [(&#39;B&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;A&#39;)]</span>
+<span class="sd">        -16272.258953246836        [(&#39;B&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;A&#39;)]</span>
+<span class="sd">        -16272.258953246836        [(&#39;B&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
+<span class="sd">        -16272.258953246836        [(&#39;C&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
+<span class="sd">        -16239.437734587846        [(&#39;B&#39;, &#39;C&#39;)]</span>
+<span class="sd">        -16239.437734587846        [(&#39;C&#39;, &#39;B&#39;)]</span>
+<span class="sd">        -16208.697876639875        [(&#39;B&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;A&#39;)]</span>
+<span class="sd">        -16208.697876639875        [(&#39;B&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;A&#39;), (&#39;C&#39;, &#39;B&#39;)]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">scored_dags</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
@@ -210,16 +223,18 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ExhaustiveSearch</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ExhaustiveSearch, K2</span>
 <span class="sd">        &gt;&gt;&gt; # create random data sample with 3 variables, where B and C are identical:</span>
-<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 5, size=(5000, 2)), columns=list(&#39;AB&#39;))</span>
-<span class="sd">        &gt;&gt;&gt; data[&#39;C&#39;] = data[&#39;B&#39;]</span>
-<span class="sd">        &gt;&gt;&gt; est = ExhaustiveSearch(data)</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.randint(low=0, high=5, size=(5000, 2)), columns=list(&quot;AB&quot;)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; data[&quot;C&quot;] = data[&quot;B&quot;]</span>
+<span class="sd">        &gt;&gt;&gt; est = ExhaustiveSearch(data, scoring_method=K2(data))</span>
 <span class="sd">        &gt;&gt;&gt; best_model = est.estimate()</span>
 <span class="sd">        &gt;&gt;&gt; best_model</span>
-<span class="sd">        &lt;pgmpy.base.DAG.DAG object at 0x7f695c535470&gt;</span>
+<span class="sd">        &lt;pgmpy.base.DAG.DAG object at 0x...&gt;</span>
 <span class="sd">        &gt;&gt;&gt; best_model.edges()</span>
-<span class="sd">        [(&#39;B&#39;, &#39;C&#39;)]</span>
+<span class="sd">        OutEdgeView([(&#39;B&#39;, &#39;A&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;A&#39;)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">best_dag</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_dags</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span><span class="o">.</span><span class="n">score</span><span class="p">)</span>
@@ -252,21 +267,29 @@
 
 
 
-<h3>Navigation</h3>
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../started/base.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../base/base.html">Base Model Structures</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Supported Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../factors/base.html">Parameterization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/base.html">Exact Inference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../exact_infer/model_testing.html">Model Testing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../approx_infer/base.html">Approximate Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../causal_infer/base.html">Causal Inference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../param_estimator/base.html">Parameter Estimation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Structure Learning</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for testing models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for Testing Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Example Notebooks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial Notebooks</a></li>
 </ul>
 
@@ -278,15 +301,7 @@
   </ul></li>
   </ul></li>
 </ul>
-</div>
-
-
-
-
-
-
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>
@@ -296,25 +311,15 @@
 
   gtag('config', 'G-HCFR07M31W');
 </script>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &#169;2023, Ankur Ankan.
+      &#169;2025, Ankur Ankan.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.4.7</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
     </div>

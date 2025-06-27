@@ -46,18 +46,17 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
+<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
+<span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">compat_fns</span>
+
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">pyparsing</span> <span class="k">as</span> <span class="nn">pp</span>
 <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
-        <span class="n">e</span><span class="o">.</span><span class="n">msg</span>
-        <span class="o">+</span> <span class="s2">&quot;. pyparsing is required for using read/write methods. Please install using: pip install pyparsing.&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2"> . pyparsing is required for using read/write methods. Please install using: pip install pyparsing.&quot;</span>
     <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
-
-<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">State</span><span class="p">,</span> <span class="n">TabularCPD</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
-<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">compat_fns</span>
-<span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
 
 
 <div class="viewcode-block" id="XMLBIFReader">
@@ -338,9 +337,9 @@
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.readwrite import XMLBIFWriter</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
-<span class="sd">    &gt;&gt;&gt; model = get_example_model(&#39;asia&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; model = get_example_model(&quot;asia&quot;)</span>
 <span class="sd">    &gt;&gt;&gt; writer = XMLBIFWriter(model)</span>
-<span class="sd">    &gt;&gt;&gt; writer.write_xmlbif(&#39;asia.xml&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; writer.write_xmlbif(&quot;asia.xml&quot;)</span>
 
 <span class="sd">    Reference</span>
 <span class="sd">    ---------</span>
@@ -462,6 +461,7 @@
 
             <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">states</span><span class="p">:</span>
                 <span class="n">state_tag</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="n">var</span><span class="p">],</span> <span class="s2">&quot;OUTCOME&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">variable_name</span> <span class="o">=</span> <span class="n">var</span>  <span class="c1"># Set the current variable name</span>
                 <span class="n">state_tag</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_valid_state_name</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
                 <span class="n">outcome_tag</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state_tag</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">outcome_tag</span></div>
@@ -469,10 +469,22 @@
 
     <span class="k">def</span> <span class="nf">_make_valid_state_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform the input state_name into a valid state in XMLBIF.</span>
-<span class="sd">        XMLBIF states must start with a letter an only contain letters,</span>
+<span class="sd">        XMLBIF states must start with a letter and only contain letters,</span>
 <span class="sd">        numbers and underscores.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">s</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">state_name</span><span class="p">)</span>
+
+        <span class="c1"># Warn about commas in state names as they can cause issues when loading</span>
+        <span class="k">if</span> <span class="s2">&quot;,&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+            <span class="n">var_name</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">variable_name</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;variable_name&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;unknown&quot;</span>
+            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;State name &#39;</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&#39; for variable &#39;</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">&#39; contains commas. &quot;</span>
+                <span class="s2">&quot;This may cause issues when loading the file. Consider removing any special characters.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Keep existing transformation logic</span>
         <span class="n">s_fixed</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">pp</span><span class="o">.</span><span class="n">CharsNotIn</span><span class="p">(</span><span class="n">pp</span><span class="o">.</span><span class="n">alphanums</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span>
             <span class="o">.</span><span class="n">setParseAction</span><span class="p">(</span><span class="n">pp</span><span class="o">.</span><span class="n">replaceWith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">))</span>
@@ -484,7 +496,7 @@
         <span class="k">if</span> <span class="n">s</span> <span class="o">!=</span> <span class="n">s_fixed</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;State name &#39;</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">&#39; has been modified to &#39;</span><span class="si">{</span><span class="n">s_fixed</span><span class="si">}</span><span class="s2">&#39; to comply with XMLBIF format requirements. &quot;</span>
-                <span class="s2">&quot;XMLBIF states must start with a letter and only contain letters, numbers, and underscores.&quot;</span>
+                <span class="s2">&quot;XMLBIF states must start with a letter and only contain letters, numbers, and underscores.&quot;</span>  <span class="c1"># noqa: E501</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">s_fixed</span>
 
@@ -598,9 +610,9 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.readwrite import XMLBIFWriter</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
-<span class="sd">        &gt;&gt;&gt; model = get_example_model(&#39;asia&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; model = get_example_model(&quot;asia&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; writer = XMLBIFWriter(model)</span>
-<span class="sd">        &gt;&gt;&gt; writer.write_xmlbif(&#39;asia.xml&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; writer.write_xmlbif(&quot;asia.xml&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
             <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">())</span></div>
@@ -662,11 +674,7 @@
   </ul></li>
   </ul></li>
 </ul>
-</div><head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
-</head>
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>

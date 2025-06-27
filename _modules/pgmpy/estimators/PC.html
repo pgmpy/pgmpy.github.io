@@ -41,16 +41,29 @@
 <span></span><span class="ch">#!/usr/bin/env python</span>
 
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">combinations</span><span class="p">,</span> <span class="n">permutations</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Collection</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">FrozenSet</span><span class="p">,</span>
+    <span class="n">Hashable</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Set</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
 <span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
-<span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">PDAG</span>
+<span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span><span class="p">,</span> <span class="n">PDAG</span><span class="p">,</span> <span class="n">UndirectedGraph</span>
 <span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">ExpertKnowledge</span><span class="p">,</span> <span class="n">StructureEstimator</span>
-<span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="kn">import</span> <span class="n">get_ci_test</span>
+<span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="kn">import</span> <span class="n">get_callable_ci_test</span>
 <span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span> <span class="nn">pgmpy.independencies</span> <span class="kn">import</span> <span class="n">Independencies</span>
 
 
 <div class="viewcode-block" id="PC">
@@ -75,31 +88,37 @@
 <span class="sd">    ----------</span>
 <span class="sd">    [1] Koller &amp; Friedman, Probabilistic Graphical Models - Principles and Techniques,</span>
 <span class="sd">        2009, Section 18.2</span>
-<span class="sd">    [2] Neapolitan, Learning Bayesian Networks, Section 10.1.2 for the PC algorithm (page 550), http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf</span>
+<span class="sd">    [2] Neapolitan, Learning Bayesian Networks, Section 10.1.2 for the PC algorithm (page 550),</span>
+<span class="sd">      http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">independencies</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">independencies</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Independencies</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">PC</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">independencies</span><span class="o">=</span><span class="n">independencies</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="PC.estimate">
 <a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.PC.estimate">[docs]</a>
     <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">variant</span><span class="o">=</span><span class="s2">&quot;parallel&quot;</span><span class="p">,</span>
-        <span class="n">ci_test</span><span class="o">=</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span>
-        <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;pdag&quot;</span><span class="p">,</span>
-        <span class="n">significance_level</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
-        <span class="n">max_cond_vars</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-        <span class="n">expert_knowledge</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">enforce_expert_knowledge</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;parallel&quot;</span><span class="p">,</span>
+        <span class="n">ci_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">return_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pdag&quot;</span><span class="p">,</span>
+        <span class="n">significance_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">max_cond_vars</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">expert_knowledge</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ExpertKnowledge</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">enforce_expert_knowledge</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">DAG</span><span class="p">,</span> <span class="n">PDAG</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Estimates a DAG/PDAG from the given dataset using the PC algorithm which</span>
 <span class="sd">        is a constraint-based structure learning algorithm[1]. The independencies</span>
-<span class="sd">        in the dataset are identified by doing statistical independece test. This</span>
+<span class="sd">        in the dataset are identified by doing statistical independence test. This</span>
 <span class="sd">        method returns a DAG/PDAG structure which is faithful to the independencies</span>
 <span class="sd">        implied by the dataset.</span>
 
@@ -122,7 +141,7 @@
 <span class="sd">                        `independencies` must be specified.</span>
 <span class="sd">                &quot;chi_square&quot;: Uses the Chi-Square independence test. This works</span>
 <span class="sd">                        only for discrete datasets.</span>
-<span class="sd">                &quot;pearsonr&quot;: Uses the pertial correlation based on pearson</span>
+<span class="sd">                &quot;pearsonr&quot;: Uses the partial correlation based on pearson</span>
 <span class="sd">                        correlation coefficient to test independence. This works</span>
 <span class="sd">                        only for continuous datasets.</span>
 <span class="sd">                &quot;g_sq&quot;: G-test. Works only for discrete datasets.</span>
@@ -201,13 +220,13 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import PC</span>
-<span class="sd">        &gt;&gt;&gt; model = get_example_model(&#39;alarm&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; model = get_example_model(&quot;alarm&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; data = model.simulate(n_samples=1000)</span>
 <span class="sd">        &gt;&gt;&gt; est = PC(data)</span>
-<span class="sd">        &gt;&gt;&gt; model_chi = est.estimate(ci_test=&#39;chi_square&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; model_chi = est.estimate(ci_test=&quot;chi_square&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; print(len(model_chi.edges()))</span>
 <span class="sd">        28</span>
-<span class="sd">        &gt;&gt;&gt; model_gsq, _ = est.estimate(ci_test=&#39;g_sq&#39;, return_type=&#39;skeleton&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; model_gsq, _ = est.estimate(ci_test=&quot;g_sq&quot;, return_type=&quot;skeleton&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; print(len(model_gsq.edges()))</span>
 <span class="sd">        33</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -217,7 +236,7 @@
                 <span class="sa">f</span><span class="s2">&quot;variant must be one of: orig, stable, or parallel. Got: </span><span class="si">{</span><span class="n">variant</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
-        <span class="n">ci_test</span> <span class="o">=</span> <span class="n">get_ci_test</span><span class="p">(</span>
+        <span class="n">ci_test</span> <span class="o">=</span> <span class="n">get_callable_ci_test</span><span class="p">(</span>
             <span class="n">ci_test</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">independencies</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">independencies</span>
         <span class="p">)</span>
 
@@ -277,16 +296,16 @@
 <a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.PC.build_skeleton">[docs]</a>
     <span class="k">def</span> <span class="nf">build_skeleton</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">variant</span><span class="o">=</span><span class="s2">&quot;stable&quot;</span><span class="p">,</span>
-        <span class="n">ci_test</span><span class="o">=</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span>
-        <span class="n">significance_level</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
-        <span class="n">max_cond_vars</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-        <span class="n">expert_knowledge</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">enforce_expert_knowledge</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;stable&quot;</span><span class="p">,</span>
+        <span class="n">ci_test</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">significance_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">max_cond_vars</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">expert_knowledge</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ExpertKnowledge</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">enforce_expert_knowledge</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">UndirectedGraph</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Estimates a graph skeleton (UndirectedGraph) from a set of independencies</span>
 <span class="sd">        using (the first part of) the PC algorithm. The independencies can either be</span>
@@ -296,7 +315,7 @@
 
 <span class="sd">        If an Independencies-instance is passed, the contained IndependenceAssertions</span>
 <span class="sd">        have to admit a faithful BN representation. This is the case if</span>
-<span class="sd">        they are obtained as a set of d-seperations of some Bayesian network or</span>
+<span class="sd">        they are obtained as a set of d-separations of some Bayesian network or</span>
 <span class="sd">        if the independence assertions are closed under the semi-graphoid axioms.</span>
 <span class="sd">        Otherwise, the procedure may fail to identify the correct structure.</span>
 
@@ -310,7 +329,7 @@
 
 <span class="sd">        separating_sets: dict</span>
 <span class="sd">            A dict containing for each pair of not directly connected nodes a</span>
-<span class="sd">            separating set (&quot;witnessing set&quot;) of variables that makes then</span>
+<span class="sd">            separating set (&quot;witnessing set&quot;) of variables that makes them</span>
 <span class="sd">            conditionally independent. (needed for edge orientation procedures)</span>
 
 <span class="sd">        References</span>
@@ -323,7 +342,9 @@
         <span class="c1"># Initialize initial values and structures.</span>
         <span class="n">lim_neighbors</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">separating_sets</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="n">ci_test</span> <span class="o">=</span> <span class="n">get_ci_test</span><span class="p">(</span><span class="n">ci_test</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">ci_test</span> <span class="o">=</span> <span class="n">get_callable_ci_test</span><span class="p">(</span>
+            <span class="n">ci_test</span><span class="p">,</span> <span class="n">full</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span>
+        <span class="p">)</span>  <span class="c1"># this is called twice, before on PC estimate</span>
 
         <span class="k">if</span> <span class="n">expert_knowledge</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">()</span>
@@ -373,7 +394,6 @@
 
             <span class="k">elif</span> <span class="n">variant</span> <span class="o">==</span> <span class="s2">&quot;stable&quot;</span><span class="p">:</span>
                 <span class="c1"># In case of stable, precompute neighbors as this is the stable algorithm.</span>
-                <span class="n">neighbors</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">graph</span><span class="p">[</span><span class="n">node</span><span class="p">])</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
                 <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
                     <span class="k">if</span> <span class="p">(</span><span class="n">enforce_expert_knowledge</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
                         <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">required_edges</span>
@@ -397,7 +417,6 @@
                                 <span class="k">break</span>
 
             <span class="k">elif</span> <span class="n">variant</span> <span class="o">==</span> <span class="s2">&quot;parallel&quot;</span><span class="p">:</span>
-                <span class="n">neighbors</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">graph</span><span class="p">[</span><span class="n">node</span><span class="p">])</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
 
                 <span class="k">def</span> <span class="nf">_parallel_fun</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
                     <span class="k">for</span> <span class="n">separating_set</span> <span class="ow">in</span> <span class="n">PC</span><span class="o">.</span><span class="n">_get_potential_sepsets</span><span class="p">(</span>
@@ -447,12 +466,19 @@
                 <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span><span class="p">:</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">max_cond_vars</span> <span class="o">-</span> <span class="n">lim_neighbors</span><span class="p">)</span>
             <span class="n">pbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">graph</span><span class="p">,</span> <span class="n">separating_sets</span></div>
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_get_potential_sepsets</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">temporal_ordering</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">lim_neighbors</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_potential_sepsets</span><span class="p">(</span>
+        <span class="n">u</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span>
+        <span class="n">v</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span>
+        <span class="n">temporal_ordering</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="n">graph</span><span class="p">:</span> <span class="n">UndirectedGraph</span><span class="p">,</span>
+        <span class="n">lim_neighbors</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Collection</span><span class="p">[</span><span class="n">Tuple</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the temporally consistent superset of separating set of u, v.</span>
 
@@ -469,7 +495,7 @@
 <span class="sd">            The node along with u whose separating set is being calculated.</span>
 
 <span class="sd">        temporal_ordering: dict</span>
-<span class="sd">            The temporal ordering of variables according to prior knowledgee.</span>
+<span class="sd">            The temporal ordering of variables according to prior knowledge.</span>
 
 <span class="sd">        graph: UndirectedGraph</span>
 <span class="sd">            The graph where separating sets are being calculated for the edges.</span>
@@ -505,7 +531,11 @@
 <div class="viewcode-block" id="PC.orient_colliders">
 <a class="viewcode-back" href="../../../structure_estimator/pc.html#pgmpy.estimators.PC.orient_colliders">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">orient_colliders</span><span class="p">(</span><span class="n">skeleton</span><span class="p">,</span> <span class="n">separating_sets</span><span class="p">,</span> <span class="n">temporal_ordering</span><span class="o">=</span><span class="nb">dict</span><span class="p">()):</span>
+    <span class="k">def</span> <span class="nf">orient_colliders</span><span class="p">(</span>
+        <span class="n">skeleton</span><span class="p">:</span> <span class="n">UndirectedGraph</span><span class="p">,</span>
+        <span class="n">separating_sets</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">FrozenSet</span><span class="p">,</span> <span class="n">Set</span><span class="p">],</span>
+        <span class="n">temporal_ordering</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PDAG</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Orients the edges that form v-structures in a graph skeleton</span>
 <span class="sd">        based on information from `separating_sets` to form a DAG pattern (PDAG).</span>
@@ -540,12 +570,14 @@
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; import numpy as np</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import PC</span>
-<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(np.random.randint(0, 4, size=(5000, 3)), columns=list(&#39;ABD&#39;))</span>
-<span class="sd">        &gt;&gt;&gt; data[&#39;C&#39;] = data[&#39;A&#39;] - data[&#39;B&#39;]</span>
-<span class="sd">        &gt;&gt;&gt; data[&#39;D&#39;] += data[&#39;A&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(</span>
+<span class="sd">        ...     np.random.randint(0, 4, size=(5000, 3)), columns=list(&quot;ABD&quot;)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; data[&quot;C&quot;] = data[&quot;A&quot;] - data[&quot;B&quot;]</span>
+<span class="sd">        &gt;&gt;&gt; data[&quot;D&quot;] += data[&quot;A&quot;]</span>
 <span class="sd">        &gt;&gt;&gt; c = PC(data)</span>
 <span class="sd">        &gt;&gt;&gt; pdag = c.orient_colliders(*c.build_skeleton())</span>
-<span class="sd">        &gt;&gt;&gt; pdag.edges() # edges: A-&gt;C, B-&gt;C, A--D (not directed)</span>
+<span class="sd">        &gt;&gt;&gt; pdag.edges()  # edges: A-&gt;C, B-&gt;C, A--D (not directed)</span>
 <span class="sd">        OutEdgeView([(&#39;B&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;D&#39;), (&#39;D&#39;, &#39;A&#39;)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -636,11 +668,7 @@
   </ul></li>
   </ul></li>
 </ul>
-</div><head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
-</head>
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>

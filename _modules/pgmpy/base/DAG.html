@@ -41,6 +41,8 @@
 <span></span><span class="ch">#!/usr/bin/env python3</span>
 
 <span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">os</span> <span class="kn">import</span> <span class="n">PathLike</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -81,12 +83,12 @@
 
 <span class="sd">    Add one node at a time:</span>
 
-<span class="sd">    &gt;&gt;&gt; G.add_node(node=&#39;a&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; G.add_node(node=&quot;a&quot;)</span>
 
 <span class="sd">    Add the nodes from any container (a list, set or tuple or the nodes</span>
 <span class="sd">    from another graph).</span>
 
-<span class="sd">    &gt;&gt;&gt; G.add_nodes_from(nodes=[&#39;a&#39;, &#39;b&#39;])</span>
+<span class="sd">    &gt;&gt;&gt; G.add_nodes_from(nodes=[&quot;a&quot;, &quot;b&quot;])</span>
 
 <span class="sd">    **Edges:**</span>
 
@@ -94,11 +96,11 @@
 
 <span class="sd">    Add one edge,</span>
 
-<span class="sd">    &gt;&gt;&gt; G.add_edge(u=&#39;a&#39;, v=&#39;b&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; G.add_edge(u=&quot;a&quot;, v=&quot;b&quot;)</span>
 
 <span class="sd">    a list of edges,</span>
 
-<span class="sd">    &gt;&gt;&gt; G.add_edges_from(ebunch=[(&#39;a&#39;, &#39;b&#39;), (&#39;b&#39;, &#39;c&#39;)])</span>
+<span class="sd">    &gt;&gt;&gt; G.add_edges_from(ebunch=[(&quot;a&quot;, &quot;b&quot;), (&quot;b&quot;, &quot;c&quot;)])</span>
 
 <span class="sd">    If some edges connect nodes not yet in the model, the nodes</span>
 <span class="sd">    are added automatically. There are no errors when adding</span>
@@ -108,7 +110,7 @@
 
 <span class="sd">    Many common graph features allow python syntax for speed reporting.</span>
 
-<span class="sd">    &gt;&gt;&gt; &#39;a&#39; in G     # check if node in graph</span>
+<span class="sd">    &gt;&gt;&gt; &quot;a&quot; in G  # check if node in graph</span>
 <span class="sd">    True</span>
 <span class="sd">    &gt;&gt;&gt; len(G)  # number of nodes in graph</span>
 <span class="sd">    3</span>
@@ -116,20 +118,9 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">latents</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span>
-        <span class="n">lavaan_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">dagitty_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">ebunch</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">latents</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
     <span class="p">):</span>
-        <span class="k">if</span> <span class="n">lavaan_str</span><span class="p">:</span>
-            <span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="p">,</span> <span class="n">err_corr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">parse_lavaan</span><span class="p">(</span><span class="n">lavaan_str</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">err_corr</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Residual correlations </span><span class="si">{</span><span class="n">err_corr</span><span class="si">}</span><span class="s2"> are ignored in DAG. Use the SEM class to keep them.&quot;</span>
-                <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">dagitty_str</span><span class="p">:</span>
-            <span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span> <span class="o">=</span> <span class="n">parse_dagitty</span><span class="p">(</span><span class="n">dagitty_str</span><span class="p">)</span>
-
         <span class="nb">super</span><span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">ebunch</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">latents</span><span class="p">)</span>
         <span class="n">cycles</span> <span class="o">=</span> <span class="p">[]</span>
@@ -146,7 +137,11 @@
 <div class="viewcode-block" id="DAG.from_lavaan">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.from_lavaan">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_lavaan</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_lavaan</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">string</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="n">PathLike</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DAG&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes a `DAG` instance using lavaan syntax.</span>
 
@@ -169,16 +164,23 @@
             <span class="n">lavaan_str</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either `filename` or `string` need to be specified&quot;</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">lavaan_str</span><span class="o">=</span><span class="n">lavaan_str</span><span class="p">)</span></div>
+        <span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="p">,</span> <span class="n">err_corr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">parse_lavaan</span><span class="p">(</span><span class="n">lavaan_str</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">err_corr</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Residual correlations </span><span class="si">{</span><span class="n">err_corr</span><span class="si">}</span><span class="s2"> are ignored in DAG. Use the SEM class to keep them.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DAG.from_dagitty">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.from_dagitty">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_dagitty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">from_dagitty</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DAG&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes a `DAG` instance using DAGitty syntax.</span>
+
+<span class="sd">        Creates a `DAG` from the dagitty string. If parameter `beta` is specified in the DAGitty</span>
+<span class="sd">        string, the method returns a `LinearGaussianBayesianNetwork` instead of a plain `DAG`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -192,6 +194,22 @@
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
+<span class="sd">        &gt;&gt;&gt; dag = DAG.from_dagitty(</span>
+<span class="sd">        ...     &quot;dag{&#39;carry matches&#39; [latent] cancer [outcome] smoking -&gt; &#39;carry matches&#39; [beta=0.2] smoking -&gt; cancer [beta=0.5] &#39;carry matches&#39; -&gt; cancer }&quot;</span>
+<span class="sd">        ... )</span>
+
+<span class="sd">        Creating a Linear Gaussian Bayesian network from dagitty:</span>
+
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import LinearGaussianBayesianNetwork as LGBN</span>
+
+<span class="sd">        # Specifying beta creates a LinearGaussianBayesianNetwork instance</span>
+<span class="sd">        &gt;&gt;&gt; dag = DAG.from_dagitty(&quot;dag{X -&gt; Y [beta=0.3] Y -&gt; Z [beta=0.1]}&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; data = dag.simulate(n_samples=int(1e4))</span>
+
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import LinearGaussianBayesianNetwork as LGBN</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">filename</span><span class="p">:</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -201,12 +219,54 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either `filename` or `string` need to be specified&quot;</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">dagitty_str</span><span class="o">=</span><span class="n">dagitty_str</span><span class="p">)</span></div>
+        <span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="p">,</span> <span class="n">coefs</span><span class="p">,</span> <span class="n">nodes</span> <span class="o">=</span> <span class="n">parse_dagitty</span><span class="p">(</span><span class="n">dagitty_str</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coefs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">dag</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">)</span>
+            <span class="n">dag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dag</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">pgmpy.factors.continuous</span> <span class="kn">import</span> <span class="n">LinearGaussianCPD</span>
+            <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">LinearGaussianBayesianNetwork</span>
+
+            <span class="n">lgbn</span> <span class="o">=</span> <span class="n">LinearGaussianBayesianNetwork</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">)</span>
+            <span class="n">lgbn</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+
+            <span class="n">std</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">intercept</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="n">cpds</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lgbn</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
+                <span class="n">parents</span> <span class="o">=</span> <span class="n">lgbn</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">coefs</span><span class="p">:</span>
+                    <span class="n">coefs</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+                <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
+
+                <span class="n">beta</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">beta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">intercept</span>
+
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ev</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parents</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">ev</span> <span class="ow">in</span> <span class="n">coefs</span><span class="p">[</span><span class="n">var</span><span class="p">]:</span>
+                        <span class="n">beta</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">coefs</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">ev</span><span class="p">]</span>
+
+                <span class="n">cpd</span> <span class="o">=</span> <span class="n">LinearGaussianCPD</span><span class="p">(</span>
+                    <span class="n">variable</span><span class="o">=</span><span class="n">var</span><span class="p">,</span>
+                    <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+                    <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">,</span>
+                    <span class="n">evidence</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cpd</span><span class="p">)</span>
+            <span class="n">lgbn</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">lgbn</span></div>
 
 
 <div class="viewcode-block" id="DAG.add_node">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.add_node">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latent</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">add_node</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">latent</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds a single node to the Graph.</span>
 
@@ -225,19 +285,19 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; G = DAG()</span>
-<span class="sd">        &gt;&gt;&gt; G.add_node(node=&#39;A&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; G.add_node(node=&quot;A&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; sorted(G.nodes())</span>
 <span class="sd">        [&#39;A&#39;]</span>
 
 <span class="sd">        Adding a node with some weight.</span>
 
-<span class="sd">        &gt;&gt;&gt; G.add_node(node=&#39;B&#39;, weight=0.3)</span>
+<span class="sd">        &gt;&gt;&gt; G.add_node(node=&quot;B&quot;, weight=0.3)</span>
 
 <span class="sd">        The weight of these nodes can be accessed as:</span>
 
-<span class="sd">        &gt;&gt;&gt; G.nodes[&#39;B&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; G.nodes[&quot;B&quot;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.3}</span>
-<span class="sd">        &gt;&gt;&gt; G.nodes[&#39;A&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; G.nodes[&quot;A&quot;]</span>
 <span class="sd">        {&#39;weight&#39;: None}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -257,7 +317,12 @@
 
 <div class="viewcode-block" id="DAG.add_nodes_from">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.add_nodes_from">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latent</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">add_nodes_from</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">nodes</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">],</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">latent</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add multiple nodes to the Graph.</span>
 
@@ -266,14 +331,14 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        nodes: iterable container</span>
-<span class="sd">            A container of nodes (list, dict, set, or any hashable python</span>
+<span class="sd">            A container (list, dict, set) of nodes (str, int or any hashable python</span>
 <span class="sd">            object).</span>
 
 <span class="sd">        weights: list, tuple (default=None)</span>
 <span class="sd">            A container of weights (int, float). The weight value at index i</span>
 <span class="sd">            is associated with the variable at index i.</span>
 
-<span class="sd">        latent: list, tuple (default=False)</span>
+<span class="sd">        latent: bool, list, tuple (default=False)</span>
 <span class="sd">            A container of boolean. The value at index i tells whether the</span>
 <span class="sd">            node at index i is latent or not.</span>
 
@@ -281,18 +346,18 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; G = DAG()</span>
-<span class="sd">        &gt;&gt;&gt; G.add_nodes_from(nodes=[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; G.add_nodes_from(nodes=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;])</span>
 <span class="sd">        &gt;&gt;&gt; G.nodes()</span>
 <span class="sd">        NodeView((&#39;A&#39;, &#39;B&#39;, &#39;C&#39;))</span>
 
 <span class="sd">        Adding nodes with weights:</span>
 
-<span class="sd">        &gt;&gt;&gt; G.add_nodes_from(nodes=[&#39;D&#39;, &#39;E&#39;], weights=[0.3, 0.6])</span>
-<span class="sd">        &gt;&gt;&gt; G.nodes[&#39;D&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; G.add_nodes_from(nodes=[&quot;D&quot;, &quot;E&quot;], weights=[0.3, 0.6])</span>
+<span class="sd">        &gt;&gt;&gt; G.nodes[&quot;D&quot;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.3}</span>
-<span class="sd">        &gt;&gt;&gt; G.nodes[&#39;E&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; G.nodes[&quot;E&quot;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.6}</span>
-<span class="sd">        &gt;&gt;&gt; G.nodes[&#39;A&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; G.nodes[&quot;A&quot;]</span>
 <span class="sd">        {&#39;weight&#39;: None}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
@@ -316,12 +381,11 @@
 
 <div class="viewcode-block" id="DAG.add_edge">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.add_edge">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add an edge between u and v.</span>
 
-<span class="sd">        The nodes u and v will be automatically added if they are</span>
-<span class="sd">        not already in the graph.</span>
+<span class="sd">        The nodes u and v will be automatically added if they are not already in the graph.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -335,8 +399,8 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; G = DAG()</span>
-<span class="sd">        &gt;&gt;&gt; G.add_nodes_from(nodes=[&#39;Alice&#39;, &#39;Bob&#39;, &#39;Charles&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; G.add_edge(u=&#39;Alice&#39;, v=&#39;Bob&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; G.add_nodes_from(nodes=[&quot;Alice&quot;, &quot;Bob&quot;, &quot;Charles&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; G.add_edge(u=&quot;Alice&quot;, v=&quot;Bob&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; G.nodes()</span>
 <span class="sd">        NodeView((&#39;Alice&#39;, &#39;Bob&#39;, &#39;Charles&#39;))</span>
 <span class="sd">        &gt;&gt;&gt; G.edges()</span>
@@ -344,7 +408,7 @@
 
 <span class="sd">        When the node is not already present in the graph:</span>
 
-<span class="sd">        &gt;&gt;&gt; G.add_edge(u=&#39;Alice&#39;, v=&#39;Ankur&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; G.add_edge(u=&quot;Alice&quot;, v=&quot;Ankur&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; G.nodes()</span>
 <span class="sd">        NodeView((&#39;Alice&#39;, &#39;Ankur&#39;, &#39;Bob&#39;, &#39;Charles&#39;))</span>
 <span class="sd">        &gt;&gt;&gt; G.edges()</span>
@@ -352,8 +416,8 @@
 
 <span class="sd">        Adding edges with weight:</span>
 
-<span class="sd">        &gt;&gt;&gt; G.add_edge(&#39;Ankur&#39;, &#39;Maria&#39;, weight=0.1)</span>
-<span class="sd">        &gt;&gt;&gt; G.edge[&#39;Ankur&#39;][&#39;Maria&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; G.add_edge(&quot;Ankur&quot;, &quot;Maria&quot;, weight=0.1)</span>
+<span class="sd">        &gt;&gt;&gt; G.edge[&quot;Ankur&quot;][&quot;Maria&quot;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.1}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span></div>
@@ -361,7 +425,11 @@
 
 <div class="viewcode-block" id="DAG.add_edges_from">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.add_edges_from">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_edges_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">add_edges_from</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ebunch</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]],</span>
+        <span class="n">weights</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add all the edges in ebunch.</span>
 
@@ -385,8 +453,8 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; G = DAG()</span>
-<span class="sd">        &gt;&gt;&gt; G.add_nodes_from(nodes=[&#39;Alice&#39;, &#39;Bob&#39;, &#39;Charles&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; G.add_edges_from(ebunch=[(&#39;Alice&#39;, &#39;Bob&#39;), (&#39;Bob&#39;, &#39;Charles&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; G.add_nodes_from(nodes=[&quot;Alice&quot;, &quot;Bob&quot;, &quot;Charles&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; G.add_edges_from(ebunch=[(&quot;Alice&quot;, &quot;Bob&quot;), (&quot;Bob&quot;, &quot;Charles&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; G.nodes()</span>
 <span class="sd">        NodeView((&#39;Alice&#39;, &#39;Bob&#39;, &#39;Charles&#39;))</span>
 <span class="sd">        &gt;&gt;&gt; G.edges()</span>
@@ -394,7 +462,7 @@
 
 <span class="sd">        When the node is not already in the model:</span>
 
-<span class="sd">        &gt;&gt;&gt; G.add_edges_from(ebunch=[(&#39;Alice&#39;, &#39;Ankur&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; G.add_edges_from(ebunch=[(&quot;Alice&quot;, &quot;Ankur&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; G.nodes()</span>
 <span class="sd">        NodeView((&#39;Alice&#39;, &#39;Bob&#39;, &#39;Charles&#39;, &#39;Ankur&#39;))</span>
 <span class="sd">        &gt;&gt;&gt; G.edges()</span>
@@ -402,16 +470,17 @@
 
 <span class="sd">        Adding edges with weights:</span>
 
-<span class="sd">        &gt;&gt;&gt; G.add_edges_from([(&#39;Ankur&#39;, &#39;Maria&#39;), (&#39;Maria&#39;, &#39;Mason&#39;)],</span>
-<span class="sd">        ...                  weights=[0.3, 0.5])</span>
-<span class="sd">        &gt;&gt;&gt; G.edge[&#39;Ankur&#39;][&#39;Maria&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; G.add_edges_from(</span>
+<span class="sd">        ...     [(&quot;Ankur&quot;, &quot;Maria&quot;), (&quot;Maria&quot;, &quot;Mason&quot;)], weights=[0.3, 0.5]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; G.edge[&quot;Ankur&quot;][&quot;Maria&quot;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.3}</span>
-<span class="sd">        &gt;&gt;&gt; G.edge[&#39;Maria&#39;][&#39;Mason&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; G.edge[&quot;Maria&quot;][&quot;Mason&quot;]</span>
 <span class="sd">        {&#39;weight&#39;: 0.5}</span>
 
 <span class="sd">        or</span>
 
-<span class="sd">        &gt;&gt;&gt; G.add_edges_from([(&#39;Ankur&#39;, &#39;Maria&#39;, 0.3), (&#39;Maria&#39;, &#39;Mason&#39;, 0.5)])</span>
+<span class="sd">        &gt;&gt;&gt; G.add_edges_from([(&quot;Ankur&quot;, &quot;Maria&quot;, 0.3), (&quot;Maria&quot;, &quot;Mason&quot;, 0.5)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ebunch</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ebunch</span><span class="p">)</span>
 
@@ -432,7 +501,7 @@
 
 <div class="viewcode-block" id="DAG.get_parents">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.get_parents">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a list of parents of node.</span>
 
@@ -446,8 +515,8 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; G = DAG(ebunch=[(&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; G.get_parents(node=&#39;grade&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; G = DAG(ebunch=[(&quot;diff&quot;, &quot;grade&quot;), (&quot;intel&quot;, &quot;grade&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; G.get_parents(node=&quot;grade&quot;)</span>
 <span class="sd">        [&#39;diff&#39;, &#39;intel&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span></div>
@@ -466,7 +535,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; G = DAG(ebunch=[(&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; G = DAG(ebunch=[(&quot;diff&quot;, &quot;grade&quot;), (&quot;intel&quot;, &quot;grade&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; moral_graph = G.moralize()</span>
 <span class="sd">        &gt;&gt;&gt; moral_graph.edges()</span>
 <span class="sd">        EdgeView([(&#39;intel&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;diff&#39;), (&#39;grade&#39;, &#39;diff&#39;)])</span>
@@ -492,7 +561,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; graph = DAG([(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;D&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; graph = DAG([(&quot;A&quot;, &quot;B&quot;), (&quot;B&quot;, &quot;C&quot;), (&quot;B&quot;, &quot;D&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; graph.get_leaves()</span>
 <span class="sd">        [&#39;C&#39;, &#39;D&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -520,7 +589,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; graph = DAG([(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;D&#39;), (&#39;E&#39;, &#39;B&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; graph = DAG([(&quot;A&quot;, &quot;B&quot;), (&quot;B&quot;, &quot;C&quot;), (&quot;B&quot;, &quot;D&quot;), (&quot;E&quot;, &quot;B&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; graph.get_roots()</span>
 <span class="sd">        [&#39;A&#39;, &#39;E&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -531,7 +600,7 @@
 
 <div class="viewcode-block" id="DAG.get_children">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.get_children">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a list of children of node.</span>
 <span class="sd">        Throws an error if the node is not present in the graph.</span>
@@ -544,9 +613,17 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; g = DAG(ebunch=[(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;D&#39;),</span>
-<span class="sd">                                      (&#39;B&#39;, &#39;E&#39;), (&#39;B&#39;, &#39;F&#39;), (&#39;E&#39;, &#39;G&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; g.get_children(node=&#39;B&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; g = DAG(</span>
+<span class="sd">        ...     ebunch=[</span>
+<span class="sd">        ...         (&quot;A&quot;, &quot;B&quot;),</span>
+<span class="sd">        ...         (&quot;C&quot;, &quot;B&quot;),</span>
+<span class="sd">        ...         (&quot;B&quot;, &quot;D&quot;),</span>
+<span class="sd">        ...         (&quot;B&quot;, &quot;E&quot;),</span>
+<span class="sd">        ...         (&quot;B&quot;, &quot;F&quot;),</span>
+<span class="sd">        ...         (&quot;E&quot;, &quot;G&quot;),</span>
+<span class="sd">        ...     ]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; g.get_children(node=&quot;B&quot;)</span>
 <span class="sd">        [&#39;D&#39;, &#39;E&#39;, &#39;F&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span></div>
@@ -554,7 +631,9 @@
 
 <div class="viewcode-block" id="DAG.get_independencies">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.get_independencies">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_independencies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_independencies</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">latex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Independencies</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes independencies in the DAG, by checking minimal d-seperation.</span>
 
@@ -571,7 +650,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; chain = DAG([(&#39;X&#39;, &#39;Y&#39;), (&#39;Y&#39;, &#39;Z&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; chain = DAG([(&quot;X&quot;, &quot;Y&quot;), (&quot;Y&quot;, &quot;Z&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; chain.get_independencies()</span>
 <span class="sd">        (X \u27c2 Z | Y)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -598,7 +677,9 @@
 
 <div class="viewcode-block" id="DAG.local_independencies">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.local_independencies">[docs]</a>
-    <span class="k">def</span> <span class="nf">local_independencies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">local_independencies</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns an instance of Independencies containing the local independencies</span>
 <span class="sd">        of each of the variables.</span>
@@ -612,9 +693,15 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; student = DAG()</span>
-<span class="sd">        &gt;&gt;&gt; student.add_edges_from([(&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;),</span>
-<span class="sd">        &gt;&gt;&gt;                         (&#39;grade&#39;, &#39;letter&#39;), (&#39;intel&#39;, &#39;SAT&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; ind = student.local_independencies(&#39;grade&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; student.add_edges_from(</span>
+<span class="sd">        ...     [</span>
+<span class="sd">        ...         (&quot;diff&quot;, &quot;grade&quot;),</span>
+<span class="sd">        ...         (&quot;intel&quot;, &quot;grade&quot;),</span>
+<span class="sd">        ...         (&quot;grade&quot;, &quot;letter&quot;),</span>
+<span class="sd">        ...         (&quot;intel&quot;, &quot;SAT&quot;),</span>
+<span class="sd">        ...     ]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; ind = student.local_independencies(&quot;grade&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; ind</span>
 <span class="sd">        (grade \u27c2 SAT | diff, intel)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -638,7 +725,7 @@
 
 <div class="viewcode-block" id="DAG.is_iequivalent">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.is_iequivalent">[docs]</a>
-    <span class="k">def</span> <span class="nf">is_iequivalent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">is_iequivalent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="s2">&quot;DAG&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Checks whether the given model is I-equivalent</span>
 
@@ -658,11 +745,9 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; G = DAG()</span>
-<span class="sd">        &gt;&gt;&gt; G.add_edges_from([(&#39;V&#39;, &#39;W&#39;), (&#39;W&#39;, &#39;X&#39;),</span>
-<span class="sd">        ...                   (&#39;X&#39;, &#39;Y&#39;), (&#39;Z&#39;, &#39;Y&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; G.add_edges_from([(&quot;V&quot;, &quot;W&quot;), (&quot;W&quot;, &quot;X&quot;), (&quot;X&quot;, &quot;Y&quot;), (&quot;Z&quot;, &quot;Y&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; G1 = DAG()</span>
-<span class="sd">        &gt;&gt;&gt; G1.add_edges_from([(&#39;W&#39;, &#39;V&#39;), (&#39;X&#39;, &#39;W&#39;),</span>
-<span class="sd">        ...                    (&#39;X&#39;, &#39;Y&#39;), (&#39;Z&#39;, &#39;Y&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; G1.add_edges_from([(&quot;W&quot;, &quot;V&quot;), (&quot;X&quot;, &quot;W&quot;), (&quot;X&quot;, &quot;Y&quot;), (&quot;Z&quot;, &quot;Y&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; G.is_iequivalent(G1)</span>
 <span class="sd">        True</span>
 
@@ -681,7 +766,7 @@
 
 <div class="viewcode-block" id="DAG.get_immoralities">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.get_immoralities">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_immoralities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_immoralities</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Finds all the immoralities in the model</span>
 <span class="sd">        A v-structure X -&gt; Z &lt;- Y is an immorality if there is no direct edge between X and Y .</span>
@@ -695,8 +780,14 @@
 <span class="sd">        ---------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; student = DAG()</span>
-<span class="sd">        &gt;&gt;&gt; student.add_edges_from([(&#39;diff&#39;, &#39;grade&#39;), (&#39;intel&#39;, &#39;grade&#39;),</span>
-<span class="sd">        ...                         (&#39;intel&#39;, &#39;SAT&#39;), (&#39;grade&#39;, &#39;letter&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; student.add_edges_from(</span>
+<span class="sd">        ...     [</span>
+<span class="sd">        ...         (&quot;diff&quot;, &quot;grade&quot;),</span>
+<span class="sd">        ...         (&quot;intel&quot;, &quot;grade&quot;),</span>
+<span class="sd">        ...         (&quot;intel&quot;, &quot;SAT&quot;),</span>
+<span class="sd">        ...         (&quot;grade&quot;, &quot;letter&quot;),</span>
+<span class="sd">        ...     ]</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; student.get_immoralities()</span>
 <span class="sd">        {(&#39;diff&#39;, &#39;intel&#39;)}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -714,7 +805,13 @@
 
 <div class="viewcode-block" id="DAG.is_dconnected">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.is_dconnected">[docs]</a>
-    <span class="k">def</span> <span class="nf">is_dconnected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">is_dconnected</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span>
+        <span class="n">end</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span>
+        <span class="n">observed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns True if there is an active trail (i.e. d-connection) between</span>
 <span class="sd">        `start` and `end` node given that `observed` is observed.</span>
@@ -735,12 +832,18 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; student = DAG()</span>
-<span class="sd">        &gt;&gt;&gt; student.add_nodes_from([&#39;diff&#39;, &#39;intel&#39;, &#39;grades&#39;, &#39;letter&#39;, &#39;sat&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; student.add_edges_from([(&#39;diff&#39;, &#39;grades&#39;), (&#39;intel&#39;, &#39;grades&#39;), (&#39;grades&#39;, &#39;letter&#39;),</span>
-<span class="sd">        ...                         (&#39;intel&#39;, &#39;sat&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; student.is_dconnected(&#39;diff&#39;, &#39;intel&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; student.add_nodes_from([&quot;diff&quot;, &quot;intel&quot;, &quot;grades&quot;, &quot;letter&quot;, &quot;sat&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; student.add_edges_from(</span>
+<span class="sd">        ...     [</span>
+<span class="sd">        ...         (&quot;diff&quot;, &quot;grades&quot;),</span>
+<span class="sd">        ...         (&quot;intel&quot;, &quot;grades&quot;),</span>
+<span class="sd">        ...         (&quot;grades&quot;, &quot;letter&quot;),</span>
+<span class="sd">        ...         (&quot;intel&quot;, &quot;sat&quot;),</span>
+<span class="sd">        ...     ]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; student.is_dconnected(&quot;diff&quot;, &quot;intel&quot;)</span>
 <span class="sd">        False</span>
-<span class="sd">        &gt;&gt;&gt; student.is_dconnected(&#39;grades&#39;, &#39;sat&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; student.is_dconnected(&quot;grades&quot;, &quot;sat&quot;)</span>
 <span class="sd">        True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="p">(</span>
@@ -756,7 +859,9 @@
 
 <div class="viewcode-block" id="DAG.minimal_dseparator">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.minimal_dseparator">[docs]</a>
-    <span class="k">def</span> <span class="nf">minimal_dseparator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">minimal_dseparator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">end</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Finds the minimal d-separating set for `start` and `end`.</span>
 
@@ -773,13 +878,15 @@
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; dag = DAG([(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; dag.minimal_dseparator(start=&#39;A&#39;, end=&#39;C&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; dag = DAG([(&quot;A&quot;, &quot;B&quot;), (&quot;B&quot;, &quot;C&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; dag.minimal_dseparator(start=&quot;A&quot;, end=&quot;C&quot;)</span>
 <span class="sd">        {&#39;B&#39;}</span>
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        [1] Algorithm 4, Page 10: Tian, Jin, Azaria Paz, and Judea Pearl. Finding minimal d-separators. Computer Science Department, University of California, 1998.</span>
+<span class="sd">        [1] Algorithm 4, Page 10: Tian, Jin, Azaria Paz, and</span>
+<span class="sd">          Judea Pearl. Finding minimal d-separators. Computer Science Department,</span>
+<span class="sd">            University of California, 1998.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">end</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">start</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="n">start</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">end</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -792,7 +899,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
             <span class="c1"># If any of the parents were latents, take the latent&#39;s parent</span>
-            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">separator</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">while</span> <span class="n">separator</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">):</span>
                 <span class="n">separator_copy</span> <span class="o">=</span> <span class="n">separator</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                 <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">separator</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">u</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">:</span>
@@ -820,7 +927,7 @@
 
 <div class="viewcode-block" id="DAG.get_markov_blanket">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.get_markov_blanket">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_markov_blanket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_markov_blanket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a markov blanket for a random variable. In the case</span>
 <span class="sd">        of Bayesian Networks, the markov blanket is the set of</span>
@@ -840,9 +947,21 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
-<span class="sd">        &gt;&gt;&gt; G = DAG([(&#39;x&#39;, &#39;y&#39;), (&#39;z&#39;, &#39;y&#39;), (&#39;y&#39;, &#39;w&#39;), (&#39;y&#39;, &#39;v&#39;), (&#39;u&#39;, &#39;w&#39;),</span>
-<span class="sd">                               (&#39;s&#39;, &#39;v&#39;), (&#39;w&#39;, &#39;t&#39;), (&#39;w&#39;, &#39;m&#39;), (&#39;v&#39;, &#39;n&#39;), (&#39;v&#39;, &#39;q&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; G.get_markov_blanket(&#39;y&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; G = DAG(</span>
+<span class="sd">        ...     [</span>
+<span class="sd">        ...         (&quot;x&quot;, &quot;y&quot;),</span>
+<span class="sd">        ...         (&quot;z&quot;, &quot;y&quot;),</span>
+<span class="sd">        ...         (&quot;y&quot;, &quot;w&quot;),</span>
+<span class="sd">        ...         (&quot;y&quot;, &quot;v&quot;),</span>
+<span class="sd">        ...         (&quot;u&quot;, &quot;w&quot;),</span>
+<span class="sd">        ...         (&quot;s&quot;, &quot;v&quot;),</span>
+<span class="sd">        ...         (&quot;w&quot;, &quot;t&quot;),</span>
+<span class="sd">        ...         (&quot;w&quot;, &quot;m&quot;),</span>
+<span class="sd">        ...         (&quot;v&quot;, &quot;n&quot;),</span>
+<span class="sd">        ...         (&quot;v&quot;, &quot;q&quot;),</span>
+<span class="sd">        ...     ]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; G.get_markov_blanket(&quot;y&quot;)</span>
 <span class="sd">        [&#39;s&#39;, &#39;w&#39;, &#39;x&#39;, &#39;u&#39;, &#39;z&#39;, &#39;v&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_children</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
@@ -857,7 +976,14 @@
 
 <div class="viewcode-block" id="DAG.active_trail_nodes">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.active_trail_nodes">[docs]</a>
-    <span class="k">def</span> <span class="nf">active_trail_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">active_trail_nodes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="n">Hashable</span><span class="p">,</span>
+        <span class="n">observed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+            <span class="n">Hashable</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">set</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a dictionary with the given variables as keys and all the nodes reachable</span>
 <span class="sd">        from that respective variable as values.</span>
@@ -878,11 +1004,11 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; student = DAG()</span>
-<span class="sd">        &gt;&gt;&gt; student.add_nodes_from([&#39;diff&#39;, &#39;intel&#39;, &#39;grades&#39;])</span>
-<span class="sd">        &gt;&gt;&gt; student.add_edges_from([(&#39;diff&#39;, &#39;grades&#39;), (&#39;intel&#39;, &#39;grades&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; student.active_trail_nodes(&#39;diff&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; student.add_nodes_from([&quot;diff&quot;, &quot;intel&quot;, &quot;grades&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; student.add_edges_from([(&quot;diff&quot;, &quot;grades&quot;), (&quot;intel&quot;, &quot;grades&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; student.active_trail_nodes(&quot;diff&quot;)</span>
 <span class="sd">        {&#39;diff&#39;: {&#39;diff&#39;, &#39;grades&#39;}}</span>
-<span class="sd">        &gt;&gt;&gt; student.active_trail_nodes([&#39;diff&#39;, &#39;intel&#39;], observed=&#39;grades&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; student.active_trail_nodes([&quot;diff&quot;, &quot;intel&quot;], observed=&quot;grades&quot;)</span>
 <span class="sd">        {&#39;diff&#39;: {&#39;diff&#39;, &#39;intel&#39;}, &#39;intel&#39;: {&#39;diff&#39;, &#39;intel&#39;}}</span>
 
 <span class="sd">        References</span>
@@ -891,6 +1017,7 @@
 <span class="sd">        Principles and Techniques&#39; - Koller and Friedman</span>
 <span class="sd">        Page 75 Algorithm 3.1</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">observed_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">observed</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="nb">set</span><span class="p">):</span>
                 <span class="n">observed</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">observed</span><span class="p">)</span>
@@ -938,7 +1065,9 @@
         <span class="k">return</span> <span class="n">active_trails</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_get_ancestors_of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_ancestors_of</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a dictionary of all ancestors of all the observed nodes including the</span>
 <span class="sd">        node itself.</span>
@@ -951,11 +1080,10 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; model = DAG([(&#39;D&#39;, &#39;G&#39;), (&#39;I&#39;, &#39;G&#39;), (&#39;G&#39;, &#39;L&#39;),</span>
-<span class="sd">        ...                        (&#39;I&#39;, &#39;L&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; model._get_ancestors_of(&#39;G&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; model = DAG([(&quot;D&quot;, &quot;G&quot;), (&quot;I&quot;, &quot;G&quot;), (&quot;G&quot;, &quot;L&quot;), (&quot;I&quot;, &quot;L&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; model._get_ancestors_of(&quot;G&quot;)</span>
 <span class="sd">        {&#39;D&#39;, &#39;G&#39;, &#39;I&#39;}</span>
-<span class="sd">        &gt;&gt;&gt; model._get_ancestors_of([&#39;G&#39;, &#39;I&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; model._get_ancestors_of([&quot;G&quot;, &quot;I&quot;])</span>
 <span class="sd">        {&#39;D&#39;, &#39;G&#39;, &#39;I&#39;}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
@@ -976,7 +1104,8 @@
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.to_pdag">[docs]</a>
     <span class="k">def</span> <span class="nf">to_pdag</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the CPDAG (Completed Partial DAG) of the DAG representing the equivalence class that the given DAG belongs to.</span>
+<span class="sd">        Returns the CPDAG (Completed Partial DAG) of the DAG representing the equivalence class</span>
+<span class="sd">        that the given DAG belongs to.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -986,14 +1115,15 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; dag = DAG([(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;D&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; dag = DAG([(&quot;A&quot;, &quot;B&quot;), (&quot;B&quot;, &quot;C&quot;), (&quot;C&quot;, &quot;D&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; pdag = dag.to_pdag()</span>
 <span class="sd">        &gt;&gt;&gt; pdag.directed_edges</span>
 <span class="sd">        {(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;D&#39;)}</span>
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        [1] Chickering, David Maxwell. &quot;Learning equivalence classes of Bayesian-network structures.&quot; Journal of machine learning research 2.Feb (2002): 445-498. Figure 4 and 5.</span>
+<span class="sd">        [1] Chickering, David Maxwell. &quot;Learning equivalence classes of Bayesian-network structures.&quot;</span>
+<span class="sd">          Journal of machine learning research 2.Feb (2002): 445-498. Figure 4 and 5.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Perform a topological sort on the nodes</span>
         <span class="n">topo_order</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
@@ -1079,7 +1209,6 @@
         <span class="n">undirected_edges</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">edge</span> <span class="k">for</span> <span class="n">edge</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">edge_labels</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;reversible&quot;</span>
         <span class="p">]</span>
-
         <span class="k">return</span> <span class="n">PDAG</span><span class="p">(</span>
             <span class="n">directed_ebunch</span><span class="o">=</span><span class="n">directed_edges</span><span class="p">,</span>
             <span class="n">undirected_ebunch</span><span class="o">=</span><span class="n">undirected_edges</span><span class="p">,</span>
@@ -1089,7 +1218,11 @@
 
 <div class="viewcode-block" id="DAG.do">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.do">[docs]</a>
-    <span class="k">def</span> <span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">do</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">nodes</span><span class="p">:</span> <span class="n">Hashable</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">],</span>
+        <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Applies the do operator to the graph and returns a new DAG with the</span>
 <span class="sd">        transformed graph.</span>
@@ -1116,11 +1249,9 @@
 <span class="sd">        Initialize a DAG</span>
 
 <span class="sd">        &gt;&gt;&gt; graph = DAG()</span>
-<span class="sd">        &gt;&gt;&gt; graph.add_edges_from([(&#39;X&#39;, &#39;A&#39;),</span>
-<span class="sd">        ...                       (&#39;A&#39;, &#39;Y&#39;),</span>
-<span class="sd">        ...                       (&#39;A&#39;, &#39;B&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; graph.add_edges_from([(&quot;X&quot;, &quot;A&quot;), (&quot;A&quot;, &quot;Y&quot;), (&quot;A&quot;, &quot;B&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; # Applying the do-operator will return a new DAG with the desired structure.</span>
-<span class="sd">        &gt;&gt;&gt; graph_do_A = graph.do(&#39;A&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; graph_do_A = graph.do(&quot;A&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; # Which we can verify is missing the edges we would expect.</span>
 <span class="sd">        &gt;&gt;&gt; graph_do_A.edges</span>
 <span class="sd">        OutEdgeView([(&#39;A&#39;, &#39;B&#39;), (&#39;A&#39;, &#39;Y&#39;)])</span>
@@ -1138,7 +1269,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Nodes not found in the model: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Nodes not found in the model: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
@@ -1150,7 +1281,7 @@
 
 <div class="viewcode-block" id="DAG.get_ancestral_graph">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.get_ancestral_graph">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_ancestral_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_ancestral_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the ancestral graph of the given `nodes`. The ancestral graph only</span>
 <span class="sd">        contains the nodes which are ancestors of at least one of the variables in</span>
@@ -1168,8 +1299,8 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; dag = DAG([(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;), (&#39;D&#39;, &#39;A&#39;), (&#39;D&#39;, &#39;B&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; anc_dag = dag.get_ancestral_graph(nodes=[&#39;A&#39;, &#39;B&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; dag = DAG([(&quot;A&quot;, &quot;C&quot;), (&quot;B&quot;, &quot;C&quot;), (&quot;D&quot;, &quot;A&quot;), (&quot;D&quot;, &quot;B&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; anc_dag = dag.get_ancestral_graph(nodes=[&quot;A&quot;, &quot;B&quot;])</span>
 <span class="sd">        &gt;&gt;&gt; anc_dag.edges()</span>
 <span class="sd">        OutEdgeView([(&#39;D&#39;, &#39;A&#39;), (&#39;D&#39;, &#39;B&#39;)])</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1180,11 +1311,12 @@
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.to_daft">[docs]</a>
     <span class="k">def</span> <span class="nf">to_daft</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">node_pos</span><span class="o">=</span><span class="s2">&quot;circular&quot;</span><span class="p">,</span>
+        <span class="n">node_pos</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;circular&quot;</span><span class="p">,</span>
         <span class="n">latex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">pgm_params</span><span class="o">=</span><span class="p">{},</span>
         <span class="n">edge_params</span><span class="o">=</span><span class="p">{},</span>
         <span class="n">node_params</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">plot_edge_strength</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a daft (https://docs.daft-pgm.org/en/latest/) object which can be rendered for</span>
@@ -1194,7 +1326,9 @@
 <span class="sd">        ----------</span>
 <span class="sd">        node_pos: str or dict (default: circular)</span>
 <span class="sd">            If str: Must be one of the following: circular, kamada_kawai, planar, random, shell, sprint,</span>
-<span class="sd">                spectral, spiral. Please refer: https://networkx.org/documentation/stable//reference/drawing.html#module-networkx.drawing.layout for details on these layouts.</span>
+<span class="sd">                spectral, spiral. Please refer:</span>
+<span class="sd">                  https://networkx.org/documentation/stable//reference/drawing.html#module-networkx.drawing.layout</span>
+<span class="sd">                    for details on these layouts.</span>
 
 <span class="sd">            If dict should be of the form {node: (x coordinate, y coordinate)} describing the x and y coordinate of each</span>
 <span class="sd">            node.</span>
@@ -1216,6 +1350,10 @@
 <span class="sd">            Any additional node parameters that need to be passed to `daft.add_node` method.</span>
 <span class="sd">            Should be of the form: {node1: {param_name: param_value}, node2: {...} }</span>
 
+<span class="sd">        plot_edge_strength: bool (default: False)</span>
+<span class="sd">            If True, displays edge strength values as labels on edges.</span>
+<span class="sd">            Requires edge strengths to be computed first using the edge_strength() method.</span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Daft object: daft.PGM object</span>
@@ -1224,25 +1362,41 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; dag = DAG([(&#39;a&#39;, &#39;b&#39;), (&#39;b&#39;, &#39;c&#39;), (&#39;d&#39;, &#39;c&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; dag.to_daft(node_pos={&#39;a&#39;: (0, 0), &#39;b&#39;: (1, 0), &#39;c&#39;: (2, 0), &#39;d&#39;: (1, 1)})</span>
+<span class="sd">        &gt;&gt;&gt; dag = DAG([(&quot;a&quot;, &quot;b&quot;), (&quot;b&quot;, &quot;c&quot;), (&quot;d&quot;, &quot;c&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; dag.to_daft(node_pos={&quot;a&quot;: (0, 0), &quot;b&quot;: (1, 0), &quot;c&quot;: (2, 0), &quot;d&quot;: (1, 1)})</span>
 <span class="sd">        &lt;daft.PGM at 0x7fc756e936d0&gt;</span>
 <span class="sd">        &gt;&gt;&gt; dag.to_daft(node_pos=&quot;circular&quot;)</span>
 <span class="sd">        &lt;daft.PGM at 0x7f9bb48c5eb0&gt;</span>
-<span class="sd">        &gt;&gt;&gt; dag.to_daft(node_pos=&quot;circular&quot;, pgm_params={&#39;observed_style&#39;: &#39;inner&#39;})</span>
+<span class="sd">        &gt;&gt;&gt; dag.to_daft(node_pos=&quot;circular&quot;, pgm_params={&quot;observed_style&quot;: &quot;inner&quot;})</span>
 <span class="sd">        &lt;daft.PGM at 0x7f9bb48b0bb0&gt;</span>
-<span class="sd">        &gt;&gt;&gt; dag.to_daft(node_pos=&quot;circular&quot;,</span>
-<span class="sd">        ...             edge_params={(&#39;a&#39;, &#39;b&#39;): {&#39;label&#39;: 2}},</span>
-<span class="sd">        ...             node_params={&#39;a&#39;: {&#39;shape&#39;: &#39;rectangle&#39;}})</span>
+<span class="sd">        &gt;&gt;&gt; dag.to_daft(</span>
+<span class="sd">        ...     node_pos=&quot;circular&quot;,</span>
+<span class="sd">        ...     edge_params={(&quot;a&quot;, &quot;b&quot;): {&quot;label&quot;: 2}},</span>
+<span class="sd">        ...     node_params={&quot;a&quot;: {&quot;shape&quot;: &quot;rectangle&quot;}},</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &lt;daft.PGM at 0x7f9bb48b0bb0&gt;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="kn">from</span> <span class="nn">daft</span> <span class="kn">import</span> <span class="n">PGM</span>
         <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
-                <span class="n">e</span><span class="o">.</span><span class="n">msg</span>
-                <span class="o">+</span> <span class="s2">&quot;. Package daft required. Please visit: https://docs.daft-pgm.org/en/latest/ for installation instructions.&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Package `daft` is required for plotting probabilistic graphical models.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Please install it using: pip install daft-pgm</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;Documentation: https://docs.daft-pgm.org/en/latest/&quot;</span>
             <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+
+        <span class="c1"># Check edge strength existence if plotting is requested</span>
+        <span class="k">if</span> <span class="n">plot_edge_strength</span><span class="p">:</span>
+            <span class="n">missing_strengths</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;strength&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)]:</span>
+                    <span class="n">missing_strengths</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">missing_strengths</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Edge strength plotting requested but strengths not found for edges: </span><span class="si">{</span><span class="n">missing_strengths</span><span class="si">}</span><span class="s2">. &quot;</span>
+                    <span class="s2">&quot;Use edge_strength() method to compute strengths first.&quot;</span>
+                <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node_pos</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">supported_layouts</span> <span class="o">=</span> <span class="p">{</span>
@@ -1255,15 +1409,16 @@
                 <span class="s2">&quot;spectral&quot;</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">spectral_layout</span><span class="p">,</span>
                 <span class="s2">&quot;spiral&quot;</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">spiral_layout</span><span class="p">,</span>
             <span class="p">}</span>
-            <span class="k">if</span> <span class="n">node_pos</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported_layouts</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">node_pos</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">supported_layouts</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Unknown node_pos argument. Please refer docstring for accepted values&quot;</span>
+                    <span class="s2">&quot;Unknown node_pos argument. Please refer docstring &quot;</span>
+                    <span class="s2">&quot;for accepted values&quot;</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">node_pos</span> <span class="o">=</span> <span class="n">supported_layouts</span><span class="p">[</span><span class="n">node_pos</span><span class="p">](</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node_pos</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">node_pos</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">node_pos</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No position specified for </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -1301,6 +1456,14 @@
                 <span class="n">extra_params</span> <span class="o">=</span> <span class="n">edge_params</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span>
             <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
                 <span class="n">extra_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+            <span class="c1"># Add edge strength as label if requested</span>
+            <span class="k">if</span> <span class="n">plot_edge_strength</span><span class="p">:</span>
+                <span class="n">strength_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)][</span><span class="s2">&quot;strength&quot;</span><span class="p">]</span>
+                <span class="n">strength_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">strength_value</span><span class="si">:</span><span class="s2"> .3f</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="s2">&quot;label&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">extra_params</span><span class="p">:</span>
+                    <span class="n">extra_params</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">strength_label</span>
+
             <span class="n">daft_pgm</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="o">**</span><span class="n">extra_params</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">daft_pgm</span></div>
@@ -1309,7 +1472,13 @@
 <div class="viewcode-block" id="DAG.get_random">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.get_random">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">edge_prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">node_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_random</span><span class="p">(</span>
+        <span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="n">edge_prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">node_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DAG&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a randomly generated DAG with `n_nodes` number of nodes with</span>
 <span class="sd">        edge probability being `edge_prob`.</span>
@@ -1374,25 +1543,56 @@
 
 <div class="viewcode-block" id="DAG.to_graphviz">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.to_graphviz">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_graphviz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">to_graphviz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plot_edge_strength</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retuns a pygraphviz object for the DAG. pygraphviz is useful for</span>
 <span class="sd">        visualizing the network structure.</span>
 
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        plot_edge_strength: bool (default: False)</span>
+<span class="sd">            If True, displays edge strength values as labels on edges.</span>
+<span class="sd">            Requires edge strengths to be computed first using the edge_strength() method.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        AGraph object: pygraphviz.AGraph</span>
+<span class="sd">            pygraphviz object for plotting the DAG.</span>
+
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
-<span class="sd">        &gt;&gt;&gt; model = get_example_model(&#39;alarm&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; model = get_example_model(&quot;alarm&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; model.to_graphviz()</span>
 <span class="sd">        &lt;AGraph &lt;Swig Object of type &#39;Agraph_t *&#39; at 0x7fdea4cde040&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; model.draw(&#39;model.png&#39;, prog=&#39;neato&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; model.draw(&quot;model.png&quot;, prog=&quot;neato&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">nx_agraph</span><span class="o">.</span><span class="n">to_agraph</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="n">plot_edge_strength</span><span class="p">:</span>
+            <span class="n">missing_strengths</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+                <span class="k">if</span> <span class="s2">&quot;strength&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)]:</span>
+                    <span class="n">missing_strengths</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">missing_strengths</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Edge strength plotting requested but strengths not found for edges: </span><span class="si">{</span><span class="n">missing_strengths</span><span class="si">}</span><span class="s2">. &quot;</span>
+                    <span class="s2">&quot;Use edge_strength() method to compute strengths first.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="n">agraph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">nx_agraph</span><span class="o">.</span><span class="n">to_agraph</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">plot_edge_strength</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+                <span class="n">strength_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)][</span><span class="s2">&quot;strength&quot;</span><span class="p">]</span>
+                <span class="n">strength_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">strength_value</span><span class="si">:</span><span class="s2"> .3f</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">agraph</span><span class="o">.</span><span class="n">get_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">attr</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">strength_label</span>
+
+        <span class="k">return</span> <span class="n">agraph</span></div>
 
 
 <div class="viewcode-block" id="DAG.fit">
 <a class="viewcode-back" href="../../../models/dag.html#pgmpy.base.DAG.DAG.fit">[docs]</a>
-    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="p">[],</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="p">[],</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DAG&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Estimates the CPD for each variable based on a given data set.</span>
 
@@ -1432,8 +1632,8 @@
 <span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(data={&#39;A&#39;: [0, 0, 1], &#39;B&#39;: [0, 1, 0], &#39;C&#39;: [1, 1, 0]})</span>
-<span class="sd">        &gt;&gt;&gt; model = DAG([(&#39;A&#39;, &#39;C&#39;), (&#39;B&#39;, &#39;C&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(data={&quot;A&quot;: [0, 0, 1], &quot;B&quot;: [0, 1, 0], &quot;C&quot;: [1, 1, 0]})</span>
+<span class="sd">        &gt;&gt;&gt; model = DAG([(&quot;A&quot;, &quot;C&quot;), (&quot;B&quot;, &quot;C&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; fitted_model = model.fit(data)</span>
 <span class="sd">        &gt;&gt;&gt; fitted_model.get_cpds()</span>
 <span class="sd">        [&lt;TabularCPD representing P(A:2) at 0x17945372c30&gt;,</span>
@@ -1525,7 +1725,9 @@
 <span class="sd">        &gt;&gt;&gt; linear_model = LGBN([(&quot;X&quot;, &quot;Y&quot;), (&quot;Z&quot;, &quot;Y&quot;)])</span>
 <span class="sd">        &gt;&gt;&gt; # Create CPDs with specific beta values</span>
 <span class="sd">        &gt;&gt;&gt; x_cpd = LinearGaussianCPD(variable=&quot;X&quot;, beta=[0], std=1)</span>
-<span class="sd">        &gt;&gt;&gt; y_cpd = LinearGaussianCPD(variable=&quot;Y&quot;, beta=[0, 0.4, 0.6], std=1, evidence=[&quot;X&quot;, &quot;Z&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; y_cpd = LinearGaussianCPD(</span>
+<span class="sd">        ...     variable=&quot;Y&quot;, beta=[0, 0.4, 0.6], std=1, evidence=[&quot;X&quot;, &quot;Z&quot;]</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; z_cpd = LinearGaussianCPD(variable=&quot;Z&quot;, beta=[0], std=1)</span>
 <span class="sd">        &gt;&gt;&gt; # Add CPDs to the model</span>
 <span class="sd">        &gt;&gt;&gt; linear_model.add_cpds(x_cpd, y_cpd, z_cpd)</span>
@@ -1539,7 +1741,9 @@
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        [1] Ankan, Ankur, and Johannes Textor. &quot;A simple unified approach to testing high-dimensional conditional independences for categorical and ordinal data.&quot; Proceedings of the AAAI Conference on Artificial Intelligence.</span>
+<span class="sd">        [1] Ankan, Ankur, and Johannes Textor. &quot;A simple unified approach to testing high-dimensional</span>
+<span class="sd">        conditional independences for categorical and ordinal data.&quot; Proceedings of the AAAI Conference</span>
+<span class="sd">        on Artificial Intelligence.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="kn">import</span> <span class="n">pillai_trace</span>
@@ -1614,7 +1818,12 @@
 <span class="sd">    an undirected edge between X - Y is represented using X -&gt; Y and X &lt;- Y.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[],</span> <span class="n">undirected_ebunch</span><span class="o">=</span><span class="p">[],</span> <span class="n">latents</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">directed_ebunch</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">undirected_ebunch</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">latents</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initializes a PDAG class.</span>
 
@@ -1664,8 +1873,11 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import PDAG</span>
-<span class="sd">        &gt;&gt;&gt; pdag = PDAG(directed_ebunch=[(&#39;A&#39;, &#39;C&#39;), (&#39;D&#39;, &#39;C&#39;)], undirected_ebunch=[(&#39;B&#39;, &#39;A&#39;), (&#39;B&#39;, &#39;D&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; pdag.all_neighbors(&#39;A&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; pdag = PDAG(</span>
+<span class="sd">        ...     directed_ebunch=[(&quot;A&quot;, &quot;C&quot;), (&quot;D&quot;, &quot;C&quot;)],</span>
+<span class="sd">        ...     undirected_ebunch=[(&quot;B&quot;, &quot;A&quot;), (&quot;B&quot;, &quot;D&quot;)],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; pdag.all_neighbors(&quot;A&quot;)</span>
 <span class="sd">        {&#39;B&#39;, &#39;C&#39;}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">)}</span> <span class="o">|</span> <span class="p">{</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">)}</span></div>
@@ -1731,8 +1943,11 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import PDAG</span>
-<span class="sd">        &gt;&gt;&gt; pdag = PDAG(directed_ebunch=[(&#39;A&#39;, &#39;C&#39;), (&#39;D&#39;, &#39;C&#39;)], undirected_ebunch=[(&#39;B&#39;, &#39;A&#39;), (&#39;B&#39;, &#39;D&#39;)])</span>
-<span class="sd">        &gt;&gt;&gt; pdag.undirected_neighbors(&#39;A&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; pdag = PDAG(</span>
+<span class="sd">        ...     directed_ebunch=[(&quot;A&quot;, &quot;C&quot;), (&quot;D&quot;, &quot;C&quot;)],</span>
+<span class="sd">        ...     undirected_ebunch=[(&quot;B&quot;, &quot;A&quot;), (&quot;B&quot;, &quot;D&quot;)],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; pdag.undirected_neighbors(&quot;A&quot;)</span>
 <span class="sd">        {&#39;B&#39;}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">node</span><span class="p">)}</span></div>
@@ -1865,7 +2080,9 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import PDAG</span>
-<span class="sd">        &gt;&gt;&gt; pdag = PDAG(directed_ebunch=[(&#39;A&#39;, &#39;B&#39;)], undirected_ebunch=[(&#39;B&#39;, &#39;C&#39;), (&#39;C&#39;, &#39;B&#39;)])</span>
+<span class="sd">        &gt;&gt;&gt; pdag = PDAG(</span>
+<span class="sd">        ...     directed_ebunch=[(&quot;A&quot;, &quot;B&quot;)], undirected_ebunch=[(&quot;B&quot;, &quot;C&quot;), (&quot;C&quot;, &quot;B&quot;)]</span>
+<span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; pdag.apply_meeks_rules()</span>
 <span class="sd">        &gt;&gt;&gt; pdag.directed_edges</span>
 <span class="sd">        {(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;)}</span>
@@ -1927,20 +2144,21 @@
                         <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
                         <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
                             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                                <span class="sa">f</span><span class="s2">&quot;Applying Rule 3: </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">; </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2"> =&gt; </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">&quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;Applying Rule 3: </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2"> &quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2"> =&gt; </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">&quot;</span>
                             <span class="p">)</span>
                         <span class="k">break</span>
 
             <span class="c1"># Rule 4: If d -&gt; c -&gt; b &amp; a - {b, c, d} and b not adj d =&gt; a -&gt; b</span>
             <span class="k">if</span> <span class="n">apply_r4</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
-                    <span class="n">directed_graph</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">_directed_graph</span><span class="p">()</span>
                     <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">directed_children</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
                         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">directed_parents</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
                             <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="n">d</span> <span class="ow">or</span> <span class="n">pdag</span><span class="o">.</span><span class="n">is_adjacent</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
                                 <span class="k">continue</span>  <span class="c1"># b adjacent d =&gt; rule not applicable</span>
 
-                            <span class="c1"># find nodes a that are undirected neighbor to b, d, and directed or undirected neighbor to c</span>
+                            <span class="c1"># find nodes a that are undirected neighbor to b, d,</span>
+                            <span class="c1">#  and directed or undirected neighbor to c</span>
                             <span class="n">cand</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">undirected_neighbors</span><span class="p">(</span><span class="n">b</span><span class="p">))</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
                                 <span class="n">pdag</span><span class="o">.</span><span class="n">all_neighbors</span><span class="p">(</span><span class="n">c</span><span class="p">),</span>
                                 <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_neighbors</span><span class="p">(</span><span class="n">d</span><span class="p">),</span>
@@ -1955,7 +2173,7 @@
 
 <div class="viewcode-block" id="PDAG.to_dag">
 <a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.DAG.PDAG.to_dag">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_dag</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">to_dag</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;DAG&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns one possible DAG which is represented using the PDAG.</span>
 
@@ -1966,8 +2184,8 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; pdag = PDAG(</span>
-<span class="sd">        ... directed_ebunch=[(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;)],</span>
-<span class="sd">        ... undirected_ebunch=[(&quot;C&quot;, &quot;D&quot;), (&quot;D&quot;, &quot;A&quot;)],</span>
+<span class="sd">        ...     directed_ebunch=[(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;)],</span>
+<span class="sd">        ...     undirected_ebunch=[(&quot;C&quot;, &quot;D&quot;), (&quot;D&quot;, &quot;A&quot;)],</span>
 <span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; dag = pdag.to_dag()</span>
 <span class="sd">        &gt;&gt;&gt; print(dag.edges())</span>
@@ -1975,7 +2193,9 @@
 
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
-<span class="sd">        [1] Dor, Dorit, and Michael Tarsi. &quot;A simple algorithm to construct a consistent extension of a partially oriented graph.&quot; Technicial Report R-185, Cognitive Systems Laboratory, UCLA (1992): 45.</span>
+<span class="sd">        [1] Dor, Dorit, and Michael Tarsi.</span>
+<span class="sd">          &quot;A simple algorithm to construct a consistent extension of a partially oriented graph.&quot;</span>
+<span class="sd">            Technicial Report R-185, Cognitive Systems Laboratory, UCLA (1992): 45.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Add required edges if it doesn&#39;t form a new v-structure or an opposite edge</span>
         <span class="c1"># is already present in the network.</span>
@@ -1989,30 +2209,25 @@
         <span class="k">while</span> <span class="n">pdag</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># find node with (1) no directed outgoing edges and</span>
             <span class="c1">#                (2) the set of undirected neighbors is either empty or</span>
-            <span class="c1">#                    undirected neighbors + parents of X are a clique</span>
+            <span class="c1">#                    undirected neighbors + parents of X are adjacent</span>
             <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
-                <span class="n">directed_outgoing_edges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span>
-                    <span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-                <span class="p">)</span>
-                <span class="n">undirected_neighbors</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span>
-                    <span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-                <span class="p">)</span>
-                <span class="n">neighbors_are_clique</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
+                <span class="n">undirected_neighbors</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_neighbors</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+                <span class="n">neighbors_are_adjacent</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span>
                     <span class="p">(</span>
-                        <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
-                        <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+                        <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span> <span class="ow">or</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">all_neighbors</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
                         <span class="k">for</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">undirected_neighbors</span>
                         <span class="k">if</span> <span class="ow">not</span> <span class="n">Y</span> <span class="o">==</span> <span class="n">Z</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
 
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">directed_outgoing_edges</span> <span class="ow">and</span> <span class="p">(</span>
-                    <span class="ow">not</span> <span class="n">undirected_neighbors</span> <span class="ow">or</span> <span class="n">neighbors_are_clique</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">pdag</span><span class="o">.</span><span class="n">directed_children</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                    <span class="ow">not</span> <span class="n">undirected_neighbors</span> <span class="ow">or</span> <span class="n">neighbors_are_adjacent</span>
                 <span class="p">):</span>
                     <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="c1"># add all edges of X as outgoing edges to dag</span>
-                    <span class="k">for</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_neighbors</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
                         <span class="n">dag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
                     <span class="n">pdag</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
                     <span class="k">break</span>
@@ -2035,7 +2250,7 @@
 
 <div class="viewcode-block" id="PDAG.to_graphviz">
 <a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.DAG.PDAG.to_graphviz">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_graphviz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">to_graphviz</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Retuns a pygraphviz object for the DAG. pygraphviz is useful for</span>
 <span class="sd">        visualizing the network structure.</span>
@@ -2043,7 +2258,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
-<span class="sd">        &gt;&gt;&gt; model = get_example_model(&#39;alarm&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; model = get_example_model(&quot;alarm&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; model.to_graphviz()</span>
 <span class="sd">        &lt;AGraph &lt;Swig Object of type &#39;Agraph_t *&#39; at 0x7fdea4cde040&gt;&gt;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -2106,11 +2321,7 @@
   </ul></li>
   </ul></li>
 </ul>
-</div><head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2028028118033346" crossorigin="anonymous"></script>
-</head>
-
-<script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
 
 <div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
 <script>
