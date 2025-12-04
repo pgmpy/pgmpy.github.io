@@ -17,8 +17,9 @@
 <meta name="twitter:card" content="summary_large_image" />
 
     <title>PC (Constraint-Based Estimator) &#8212; 1.0.0 | pgmpy docs</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=c2b266e2" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
     <script src="../_static/documentation_options.js?v=8d563738"></script>
@@ -61,6 +62,63 @@ from a given data set.  Identifies (conditional) dependencies in data
 set using statistical independence tests and estimates a DAG pattern
 that satisfies the identified dependencies. The DAG pattern can then be
 completed to a faithful DAG, if possible.</p>
+<p>When used with expert knowledge, the following flowchart can help you figure
+out the expected results based on different choices of parameters and the
+structure learned from the data.</p>
+<blockquote>
+<div><blockquote>
+<div><blockquote>
+<div><blockquote>
+<div><p>┌──────────────────┐    No      ┌─────────────┐
+│ Expert Knowledge ├──────────► │  Normal PC  │
+│    specified?    │            │    run      │
+└────────┬─────────┘            └─────────────┘</p>
+<blockquote>
+<div><blockquote>
+<div><p>│</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Yes  │</dt><dd><p>│
+▼</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>┌──────────────────┐
+│  Enforce expert  │
+│    knowledge?    │
+└────────┬─────────┘</p>
+<blockquote>
+<div><p>│
+│</p>
+</div></blockquote>
+</div></blockquote>
+<p>Yes              │                No</p>
+</div></blockquote>
+<p>┌─────────────────────────┴───────────────────────┐
+│                                                 │
+▼                                                 ▼</p>
+</div></blockquote>
+<p>┌──────────────────────────────┐                     ┌─────────────────────────┐
+│                              │                     │                         │
+│ 1) Forbidden edges are       │                     │ Conflicts with learned  │
+│    removed from the skeleton │                     │   structure (opposite   │
+│                              │                     │  edge orientations)?    │
+│ 2) Required edges will be    │                     │                         │
+│    present in the final      │                     └───────────┬─────────────┘
+│    model (but direction is   │                                 │
+│    not guaranteed)           │                ┌────────────────┴──────────────────┐
+│                              │            Yes │                                   │ No
+└──────────────────────────────┘                │                                   │</p>
+<blockquote>
+<div><blockquote>
+<div><p>▼                                   ▼</p>
+</div></blockquote>
+<p>┌───────────────────┐                ┌──────────────────┐
+│ Conflicting edges │                │ Expert knowledge │
+│    are ignored    │                │  applied fully   │
+└───────────────────┘                └──────────────────┘</p>
+</div></blockquote>
+</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>data</strong> (<em>pandas DataFrame object</em>) – dataframe object where each column represents one variable.  (If some
@@ -77,41 +135,8 @@ values in the data are missing the data cells should be set to
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.estimators.PC.build_skeleton">
-<span class="sig-name descname"><span class="pre">build_skeleton</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'stable'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ci_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Callable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">significance_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expert_knowledge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ExpertKnowledge</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enforce_expert_knowledge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">UndirectedGraph</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/pgmpy/estimators/PC.html#PC.build_skeleton"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.PC.build_skeleton" title="Link to this definition">¶</a></dt>
-<dd><p>Estimates a graph skeleton (UndirectedGraph) from a set of independencies
-using (the first part of) the PC algorithm. The independencies can either be
-provided as an instance of the <cite>Independencies</cite>-class or by passing a
-decision function that decides any conditional independency assertion.
-Returns a tuple <cite>(skeleton, separating_sets)</cite>.</p>
-<p>If an Independencies-instance is passed, the contained IndependenceAssertions
-have to admit a faithful BN representation. This is the case if
-they are obtained as a set of d-separations of some Bayesian network or
-if the independence assertions are closed under the semi-graphoid axioms.
-Otherwise, the procedure may fail to identify the correct structure.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><strong>skeleton</strong> (<em>UndirectedGraph</em>) – An estimate for the undirected graph skeleton of the BN underlying the data.</p></li>
-<li><p><strong>separating_sets</strong> (<em>dict</em>) – A dict containing for each pair of not directly connected nodes a
-separating set (“witnessing set”) of variables that makes them
-conditionally independent. (needed for edge orientation procedures)</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-<p class="rubric">References</p>
-<dl class="simple">
-<dt>[1] Neapolitan, Learning Bayesian Networks, Section 10.1.2, Algorithm 10.2 (page 550)</dt><dd><p><a class="reference external" href="http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf">http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf</a></p>
-</dd>
-<dt>[2] Koller &amp; Friedman, Probabilistic Graphical Models - Principles and Techniques, 2009</dt><dd><p>Section 3.4.2.1 (page 85), Algorithm 3.3</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.estimators.PC.estimate">
-<span class="sig-name descname"><span class="pre">estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'parallel'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ci_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Callable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'pdag'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">significance_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expert_knowledge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ExpertKnowledge</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enforce_expert_knowledge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../base.html#pgmpy.base.DAG.DAG" title="pgmpy.base.DAG.DAG"><span class="pre">DAG</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../base.html#pgmpy.base.DAG.PDAG" title="pgmpy.base.DAG.PDAG"><span class="pre">PDAG</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Graph</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/pgmpy/estimators/PC.html#PC.estimate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.PC.estimate" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'parallel'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ci_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Callable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'pdag'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">significance_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cond_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expert_knowledge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ExpertKnowledge</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enforce_expert_knowledge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../base.html#pgmpy.base.DAG.DAG" title="pgmpy.base.DAG.DAG"><span class="pre">DAG</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../base.html#pgmpy.base.PDAG.PDAG" title="pgmpy.base.PDAG.PDAG"><span class="pre">PDAG</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Graph</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/pgmpy/estimators/PC.html#PC.estimate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.PC.estimate" title="Link to this definition">¶</a></dt>
 <dd><p>Estimates a DAG/PDAG from the given dataset using the PC algorithm which
 is a constraint-based structure learning algorithm[1]. The independencies
 in the dataset are identified by doing statistical independence test. This
@@ -181,6 +206,8 @@ not. Different tests can treat this parameter differently:</p>
 </ol>
 </div></blockquote>
 </p></li>
+<li><p><strong>max_cond_vars</strong> (<em>int</em><em> (</em><em>default: 5</em><em>)</em>) – The maximum number of variables to condition on while testing
+independence.</p></li>
 <li><p><strong>expert_knowledge</strong> (<em>pgmpy.estimators.ExpertKnowledge instance</em>) – Expert knowledge to be used with the algorithm. Expert knowledge
 includes required/forbidden edges in the final graph, temporal
 information about the variables etc. Please refer
@@ -222,6 +249,8 @@ collider structure in the learned skeleton.</p>
 </ol>
 </div></blockquote>
 </p></li>
+<li><p><strong>n_jobs</strong> (<em>int</em><em> (</em><em>default: -1</em><em>)</em>) – The number of jobs to run in parallel.</p></li>
+<li><p><strong>show_progress</strong> (<em>bool</em><em> (</em><em>default: True</em><em>)</em>) – If True, shows a progress bar while running the algorithm.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -254,8 +283,8 @@ biology and bioinformatics (2016).</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">get_example_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">PC</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_example_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">PC</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="s2">&quot;alarm&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">est</span> <span class="o">=</span> <span class="n">PC</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
@@ -271,7 +300,7 @@ biology and bioinformatics (2016).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.estimators.PC.orient_colliders">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">orient_colliders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skeleton</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UndirectedGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separating_sets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">FrozenSet</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temporal_ordering</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../base.html#pgmpy.base.DAG.PDAG" title="pgmpy.base.DAG.PDAG"><span class="pre">PDAG</span></a></span></span><a class="reference internal" href="../_modules/pgmpy/estimators/PC.html#PC.orient_colliders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.PC.orient_colliders" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">orient_colliders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skeleton</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UndirectedGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separating_sets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">FrozenSet</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temporal_ordering</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../base.html#pgmpy.base.PDAG.PDAG" title="pgmpy.base.PDAG.PDAG"><span class="pre">PDAG</span></a></span></span><a class="reference internal" href="../_modules/pgmpy/estimators/PC.html#PC.orient_colliders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.PC.orient_colliders" title="Link to this definition">¶</a></dt>
 <dd><p>Orients the edges that form v-structures in a graph skeleton
 based on information from <cite>separating_sets</cite> to form a DAG pattern (PDAG).</p>
 <dl class="field-list simple">
@@ -301,9 +330,9 @@ pair) results in a I-equivalent Bayesian network DAG.</p>
 </dl>
 <p>[2] <a class="reference external" href="http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf">http://www.cs.technion.ac.il/~dang/books/Learning%20Bayesian%20Networks(Neapolitan,%20Richard).pdf</a></p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">PC</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">PC</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">5000</span><span class="p">,</span> <span class="mi">3</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="s2">&quot;ABD&quot;</span><span class="p">)</span>
 <span class="gp">... </span><span class="p">)</span>
@@ -322,16 +351,56 @@ pair) results in a I-equivalent Bayesian network DAG.</p>
 </section>
 <section id="module-pgmpy.estimators.CITests">
 <span id="conditional-independence-tests-for-pc-algorithm"></span><h1>Conditional Independence Tests for PC algorithm<a class="headerlink" href="#module-pgmpy.estimators.CITests" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pgmpy.estimators.CITests.CITestRegistry">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.CITests.</span></span><span class="sig-name descname"><span class="pre">CITestRegistry</span></span><a class="reference internal" href="../_modules/pgmpy/estimators/CITests.html#CITestRegistry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.CITests.CITestRegistry" title="Link to this definition">¶</a></dt>
+<dd><p>Registry to manage Conditional Independence (CI) Test Strategies.</p>
+<p>Allows looking up tests by name or inferring suitable tests based on data type.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.estimators.CITests.CITestRegistry.get_test">
+<span class="sig-name descname"><span class="pre">get_test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span></span></span><a class="reference internal" href="../_modules/pgmpy/estimators/CITests.html#CITestRegistry.get_test"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.CITests.CITestRegistry.get_test" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves a CI test strategy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>test</strong> (<em>str</em><em>, </em><em>callable</em><em> or </em><em>None</em>) – The name of the test, a callable function, or None.</p></li>
+<li><p><strong>data</strong> (<em>pandas.DataFrame</em><em>, </em><em>optional</em>) – The dataframe used to infer the test type if <cite>test</cite> is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The CI test function.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>callable</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If <cite>test</cite> is None and <cite>data</cite> is None, or if the test name is not found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.estimators.CITests.CITestRegistry.register">
+<span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/CITests.html#CITestRegistry.register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.CITests.CITestRegistry.register" title="Link to this definition">¶</a></dt>
+<dd><p>Decorator to register a CI test strategy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – The name of the test (case-insensitive).</p></li>
+<li><p><strong>data_types</strong> (<em>list</em><em> of </em><em>str</em>) – List of data types this test supports (e.g., [‘continuous’, ‘discrete’]).</p></li>
+<li><p><strong>is_default</strong> (<em>bool</em><em>, </em><em>default=False</em>) – If True, sets this test as the default for the provided data types.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="pgmpy.estimators.CITests.chi_square">
 <span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.CITests.</span></span><span class="sig-name descname"><span class="pre">chi_square</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boolean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/CITests.html#chi_square"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.CITests.chi_square" title="Link to this definition">¶</a></dt>
-<dd><p>Chi-square conditional independence test.
-Tests the null hypothesis that X is independent from Y given Zs.</p>
-<p>This is done by comparing the observed frequencies with the expected
-frequencies if X,Y were conditionally independent, using a chisquare
-deviance statistic. The expected frequencies given independence are
-<img class="math" src="../_images/math/025c892b64f439d43f5a8b81a3ee6265b8c6aabf.png" alt="P(X,Y,Zs) = P(X|Zs)*P(Y|Zs)*P(Zs)"/>. The latter term can be computed
-as :math:<a href="#id3"><span class="problematic" id="id4">`</span></a>P(X,Zs)*P(Y,Zs)/P(Zs).</p>
+<dd><p>Perform Chi-square conditional independence test.</p>
+<p>Tests the null hypothesis that X is independent from Y given Zs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -348,22 +417,23 @@ If boolean=False, returns the chi2 and p_value of the test.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>CI Test Results</strong> – If boolean = False, Returns a tuple (chi, p_value, dof). <cite>chi</cite> is the
-chi-squared test statistic. The <cite>p_value</cite> for the test, i.e. the
-probability of observing the computed chi-square statistic (or an even
-higher value), given the null hypothesis that X ⟂ Y | Zs is True.
-If boolean = True, returns True if the p_value of the test is greater
-than <cite>significance_level</cite> else returns False.</p>
+<dd class="field-even"><p><strong>result</strong> – If boolean=False, returns (chi, p_value, dof).
+If boolean=True, returns True if p_value &gt; significance_level.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple or bool</p>
+<dd class="field-odd"><p>bool or tuple</p>
 </dd>
 </dl>
 <p class="rubric">References</p>
-<p>[1] <a class="reference external" href="https://en.wikipedia.org/wiki/Chi-squared_test">https://en.wikipedia.org/wiki/Chi-squared_test</a></p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id3" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Chi-squared_test">https://en.wikipedia.org/wiki/Chi-squared_test</a></p>
+</aside>
+</aside>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">50000</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="s2">&quot;ABCD&quot;</span><span class="p">)</span>
@@ -405,22 +475,23 @@ boolean=False, returns the chi2 and p_value of the test.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>CI Test Results</strong> – If boolean = False, Returns a tuple (chi, p_value, dof). <cite>chi</cite> is the
-chi-squared test statistic. The <cite>p_value</cite> for the test, i.e. the
-probability of observing the computed chi-square statistic (or an even
-higher value), given the null hypothesis that X ⟂ Y | Zs is True.
-If boolean = True, returns True if the p_value of the test is greater
-than <cite>significance_level</cite> else returns False.</p>
+<dd class="field-even"><p><strong>result</strong> – If boolean=False, returns (chi, p_value, dof).
+If boolean=True, returns True if p_value &gt; significance_level.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple or bool</p>
+<dd class="field-odd"><p>bool or tuple</p>
 </dd>
 </dl>
 <p class="rubric">References</p>
-<p>[1] <a class="reference external" href="https://en.wikipedia.org/wiki/G-test">https://en.wikipedia.org/wiki/G-test</a></p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id4" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/G-test">https://en.wikipedia.org/wiki/G-test</a></p>
+</aside>
+</aside>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">50000</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="s2">&quot;ABCD&quot;</span><span class="p">)</span>
@@ -471,34 +542,35 @@ boolean=False, returns a tuple of (Pearson’s correlation Coefficient, p-value)
 </dd>
 </dl>
 <p class="rubric">References</p>
-<dl class="simple">
-<dt>[1] Rajen D. Shah, and Jonas Peters.</dt><dd><dl class="simple">
-<dt>“The Hardness of Conditional Independence</dt><dd><p>Testing and the Generalised Covariance Measure”.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id5" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>Rajen D. Shah, and Jonas Peters. “The Hardness of Conditional Independence Testing and the Generalised
+Covariance Measure”.</p>
+</aside>
+</aside>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pgmpy.estimators.CITests.independence_match">
 <span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.CITests.</span></span><span class="sig-name descname"><span class="pre">independence_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">independencies</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/CITests.html#independence_match"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.CITests.independence_match" title="Link to this definition">¶</a></dt>
-<dd><p>Checks if <cite>X ⟂ Y | Z</cite> is in <cite>independencies</cite>. This method is implemented to
-have an uniform API when the independencies are provided instead of data.</p>
+<dd><p>Check if <cite>X ⟂ Y | Z</cite> is in <cite>independences</cite>.</p>
+<p>This method is implemented to have a uniform API when the independences
+are provided explicitly instead of being inferred from data.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<em>str</em>) – The first variable for testing the independence condition X ⟂ Y | Z</p></li>
-<li><p><strong>Y</strong> (<em>str</em>) – The second variable for testing the independence condition X ⟂ Y | Z</p></li>
-<li><p><strong>Z</strong> (<em>list/array-like</em>) – A list of conditional variable for testing the condition X ⟂ Y | Z</p></li>
-<li><p><strong>data</strong> (<em>pandas.DataFrame The dataset in which to test the independence condition.</em>)</p></li>
+<li><p><strong>X</strong> (<em>str</em>) – The first variable for testing the independence condition X ⟂ Y | Z.</p></li>
+<li><p><strong>Y</strong> (<em>str</em>) – The second variable for testing the independence condition X ⟂ Y | Z.</p></li>
+<li><p><strong>Z</strong> (<em>list</em><em> or </em><em>array-like</em>) – A list of conditional variables for testing the condition X ⟂ Y | Z.</p></li>
+<li><p><strong>independencies</strong> (<em>pgmpy.independencies.Independencies</em>) – The object containing the known independences.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>p-value</strong></p>
+<dd class="field-even"><p>True if the independence assertion is present in <cite>independences</cite>, else False.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float (Fixed to 0 since it is always confident)</p>
+<dd class="field-odd"><p>bool</p>
 </dd>
 </dl>
 </dd></dl>
@@ -539,8 +611,8 @@ than <cite>significance_level</cite> else returns False.</p>
 <p class="rubric">References</p>
 <p>[1] <a class="reference external" href="https://en.wikipedia.org/wiki/G-test">https://en.wikipedia.org/wiki/G-test</a></p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">50000</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="s2">&quot;ABCD&quot;</span><span class="p">)</span>
@@ -595,8 +667,8 @@ than <cite>significance_level</cite> else returns False.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">50000</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="s2">&quot;ABCD&quot;</span><span class="p">)</span>
@@ -621,39 +693,40 @@ than <cite>significance_level</cite> else returns False.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pgmpy.estimators.CITests.pearsonr">
 <span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.CITests.</span></span><span class="sig-name descname"><span class="pre">pearsonr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boolean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pgmpy/estimators/CITests.html#pearsonr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.CITests.pearsonr" title="Link to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Computes Pearson correlation coefficient and p-value for testing non-correlation.
-Should be used only on continuous data. In case when :math:<a href="#id5"><span class="problematic" id="id6">`</span></a>Z !=</p>
-</div></blockquote>
-<dl>
-<dt>ull` uses</dt><dd><p>linear regression and computes pearson coefficient on residuals.</p>
-<dl class="simple">
-<dt>X: str</dt><dd><p>The first variable for testing the independence condition X ⟂ Y | Z</p>
+<dd><p>Compute Pearson correlation coefficient and p-value for testing non-correlation.</p>
+<p>Should be used only on continuous data. In case when <span class="math">Z \neq \emptyset</span> uses
+linear regression and computes pearson coefficient on residuals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>str</em>) – The first variable for testing the independence condition X ⟂ Y | Z.</p></li>
+<li><p><strong>Y</strong> (<em>str</em>) – The second variable for testing the independence condition X ⟂ Y | Z.</p></li>
+<li><p><strong>Z</strong> (<em>list</em><em> or </em><em>array-like</em>) – A list of conditional variables for testing the condition X ⟂ Y | Z.</p></li>
+<li><p><strong>data</strong> (<em>pandas.DataFrame</em>) – The dataset in which to test the independence condition.</p></li>
+<li><p><strong>boolean</strong> (<em>bool</em><em>, </em><em>default=True</em>) – If True, returns a boolean indicating independence (based on <cite>significance_level</cite>).
+If False, returns the test statistic and p-value.</p></li>
+<li><p><strong>**kwargs</strong> – Additional arguments. Must contain <cite>significance_level</cite> if <cite>boolean=True</cite>.</p></li>
+</ul>
 </dd>
-<dt>Y: str</dt><dd><p>The second variable for testing the independence condition X ⟂ Y | Z</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>result</strong> – If boolean=True, returns True if p-value &gt;= significance_level, else False.
+If boolean=False, returns a tuple of (Pearson’s correlation Coefficient, p-value).</p>
 </dd>
-<dt>Z: list/array-like</dt><dd><p>A list of conditional variable for testing the condition X ⟂ Y | Z</p>
-</dd>
-<dt>data: pandas.DataFrame</dt><dd><p>The dataset in which to test the independence condition.</p>
-</dd>
-<dt>boolean: bool</dt><dd><dl class="simple">
-<dt>If boolean=True, an additional argument <cite>significance_level</cite> must</dt><dd><p>be specified. If p_value of the test is greater than equal to
-<cite>significance_level</cite>, returns True. Otherwise returns False.</p>
-</dd>
-<dt>If boolean=False, returns the pearson correlation coefficient and p_value</dt><dd><p>of the test.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<dl class="simple">
-<dt>CI Test results: tuple or bool</dt><dd><p>If boolean=True, returns True if p-value &gt;= significance_level, else False. If
-boolean=False, returns a tuple of (Pearson’s correlation Coefficient, p-value)</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool or tuple</p>
 </dd>
 </dl>
-<p>[1] <a class="reference external" href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">https://en.wikipedia.org/wiki/Pearson_correlation_coefficient</a>
-[2] <a class="reference external" href="https://en.wikipedia.org/wiki/Partial_correlation#Using_linear_regression">https://en.wikipedia.org/wiki/Partial_correlation#Using_linear_regression</a></p>
-</dd>
-</dl>
+<p class="rubric">References</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id6" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Pearson_correlation_coefficient">https://en.wikipedia.org/wiki/Pearson_correlation_coefficient</a></p>
+</aside>
+<aside class="footnote brackets" id="id7" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p><a class="reference external" href="https://en.wikipedia.org/wiki/Partial_correlation#Using_linear_regression">https://en.wikipedia.org/wiki/Partial_correlation#Using_linear_regression</a></p>
+</aside>
+</aside>
 </dd></dl>
 
 <dl class="py function">
@@ -688,18 +761,24 @@ boolean=False, returns a tuple of (Pearson’s correlation Coefficient, p-value)
 </dd>
 </dl>
 <p class="rubric">References</p>
-<dl class="simple">
-<dt>[1] Ankan, Ankur, and Johannes Textor.</dt><dd><p>“A simple unified approach to testing high-dimensional”
-“conditional independences for categorical and ordinal data.”
-Proceedings of the AAAI Conference on Artificial Intelligence.</p>
-</dd>
-<dt>[2] Li, C.; and Shepherd, B. E. 2010.</dt><dd><p>Test of Association Between Two Ordinal Variables While Adjusting for Covariates.
-Journal of the American Statistical Association.</p>
-</dd>
-<dt>[3] Muller, K. E. and Peterson B. L. (1984) Practical Methods for computing power</dt><dd><p>in testing the multivariate general linear hypothesis.
-Computational Statistics &amp; Data Analysis.</p>
-</dd>
-</dl>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id8" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>Ankan, Ankur, and Johannes Textor. “A simple unified approach to testing high-dimensional” “conditional
+independences for categorical and ordinal data.” Proceedings of the
+AAAI Conference on Artificial Intelligence.</p>
+</aside>
+<aside class="footnote brackets" id="id9" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>Li, C.; and Shepherd, B. E. 2010. Test of Association Between Two Ordinal Variables While Adjusting for
+Covariates. Journal of the American Statistical Association.</p>
+</aside>
+<aside class="footnote brackets" id="id10" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></span>
+<p>Muller, K. E. and Peterson B. L. (1984) Practical Methods for computing power in testing the multivariate
+general linear hypothesis. Computational Statistics &amp; Data Analysis.</p>
+</aside>
+</aside>
 </dd></dl>
 
 <dl class="py function">
@@ -719,14 +798,16 @@ This is the separating set that (potentially) makes X and Y independent.
 Default: []</p></li>
 <li><p><strong>data</strong> (<em>pandas.DataFrame</em>) – The dataset on which to test the independence condition.</p></li>
 <li><p><strong>lambda</strong> (<em>float</em><em> or </em><em>string</em>) – <p>The lambda parameter for the power_divergence statistic. Some values of
-<a href="#id7"><span class="problematic" id="id8">lambda_</span></a> results in other well known tests:</p>
+<a href="#id12"><span class="problematic" id="id13">lambda_</span></a> results in other well known tests:</p>
 <blockquote>
-<div><p>”pearson”             1          “Chi-squared test”
-“log-likelihood”      0          “G-test or log-likelihood”
-“freeman-tuckey”     -1/2        “Freeman-Tuckey Statistic”
-“mod-log-likelihood”  -1         “Modified Log-likelihood”
-“neyman”              -2         “Neyman’s statistic”
-“cressie-read”        2/3        “The value recommended in the paper[1]”</p>
+<div><ul>
+<li><p>”pearson”             1          “Chi-squared test”</p></li>
+<li><p>”log-likelihood”      0          “G-test or log-likelihood”</p></li>
+<li><p>”freeman-tuckey”     -1/2        “Freeman-Tuckey Statistic”</p></li>
+<li><p>”mod-log-likelihood”  -1         “Modified Log-likelihood”</p></li>
+<li><p>”neyman”              -2         “Neyman’s statistic”</p></li>
+<li><p>”cressie-read”        2/3        “The value recommended in the paper[1]”</p></li>
+</ul>
 </div></blockquote>
 </p></li>
 <li><p><strong>boolean</strong> (<em>bool</em>) – <dl class="simple">
@@ -736,28 +817,28 @@ Default: []</p></li>
 </dl>
 <p>If boolean=False, returns the chi2 and p_value of the test.</p>
 </p></li>
+<li><p><strong>**kwargs</strong> – Must contain <cite>significance_level</cite> if <cite>boolean=True</cite>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>CI Test Results</strong> – If boolean = False, Returns a tuple (chi, p_value, dof). <cite>chi</cite> is the
-chi-squared test statistic. The <cite>p_value</cite> for the test, i.e. the
-probability of observing the computed chi-square statistic (or an even
-higher value), given the null hypothesis that X ⟂ Y | Zs is True.
-If boolean = True, returns True if the p_value of the test is greater
-than <cite>significance_level</cite> else returns False.</p>
+<dd class="field-even"><p><strong>result</strong> – If boolean=False, returns (chi, p_value, dof).
+If boolean=True, returns True if p_value &gt; significance_level.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple or bool</p>
+<dd class="field-odd"><p>bool or tuple</p>
 </dd>
 </dl>
 <p class="rubric">References</p>
-<dl class="simple">
-<dt>[1] Cressie, Noel, and Timothy RC Read. “Multinomial goodness‐of‐fit tests.”</dt><dd><p>Journal of the Royal Statistical Society: Series B (Methodological) 46.3 (1984): 440-464.</p>
-</dd>
-</dl>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id11" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>Cressie, Noel, and Timothy RC Read. “Multinomial goodness‐of‐fit tests.”
+Journal of the Royal Statistical Society: Series B (Methodological) 46.3 (1984): 440-464.</p>
+</aside>
+</aside>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">50000</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="s2">&quot;ABCD&quot;</span><span class="p">)</span>
@@ -866,7 +947,7 @@ than <cite>significance_level</cite> else returns False.</p>
       
       |
       Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |
       <a href="../_sources/structure_estimator/pc.rst.txt"

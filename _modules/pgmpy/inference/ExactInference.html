@@ -5,8 +5,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>pgmpy.inference.ExactInference &#8212; 1.0.0 | pgmpy docs</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=c2b266e2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <script src="../../../_static/documentation_options.js?v=8d563738"></script>
@@ -39,27 +40,27 @@
             
   <h1>Source code for pgmpy.inference.ExactInference</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">reduce</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">reduce</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">opt_einsum</span> <span class="kn">import</span> <span class="n">contract</span>
-<span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opt_einsum</span><span class="w"> </span><span class="kn">import</span> <span class="n">contract</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm.auto</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
-<span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
-<span class="kn">from</span> <span class="nn">pgmpy.factors</span> <span class="kn">import</span> <span class="n">factor_product</span>
-<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">DiscreteFactor</span>
-<span class="kn">from</span> <span class="nn">pgmpy.inference</span> <span class="kn">import</span> <span class="n">Inference</span>
-<span class="kn">from</span> <span class="nn">pgmpy.inference.EliminationOrder</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors</span><span class="w"> </span><span class="kn">import</span> <span class="n">factor_product</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteFactor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inference</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.inference.EliminationOrder</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">MinFill</span><span class="p">,</span>
     <span class="n">MinNeighbors</span><span class="p">,</span>
     <span class="n">MinWeight</span><span class="p">,</span>
     <span class="n">WeightedMinFill</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DiscreteBayesianNetwork</span><span class="p">,</span>
     <span class="n">DynamicBayesianNetwork</span><span class="p">,</span>
     <span class="n">FactorGraph</span><span class="p">,</span>
@@ -67,13 +68,13 @@
     <span class="n">JunctionTree</span><span class="p">,</span>
     <span class="n">LinearGaussianBayesianNetwork</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">compat_fns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compat_fns</span>
 
 
 <div class="viewcode-block" id="VariableElimination">
 <a class="viewcode-back" href="../../../infer/ve.html#pgmpy.inference.ExactInference.VariableElimination">[docs]</a>
-<span class="k">class</span> <span class="nc">VariableElimination</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">_get_working_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evidence</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VariableElimination</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_working_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evidence</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Uses the evidence given to the query methods to modify the factors before running</span>
 <span class="sd">        the variable elimination algorithm.</span>
@@ -106,7 +107,7 @@
                 <span class="k">del</span> <span class="n">working_factors</span><span class="p">[</span><span class="n">evidence_var</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">working_factors</span>
 
-    <span class="k">def</span> <span class="nf">_get_elimination_order</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_elimination_order</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -179,7 +180,7 @@
             <span class="p">)</span><span class="o">.</span><span class="n">get_elimination_order</span><span class="p">(</span><span class="n">nodes</span><span class="o">=</span><span class="n">to_eliminate</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">elimination_order</span>
 
-    <span class="k">def</span> <span class="nf">_variable_elimination</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_variable_elimination</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">,</span>
         <span class="n">operation</span><span class="p">,</span>
@@ -286,7 +287,7 @@
 
 <div class="viewcode-block" id="VariableElimination.query">
 <a class="viewcode-back" href="../../../infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.query">[docs]</a>
-    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">],</span>
         <span class="n">evidence</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -502,7 +503,7 @@
 
 <div class="viewcode-block" id="VariableElimination.max_marginal">
 <a class="viewcode-back" href="../../../infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.max_marginal">[docs]</a>
-    <span class="k">def</span> <span class="nf">max_marginal</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_marginal</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -574,7 +575,7 @@
 
 <div class="viewcode-block" id="VariableElimination.map_query">
 <a class="viewcode-back" href="../../../infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.map_query">[docs]</a>
-    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">map_query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -675,7 +676,7 @@
 
 <div class="viewcode-block" id="VariableElimination.induced_graph">
 <a class="viewcode-back" href="../../../infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.induced_graph">[docs]</a>
-    <span class="k">def</span> <span class="nf">induced_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">induced_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the induced graph formed by running Variable Elimination on the network.</span>
 
@@ -745,7 +746,7 @@
 
 <div class="viewcode-block" id="VariableElimination.induced_width">
 <a class="viewcode-back" href="../../../infer/ve.html#pgmpy.inference.ExactInference.VariableElimination.induced_width">[docs]</a>
-    <span class="k">def</span> <span class="nf">induced_width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">induced_width</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elimination_order</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the width (integer) of the induced graph formed by running Variable Elimination on the network.</span>
 <span class="sd">        The width is the defined as the number of nodes in the largest clique in the graph minus 1.</span>
@@ -781,7 +782,7 @@
 
 <div class="viewcode-block" id="BeliefPropagation">
 <a class="viewcode-back" href="../../../infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation">[docs]</a>
-<span class="k">class</span> <span class="nc">BeliefPropagation</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BeliefPropagation</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for performing inference using Belief Propagation method.</span>
 
@@ -795,7 +796,7 @@
 <span class="sd">        model for which inference is to performed</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">BeliefPropagation</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">JunctionTree</span><span class="p">):</span>
@@ -808,7 +809,7 @@
 
 <div class="viewcode-block" id="BeliefPropagation.get_cliques">
 <a class="viewcode-back" href="../../../infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.get_cliques">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_cliques</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_cliques</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns cliques used for belief propagation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -817,7 +818,7 @@
 
 <div class="viewcode-block" id="BeliefPropagation.get_clique_beliefs">
 <a class="viewcode-back" href="../../../infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.get_clique_beliefs">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_clique_beliefs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_clique_beliefs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns clique beliefs. Should be called after the clique tree (or</span>
 <span class="sd">        junction tree) is calibrated.</span>
@@ -827,7 +828,7 @@
 
 <div class="viewcode-block" id="BeliefPropagation.get_sepset_beliefs">
 <a class="viewcode-back" href="../../../infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.get_sepset_beliefs">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_sepset_beliefs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_sepset_beliefs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns sepset beliefs. Should be called after clique tree (or junction</span>
 <span class="sd">        tree) is calibrated.</span>
@@ -835,7 +836,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_update_beliefs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sending_clique</span><span class="p">,</span> <span class="n">receiving_clique</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_beliefs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sending_clique</span><span class="p">,</span> <span class="n">receiving_clique</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is belief-update method.</span>
 
@@ -872,8 +873,8 @@
         <span class="c1"># \mu_{i, j} = \sigma_{i \rightarrow j}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigma</span>
 
-    <span class="k">def</span> <span class="nf">_is_converged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_converged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Checks whether the calibration has converged or not. At convergence</span>
 <span class="sd">        the sepset belief would be precisely the sepset marginal.</span>
 
@@ -919,7 +920,7 @@
                 <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="kc">True</span>
 
-    <span class="k">def</span> <span class="nf">_calibrate_junction_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_calibrate_junction_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generalized calibration of junction tree or clique using belief propagation. This method can be used for both</span>
 <span class="sd">        calibrating as well as max-calibrating.</span>
@@ -964,7 +965,7 @@
 
 <div class="viewcode-block" id="BeliefPropagation.calibrate">
 <a class="viewcode-back" href="../../../infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.calibrate">[docs]</a>
-    <span class="k">def</span> <span class="nf">calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calibration using belief propagation in junction tree or clique tree.</span>
 
@@ -1017,7 +1018,7 @@
 
 <div class="viewcode-block" id="BeliefPropagation.max_calibrate">
 <a class="viewcode-back" href="../../../infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.max_calibrate">[docs]</a>
-    <span class="k">def</span> <span class="nf">max_calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Max-calibration of the junction tree using belief propagation.</span>
 
@@ -1068,7 +1069,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate_junction_tree</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">&quot;maximize&quot;</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_query</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1190,7 +1191,7 @@
 
 <div class="viewcode-block" id="BeliefPropagation.query">
 <a class="viewcode-back" href="../../../infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.query">[docs]</a>
-    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">,</span>
         <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -1298,7 +1299,7 @@
 
 <div class="viewcode-block" id="BeliefPropagation.map_query">
 <a class="viewcode-back" href="../../../infer/bp.html#pgmpy.inference.ExactInference.BeliefPropagation.map_query">[docs]</a>
-    <span class="k">def</span> <span class="nf">map_query</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">map_query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1400,7 +1401,7 @@
 
 <div class="viewcode-block" id="BeliefPropagationWithMessagePassing">
 <a class="viewcode-back" href="../../../infer/bp_wmp.html#pgmpy.inference.ExactInference.BeliefPropagationWithMessagePassing">[docs]</a>
-<span class="k">class</span> <span class="nc">BeliefPropagationWithMessagePassing</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BeliefPropagationWithMessagePassing</span><span class="p">(</span><span class="n">Inference</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for performing efficient inference using Belief Propagation method on factor graphs with no loops.</span>
 
@@ -1421,7 +1422,7 @@
 <span class="sd">    by J Winn (Microsoft Research).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">FactorGraph</span><span class="p">,</span> <span class="n">check_model</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">FactorGraph</span><span class="p">,</span> <span class="n">check_model</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span>
             <span class="n">model</span><span class="p">,</span> <span class="n">FactorGraph</span>
         <span class="p">),</span> <span class="s2">&quot;Model must be an instance of FactorGraph&quot;</span>
@@ -1429,7 +1430,7 @@
             <span class="n">model</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
 
-    <span class="k">class</span> <span class="nc">_RecursiveMessageSchedulingQuery</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">_RecursiveMessageSchedulingQuery</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Private class used in `BeliefPropagationWithMessagePassing.query()` to efficiently</span>
 <span class="sd">        manage the message scheduling across the different queried variables, in a recursive way.</span>
@@ -1439,7 +1440,7 @@
 <span class="sd">        Same as in the query method.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">belief_propagation</span><span class="p">,</span>
             <span class="n">variables</span><span class="p">,</span>
@@ -1453,7 +1454,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">virtual_evidence</span> <span class="o">=</span> <span class="n">virtual_evidence</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">all_messages</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">get_messages</span> <span class="k">else</span> <span class="kc">None</span>
 
-        <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="n">agg_res</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
                 <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schedule_variable_node_messages</span><span class="p">(</span>
@@ -1466,7 +1467,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">agg_res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_messages</span>
 
-        <span class="k">def</span> <span class="nf">schedule_variable_node_messages</span><span class="p">(</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">schedule_variable_node_messages</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">variable</span><span class="p">,</span>
             <span class="n">from_factor</span><span class="p">,</span>
@@ -1532,7 +1533,7 @@
                     <span class="n">variable</span><span class="p">,</span> <span class="n">incoming_messages</span> <span class="o">+</span> <span class="n">virtual_messages</span>
                 <span class="p">)</span>
 
-        <span class="k">def</span> <span class="nf">schedule_factor_node_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">from_variable</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">schedule_factor_node_messages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">from_variable</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Returns the message sent from the factor to the variable requesting it.</span>
 <span class="sd">            For that, the factor requests the messages coming from its neighbouring</span>
@@ -1564,7 +1565,7 @@
 
 <div class="viewcode-block" id="BeliefPropagationWithMessagePassing.query">
 <a class="viewcode-back" href="../../../infer/bp_wmp.html#pgmpy.inference.ExactInference.BeliefPropagationWithMessagePassing.query">[docs]</a>
-    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_messages</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1658,7 +1659,7 @@
 
 <div class="viewcode-block" id="BeliefPropagationWithMessagePassing.calc_variable_node_message">
 <a class="viewcode-back" href="../../../infer/bp_wmp.html#pgmpy.inference.ExactInference.BeliefPropagationWithMessagePassing.calc_variable_node_message">[docs]</a>
-    <span class="k">def</span> <span class="nf">calc_variable_node_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">incoming_messages</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_variable_node_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">incoming_messages</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The outgoing message is the element wise product of all incoming messages</span>
 
@@ -1685,7 +1686,7 @@
 <div class="viewcode-block" id="BeliefPropagationWithMessagePassing.calc_factor_node_message">
 <a class="viewcode-back" href="../../../infer/bp_wmp.html#pgmpy.inference.ExactInference.BeliefPropagationWithMessagePassing.calc_factor_node_message">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">calc_factor_node_message</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">incoming_messages</span><span class="p">,</span> <span class="n">target_var</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calc_factor_node_message</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">incoming_messages</span><span class="p">,</span> <span class="n">target_var</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the outgoing message for a factor node, which is the</span>
 <span class="sd">        multiplication of the incoming messages with the factor function (CPT).</span>
@@ -1805,7 +1806,7 @@
       
       |
       Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
     </div>
 

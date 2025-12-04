@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Expert Knowledge Integration with Causal Discovery" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="examples/Expert_Knowledge.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="Causal Discovery (aka. Structure learning) seeks to uncover the causal relationships among random variables from observational datasets. Methods like the PC algorithm and Hill-climb Search can be u..." />
+<meta property="og:image:width" content="1146" />
+<meta property="og:image:height" content="600" />
+<meta property="og:image" content="_images/social_previews/summary_examples_Expert_Knowledge_d77abb44.png" />
+<meta property="og:image:alt" content="Causal Discovery (aka. Structure learning) seeks to uncover the causal relationships among random variables from observational datasets. Methods like the PC algorithm and Hill-climb Search can be u..." />
+<meta name="description" content="Causal Discovery (aka. Structure learning) seeks to uncover the causal relationships among random variables from observational datasets. Methods like the PC algorithm and Hill-climb Search can be u..." />
+<meta name="twitter:card" content="summary_large_image" />
+
+    <title>Expert Knowledge Integration with Causal Discovery &#8212; 1.0.0 | pgmpy docs</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=c2b266e2" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <script src="../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/examples/Expert_Knowledge.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Parameter Learning in Discrete Bayesian Networks" href="Parameter_Learning_Discrete_BN.html" />
+    <link rel="prev" title="Learning Tree-augmented Naive Bayes (TAN) Structure from Data" href="Structure_Learning_TAN.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="Expert-Knowledge-Integration-with-Causal-Discovery">
+<h1>Expert Knowledge Integration with Causal Discovery<a class="headerlink" href="#Expert-Knowledge-Integration-with-Causal-Discovery" title="Link to this heading">¶</a></h1>
+<p>Causal Discovery (aka. Structure learning) seeks to uncover the causal relationships among random variables from observational datasets. Methods like the PC algorithm and Hill-climb Search can be used for causal discovery, however, they often struggle to recover the correct causal relationships due to issues such as data not satisfying the assumptions of the method, limited data can lead to error, high compute time when there are many variables or the model is dense.</p>
+<p>Incorporating expert knowledge can greatly improve the accuracy of these methods, as well as reduce the computational cost as it constrains the search space for these algorithms. pgmpy currently has the following options to specify expert knowledge:</p>
+<ul class="simple">
+<li><p><strong>Temporal Order / Tier information</strong>: Specify the tiers/temporal order for sets of variables.</p></li>
+<li><p><strong>Search Space</strong>: Specify the set of edges that the algorithms should search through.</p></li>
+<li><p><strong>Forbidden Edges</strong>: Edges that should not be present in the final model.</p></li>
+<li><p><strong>Required Edges</strong>: Edges that must be present in the final model.</p></li>
+</ul>
+<p>This tutorial walks through examples of specifying expert knowledge with the causal discovery algorithms implemented in pgmpy. Expert knowledge is supported in pgmpy with the following algorithms:</p>
+<ul class="simple">
+<li><p><strong>PC</strong></p></li>
+<li><p><strong>Hill Climb Search</strong></p></li>
+<li><p><strong>GES</strong></p></li>
+<li><p><strong>ExpertInLoop</strong></p></li>
+</ul>
+<p>The models used in this notebook are described in detail at <a class="reference external" href="https://www.bnlearn.com/bnrepository/">the bnlearn repository</a>.</p>
+<section id="Temporal-Order-with-PC-Algorithm">
+<h2>Temporal Order with PC Algorithm<a class="headerlink" href="#Temporal-Order-with-PC-Algorithm" title="Link to this heading">¶</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports and configuration</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">display</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_example_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.global_vars</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span><span class="p">,</span> <span class="n">config</span>
+
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+<span class="n">config</span><span class="o">.</span><span class="n">set_backend</span><span class="p">(</span><span class="s2">&quot;numpy&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load an example model and simulate data from it.</span>
+<span class="n">cancer</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="s2">&quot;cancer&quot;</span><span class="p">)</span>
+<span class="n">cancer_samples</span> <span class="o">=</span> <span class="n">cancer</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="c1"># Plot the `cancer` model</span>
+<span class="n">diag</span> <span class="o">=</span> <span class="n">cancer</span><span class="o">.</span><span class="n">to_graphviz</span><span class="p">()</span>
+<span class="n">diag</span><span class="o">.</span><span class="n">layout</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s2">&quot;dot&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">diag</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "f12b3917ef2e45f9b0f0de13fbd37c2d", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_4_1.svg" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_4_1.svg" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run the standard PC algorithm and plot the results</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">PC</span><span class="p">,</span> <span class="n">ExpertKnowledge</span>
+
+<span class="n">learned_model</span> <span class="o">=</span> <span class="n">PC</span><span class="p">(</span><span class="n">cancer_samples</span><span class="p">)</span><span class="o">.</span><span class="n">estimate</span><span class="p">()</span>
+
+<span class="n">diag</span> <span class="o">=</span> <span class="n">learned_model</span><span class="o">.</span><span class="n">to_graphviz</span><span class="p">()</span>
+<span class="n">diag</span><span class="o">.</span><span class="n">layout</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s2">&quot;dot&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">diag</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "22ce028ac25e4fb28411fa5bc2ac1997", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_5_1.svg" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_5_1.svg" />
+</div>
+</div>
+<p>As seen from the learned model, the PC algorithm was not able to correctly recover the original data-generating DAG.</p>
+<p>Now, we know that smoking (<code class="docutils literal notranslate"><span class="pre">Smoker</span></code>) and air pollution (<code class="docutils literal notranslate"><span class="pre">Pollution</span></code>) contribute to lung cancer (<code class="docutils literal notranslate"><span class="pre">Cancer</span></code>). Also, breathing difficulties (<code class="docutils literal notranslate"><span class="pre">Dyspnoea</span></code>) and a positive X-ray report (<code class="docutils literal notranslate"><span class="pre">Xray</span></code>) contribute to a cancer diagnosis (effect), so they cannot be the initial causes in this scenario. Based on this, we can craft a temporal order where the causes of cancer are at a higher temporal order, while the effects are lumped together at the end.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># PC algorithm with the temporal knowledge.</span>
+
+<span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">(</span>
+    <span class="n">temporal_order</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;Pollution&quot;</span><span class="p">,</span> <span class="s2">&quot;Smoker&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;Cancer&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;Dyspnoea&quot;</span><span class="p">,</span> <span class="s2">&quot;Xray&quot;</span><span class="p">]]</span>
+<span class="p">)</span>
+
+<span class="n">est_model</span> <span class="o">=</span> <span class="n">PC</span><span class="p">(</span><span class="n">cancer_samples</span><span class="p">)</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">expert_knowledge</span><span class="o">=</span><span class="n">expert_knowledge</span><span class="p">)</span>
+
+<span class="n">diag</span> <span class="o">=</span> <span class="n">est_model</span><span class="o">.</span><span class="n">to_graphviz</span><span class="p">()</span>
+<span class="n">diag</span><span class="o">.</span><span class="n">layout</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s2">&quot;dot&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">diag</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "e26c8f630ac94230b2a3d30c64511087", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_7_1.svg" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_7_1.svg" />
+</div>
+</div>
+<p>Note: Using any form of expert knowledge, especially with PC, is sensitive to the accuracy of the knowledge.</p>
+</section>
+<section id="Expert-knowledge-based-on-search-space">
+<h2>Expert knowledge based on search space<a class="headerlink" href="#Expert-knowledge-based-on-search-space" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the Asia model and simulate data (https://www.bnlearn.com/bnrepository/discrete-small.html#asia)</span>
+<span class="n">asia</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="s2">&quot;asia&quot;</span><span class="p">)</span>
+<span class="n">asia_samples</span> <span class="o">=</span> <span class="n">asia</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">diag</span> <span class="o">=</span> <span class="n">asia</span><span class="o">.</span><span class="n">to_graphviz</span><span class="p">()</span>
+<span class="n">diag</span><span class="o">.</span><span class="n">layout</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s2">&quot;dot&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">diag</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "22c18d7324bf42158d08524faac44a58", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_10_1.svg" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_10_1.svg" />
+</div>
+</div>
+<p>The idea with the search space is that it is usually difficult to distinguish between direct and indirect effects. For example, in the above Asia model, we might know that <code class="docutils literal notranslate"><span class="pre">smoke</span></code> would have a causal effect on <code class="docutils literal notranslate"><span class="pre">dysp</span></code> but might not exactly know through which pathways. With the search space, we try to specify a hypergraph over our variables such that we specify a causal edge between any two variables that we think should have a causal relationship, but aren’t sure about the causal path/edges.</p>
+<p>As an example, for the <code class="docutils literal notranslate"><span class="pre">asia</span></code> model, we can consider additional edges from all three diseases (<code class="docutils literal notranslate"><span class="pre">tub</span></code>, <code class="docutils literal notranslate"><span class="pre">lung</span></code>, and <code class="docutils literal notranslate"><span class="pre">bronc</span></code>) to both the symptoms (<code class="docutils literal notranslate"><span class="pre">xray</span></code> and <code class="docutils literal notranslate"><span class="pre">dysp</span></code>).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">SHD</span>
+
+<span class="n">search_space</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;smoke&quot;</span><span class="p">,</span> <span class="s2">&quot;cancer&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;smoke&quot;</span><span class="p">,</span> <span class="s2">&quot;lung&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;smoke&quot;</span><span class="p">,</span> <span class="s2">&quot;tub&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;tub&quot;</span><span class="p">,</span> <span class="s2">&quot;asia&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;asia&quot;</span><span class="p">,</span> <span class="s2">&quot;tub&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;tub&quot;</span><span class="p">,</span> <span class="s2">&quot;either&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;lung&quot;</span><span class="p">,</span> <span class="s2">&quot;either&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;bronc&quot;</span><span class="p">,</span> <span class="s2">&quot;either&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;tub&quot;</span><span class="p">,</span> <span class="s2">&quot;xray&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;tub&quot;</span><span class="p">,</span> <span class="s2">&quot;dysp&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;lung&quot;</span><span class="p">,</span> <span class="s2">&quot;x-ray&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;lung&quot;</span><span class="p">,</span> <span class="s2">&quot;dysp&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;bronc&quot;</span><span class="p">,</span> <span class="s2">&quot;xray&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;bronc&quot;</span><span class="p">,</span> <span class="s2">&quot;dysp&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;either&quot;</span><span class="p">,</span> <span class="s2">&quot;xray&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;either&quot;</span><span class="p">,</span> <span class="s2">&quot;dysp&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;tub&quot;</span><span class="p">,</span> <span class="s2">&quot;dysp&quot;</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">(</span><span class="n">search_space</span><span class="o">=</span><span class="n">search_space</span><span class="p">)</span>
+
+<span class="n">est_model</span> <span class="o">=</span> <span class="n">PC</span><span class="p">(</span><span class="n">asia_samples</span><span class="p">)</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">expert_knowledge</span><span class="o">=</span><span class="n">expert_knowledge</span><span class="p">,</span> <span class="n">ci_test</span><span class="o">=</span><span class="s1">&#39;pillai&#39;</span><span class="p">,</span> <span class="n">enforce_expert_knowledge</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">SHD</span><span class="p">(</span><span class="n">asia</span><span class="p">,</span> <span class="n">est_model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "5d011a252da542e2b86c84964a3635bd", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+8
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot the estimated model</span>
+
+<span class="n">diag</span> <span class="o">=</span> <span class="n">est_model</span><span class="o">.</span><span class="n">to_graphviz</span><span class="p">()</span>
+<span class="n">diag</span><span class="o">.</span><span class="n">layout</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s2">&quot;dot&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">diag</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_13_0.svg" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_13_0.svg" />
+</div>
+</div>
+</section>
+<section id="Knowledge-base-of-required-and-forbidden-edges">
+<h2>Knowledge base of required and forbidden edges<a class="headerlink" href="#Knowledge-base-of-required-and-forbidden-edges" title="Link to this heading">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">child</span> <span class="o">=</span> <span class="n">get_example_model</span><span class="p">(</span><span class="s2">&quot;child&quot;</span><span class="p">)</span>
+<span class="n">child_samples</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">diag</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">to_graphviz</span><span class="p">()</span>
+<span class="n">diag</span><span class="o">.</span><span class="n">layout</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s2">&quot;dot&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">diag</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "c2e6b6fc46b547369d2ec99db880478b", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_15_1.svg" src="../../../pgmpy_docs/doctrees/nbsphinx/examples_Expert_Knowledge_15_1.svg" />
+</div>
+</div>
+<p>Based on similar reasoning as in the first section, we can now create a knowledge base consisting of forbidden and required edges. For example, having birth asphyxia (‘Disease’) directly contributes to the 6 subclassses/markers of disease (‘LVH’, ‘LungParench’ etc.). It is the root cause, so it cannot have incoming edges from any of these nodes. Similarly, the CO2 level (‘CO2’) affects the CO2 report (‘CO2Report’), and not the other way around.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">required_edges</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;CO2&quot;</span><span class="p">,</span> <span class="s2">&quot;CO2Report&quot;</span><span class="p">),</span>
+                  <span class="p">(</span><span class="s2">&quot;ChestXray&quot;</span><span class="p">,</span> <span class="s2">&quot;XrayReport&quot;</span><span class="p">),</span>
+                  <span class="p">(</span><span class="s2">&quot;LVH&quot;</span><span class="p">,</span> <span class="s2">&quot;LVHreport&quot;</span><span class="p">),</span>
+                  <span class="p">(</span><span class="s2">&quot;Gruntin&quot;</span><span class="p">,</span> <span class="s2">&quot;GruntingReport&quot;</span><span class="p">)]</span>
+<span class="c1"># As disease should be an exogenous node, do not allow any incoming edges except `BirthAsphyxia&#39;.</span>
+<span class="n">forbidden_edges</span> <span class="o">=</span> <span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s1">&#39;Disease&#39;</span><span class="p">]</span>
+
+<span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">(</span>
+    <span class="n">required_edges</span><span class="o">=</span><span class="n">required_edges</span><span class="p">,</span> <span class="n">forbidden_edges</span><span class="o">=</span><span class="n">forbidden_edges</span>
+<span class="p">)</span>
+<span class="n">est_model</span> <span class="o">=</span> <span class="n">PC</span><span class="p">(</span><span class="n">child_samples</span><span class="p">)</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">expert_knowledge</span><span class="o">=</span><span class="n">expert_knowledge</span><span class="p">,</span> <span class="n">ci_test</span><span class="o">=</span><span class="s1">&#39;pillai&#39;</span><span class="p">,</span> <span class="n">enforce_expert_knowledge</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">SHD</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">est_model</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "1697474157f046a6b2cbe6f71f7fcde1", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">KeyError</span>                                  Traceback (most recent call last)
+Cell <span class="ansi-green-fg">In[9], line 11</span>
+<span class="ansi-green-intense-fg ansi-bold">      6</span> forbidden_edges <span style="color: rgb(98,98,98)">=</span> [(u, v) <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> u, v <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> itertools<span style="color: rgb(98,98,98)">.</span>combinations(child<span style="color: rgb(98,98,98)">.</span>nodes(), <span style="color: rgb(98,98,98)">2</span>) <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> v <span style="color: rgb(98,98,98)">==</span> <span style="color: rgb(175,0,0)">&#39;</span><span style="color: rgb(175,0,0)">Disease</span><span style="color: rgb(175,0,0)">&#39;</span>]
+<span class="ansi-green-intense-fg ansi-bold">      8</span> expert_knowledge <span style="color: rgb(98,98,98)">=</span> ExpertKnowledge(
+<span class="ansi-green-intense-fg ansi-bold">      9</span>     required_edges<span style="color: rgb(98,98,98)">=</span>required_edges, forbidden_edges<span style="color: rgb(98,98,98)">=</span>forbidden_edges
+<span class="ansi-green-intense-fg ansi-bold">     10</span> )
+<span class="ansi-green-fg">---&gt; 11</span> est_model <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg">PC</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">child_samples</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">estimate</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">expert_knowledge</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg">expert_knowledge</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">ci_test</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">pillai</span><span class="ansi-yellow-bg" style="color: rgb(175,0,0)">&#39;</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">enforce_expert_knowledge</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">=</span><span class="ansi-yellow-bg ansi-bold" style="color: rgb(0,135,0)">True</span><span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">     12</span> SHD(child, est_model)
+
+File <span class="ansi-green-fg">~/pgmpy/examples/pgmpy/estimators/PC.py:241</span>, in <span class="ansi-cyan-fg">PC.estimate</span><span class="ansi-blue-fg">(self, variant, ci_test, return_type, significance_level, max_cond_vars, expert_knowledge, enforce_expert_knowledge, n_jobs, show_progress, **kwargs)</span>
+<span class="ansi-green-intense-fg ansi-bold">    238</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> skel, separating_sets
+<span class="ansi-green-intense-fg ansi-bold">    240</span> <span style="color: rgb(95,135,135)"># Step 2: Orient the edges based on collider structures.</span>
+<span class="ansi-green-fg">--&gt; 241</span> pdag <span style="color: rgb(98,98,98)">=</span> <span class="ansi-yellow-bg" style="color: rgb(0,135,0)">self</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">orient_colliders</span><span class="ansi-yellow-bg">(</span>
+<span class="ansi-green-intense-fg ansi-bold">    242</span> <span class="ansi-yellow-bg">    </span><span class="ansi-yellow-bg">skel</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">separating_sets</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">expert_knowledge</span><span class="ansi-yellow-bg" style="color: rgb(98,98,98)">.</span><span class="ansi-yellow-bg">temporal_ordering</span>
+<span class="ansi-green-intense-fg ansi-bold">    243</span> <span class="ansi-yellow-bg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    245</span> <span style="color: rgb(95,135,135)"># Step 3: Either return the CPDAG, integrate expert knowledge or fully orient the edges to build a DAG.</span>
+<span class="ansi-green-intense-fg ansi-bold">    246</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> expert_knowledge<span style="color: rgb(98,98,98)">.</span>temporal_order <span style="color: rgb(98,98,98)">!=</span> [[]]:
+
+File <span class="ansi-green-fg">~/pgmpy/examples/pgmpy/estimators/PC.py:548</span>, in <span class="ansi-cyan-fg">PC.orient_colliders</span><span class="ansi-blue-fg">(skeleton, separating_sets, temporal_ordering)</span>
+<span class="ansi-green-intense-fg ansi-bold">    546</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> skeleton<span style="color: rgb(98,98,98)">.</span>has_edge(X, Y):
+<span class="ansi-green-intense-fg ansi-bold">    547</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> Z <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> <span style="color: rgb(0,135,0)">set</span>(skeleton<span style="color: rgb(98,98,98)">.</span>neighbors(X)) <span style="color: rgb(98,98,98)">&amp;</span> <span style="color: rgb(0,135,0)">set</span>(skeleton<span style="color: rgb(98,98,98)">.</span>neighbors(Y)):
+<span class="ansi-green-fg">--&gt; 548</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> Z <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> <span class="ansi-yellow-bg">separating_sets</span><span class="ansi-yellow-bg">[</span><span class="ansi-yellow-bg" style="color: rgb(0,135,0)">frozenset</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">(</span><span class="ansi-yellow-bg">X</span><span class="ansi-yellow-bg">,</span><span class="ansi-yellow-bg"> </span><span class="ansi-yellow-bg">Y</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">)</span><span class="ansi-yellow-bg">]</span>:
+<span class="ansi-green-intense-fg ansi-bold">    549</span>             <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> (temporal_ordering <span style="color: rgb(98,98,98)">==</span> <span style="color: rgb(0,135,0)">dict</span>()) <span class="ansi-bold" style="color: rgb(175,0,255)">or</span> (
+<span class="ansi-green-intense-fg ansi-bold">    550</span>                 (temporal_ordering[Z] <span style="color: rgb(98,98,98)">&gt;</span><span style="color: rgb(98,98,98)">=</span> temporal_ordering[X])
+<span class="ansi-green-intense-fg ansi-bold">    551</span>                 <span class="ansi-bold" style="color: rgb(175,0,255)">and</span> (temporal_ordering[Z] <span style="color: rgb(98,98,98)">&gt;</span><span style="color: rgb(98,98,98)">=</span> temporal_ordering[Y])
+<span class="ansi-green-intense-fg ansi-bold">    552</span>             ):
+<span class="ansi-green-intense-fg ansi-bold">    553</span>                 pdag<span style="color: rgb(98,98,98)">.</span>remove_edges_from([(Z, X), (Z, Y)])
+
+<span class="ansi-red-fg">KeyError</span>: frozenset({&#39;Disease&#39;, &#39;CO2&#39;})
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Plot the estimated model</span>
+
+<span class="n">diag</span> <span class="o">=</span> <span class="n">est_model</span><span class="o">.</span><span class="n">to_graphviz</span><span class="p">()</span>
+<span class="n">diag</span><span class="o">.</span><span class="n">layout</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s2">&quot;dot&quot;</span><span class="p">)</span>
+<span class="n">display</span><span class="p">(</span><span class="n">diag</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../index.html">
+    <img class="logo" src="../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../started/base.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#defining-bayesian-networks">Defining Bayesian Networks</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../examples.html#causal-discovery-structure-learning">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#parameter-estimation">Parameter Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#probabilistic-inference">Probabilistic Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#causal-inference">Causal Inference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#simulations">Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples.html#extending-pgmpy">Extending pgmpy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../models/base.html">Supported Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../factors/base.html">Parameterization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../causal_infer/base.html">Causal Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../metrics/metrics.html">Metrics for Testing Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../examples.html">Examples</a><ul>
+      <li>Previous: <a href="Structure_Learning_TAN.html" title="previous chapter">Learning Tree-augmented Naive Bayes (TAN) Structure from Data</a></li>
+      <li>Next: <a href="Parameter_Learning_Discrete_BN.html" title="next chapter">Parameter Learning in Discrete Bayesian Networks</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/examples/Expert_Knowledge.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

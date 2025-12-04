@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pgmpy.base.PDAG &#8212; 1.0.0 | pgmpy docs</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=c2b266e2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="canonical" href="https://pgmpy.org/_modules/pgmpy/base/PDAG.html" />
+    <link rel="icon" href="../../../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pgmpy.base.PDAG</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Iterable</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base._mixin_roles</span><span class="w"> </span><span class="kn">import</span> <span class="n">_GraphRolesMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.global_vars</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+
+
+<div class="viewcode-block" id="PDAG">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PDAG</span><span class="p">(</span><span class="n">_GraphRolesMixin</span><span class="p">,</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class for representing PDAGs (also known as CPDAG). PDAGs are the equivalence classes of</span>
+<span class="sd">    DAGs and contain both directed and undirected edges.</span>
+
+<span class="sd">    Note: In this class, undirected edges are represented using two edges in both direction i.e.</span>
+<span class="sd">    an undirected edge between X - Y is represented using X -&gt; Y and X &lt;- Y.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    directed_ebunch: list, array-like of 2-tuples</span>
+<span class="sd">        List of directed edges in the PDAG.</span>
+
+<span class="sd">    undirected_ebunch: list, array-like of 2-tuples</span>
+<span class="sd">        List of undirected edges in the PDAG.</span>
+
+<span class="sd">    latents: list, array-like</span>
+<span class="sd">        List of nodes which are latent variables.</span>
+
+<span class="sd">    exposures : set, default=set()</span>
+<span class="sd">        Set of exposure variables in the graph. These are the variables</span>
+<span class="sd">        that represent the treatment or intervention being studied in a</span>
+<span class="sd">        causal analysis. Default is an empty set.</span>
+
+<span class="sd">    outcomes : set, default=set()</span>
+<span class="sd">        Set of outcome variables in the graph. These are the variables</span>
+<span class="sd">        that represent the response or dependent variables being studied</span>
+<span class="sd">        in a causal analysis. Default is an empty set.</span>
+
+<span class="sd">    roles : dict, optional (default: None)</span>
+<span class="sd">        A dictionary mapping roles to node names.</span>
+<span class="sd">        The keys are roles, and the values are role names (strings or iterables of str).</span>
+<span class="sd">        If provided, this will automatically assign roles to the nodes in the graph.</span>
+<span class="sd">        Passing a key-value pair via ``roles`` is equivalent to calling</span>
+<span class="sd">        ``with_role(role, variables)`` for each key-value pair in the dictionary.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.base import PDAG</span>
+<span class="sd">    &gt;&gt;&gt; pdag = PDAG(</span>
+<span class="sd">    ...     directed_ebunch=[(&quot;A&quot;, &quot;C&quot;), (&quot;D&quot;, &quot;C&quot;)],</span>
+<span class="sd">    ...     undirected_ebunch=[(&quot;B&quot;, &quot;A&quot;), (&quot;B&quot;, &quot;D&quot;)],</span>
+<span class="sd">    ...     latents=[&quot;E&quot;],</span>
+<span class="sd">    ...     roles={&quot;exposure&quot;: [&quot;A&quot;], &quot;outcome&quot;: [&quot;C&quot;]},</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; pdag.directed_edges</span>
+<span class="sd">    {(&#39;A&#39;, &#39;C&#39;), (&#39;D&#39;, &#39;C&#39;)}</span>
+<span class="sd">    &gt;&gt;&gt; pdag.undirected_edges</span>
+<span class="sd">    {(&#39;B&#39;, &#39;A&#39;), (&#39;B&#39;, &#39;D&#39;)}</span>
+<span class="sd">    &gt;&gt;&gt; pdag.latents</span>
+<span class="sd">    {&#39;E&#39;}</span>
+<span class="sd">    &gt;&gt;&gt; pdag.exposures</span>
+<span class="sd">    {&#39;A&#39;}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">directed_ebunch</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">undirected_ebunch</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">latents</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">exposures</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
+        <span class="n">outcomes</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(),</span>
+        <span class="n">roles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undirected_edges</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">undirected_ebunch</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">PDAG</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">undirected_edges</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
+                <span class="nb">set</span><span class="p">([(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">undirected_edges</span><span class="p">])</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">latents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exposures</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">exposures</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outcomes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">outcomes</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">roles</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">roles</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">roles</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Roles must be provided as a dictionary.&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="nb">vars</span> <span class="ow">in</span> <span class="n">roles</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">with_role</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="nb">vars</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PDAG.all_neighbors">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.all_neighbors">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">all_neighbors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a set of all neighbors of a node in the PDAG. This includes both directed and undirected edges.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node: any hashable python object</span>
+<span class="sd">            The node for which to get the neighboring nodes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set: A set of neighboring nodes.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import PDAG</span>
+<span class="sd">        &gt;&gt;&gt; pdag = PDAG(</span>
+<span class="sd">        ...     directed_ebunch=[(&quot;A&quot;, &quot;C&quot;), (&quot;D&quot;, &quot;C&quot;)],</span>
+<span class="sd">        ...     undirected_ebunch=[(&quot;B&quot;, &quot;A&quot;), (&quot;B&quot;, &quot;D&quot;)],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; pdag.all_neighbors(&quot;A&quot;)</span>
+<span class="sd">        {&#39;B&#39;, &#39;C&#39;}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">)}</span> <span class="o">|</span> <span class="p">{</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">)}</span></div>
+
+
+<div class="viewcode-block" id="PDAG.directed_children">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.directed_children">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">directed_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a set of children of node such that there is a directed edge from `node` to child.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="PDAG.directed_parents">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.directed_parents">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">directed_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a set of parents of node such that there is a directed edge from the parent to `node`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="PDAG.has_directed_edge">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.has_directed_edge">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_directed_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if there is a directed edge u -&gt; v in the PDAG.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="PDAG.has_undirected_edge">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.has_undirected_edge">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_undirected_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if there is an undirected edge u - v in the PDAG.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">undirected_edges</span> <span class="ow">or</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">undirected_edges</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="PDAG.undirected_neighbors">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.undirected_neighbors">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">undirected_neighbors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a set of neighboring nodes such that all of them have an undirected edge with `node`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node: any hashable python object</span>
+<span class="sd">            The node for which to get the undirected neighboring nodes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        set: A set of neighboring nodes.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import PDAG</span>
+<span class="sd">        &gt;&gt;&gt; pdag = PDAG(</span>
+<span class="sd">        ...     directed_ebunch=[(&quot;A&quot;, &quot;C&quot;), (&quot;D&quot;, &quot;C&quot;)],</span>
+<span class="sd">        ...     undirected_ebunch=[(&quot;B&quot;, &quot;A&quot;), (&quot;B&quot;, &quot;D&quot;)],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; pdag.undirected_neighbors(&quot;A&quot;)</span>
+<span class="sd">        {&#39;B&#39;}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">node</span><span class="p">)}</span></div>
+
+
+<div class="viewcode-block" id="PDAG.is_adjacent">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.is_adjacent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_adjacent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if there is an edge between u and v. This can be either of u - v, u -&gt; v, or u &lt;- v.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span> <span class="ow">or</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="PDAG.copy">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.copy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a copy of the object instance.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Copy of PDAG: pgmpy.dag.PDAG</span>
+<span class="sd">            Returns a copy of self.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pdag</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">(</span>
+            <span class="n">directed_ebunch</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span><span class="o">.</span><span class="n">copy</span><span class="p">()),</span>
+            <span class="n">undirected_ebunch</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">undirected_edges</span><span class="o">.</span><span class="n">copy</span><span class="p">()),</span>
+            <span class="n">latents</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">pdag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="nb">vars</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_role_dict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">pdag</span><span class="o">.</span><span class="n">with_role</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="nb">vars</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pdag</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_directed_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a subgraph containing only directed edges.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dag</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span><span class="p">)</span>
+        <span class="n">dag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">dag</span>
+
+<div class="viewcode-block" id="PDAG.orient_undirected_edge">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.orient_undirected_edge">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">orient_undirected_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Orients an undirected edge u - v as u -&gt; v.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u, v: Any hashable python objects</span>
+<span class="sd">            The node names.</span>
+
+<span class="sd">        inplace: boolean (default=False)</span>
+<span class="sd">            If True, the PDAG object is modified inplace, otherwise a new modified copy is returned.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None or pgmpy.base.PDAG: The modified PDAG object.</span>
+<span class="sd">            If inplace=True, returns None and the object itself is modified.</span>
+<span class="sd">            If inplace=False, returns a PDAG object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+            <span class="n">pdag</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pdag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Remove the edge for undirected_edges.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_edges</span><span class="p">:</span>
+            <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_edges</span><span class="o">.</span><span class="n">discard</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_edges</span><span class="p">:</span>
+            <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_edges</span><span class="o">.</span><span class="n">discard</span><span class="p">((</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undirected Edge </span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> not present in the PDAG.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Remove the inverse edge from the graph</span>
+        <span class="n">pdag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span>
+
+        <span class="c1"># Add the edge to directed_edges.</span>
+        <span class="n">pdag</span><span class="o">.</span><span class="n">directed_edges</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pdag</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_new_unshielded_collider</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tests if orienting an undirected edge u - v as u -&gt; v creates new unshielded V-structures in the PDAG.</span>
+
+<span class="sd">        Checks whether v has any directed parents other than u that are not adjacent to u.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        True, if the orientation u -&gt; v would lead to creation of a new V-structure.</span>
+<span class="sd">        False, if no new V-structures are formed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">directed_parents</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">node</span> <span class="o">!=</span> <span class="n">u</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_adjacent</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">node</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="PDAG.apply_meeks_rules">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.apply_meeks_rules">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_meeks_rules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">apply_r4</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies the Meek&#39;s rules to orient the undirected edges of a PDAG to return a CPDAG.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        apply_r4: boolean (default=False)</span>
+<span class="sd">            If True, applies Rules 1 - 4 of Meek&#39;s rules.</span>
+<span class="sd">            If False, applies only Rules 1 - 3.</span>
+
+<span class="sd">        inplace: boolean (default=False)</span>
+<span class="sd">            If True, the PDAG object is modified inplace, otherwise a new modified copy is returned.</span>
+
+<span class="sd">        debug: boolean (default=False)</span>
+<span class="sd">            If True, prints the rules being applied to the PDAG.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None or pgmpy.base.PDAG: The modified PDAG object.</span>
+<span class="sd">            If inplace=True, returns None and the object itself is modified.</span>
+<span class="sd">            If inplace=False, returns a PDAG object.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import PDAG</span>
+<span class="sd">        &gt;&gt;&gt; pdag = PDAG(</span>
+<span class="sd">        ...     directed_ebunch=[(&quot;A&quot;, &quot;B&quot;)], undirected_ebunch=[(&quot;B&quot;, &quot;C&quot;), (&quot;C&quot;, &quot;B&quot;)]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; pdag.apply_meeks_rules()</span>
+<span class="sd">        &gt;&gt;&gt; pdag.directed_edges</span>
+<span class="sd">        {(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;)}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+            <span class="n">pdag</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pdag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">while</span> <span class="n">changed</span><span class="p">:</span>
+            <span class="n">changed</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="c1"># Rule 1: If X -&gt; Y - Z and</span>
+            <span class="c1">#            (X not adj Z) and</span>
+            <span class="c1">#            (adding Y -&gt; Z doesn&#39;t create cycle) and</span>
+            <span class="c1">#            (adding Y -&gt; Z doesn&#39;t create an unshielded collider) =&gt;  Y → Z</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+                <span class="c1"># Select x&#39;s such that there are directed edges x -&gt; y.</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">directed_parents</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_neighbors</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="p">(</span>
+                            <span class="p">(</span><span class="ow">not</span> <span class="n">pdag</span><span class="o">.</span><span class="n">is_adjacent</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+                            <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">pdag</span><span class="o">.</span><span class="n">_check_new_unshielded_collider</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+                            <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">_directed_graph</span><span class="p">(),</span> <span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+                        <span class="p">):</span>
+                            <span class="n">pdag</span><span class="o">.</span><span class="n">orient_undirected_edge</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                            <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                                    <span class="sa">f</span><span class="s2">&quot;Applying Rule 1: </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2"> =&gt; </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2">&quot;</span>
+                                <span class="p">)</span>
+
+            <span class="c1"># Rule 2: If X -&gt; Z -&gt; Y  and X - Y =&gt;  X → Y</span>
+            <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+                <span class="n">xs</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">directed_parents</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+                <span class="n">ys</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">directed_children</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">xs</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ys</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_undirected_edge</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+                            <span class="n">pdag</span><span class="o">.</span><span class="n">orient_undirected_edge</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                            <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                                    <span class="sa">f</span><span class="s2">&quot;Applying Rule 2: </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2"> =&gt; </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">&quot;</span>
+                                <span class="p">)</span>
+
+            <span class="c1"># Rule 3: If X - {Y, Z, W} and {Z, Y} -&gt; W =&gt; X -&gt; W</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+                <span class="n">undirected_nbs</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_neighbors</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">undirected_nbs</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="k">for</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">permutations</span><span class="p">(</span><span class="n">undirected_nbs</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_directed_edge</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_directed_edge</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">w</span><span class="p">):</span>
+                        <span class="n">pdag</span><span class="o">.</span><span class="n">orient_undirected_edge</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                        <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;Applying Rule 3: </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2"> &quot;</span>
+                                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2"> =&gt; </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">w</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="p">)</span>
+                        <span class="k">break</span>
+
+            <span class="c1"># Rule 4: If d -&gt; c -&gt; b &amp; a - {b, c, d} and b not adj d =&gt; a -&gt; b</span>
+            <span class="k">if</span> <span class="n">apply_r4</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">directed_children</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">directed_parents</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="n">d</span> <span class="ow">or</span> <span class="n">pdag</span><span class="o">.</span><span class="n">is_adjacent</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+                                <span class="k">continue</span>  <span class="c1"># b adjacent d =&gt; rule not applicable</span>
+
+                            <span class="c1"># find nodes a that are undirected neighbor to b, d,</span>
+                            <span class="c1">#  and directed or undirected neighbor to c</span>
+                            <span class="n">cand</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">undirected_neighbors</span><span class="p">(</span><span class="n">b</span><span class="p">))</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span>
+                                <span class="n">pdag</span><span class="o">.</span><span class="n">all_neighbors</span><span class="p">(</span><span class="n">c</span><span class="p">),</span>
+                                <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_neighbors</span><span class="p">(</span><span class="n">d</span><span class="p">),</span>
+                            <span class="p">)</span>
+                            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">cand</span><span class="p">:</span>
+                                <span class="n">pdag</span><span class="o">.</span><span class="n">orient_undirected_edge</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                                <span class="n">changed</span> <span class="o">=</span> <span class="kc">True</span>
+                                <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pdag</span></div>
+
+
+<div class="viewcode-block" id="PDAG.to_dag">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.to_dag">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dag</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns one possible DAG which is represented using the PDAG.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pgmpy.base.DAG: Returns an instance of DAG.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; pdag = PDAG(</span>
+<span class="sd">        ...     directed_ebunch=[(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;)],</span>
+<span class="sd">        ...     undirected_ebunch=[(&quot;C&quot;, &quot;D&quot;), (&quot;D&quot;, &quot;A&quot;)],</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; dag = pdag.to_dag()</span>
+<span class="sd">        &gt;&gt;&gt; print(dag.edges())</span>
+<span class="sd">        OutEdgeView([(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;D&#39;, &#39;C&#39;), (&#39;A&#39;, &#39;D&#39;)])</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        [1] Dor, Dorit, and Michael Tarsi.</span>
+<span class="sd">          &quot;A simple algorithm to construct a consistent extension of a partially oriented graph.&quot;</span>
+<span class="sd">            Technicial Report R-185, Cognitive Systems Laboratory, UCLA (1992): 45.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Add required edges if it doesn&#39;t form a new v-structure or an opposite edge</span>
+        <span class="c1"># is already present in the network.</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
+
+        <span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">()</span>
+        <span class="c1"># Add all the nodes and the directed edges</span>
+        <span class="n">dag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="n">dag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span><span class="p">)</span>
+        <span class="n">dag</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span>
+
+        <span class="n">pdag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">while</span> <span class="n">pdag</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># find node with (1) no directed outgoing edges and</span>
+            <span class="c1">#                (2) the set of undirected neighbors is either empty or</span>
+            <span class="c1">#                    undirected neighbors + parents of X are adjacent</span>
+            <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
+                <span class="n">undirected_neighbors</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_neighbors</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+                <span class="n">neighbors_are_adjacent</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span>
+                    <span class="p">(</span>
+                        <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span> <span class="ow">or</span> <span class="n">pdag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">all_neighbors</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">undirected_neighbors</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">Y</span> <span class="o">==</span> <span class="n">Z</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">pdag</span><span class="o">.</span><span class="n">directed_children</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                    <span class="ow">not</span> <span class="n">undirected_neighbors</span> <span class="ow">or</span> <span class="n">neighbors_are_adjacent</span>
+                <span class="p">):</span>
+                    <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="c1"># add all edges of X as outgoing edges to dag</span>
+                    <span class="k">for</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">undirected_neighbors</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+                        <span class="n">dag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+                    <span class="n">pdag</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;PDAG has no faithful extension (= no oriented DAG with the &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;same v-structures as PDAG). Remaining undirected PDAG edges &quot;</span>
+                    <span class="o">+</span> <span class="s2">&quot;oriented arbitrarily.&quot;</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">pdag</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">dag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">dag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                            <span class="k">pass</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="n">dag</span></div>
+
+
+<div class="viewcode-block" id="PDAG.to_graphviz">
+<a class="viewcode-back" href="../../../models/pdag.html#pgmpy.base.PDAG.PDAG.to_graphviz">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_graphviz</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">object</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retuns a pygraphviz object for the DAG. pygraphviz is useful for</span>
+<span class="sd">        visualizing the network structure.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.utils import get_example_model</span>
+<span class="sd">        &gt;&gt;&gt; model = get_example_model(&quot;alarm&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; model.to_graphviz()</span>
+<span class="sd">        &lt;AGraph &lt;Swig Object of type &#39;Agraph_t *&#39; at 0x7fdea4cde040&gt;&gt;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">nx_agraph</span><span class="o">.</span><span class="n">to_agraph</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if two PDAGs are equal. Two PDAGs are considered equal if they</span>
+<span class="sd">        have the same nodes, edges, latent variables, and variable roles.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        other: PDAG object</span>
+<span class="sd">            The other PDAG to compare with.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the PDAGs are equal, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">PDAG</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+            <span class="ow">and</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directed_edges</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">directed_edges</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">undirected_edges</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">undirected_edges</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">latents</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_role_dict</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">get_role_dict</span><span class="p">()</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/logo.png" alt="Logo" />
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../started/base.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models/base.html">Supported Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../factors/base.html">Parameterization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../infer/base.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../causal_infer/base.html">Causal Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../param_estimator/base.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../structure_estimator/base.html">Causal Discovery / Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metrics/metrics.html">Metrics for Testing Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../readwrite/base.html">Reading/Writing to File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div><script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+<div data-ea-publisher="pgmpyorg" data-ea-type="image" data-ea-style="horizontal"></div><script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-HCFR07M31W');
+</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Ankur Ankan.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

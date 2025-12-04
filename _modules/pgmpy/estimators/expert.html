@@ -5,8 +5,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>pgmpy.estimators.expert &#8212; 1.0.0 | pgmpy docs</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=c2b266e2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <script src="../../../_static/documentation_options.js?v=8d563738"></script>
@@ -38,30 +39,30 @@
           <div class="body" role="main">
             
   <h1>Source code for pgmpy.estimators.expert</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">combinations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
 
-<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
-<span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
-<span class="kn">from</span> <span class="nn">pgmpy.estimators</span> <span class="kn">import</span> <span class="n">ExpertKnowledge</span><span class="p">,</span> <span class="n">StructureEstimator</span>
-<span class="kn">from</span> <span class="nn">pgmpy.estimators.CITests</span> <span class="kn">import</span> <span class="n">pillai_trace</span>
-<span class="kn">from</span> <span class="nn">pgmpy.global_vars</span> <span class="kn">import</span> <span class="n">logger</span>
-<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">llm_pairwise_orient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExpertKnowledge</span><span class="p">,</span> <span class="n">StructureEstimator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators.CITests</span><span class="w"> </span><span class="kn">import</span> <span class="n">ci_registry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.global_vars</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">llm_pairwise_orient</span>
 
 
 <div class="viewcode-block" id="ExpertInLoop">
 <a class="viewcode-back" href="../../../structure_estimator/expert.html#pgmpy.estimators.ExpertInLoop">[docs]</a>
-<span class="k">class</span> <span class="nc">ExpertInLoop</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ExpertInLoop</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ExpertInLoop</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">orientation_cache</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([])</span>
 
 <div class="viewcode-block" id="ExpertInLoop.test_all">
 <a class="viewcode-back" href="../../../structure_estimator/expert.html#pgmpy.estimators.ExpertInLoop.test_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">test_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dag</span><span class="p">:</span> <span class="n">DAG</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ci_test</span><span class="p">,</span> <span class="n">dag</span><span class="p">:</span> <span class="n">DAG</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Runs CI tests on all possible combinations of variables in `dag`.</span>
 
@@ -89,7 +90,7 @@
                 <span class="n">edge_present</span> <span class="o">=</span> <span class="kc">False</span>
 
             <span class="n">cond_set</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">u_parents</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">v_parents</span><span class="p">))</span>
-            <span class="n">effect</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">pillai_trace</span><span class="p">(</span>
+            <span class="n">effect</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">ci_test</span><span class="p">(</span>
                 <span class="n">X</span><span class="o">=</span><span class="n">u</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">cond_set</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">False</span>
             <span class="p">)</span>
             <span class="n">cis</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">cond_set</span><span class="p">,</span> <span class="n">edge_present</span><span class="p">,</span> <span class="n">effect</span><span class="p">,</span> <span class="n">p_value</span><span class="p">])</span>
@@ -101,10 +102,11 @@
 
 <div class="viewcode-block" id="ExpertInLoop.estimate">
 <a class="viewcode-back" href="../../../structure_estimator/expert.html#pgmpy.estimators.ExpertInLoop.estimate">[docs]</a>
-    <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">estimate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">pval_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
         <span class="n">effect_size_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="n">ci_test</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">orientation_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
             <span class="o">...</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]]</span>
         <span class="p">]</span> <span class="o">=</span> <span class="n">llm_pairwise_orient</span><span class="p">,</span>
@@ -137,6 +139,11 @@
 <span class="sd">            threshold, the algorithm would suggest to add an edge between them.</span>
 <span class="sd">            And if the effect size for an edge is less than the threshold,</span>
 <span class="sd">            would suggest to remove the edge.</span>
+
+<span class="sd">        ci_test: str or callable (default: None)</span>
+<span class="sd">            The Conditional Independence test to use. When None, the algorithms</span>
+<span class="sd">            tries to automatically detect the suitable CI test based on the variable</span>
+<span class="sd">            types.</span>
 
 <span class="sd">        orientation_fn: callable (default: pgmpy.utils.llm_pairwise_orient)</span>
 <span class="sd">            A function to determine edge orientation. The function should at</span>
@@ -250,6 +257,9 @@
         <span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">()</span>
         <span class="n">dag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
 
+        <span class="c1"># Get the CI test.</span>
+        <span class="n">ci_test</span> <span class="o">=</span> <span class="n">ci_registry</span><span class="o">.</span><span class="n">get_test</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="n">ci_test</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
         <span class="c1"># Initialize blacklisted_edges with forbidden_edges from expert knowledge</span>
         <span class="n">blacklisted_edges</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">expert_knowledge</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -260,10 +270,10 @@
 
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="c1"># Step 1: Compute effects and p-values between every combination of variables.</span>
-            <span class="n">all_effects</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_all</span><span class="p">(</span><span class="n">dag</span><span class="p">)</span>
+            <span class="n">all_effects</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_all</span><span class="p">(</span><span class="n">dag</span><span class="o">=</span><span class="n">dag</span><span class="p">,</span> <span class="n">ci_test</span><span class="o">=</span><span class="n">ci_test</span><span class="p">)</span>
 
             <span class="c1"># Step 2: Remove any edges between variables that are not sufficiently associated.</span>
-            <span class="n">edge_effects</span> <span class="o">=</span> <span class="n">all_effects</span><span class="p">[</span><span class="n">all_effects</span><span class="o">.</span><span class="n">edge_present</span> <span class="o">==</span> <span class="kc">True</span><span class="p">]</span>
+            <span class="n">edge_effects</span> <span class="o">=</span> <span class="n">all_effects</span><span class="p">[</span><span class="n">all_effects</span><span class="o">.</span><span class="n">edge_present</span><span class="p">]</span>
             <span class="n">edge_effects</span> <span class="o">=</span> <span class="n">edge_effects</span><span class="p">[</span>
                 <span class="p">(</span><span class="n">edge_effects</span><span class="o">.</span><span class="n">effect</span> <span class="o">&lt;</span> <span class="n">effect_size_threshold</span><span class="p">)</span>
                 <span class="o">&amp;</span> <span class="p">(</span><span class="n">edge_effects</span><span class="o">.</span><span class="n">p_val</span> <span class="o">&gt;</span> <span class="n">pval_threshold</span><span class="p">)</span>
@@ -350,13 +360,14 @@
                     <span class="ow">and</span> <span class="n">edge_direction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
                 <span class="p">):</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">Queried for edge orientation between&quot;</span>
+                        <span class="s2">&quot;</span><span class="se">\r</span><span class="s2">Queried for edge orientation between&quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="si">}</span><span class="s2">. Got:&quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
 
-            <span class="c1"># Step 3.6: Try adding the edge to the DAG. If edge creates a</span>
-            <span class="c1">#           cycle, add the reversed edge, and blacklist the original edge.</span>
+            <span class="c1"># Step 3.6: 1. If orientation function returns None, do not add the edge.</span>
+            <span class="c1">#           2. If new edge creates a cycle, try to resolve it.</span>
+            <span class="c1">#           3. Otherwise, add the edge.</span>
             <span class="k">if</span> <span class="n">edge_direction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;Orientation function returned None for edge </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="si">}</span><span class="s2">. &quot;</span>
@@ -364,14 +375,55 @@
                 <span class="p">)</span>
                 <span class="n">blacklisted_edges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">selected_edge</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">selected_edge</span><span class="o">.</span><span class="n">v</span><span class="p">))</span>
             <span class="k">elif</span> <span class="n">nx</span><span class="o">.</span><span class="n">has_path</span><span class="p">(</span><span class="n">dag</span><span class="p">,</span> <span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-                <span class="n">blacklisted_edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge_direction</span><span class="p">)</span>
-                <span class="n">dag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span>
+                <span class="n">edges_to_remove</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_break_cycle</span><span class="p">(</span>
+                    <span class="n">dag</span><span class="p">,</span>
+                    <span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">ci_test</span><span class="o">=</span><span class="n">ci_test</span><span class="p">,</span>
+                    <span class="n">effect_size_threshol</span><span class="o">=</span><span class="n">effect_size_threshold</span><span class="p">,</span>
+                    <span class="n">pval_threshold</span><span class="o">=</span><span class="n">pval_threshold</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">blacklisted_edges</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">edges_to_remove</span><span class="p">)</span>
+                <span class="n">dag</span><span class="o">.</span><span class="n">remove_edges_from</span><span class="p">(</span><span class="n">edges_to_remove</span><span class="p">)</span>
+                <span class="n">dag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">edge_direction</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge_direction</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">dag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([</span><span class="n">edge_direction</span><span class="p">])</span>
 
         <span class="c1"># Step 4: Return the final DAG.</span>
         <span class="k">return</span> <span class="n">dag</span></div>
-</div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_break_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dag</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">ci_test</span><span class="p">,</span> <span class="n">effect_size_threshold</span><span class="p">,</span> <span class="n">pval_threshold</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Subroutine to break any cycles that get created.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dag: pgmpy.base.DAG</span>
+<span class="sd">            The current DAG that still doesn&#39;t have cycles.</span>
+
+<span class="sd">        u, v: hashable object</span>
+<span class="sd">            The u and v variables that create cycle in `dag` when (u, v) edge is added.</span>
+
+<span class="sd">        ci_test: Callable</span>
+<span class="sd">            The Conditional Independence test to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Returned edge orientation creates a cycle. Trying to identify the incorrect edge.&quot;</span>
+        <span class="p">)</span>
+        <span class="n">edges_to_remove</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">temp_dag</span> <span class="o">=</span> <span class="n">dag</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">temp_dag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)])</span>
+        <span class="k">for</span> <span class="n">cycle</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">cycles</span><span class="p">(</span><span class="n">temp_dag</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cycle</span><span class="p">,</span> <span class="n">cycle</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="n">x</span> <span class="o">==</span> <span class="n">u</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">v</span><span class="p">)):</span>
+                    <span class="n">Z</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">cycle</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">])</span>
+                    <span class="n">effect</span><span class="p">,</span> <span class="n">pvalue</span> <span class="o">=</span> <span class="n">ci_test</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">effect</span> <span class="o">&lt;</span> <span class="n">effect_size_threshold</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">pvalue</span> <span class="o">&gt;</span> <span class="n">pval_threshold</span><span class="p">):</span>
+                        <span class="n">edges_to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removing edge: </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2"> to fix cycle&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">edges_to_remove</span></div>
 
 </pre></div>
 
@@ -448,7 +500,7 @@
       
       |
       Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
     </div>
 

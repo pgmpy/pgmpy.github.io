@@ -5,8 +5,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>pgmpy.models.DynamicBayesianNetwork &#8212; 1.0.0 | pgmpy docs</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=7b53859b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=c2b266e2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <script src="../../../_static/documentation_options.js?v=8d563738"></script>
@@ -38,26 +39,25 @@
           <div class="body" role="main">
             
   <h1>Source code for pgmpy.models.DynamicBayesianNetwork</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">typing</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">combinations</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">typing</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">chain</span><span class="p">,</span> <span class="n">combinations</span>
 
-<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">pgmpy</span> <span class="kn">import</span> <span class="n">config</span>
-<span class="kn">from</span> <span class="nn">pgmpy.base</span> <span class="kn">import</span> <span class="n">DAG</span>
-<span class="kn">from</span> <span class="nn">pgmpy.factors.discrete</span> <span class="kn">import</span> <span class="n">TabularCPD</span>
-<span class="kn">from</span> <span class="nn">pgmpy.utils</span> <span class="kn">import</span> <span class="n">compat_fns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compat_fns</span><span class="p">,</span> <span class="n">to_timeseries_format</span>
 
 
 <div class="viewcode-block" id="DynamicNode">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicNode">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">DynamicNode</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DynamicNode</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for representing the nodes of Dynamic Bayesian Networks.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -65,7 +65,7 @@
     <span class="n">node</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">time_slice</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing</span><span class="o">.</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span>
         <span class="k">elif</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -73,13 +73,13 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Index </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2"> out of bounds.&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">time_slice</span><span class="si">}</span><span class="s2">)&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&lt;DynamicNode(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">time_slice</span><span class="si">}</span><span class="s2">) at </span><span class="si">{</span><span class="nb">hex</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span><span class="si">}</span><span class="s2">&gt;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="p">:</span>
@@ -87,7 +87,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_slice</span> <span class="o">&lt;</span> <span class="n">other</span><span class="o">.</span><span class="n">time_slice</span>
 
-    <span class="k">def</span> <span class="fm">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">&lt;=</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">node</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="p">:</span>
@@ -95,7 +95,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_slice</span> <span class="o">&lt;=</span> <span class="n">other</span><span class="o">.</span><span class="n">time_slice</span>
 
-    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">DynamicNode</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_slice</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="n">other</span><span class="o">.</span><span class="n">node</span><span class="p">,</span> <span class="n">other</span><span class="o">.</span><span class="n">time_slice</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
@@ -105,7 +105,7 @@
 
 <div class="viewcode-block" id="DynamicNode.to_tuple">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicNode.to_tuple">[docs]</a>
-    <span class="k">def</span> <span class="nf">to_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a tuple representation as (node, time_slice) for DynamicNode object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -116,7 +116,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork">[docs]</a>
-<span class="k">class</span> <span class="nc">DynamicBayesianNetwork</span><span class="p">(</span><span class="n">DAG</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DynamicBayesianNetwork</span><span class="p">(</span><span class="n">DAG</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for Dynamic Bayesian Network</span>
 
@@ -194,7 +194,7 @@
 <span class="sd">    copy</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">DynamicBayesianNetwork</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">ebunch</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">ebunch</span><span class="p">)</span>
@@ -203,7 +203,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.add_node">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.add_node">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="o">**</span><span class="n">attr</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="o">**</span><span class="n">attr</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds a single node to the Network</span>
 
@@ -224,7 +224,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.add_nodes_from">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.add_nodes_from">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="o">**</span><span class="n">attr</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="o">**</span><span class="n">attr</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add multiple nodes to the Network.</span>
 
@@ -243,7 +243,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the list of nodes present in the network</span>
 
@@ -264,7 +264,7 @@
             <span class="p">)</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_timeslices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_timeslices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span>
             <span class="nb">set</span><span class="p">(</span>
                 <span class="p">[</span>
@@ -276,7 +276,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.add_edge">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.add_edge">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add an edge between two nodes.</span>
 
@@ -355,7 +355,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.add_edges_from">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.add_edges_from">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_edges_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_edges_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ebunch</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add all the edges in ebunch.</span>
 
@@ -387,7 +387,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.get_intra_edges">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.get_intra_edges">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_intra_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_slice</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_intra_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_slice</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the intra slice edges present in the 2-TBN.</span>
 
@@ -431,7 +431,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.get_inter_edges">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.get_inter_edges">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_inter_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_inter_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the inter-slice edges present in the 2-TBN.</span>
 
@@ -463,7 +463,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.get_interface_nodes">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.get_interface_nodes">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_interface_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_slice</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_interface_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_slice</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the nodes in the first timeslice whose children are present in the first timeslice.</span>
 
@@ -502,7 +502,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.get_slice_nodes">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.get_slice_nodes">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_slice_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_slice</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_slice_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_slice</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the nodes present in a particular timeslice</span>
 
@@ -536,7 +536,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.add_cpds">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.add_cpds">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">cpds</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">cpds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method adds the cpds to the Dynamic Bayesian Network.</span>
 <span class="sd">        Note that while adding variables and the evidence in cpd,</span>
@@ -610,7 +610,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.get_cpds">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.get_cpds">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_slice</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_slice</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the CPDs that have been associated with the network.</span>
 
@@ -684,7 +684,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.remove_cpds">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.remove_cpds">[docs]</a>
-    <span class="k">def</span> <span class="nf">remove_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">cpds</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">cpds</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Removes the cpds that are provided in the argument.</span>
 
@@ -729,7 +729,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.check_model">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.check_model">[docs]</a>
-    <span class="k">def</span> <span class="nf">check_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check the model for various errors. This method checks for the following</span>
 <span class="sd">        errors.</span>
@@ -766,7 +766,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.initialize_initial_state">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.initialize_initial_state">[docs]</a>
-    <span class="k">def</span> <span class="nf">initialize_initial_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize_initial_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method will automatically re-adjust the cpds and the edges added to the Bayesian Network.</span>
 <span class="sd">        If an edge that is added as an intra time slice edge in the 0th timeslice, this method will</span>
@@ -857,7 +857,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.moralize">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.moralize">[docs]</a>
-    <span class="k">def</span> <span class="nf">moralize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">moralize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Removes all the immoralities in the Network and creates a moral</span>
 <span class="sd">        graph (UndirectedGraph).</span>
@@ -888,7 +888,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.copy">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.copy">[docs]</a>
-    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a copy of the Dynamic Bayesian Network.</span>
 
@@ -941,7 +941,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.get_markov_blanket">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.get_markov_blanket">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_markov_blanket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_markov_blanket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
         <span class="c1"># Wrap node into DynamicNode</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">DynamicNode</span><span class="p">):</span>
             <span class="n">node</span> <span class="o">=</span> <span class="n">DynamicNode</span><span class="p">(</span><span class="o">*</span><span class="n">node</span><span class="p">)</span>
@@ -984,7 +984,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.get_constant_bn">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.get_constant_bn">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_constant_bn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t_slice</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_constant_bn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t_slice</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a normal Bayesian Network object which has nodes from the first two</span>
 <span class="sd">        time slices and all the edges in the first time slice and edges going from</span>
@@ -993,7 +993,7 @@
 
 <span class="sd">        The node names are changed to strings in the form `{var}_{time}`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">pgmpy.models</span> <span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 
         <span class="n">edges</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">(</span>
@@ -1028,7 +1028,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.fit">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.fit">[docs]</a>
-    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="s2">&quot;MLE&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="s2">&quot;MLE&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Learns the CPD of the model from data.</span>
 
@@ -1137,7 +1137,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.active_trail_nodes">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.active_trail_nodes">[docs]</a>
-    <span class="k">def</span> <span class="nf">active_trail_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">active_trail_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">DynamicNode</span><span class="p">):</span>
             <span class="c1"># Wrap variables in DynamicNode objects</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
@@ -1161,7 +1161,7 @@
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_postprocess</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_postprocess</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Postprocess the generated samples before returning.</span>
 <span class="sd">        1. Remove any of the variables created because of the virtual evidence or intervention. Variables</span>
@@ -1180,7 +1180,7 @@
 
 <div class="viewcode-block" id="DynamicBayesianNetwork.simulate">
 <a class="viewcode-back" href="../../../models/dbn.html#pgmpy.models.DynamicBayesianNetwork.DynamicBayesianNetwork.simulate">[docs]</a>
-    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">simulate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">n_samples</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
         <span class="n">n_time_slices</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
@@ -1191,6 +1191,7 @@
         <span class="n">include_latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">return_format</span><span class="o">=</span><span class="s2">&quot;wide&quot;</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Simulates time-series data from the specified model.</span>
@@ -1230,9 +1231,29 @@
 <span class="sd">        show_progress: bool</span>
 <span class="sd">            If True, shows a progress bar when generating samples.</span>
 
+<span class="sd">        return_format: {&quot;wide&quot;, &quot;numpy3d&quot;, &quot;pd-multiindex&quot;, &quot;pd-list&quot;, &quot;sorted&quot;}</span>
+<span class="sd">            Controls the return representation</span>
+
+<span class="sd">            - &quot;wide&quot; : Default option : wide format, where on rows we have samples, and on columns we have (potentially</span>
+<span class="sd">                       unsorted)  (&quot;variable&quot;, &quot;timestep)</span>
+
+<span class="sd">            - &#39;numpy3d&#39; : returns a 3D numpy array, where first dimension represents trace, second dimension</span>
+<span class="sd">                        represents variable, third dimension represent timestep</span>
+
+<span class="sd">            - &#39;pd-multiindex&#39; : returns the pandas multindex DataFrame, with indexes of (&quot;Variable name&quot;, &quot;timestep&quot;)</span>
+
+<span class="sd">            - &#39;pd-list&#39; : returns a list of pandas DataFrames. For every sample, a Dataframe is created, where rows</span>
+<span class="sd">                        contain timestep and columns represent variables</span>
+
+<span class="sd">            - &#39;sorted&#39; : makes sure that the representation of [sample, (&quot;variable&quot;, &quot;timestep&quot;)] is sorted, which</span>
+<span class="sd">                       makes further processing easier</span>
+
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        pandas.DataFrame: A dataframe with the simulated data.</span>
+<span class="sd">        np.ndarray or pandas.DataFrame</span>
+<span class="sd">            Depends on `return_format` argument. `numpy3d` returns a numpy array (np.ndarray), while rest of the</span>
+<span class="sd">            representations return a pandas DataFrame.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1330,11 +1351,16 @@
 <span class="sd">           (D, 0)  (G, 0)  (I, 0)  (D, 1)  (G, 1)  (I, 1)  (D, 2)  (G, 2)  (D, 3)  (G, 3)  (I, 2)  (I, 3)</span>
 <span class="sd">        0       0       0       0       1       2       0       1       2       1       1       0       1</span>
 <span class="sd">        1       0       1       1       1       2       0       1       2       1       1       0       0</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span> <span class="nn">pgmpy.sampling</span> <span class="kn">import</span> <span class="n">BayesianModelSampling</span>
 
-        <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span><span class="p">:</span>
-            <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">n_time_slices</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">()))</span>
+<span class="sd">        Return format selection using `return_format` argument.</span>
+<span class="sd">        `return_format=&quot;wide&quot;` returns the data in standard format.</span>
+
+<span class="sd">        &gt;&gt;&gt; dbn.simulate(n_samples=2, n_time_slices=3, return_format=&quot;wide&quot;)</span>
+
+<span class="sd">        `return_format=&quot;pd-multiindex&quot;` returns pandas dataframe with indexes of (&quot;Variable name&quot;, &quot;timestep&quot;).</span>
+
+<span class="sd">        &gt;&gt;&gt; dbn.simulate(n_samples=2, n_time_slices=3, return_format=&quot;pd-multiindex&quot;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># Step 1: Create some data structures for easily accessing values</span>
         <span class="n">do</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">do</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">do</span>
@@ -1388,42 +1414,48 @@
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">n_time_slices</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">sampled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_postprocess</span><span class="p">(</span><span class="n">sampled</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">sampled</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">sampled</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]]</span>
+            <span class="n">sampled</span> <span class="o">=</span> <span class="n">sampled</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">sampled</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]]</span>
+
         <span class="k">elif</span> <span class="n">n_time_slices</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">sampled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_postprocess</span><span class="p">(</span><span class="n">sampled</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">sampled</span>
 
-        <span class="c1"># Step 3: If n_time_slices &gt; 2, iterate over the time slices and generate samples</span>
-        <span class="k">for</span> <span class="n">t_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_time_slices</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">const_bn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_constant_bn</span><span class="p">(</span><span class="n">t_slice</span><span class="o">=</span><span class="n">t_slice</span><span class="p">)</span>
-            <span class="n">partial_colnames</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">t_slice</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">()</span>
-            <span class="p">]</span>
-            <span class="n">partial_df</span> <span class="o">=</span> <span class="n">sampled</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">partial_colnames</span><span class="p">]</span>
-            <span class="n">remaining_df</span> <span class="o">=</span> <span class="n">sampled</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="o">~</span><span class="n">sampled</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">partial_colnames</span><span class="p">)]</span>
-            <span class="n">new_samples</span> <span class="o">=</span> <span class="n">const_bn</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span>
-                <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
-                <span class="n">do</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">do_dict</span><span class="p">[</span><span class="n">t_slice</span><span class="p">],</span> <span class="o">**</span><span class="n">do_dict</span><span class="p">[</span><span class="n">t_slice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]},</span>
-                <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">evidence_dict</span><span class="p">[</span><span class="n">t_slice</span><span class="p">],</span> <span class="o">**</span><span class="n">evidence_dict</span><span class="p">[</span><span class="n">t_slice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]},</span>
-                <span class="n">virtual_evidence</span><span class="o">=</span><span class="p">[</span>
-                    <span class="o">*</span><span class="n">virtual_evi_dict</span><span class="p">[</span><span class="n">t_slice</span><span class="p">],</span>
-                    <span class="o">*</span><span class="n">virtual_evi_dict</span><span class="p">[</span><span class="n">t_slice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
-                <span class="p">],</span>
-                <span class="n">virtual_intervention</span><span class="o">=</span><span class="p">[</span>
-                    <span class="o">*</span><span class="n">virtual_inter_dict</span><span class="p">[</span><span class="n">t_slice</span><span class="p">],</span>
-                    <span class="o">*</span><span class="n">virtual_inter_dict</span><span class="p">[</span><span class="n">t_slice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
-                <span class="p">],</span>
-                <span class="n">include_latents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">partial_samples</span><span class="o">=</span><span class="n">partial_df</span><span class="p">,</span>
-                <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
-                <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">sampled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">remaining_df</span><span class="p">,</span> <span class="n">new_samples</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_postprocess</span><span class="p">(</span><span class="n">sampled</span><span class="p">)</span></div>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Step 3: If n_time_slices &gt; 2, iterate over the time slices and generate samples</span>
+            <span class="k">for</span> <span class="n">t_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_time_slices</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">const_bn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_constant_bn</span><span class="p">(</span><span class="n">t_slice</span><span class="o">=</span><span class="n">t_slice</span><span class="p">)</span>
+                <span class="n">partial_colnames</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">t_slice</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes</span><span class="p">()</span>
+                <span class="p">]</span>
+                <span class="n">partial_df</span> <span class="o">=</span> <span class="n">sampled</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">partial_colnames</span><span class="p">]</span>
+                <span class="n">remaining_df</span> <span class="o">=</span> <span class="n">sampled</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="o">~</span><span class="n">sampled</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">partial_colnames</span><span class="p">)]</span>
+                <span class="n">new_samples</span> <span class="o">=</span> <span class="n">const_bn</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span>
+                    <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
+                    <span class="n">do</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">do_dict</span><span class="p">[</span><span class="n">t_slice</span><span class="p">],</span> <span class="o">**</span><span class="n">do_dict</span><span class="p">[</span><span class="n">t_slice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]},</span>
+                    <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">evidence_dict</span><span class="p">[</span><span class="n">t_slice</span><span class="p">],</span> <span class="o">**</span><span class="n">evidence_dict</span><span class="p">[</span><span class="n">t_slice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]},</span>
+                    <span class="n">virtual_evidence</span><span class="o">=</span><span class="p">[</span>
+                        <span class="o">*</span><span class="n">virtual_evi_dict</span><span class="p">[</span><span class="n">t_slice</span><span class="p">],</span>
+                        <span class="o">*</span><span class="n">virtual_evi_dict</span><span class="p">[</span><span class="n">t_slice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="p">],</span>
+                    <span class="n">virtual_intervention</span><span class="o">=</span><span class="p">[</span>
+                        <span class="o">*</span><span class="n">virtual_inter_dict</span><span class="p">[</span><span class="n">t_slice</span><span class="p">],</span>
+                        <span class="o">*</span><span class="n">virtual_inter_dict</span><span class="p">[</span><span class="n">t_slice</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="p">],</span>
+                    <span class="n">include_latents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">partial_samples</span><span class="o">=</span><span class="n">partial_df</span><span class="p">,</span>
+                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                    <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">sampled</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">remaining_df</span><span class="p">,</span> <span class="n">new_samples</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">sampled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_postprocess</span><span class="p">(</span><span class="n">sampled</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">return_format</span> <span class="o">==</span> <span class="s2">&quot;wide&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sampled</span>
+        <span class="k">return</span> <span class="n">to_timeseries_format</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="n">sampled</span><span class="p">,</span> <span class="n">return_format</span><span class="o">=</span><span class="n">return_format</span><span class="p">)</span></div>
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">states</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">states</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns a dictionary mapping each node to its list of possible states.</span>
 
@@ -1513,7 +1545,7 @@
       
       |
       Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
     </div>
 
