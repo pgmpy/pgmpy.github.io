@@ -1,0 +1,1341 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Functional Bayesian Networks" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pgmpy.org/dev/examples/Functional_Bayesian_Network_Tutorial.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="Functional Bayesian Networks (FBNs) are Bayesian networks where each CPD is a Python function that returns a Pyro distribution. This lets you model arbitrary discrete, continuous, or mixed relation..." />
+<meta property="og:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
+<meta property="og:image:alt" content="pgmpy" />
+<meta name="description" content="Functional Bayesian Networks (FBNs) are Bayesian networks where each CPD is a Python function that returns a Pyro distribution. This lets you model arbitrary discrete, continuous, or mixed relation..." />
+<meta name="twitter:card" content="summary_large_image" />
+
+<meta name="twitter:description" content="pgmpy is a Python library for causal inference, probabilistic modeling, Bayesian networks, and directed acyclic graphs." />
+<meta name="twitter:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
+<meta name="robots" content="noindex,nofollow,noarchive" />
+<link rel="canonical" href="https://pgmpy.org/dev/examples/Functional_Bayesian_Network_Tutorial.html" />
+    <title>Functional Bayesian Networks &#8212; pgmpy</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=5c863c82" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/Functional_Bayesian_Network_Tutorial';</script>
+    <link rel="canonical" href="https://pgmpy.org/dev/examples/Functional_Bayesian_Network_Tutorial.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Junction Tree Exact Inference" href="Junction_Tree_Inference.html" />
+    <link rel="prev" title="Extending pgmpy" href="Extending_pgmpy.html" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+  <script type="application/ld+json">{"@context": "https://schema.org", "@id": "https://pgmpy.org/dev/#organization", "@type": "Organization", "logo": "https://pgmpy.org/dev/_static/images/logo.png", "name": "pgmpy", "sameAs": ["https://github.com/pgmpy/pgmpy", "https://pypi.org/project/pgmpy/", "https://www.linkedin.com/company/pgmpy/"], "url": "https://pgmpy.org/dev"}</script>
+    
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "item": "https://pgmpy.org/dev/index.html", "name": "Key Features", "position": 1}, {"@type": "ListItem", "item": "https://pgmpy.org/dev/examples.html", "name": "Example Notebooks", "position": 2}]}</script>
+    
+  
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HCFR07M31W');
+  </script>
+  <!-- EthicalAds -->
+  <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.png" class="logo__image only-light" alt=""/>
+    <img src="../_static/logo.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pgmpy</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../documentation.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development.html">
+    Getting Involved
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container pgmpy-version-switcher">
+  <select
+    class="form-select form-select-sm pgmpy-version-select"
+    aria-label="Select Version"
+    data-current-version="dev"
+    data-current-label="dev"
+    data-target-uri="examples/Functional_Bayesian_Network_Tutorial.html"
+  >
+    
+    
+
+    
+    <optgroup label="In Development">
+      
+      <option value="dev" data-url="https://pgmpy.org/dev/" selected>
+        dev
+      </option>
+      
+    </optgroup>
+    
+  </select>
+</div>
+
+<script>
+  (function() {
+    const selects = document.querySelectorAll(".pgmpy-version-select:not([data-pgmpy-version-init])");
+    selects.forEach(function(select) {
+      select.dataset.pgmpyVersionInit = "true";
+
+      const currentVersion = select.dataset.currentVersion;
+      const currentLabel = select.dataset.currentLabel || currentVersion;
+      const currentTargetUri = (select.dataset.targetUri || "").replace(/^\/+/, "");
+
+      if (!Array.from(select.options).some(function(option) { return option.value === currentVersion; })) {
+        const option = document.createElement("option");
+        option.value = currentVersion;
+        option.textContent = currentLabel;
+        option.selected = true;
+        select.insertBefore(option, select.firstChild);
+      }
+
+      const buildTargetUrl = function(baseUrl) {
+        if (!currentTargetUri || currentTargetUri === "index.html") {
+          return baseUrl;
+        }
+        return new URL(currentTargetUri, baseUrl).toString();
+      };
+
+      const navigateToVersion = async function(option) {
+        const baseUrl = option.dataset.url;
+        if (!baseUrl) {
+          return;
+        }
+
+        const targetUrl = buildTargetUrl(baseUrl);
+
+        if (targetUrl === baseUrl) {
+          window.location.href = baseUrl;
+          return;
+        }
+
+        try {
+          const response = await fetch(targetUrl, { method: "HEAD" });
+          window.location.href = response.ok ? targetUrl : baseUrl;
+        } catch (error) {
+          window.location.href = targetUrl;
+        }
+      };
+
+      select.addEventListener("change", function(event) {
+        const option = event.target.selectedOptions[0];
+        if (!option) {
+          return;
+        }
+        navigateToVersion(option);
+      });
+    });
+  })();
+</script></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pgmpy/pgmpy" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/DRkdKaumBs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/company/pgmpy/" title="LinkedIn" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">LinkedIn</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../documentation.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development.html">
+    Getting Involved
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container pgmpy-version-switcher">
+  <select
+    class="form-select form-select-sm pgmpy-version-select"
+    aria-label="Select Version"
+    data-current-version="dev"
+    data-current-label="dev"
+    data-target-uri="examples/Functional_Bayesian_Network_Tutorial.html"
+  >
+    
+    
+
+    
+    <optgroup label="In Development">
+      
+      <option value="dev" data-url="https://pgmpy.org/dev/" selected>
+        dev
+      </option>
+      
+    </optgroup>
+    
+  </select>
+</div>
+
+<script>
+  (function() {
+    const selects = document.querySelectorAll(".pgmpy-version-select:not([data-pgmpy-version-init])");
+    selects.forEach(function(select) {
+      select.dataset.pgmpyVersionInit = "true";
+
+      const currentVersion = select.dataset.currentVersion;
+      const currentLabel = select.dataset.currentLabel || currentVersion;
+      const currentTargetUri = (select.dataset.targetUri || "").replace(/^\/+/, "");
+
+      if (!Array.from(select.options).some(function(option) { return option.value === currentVersion; })) {
+        const option = document.createElement("option");
+        option.value = currentVersion;
+        option.textContent = currentLabel;
+        option.selected = true;
+        select.insertBefore(option, select.firstChild);
+      }
+
+      const buildTargetUrl = function(baseUrl) {
+        if (!currentTargetUri || currentTargetUri === "index.html") {
+          return baseUrl;
+        }
+        return new URL(currentTargetUri, baseUrl).toString();
+      };
+
+      const navigateToVersion = async function(option) {
+        const baseUrl = option.dataset.url;
+        if (!baseUrl) {
+          return;
+        }
+
+        const targetUrl = buildTargetUrl(baseUrl);
+
+        if (targetUrl === baseUrl) {
+          window.location.href = baseUrl;
+          return;
+        }
+
+        try {
+          const response = await fetch(targetUrl, { method: "HEAD" });
+          window.location.href = response.ok ? targetUrl : baseUrl;
+        } catch (error) {
+          window.location.href = targetUrl;
+        }
+      };
+
+      select.addEventListener("change", function(event) {
+        const option = event.target.selectedOptions[0];
+        if (!option) {
+          return;
+        }
+        navigateToVersion(option);
+      });
+    });
+  })();
+</script></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pgmpy/pgmpy" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/DRkdKaumBs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/company/pgmpy/" title="LinkedIn" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">LinkedIn</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Creating_Discrete_BN.html">Creating Discrete Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Creating_Linear_BN.html">Creating Linear Gaussian Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Defining_CPDs.html">How to define TabularCPD and LinearGaussianCPD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Basic_Operations_on_BN.html">Basic Operations on Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Structure_Learning.html">Structure Learning in Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Structure_Learning_Chow_Liu.html">Learning Tree Structure from Data using the Chow-Liu Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Structure_Learning_TAN.html">Learning Tree-augmented Naive Bayes (TAN) Structure from Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Expert_Knowledge.html">Expert Knowledge Integration with Causal Discovery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Parameter_Learning_Discrete_BN.html">Parameter Learning in Discrete Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Parameter_Learning_Factor_Graphs.html">Marginal Learning in Discrete Markov Networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="Inference_Discrete_BN.html">Inference in Discrete Bayesian Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Monty_Hall.html">Monty Hall Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Causal_Inference.html">Causal Inference Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Causal_Games.html">Causal Games</a></li>
+
+
+
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="Simulating_Data.html">Simulating Data From Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Extending_pgmpy.html">Extending pgmpy</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Functional Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Junction_Tree_Inference.html">Junction Tree Exact Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Example Notebooks</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Functional Bayesian Networks</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Functional-Bayesian-Networks">
+<h1>Functional Bayesian Networks<a class="headerlink" href="#Functional-Bayesian-Networks" title="Link to this heading">#</a></h1>
+<p>Functional Bayesian Networks (FBNs) are Bayesian networks where each CPD is a Python function that returns a Pyro distribution. This lets you model arbitrary discrete, continuous, or mixed relationships, while keeping standard graph semantics for sampling, interventions, and learning.</p>
+<p>Similar to other Bayesian Network classes in pgmpy, there are two main components of the model:</p>
+<ol class="arabic simple">
+<li><p>The graphical structure of the model,</p></li>
+<li><p>The parameterization of the model (defined using <code class="docutils literal notranslate"><span class="pre">FunctionalCPD</span></code>).</p></li>
+</ol>
+<p>This tutorial introduces <strong>Functional Bayesian Networks (FBNs)</strong> and the accompanying <strong>Functional CPDs</strong> in <code class="docutils literal notranslate"><span class="pre">pgmpy</span></code>. You’ll learn how to:</p>
+<ul class="simple">
+<li><p>Define FunctionalCPDs as <em>functions that return Pyro distributions</em>.</p></li>
+<li><p>Build FunctionalBayesianNetworks on mixed data.</p></li>
+<li><p>Simulate data from the model.</p></li>
+<li><p>Use vectorized CPDs for performance.</p></li>
+<li><p>Fit simple parametric FBNs using <strong>SVI</strong> and <strong>MCMC</strong> via Pyro.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyro</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyro.distributions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pgmpy</span>
+<span class="n">pgmpy</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_backend</span><span class="p">(</span><span class="s2">&quot;torch&quot;</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">FunctionalBayesianNetwork</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.hybrid</span><span class="w"> </span><span class="kn">import</span> <span class="n">FunctionalCPD</span>
+
+<span class="c1"># Reproducibility</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">set_rng_seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<section id="Functional-CPDs:-the-core-idea">
+<h2>Functional CPDs: the core idea<a class="headerlink" href="#Functional-CPDs:-the-core-idea" title="Link to this heading">#</a></h2>
+<p>A <strong>Functional CPD</strong> has three arguments:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">variable</span></code>: The variable for the FunctionalCPD is being defined. For a fully parameterized model, each node in the model needs a <code class="docutils literal notranslate"><span class="pre">FunctionalCPD</span></code> associated with it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fn</span></code>: A Python callable that takes a dictionary of parents’ values as input and returns a <strong>Pyro distribution</strong>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">parents</span></code>: The parents of <code class="docutils literal notranslate"><span class="pre">variable</span></code> in the model.</p></li>
+</ol>
+</section>
+<section id="Example-1:-A-simple-Gaussian-chain:-x1-→-x2-→-x3">
+<h2>Example 1: A simple Gaussian chain: <code class="docutils literal notranslate"><span class="pre">x1</span> <span class="pre">→</span> <span class="pre">x2</span> <span class="pre">→</span> <span class="pre">x3</span></code><a class="headerlink" href="#Example-1:-A-simple-Gaussian-chain:-x1-→-x2-→-x3" title="Link to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build the structure</span>
+<span class="n">gauss_chain</span> <span class="o">=</span> <span class="n">FunctionalBayesianNetwork</span><span class="p">([(</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;x2&quot;</span><span class="p">,</span> <span class="s2">&quot;x3&quot;</span><span class="p">)])</span>
+
+<span class="c1"># Define CPDs</span>
+<span class="n">cpd_x1</span> <span class="o">=</span> <span class="n">FunctionalCPD</span><span class="p">(</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+<span class="n">cpd_x2</span> <span class="o">=</span> <span class="n">FunctionalCPD</span><span class="p">(</span><span class="s2">&quot;x2&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">parents</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">],</span> <span class="mf">0.5</span><span class="p">),</span> <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">])</span>
+<span class="n">cpd_x3</span> <span class="o">=</span> <span class="n">FunctionalCPD</span><span class="p">(</span><span class="s2">&quot;x3&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">parents</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.3</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;x2&quot;</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">),</span> <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x2&quot;</span><span class="p">])</span>
+
+<span class="n">gauss_chain</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_x1</span><span class="p">,</span> <span class="n">cpd_x2</span><span class="p">,</span> <span class="n">cpd_x3</span><span class="p">)</span>
+<span class="n">gauss_chain</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
+
+<span class="c1"># Draw a few samples</span>
+<span class="n">samples_gc</span> <span class="o">=</span> <span class="n">gauss_chain</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
+<span class="n">samples_gc</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>x1</th>
+      <th>x2</th>
+      <th>x3</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>-0.111467</td>
+      <td>1.015461</td>
+      <td>1.525792</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.120363</td>
+      <td>0.610113</td>
+      <td>0.519270</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>-0.369635</td>
+      <td>0.326770</td>
+      <td>0.861743</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-0.240418</td>
+      <td>0.969617</td>
+      <td>1.934877</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-1.196924</td>
+      <td>-0.011801</td>
+      <td>0.641020</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<section id="Example-2:-Complex-model-with-mixture-data">
+<h3>Example 2: Complex model with mixture data<a class="headerlink" href="#Example-2:-Complex-model-with-mixture-data" title="Link to this heading">#</a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">complex_bn</span> <span class="o">=</span> <span class="n">FunctionalBayesianNetwork</span><span class="p">(</span>
+    <span class="p">[(</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;x2&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">),</span>
+     <span class="p">(</span><span class="s2">&quot;x2&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">),</span>
+     <span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">)]</span>
+<span class="p">)</span>
+
+<span class="c1"># Roots</span>
+<span class="n">cpd_x1</span> <span class="o">=</span> <span class="n">FunctionalCPD</span><span class="p">(</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+<span class="n">cpd_x2</span> <span class="o">=</span> <span class="n">FunctionalCPD</span><span class="p">(</span><span class="s2">&quot;x2&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">))</span>
+
+<span class="c1"># Continuous mediator: w = 0.7*x1 - 0.3*x2 + ε</span>
+<span class="n">cpd_w</span> <span class="o">=</span> <span class="n">FunctionalCPD</span><span class="p">(</span>
+    <span class="s2">&quot;w&quot;</span><span class="p">,</span>
+    <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">parents</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.7</span> <span class="o">*</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;x2&quot;</span><span class="p">],</span> <span class="mf">0.5</span><span class="p">),</span>
+    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># Bernoulli target with logistic link: y ~ Bernoulli(sigmoid(-0.7 + 1.5*x1 + 0.8*x2 + 1.2*w))</span>
+<span class="n">cpd_y</span> <span class="o">=</span> <span class="n">FunctionalCPD</span><span class="p">(</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">,</span>
+    <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">parents</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.7</span> <span class="o">+</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;x2&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">])),</span>
+    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># Downstream Bernoulli influenced by y and w</span>
+<span class="n">cpd_z</span> <span class="o">=</span> <span class="n">FunctionalCPD</span><span class="p">(</span>
+    <span class="s2">&quot;z&quot;</span><span class="p">,</span>
+    <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">parents</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">1.2</span> <span class="o">+</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.2</span> <span class="o">*</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">])),</span>
+    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># Continuous outcome depending on y and w: c = 0.2 + 0.5*y + 0.3*w + ε</span>
+<span class="n">cpd_c</span> <span class="o">=</span> <span class="n">FunctionalCPD</span><span class="p">(</span>
+    <span class="s2">&quot;c&quot;</span><span class="p">,</span>
+    <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">parents</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.2</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.3</span> <span class="o">*</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">],</span> <span class="mf">0.7</span><span class="p">),</span>
+    <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">complex_bn</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_x1</span><span class="p">,</span> <span class="n">cpd_x2</span><span class="p">,</span> <span class="n">cpd_w</span><span class="p">,</span> <span class="n">cpd_y</span><span class="p">,</span> <span class="n">cpd_z</span><span class="p">,</span> <span class="n">cpd_c</span><span class="p">)</span>
+<span class="n">complex_bn</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
+
+<span class="c1"># Simulate data from it</span>
+<span class="n">complex_bn</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>x1</th>
+      <th>x2</th>
+      <th>w</th>
+      <th>y</th>
+      <th>z</th>
+      <th>c</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>-0.111467</td>
+      <td>0.888683</td>
+      <td>-0.363940</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.848689</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.120363</td>
+      <td>0.369773</td>
+      <td>-0.469728</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>-0.909814</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>-0.369635</td>
+      <td>0.752397</td>
+      <td>-0.719913</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.266363</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-0.240418</td>
+      <td>0.030989</td>
+      <td>-0.391040</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>-0.774038</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-1.196924</td>
+      <td>0.781968</td>
+      <td>-1.086602</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.365244</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>0.209269</td>
+      <td>1.298313</td>
+      <td>0.468003</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>2.390150</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>-0.972355</td>
+      <td>0.923385</td>
+      <td>-1.151972</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>-0.164933</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>-0.755045</td>
+      <td>1.667385</td>
+      <td>-1.473914</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.495661</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+</section>
+</section>
+<section id="Vectorized-CPDs-for-speed">
+<h2>Vectorized CPDs for speed<a class="headerlink" href="#Vectorized-CPDs-for-speed" title="Link to this heading">#</a></h2>
+<p>Set <code class="docutils literal notranslate"><span class="pre">vectorized=True</span></code> and have your <code class="docutils literal notranslate"><span class="pre">fn(parent_df)</span></code> return a <strong>batched</strong> Pyro distribution whose batch size equals the number of rows in the provided parent DataFrame. This makes sampling much faster for large <code class="docutils literal notranslate"><span class="pre">n_samples</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
+
+<span class="n">vec_bn</span> <span class="o">=</span> <span class="n">FunctionalBayesianNetwork</span><span class="p">([(</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">)])</span>
+
+<span class="n">cpd_x1</span> <span class="o">=</span> <span class="n">FunctionalCPD</span><span class="p">(</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">x2_fn_vec</span><span class="p">(</span><span class="n">P</span><span class="p">):</span>
+    <span class="n">x1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">P</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">(),</span> <span class="n">device</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get_device</span><span class="p">())</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.9</span> <span class="o">*</span> <span class="n">x1</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+
+<span class="n">cpd_x2</span> <span class="o">=</span> <span class="n">FunctionalCPD</span><span class="p">(</span><span class="s2">&quot;x2&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">x2_fn_vec</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">],</span> <span class="n">vectorized</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">vec_bn</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_x1</span><span class="p">,</span> <span class="n">cpd_x2</span><span class="p">)</span>
+<span class="n">vec_bn</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
+
+<span class="c1"># Large draw to highlight performance of vectorized CPDs</span>
+<span class="n">vec_samples</span> <span class="o">=</span> <span class="n">vec_bn</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
+<span class="n">vec_samples</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>x1</th>
+      <th>x2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>-0.111467</td>
+      <td>0.796616</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.120363</td>
+      <td>0.786959</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>-0.369635</td>
+      <td>-0.077290</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>-0.240418</td>
+      <td>0.097413</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>-1.196924</td>
+      <td>-0.559637</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+</section>
+<section id="Parameter-learning-with-SVI">
+<h2>Parameter learning with SVI<a class="headerlink" href="#Parameter-learning-with-SVI" title="Link to this heading">#</a></h2>
+<p>When CPDs contain <strong>Pyro parameters</strong> (<code class="docutils literal notranslate"><span class="pre">pyro.param(...)</span></code>), you can fit them to data using <code class="docutils literal notranslate"><span class="pre">model.fit(...,</span> <span class="pre">estimator=&quot;SVI&quot;)</span></code>. Below, we synthesize data from a simple linear-Gaussian model and then recover the parameters.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate synthetic data</span>
+<span class="n">true_mu</span><span class="p">,</span> <span class="n">true_sigma</span> <span class="o">=</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.6</span>
+<span class="n">N</span> <span class="o">=</span> <span class="mi">2000</span>
+<span class="n">x1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">true_mu</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">true_sigma</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,))</span>
+<span class="c1"># FIX: vectorized draw for x2 (no size when mean is a tensor)</span>
+<span class="n">x2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">1.2</span> <span class="o">+</span> <span class="n">x1</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>         <span class="c1"># or: x2 = 1.2 + x1 + 0.7 * torch.randn_like(x1)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;x1&quot;</span><span class="p">:</span> <span class="n">x1</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="s2">&quot;x2&quot;</span><span class="p">:</span> <span class="n">x2</span><span class="o">.</span><span class="n">numpy</span><span class="p">()})</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">constraints</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyro</span><span class="o">,</span><span class="w"> </span><span class="nn">pyro.distributions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>  <span class="c1"># helpful if you re-run the cell</span>
+
+<span class="n">svi_bn</span> <span class="o">=</span> <span class="n">FunctionalBayesianNetwork</span><span class="p">([(</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">)])</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">x1_fn</span><span class="p">(</span><span class="n">_</span><span class="p">):</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;x1_mu&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;x1_sigma&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">x2_fn</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">inter</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;x2_inter&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">))</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s2">&quot;x2_sigma&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">constraint</span><span class="o">=</span><span class="n">constraints</span><span class="o">.</span><span class="n">positive</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">inter</span> <span class="o">+</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">],</span> <span class="n">sigma</span><span class="p">)</span>
+
+<span class="n">svi_bn</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span>
+    <span class="n">FunctionalCPD</span><span class="p">(</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">x1_fn</span><span class="p">),</span>
+    <span class="n">FunctionalCPD</span><span class="p">(</span><span class="s2">&quot;x2&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">x2_fn</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">]),</span>
+<span class="p">)</span>
+<span class="n">svi_bn</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
+
+<span class="c1"># Fit with SVI</span>
+<span class="n">params_svi</span> <span class="o">=</span> <span class="n">svi_bn</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+<span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">and</span> <span class="n">v</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params_svi</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;x1_mu&#39;: 0.7751224637031555,
+ &#39;x1_sigma&#39;: 0.6131476759910583,
+ &#39;x2_inter&#39;: 1.1970738172531128,
+ &#39;x2_sigma&#39;: 0.6990763545036316}
+</pre></div></div>
+</div>
+</section>
+<section id="Bayesian-inference-with-MCMC">
+<h2>Bayesian inference with MCMC<a class="headerlink" href="#Bayesian-inference-with-MCMC" title="Link to this heading">#</a></h2>
+<div class="line-block">
+<div class="line">If you prefer a fully Bayesian approach, provide <strong>priors</strong> and switch <code class="docutils literal notranslate"><span class="pre">estimator=&quot;MCMC&quot;</span></code>.</div>
+<div class="line">Here, we place priors on the parameters, then sample from the posterior.</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mcmc_bn</span> <span class="o">=</span> <span class="n">FunctionalBayesianNetwork</span><span class="p">([(</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="s2">&quot;x2&quot;</span><span class="p">)])</span>
+
+<span class="c1"># Priors with matched dtype/device (avoid dtype mismatches)</span>
+<span class="n">dtype</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">()</span>
+<span class="n">device</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get_device</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prior_fn</span><span class="p">():</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;x1_mu&quot;</span><span class="p">:</span>   <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">t</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">t</span><span class="p">(</span><span class="mf">5.0</span><span class="p">)),</span>
+        <span class="s2">&quot;x1_sigma&quot;</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="n">t</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)),</span>
+        <span class="s2">&quot;x2_inter&quot;</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">t</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">t</span><span class="p">(</span><span class="mf">5.0</span><span class="p">)),</span>
+        <span class="s2">&quot;x2_sigma&quot;</span><span class="p">:</span> <span class="n">dist</span><span class="o">.</span><span class="n">HalfNormal</span><span class="p">(</span><span class="n">t</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)),</span>
+    <span class="p">}</span>
+
+<span class="c1"># CPDs consume *sampled* prior values (from the model) + parents</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">x1_fn_prior</span><span class="p">(</span><span class="n">priors</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">priors</span><span class="p">[</span><span class="s2">&quot;x1_mu&quot;</span><span class="p">],</span> <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;x1_sigma&quot;</span><span class="p">])</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">x2_fn_prior</span><span class="p">(</span><span class="n">priors</span><span class="p">,</span> <span class="n">parents</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="n">priors</span><span class="p">[</span><span class="s2">&quot;x2_inter&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">],</span> <span class="n">priors</span><span class="p">[</span><span class="s2">&quot;x2_sigma&quot;</span><span class="p">])</span>
+
+<span class="n">mcmc_bn</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span>
+    <span class="n">FunctionalCPD</span><span class="p">(</span><span class="s2">&quot;x1&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">x1_fn_prior</span><span class="p">),</span>
+    <span class="n">FunctionalCPD</span><span class="p">(</span><span class="s2">&quot;x2&quot;</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">x2_fn_prior</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x1&quot;</span><span class="p">]),</span>
+<span class="p">)</span>
+
+<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+
+<span class="n">post</span> <span class="o">=</span> <span class="n">mcmc_bn</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">estimator</span><span class="o">=</span><span class="s2">&quot;MCMC&quot;</span><span class="p">,</span>
+    <span class="n">prior_fn</span><span class="o">=</span><span class="n">prior_fn</span><span class="p">,</span>
+    <span class="n">num_steps</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+    <span class="n">nuts_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_accept_prob&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">},</span>
+    <span class="n">mcmc_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;num_chains&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;warmup_steps&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">},</span>
+<span class="p">)</span>
+
+<span class="c1"># Peek at posterior summaries</span>
+<span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">v</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">post</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">v</span><span class="p">)}</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Sample: 100%|█████████████████████████████████████████| 400/400 [00:01, 221.79it/s, step size=6.89e-01, acc. prob=0.881]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;x1_mu&#39;: (0.7773640349223626, 0.014470493417145083),
+ &#39;x1_sigma&#39;: (0.612960799064066, 0.010122547469200738),
+ &#39;x2_inter&#39;: (1.197045500167558, 0.0148845266501543),
+ &#39;x2_sigma&#39;: (0.7008062278971664, 0.01043389183451872)}
+</pre></div></div>
+</div>
+</section>
+<section id="Interventions-and-conditioning-(preview)">
+<h2>Interventions and conditioning (preview)<a class="headerlink" href="#Interventions-and-conditioning-(preview)" title="Link to this heading">#</a></h2>
+<div class="line-block">
+<div class="line">Conceptually, an intervention <code class="docutils literal notranslate"><span class="pre">do(X</span> <span class="pre">=</span> <span class="pre">value)</span></code> <strong>severs incoming edges into ``X``</strong> and replaces its CPD with a constant or a new distribution.</div>
+<div class="line">A simple approach for simulations is to <em>temporarily swap the CPD of ``X``</em> with a <code class="docutils literal notranslate"><span class="pre">FunctionalCPD</span></code> that ignores parents and returns <code class="docutils literal notranslate"><span class="pre">dist.Delta(value)</span></code> (or any desired distribution).</div>
+</div>
+<p>Conditioning on continuous <strong>point evidence</strong> should use <strong>likelihood weighting</strong> or proper inference (SVI/MCMC), not plain rejection sampling. The high-level recipe for likelihood weighting is:</p>
+<ol class="arabic simple">
+<li><p>Sample all <strong>non-evidence</strong> nodes in topological order (respecting any <code class="docutils literal notranslate"><span class="pre">do(...)</span></code> replacements).</p></li>
+<li><p>Clamp evidence nodes to their observed values.</p></li>
+<li><p>Weight each draw by the product of evidence likelihoods under their parents’ sampled values.</p></li>
+<li><p>Normalize weights and either keep <strong>weighted samples</strong> or <strong>resample</strong> for an unweighted posterior sample.</p></li>
+</ol>
+<p>Future versions may expose <code class="docutils literal notranslate"><span class="pre">simulate(do=...,</span> <span class="pre">evidence=...)</span></code> directly in the API.</p>
+<hr class="docutils" />
+<section id="Key-takeaways">
+<h3>Key takeaways<a class="headerlink" href="#Key-takeaways" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Functional CPDs let you specify <strong>any</strong> distribution you can write in Pyro.</p></li>
+<li><p>Mixed types (discrete/continuous) are straightforward.</p></li>
+<li><p>Use <strong>vectorized CPDs</strong> for performance on large simulations.</p></li>
+<li><p>For learning: quick <strong>SVI</strong> with <code class="docutils literal notranslate"><span class="pre">pyro.param(...)</span></code> or fully Bayesian <strong>MCMC</strong> with <code class="docutils literal notranslate"><span class="pre">prior_fn</span></code>.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Extending_pgmpy.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Extending pgmpy</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Junction_Tree_Inference.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Junction Tree Exact Inference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Functional-CPDs:-the-core-idea">Functional CPDs: the core idea</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Example-1:-A-simple-Gaussian-chain:-x1-→-x2-→-x3">Example 1: A simple Gaussian chain: <code class="docutils literal notranslate"><span class="pre">x1</span> <span class="pre">→</span> <span class="pre">x2</span> <span class="pre">→</span> <span class="pre">x3</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Example-2:-Complex-model-with-mixture-data">Example 2: Complex model with mixture data</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Vectorized-CPDs-for-speed">Vectorized CPDs for speed</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Parameter-learning-with-SVI">Parameter learning with SVI</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Bayesian-inference-with-MCMC">Bayesian inference with MCMC</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Interventions-and-conditioning-(preview)">Interventions and conditioning (preview)</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Key-takeaways">Key takeaways</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, pgmpy developers.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
