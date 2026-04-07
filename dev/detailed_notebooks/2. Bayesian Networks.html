@@ -1,0 +1,1463 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Bayesian Network" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pgmpy.org/dev/detailed_notebooks/2.%20Bayesian%20Networks.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="Bayesian Models: What are Bayesian Models, Independencies in Bayesian Networks, How is Bayesian Model encoding the Joint Distribution, How we do inference from Bayesian models, Types of methods for..." />
+<meta property="og:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
+<meta property="og:image:alt" content="pgmpy" />
+<meta name="description" content="Bayesian Models: What are Bayesian Models, Independencies in Bayesian Networks, How is Bayesian Model encoding the Joint Distribution, How we do inference from Bayesian models, Types of methods for..." />
+<meta name="twitter:card" content="summary_large_image" />
+
+<meta name="twitter:description" content="pgmpy is a Python library for causal inference, probabilistic modeling, Bayesian networks, and directed acyclic graphs." />
+<meta name="twitter:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
+<meta name="robots" content="noindex,nofollow,noarchive" />
+<link rel="canonical" href="https://pgmpy.org/dev/detailed_notebooks/2.%20Bayesian%20Networks.html" />
+    <title>Bayesian Network &#8212; pgmpy</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=18a852c8" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../_static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'detailed_notebooks/2. Bayesian Networks';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://pgmpy.org/dev/detailed_notebooks/2.%20Bayesian%20Networks.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Causal Bayesian Networks" href="3.%20Causal%20Bayesian%20Networks.html" />
+    <link rel="prev" title="Introduction to Probabilitic Graphical Models" href="1.%20Introduction%20to%20Probabilistic%20Graphical%20Models.html" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  
+    
+  <script type="application/ld+json">{"@context": "https://schema.org", "@id": "https://pgmpy.org/dev/#organization", "@type": "Organization", "logo": "https://pgmpy.org/dev/_static/images/logo.png", "name": "pgmpy", "sameAs": ["https://github.com/pgmpy/pgmpy", "https://pypi.org/project/pgmpy/", "https://www.linkedin.com/company/pgmpy/"], "url": "https://pgmpy.org/dev"}</script>
+    
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "item": "https://pgmpy.org/dev/index.html", "name": "Key Features", "position": 1}]}</script>
+    
+  
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HCFR07M31W');
+  </script>
+  <!-- EthicalAds -->
+  <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.png" class="logo__image only-light" alt=""/>
+    <img src="../_static/logo.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pgmpy</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../documentation.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development.html">
+    Getting Involved
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container pgmpy-version-switcher">
+  <select
+    class="form-select form-select-sm pgmpy-version-select"
+    aria-label="Select Version"
+    data-current-version="dev"
+    data-current-label="dev"
+    data-target-uri="detailed_notebooks/2.%20Bayesian%20Networks.html"
+  >
+    
+    
+    <optgroup label="Releases">
+      
+      <option value="stable" data-url="https://pgmpy.org/" >
+        v1.1 (stable)
+      </option>
+      
+      
+      <option value="v1.1" data-url="https://pgmpy.org/v1.1/" >
+        v1.1
+      </option>
+      
+    </optgroup>
+    
+
+    
+    <optgroup label="In Development">
+      
+      <option value="dev" data-url="https://pgmpy.org/dev/" selected>
+        dev
+      </option>
+      
+    </optgroup>
+    
+  </select>
+</div>
+
+<script>
+  (function() {
+    const selects = document.querySelectorAll(".pgmpy-version-select:not([data-pgmpy-version-init])");
+    selects.forEach(function(select) {
+      select.dataset.pgmpyVersionInit = "true";
+
+      const currentVersion = select.dataset.currentVersion;
+      const currentLabel = select.dataset.currentLabel || currentVersion;
+      const currentTargetUri = (select.dataset.targetUri || "").replace(/^\/+/, "");
+
+      if (!Array.from(select.options).some(function(option) { return option.value === currentVersion; })) {
+        const option = document.createElement("option");
+        option.value = currentVersion;
+        option.textContent = currentLabel;
+        option.selected = true;
+        select.insertBefore(option, select.firstChild);
+      }
+
+      const buildTargetUrl = function(baseUrl) {
+        if (!currentTargetUri || currentTargetUri === "index.html") {
+          return baseUrl;
+        }
+        return new URL(currentTargetUri, baseUrl).toString();
+      };
+
+      const navigateToVersion = async function(option) {
+        const baseUrl = option.dataset.url;
+        if (!baseUrl) {
+          return;
+        }
+
+        const targetUrl = buildTargetUrl(baseUrl);
+
+        if (targetUrl === baseUrl) {
+          window.location.href = baseUrl;
+          return;
+        }
+
+        try {
+          const response = await fetch(targetUrl, { method: "HEAD" });
+          window.location.href = response.ok ? targetUrl : baseUrl;
+        } catch (error) {
+          window.location.href = targetUrl;
+        }
+      };
+
+      select.addEventListener("change", function(event) {
+        const option = event.target.selectedOptions[0];
+        if (!option) {
+          return;
+        }
+        navigateToVersion(option);
+      });
+    });
+  })();
+</script></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pgmpy/pgmpy" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/DRkdKaumBs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/company/pgmpy/" title="LinkedIn" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">LinkedIn</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../documentation.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development.html">
+    Getting Involved
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container pgmpy-version-switcher">
+  <select
+    class="form-select form-select-sm pgmpy-version-select"
+    aria-label="Select Version"
+    data-current-version="dev"
+    data-current-label="dev"
+    data-target-uri="detailed_notebooks/2.%20Bayesian%20Networks.html"
+  >
+    
+    
+    <optgroup label="Releases">
+      
+      <option value="stable" data-url="https://pgmpy.org/" >
+        v1.1 (stable)
+      </option>
+      
+      
+      <option value="v1.1" data-url="https://pgmpy.org/v1.1/" >
+        v1.1
+      </option>
+      
+    </optgroup>
+    
+
+    
+    <optgroup label="In Development">
+      
+      <option value="dev" data-url="https://pgmpy.org/dev/" selected>
+        dev
+      </option>
+      
+    </optgroup>
+    
+  </select>
+</div>
+
+<script>
+  (function() {
+    const selects = document.querySelectorAll(".pgmpy-version-select:not([data-pgmpy-version-init])");
+    selects.forEach(function(select) {
+      select.dataset.pgmpyVersionInit = "true";
+
+      const currentVersion = select.dataset.currentVersion;
+      const currentLabel = select.dataset.currentLabel || currentVersion;
+      const currentTargetUri = (select.dataset.targetUri || "").replace(/^\/+/, "");
+
+      if (!Array.from(select.options).some(function(option) { return option.value === currentVersion; })) {
+        const option = document.createElement("option");
+        option.value = currentVersion;
+        option.textContent = currentLabel;
+        option.selected = true;
+        select.insertBefore(option, select.firstChild);
+      }
+
+      const buildTargetUrl = function(baseUrl) {
+        if (!currentTargetUri || currentTargetUri === "index.html") {
+          return baseUrl;
+        }
+        return new URL(currentTargetUri, baseUrl).toString();
+      };
+
+      const navigateToVersion = async function(option) {
+        const baseUrl = option.dataset.url;
+        if (!baseUrl) {
+          return;
+        }
+
+        const targetUrl = buildTargetUrl(baseUrl);
+
+        if (targetUrl === baseUrl) {
+          window.location.href = baseUrl;
+          return;
+        }
+
+        try {
+          const response = await fetch(targetUrl, { method: "HEAD" });
+          window.location.href = response.ok ? targetUrl : baseUrl;
+        } catch (error) {
+          window.location.href = targetUrl;
+        }
+      };
+
+      select.addEventListener("change", function(event) {
+        const option = event.target.selectedOptions[0];
+        if (!option) {
+          return;
+        }
+        navigateToVersion(option);
+      });
+    });
+  })();
+</script></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pgmpy/pgmpy" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/DRkdKaumBs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/company/pgmpy/" title="LinkedIn" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">LinkedIn</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../examples/Creating_Discrete_BN.html">Creating Discrete Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Creating_Linear_BN.html">Creating Linear Gaussian Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Defining_CPDs.html">How to define TabularCPD and LinearGaussianCPD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Basic_Operations_on_BN.html">Basic Operations on Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Structure_Learning.html">Structure Learning in Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Structure_Learning_Chow_Liu.html">Learning Tree Structure from Data using the Chow-Liu Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Structure_Learning_TAN.html">Learning Tree-augmented Naive Bayes (TAN) Structure from Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Expert_Knowledge.html">Expert Knowledge Integration with Causal Discovery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Parameter_Learning_Discrete_BN.html">Parameter Learning in Discrete Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Parameter_Learning_Factor_Graphs.html">Marginal Learning in Discrete Markov Networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../examples/Inference_Discrete_BN.html">Inference in Discrete Bayesian Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Monty_Hall.html">Monty Hall Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Causal_Inference.html">Causal Inference Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Causal_Games.html">Causal Games</a></li>
+
+
+
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../examples/Simulating_Data.html">Simulating Data From Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Extending_pgmpy.html">Extending pgmpy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Functional_Bayesian_Network_Tutorial.html">Functional Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Junction_Tree_Inference.html">Junction Tree Exact Inference</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="1.%20Introduction%20to%20Probabilistic%20Graphical%20Models.html">Introduction to Probabilitic Graphical Models</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Bayesian Network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3.%20Causal%20Bayesian%20Networks.html">Causal Bayesian Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4.%20Markov%20Models.html">Markov Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5.%20Exact%20Inference%20in%20Graphical%20Models.html">Exact Inference in Graphical Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="6.%20Approximate%20Inference%20in%20Graphical%20Models.html">Approximate Inference in Graphical Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="7.%20Parameterizing%20with%20Continuous%20Variables.html">Parameterizing with Continuous Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="8.%20Sampling%20Algorithms.html">Sampling In Continuous Graphical Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="9.%20Reading%20and%20Writing%20from%20pgmpy%20file%20formats.html">Reading and Writing from pgmpy file formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="10.%20Learning%20Bayesian%20Networks%20from%20Data.html">Learning Bayesian Networks from Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="11.%20A%20Bayesian%20Network%20to%20model%20the%20influence%20of%20energy%20consumption%20on%20greenhouse%20gases%20in%20Italy.html">A Bayesian Network to model the influence of energy consumption on greenhouse gases in Italy</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+  <div class="pgmpy-primary-sidebar-ad">
+    <div
+        id="ethical-ad-placement"
+        class="flat adaptive-css"
+        data-ea-publisher="pgmpyorg"
+        data-ea-type="image">
+    </div>
+  </div>
+</div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Example Notebooks</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../tutorial.html" class="nav-link">Tutorial Notebooks</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Bayesian Network</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Bayesian-Network">
+<h1>Bayesian Network<a class="headerlink" href="#Bayesian-Network" title="Link to this heading">#</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+</pre></div>
+</div>
+</div>
+<section id="Bayesian-Models">
+<h2>Bayesian Models<a class="headerlink" href="#Bayesian-Models" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p>What are Bayesian Models</p></li>
+<li><p>Independencies in Bayesian Networks</p></li>
+<li><p>How is Bayesian Model encoding the Joint Distribution</p></li>
+<li><p>How we do inference from Bayesian models</p></li>
+<li><p>Types of methods for inference</p></li>
+</ol>
+<section id="1.-What-are-Bayesian-Models">
+<h3>1. What are Bayesian Models<a class="headerlink" href="#1.-What-are-Bayesian-Models" title="Link to this heading">#</a></h3>
+<p>A Bayesian network, Bayes network, belief network, Bayes(ian) model or probabilistic directed acyclic graphical model is a probabilistic graphical model (a type of statistical model) that represents a set of random variables and their conditional dependencies via a directed acyclic graph (DAG). Bayesian networks are mostly used when we want to represent causal relationship between the random variables. Bayesian Networks are parameterized using Conditional Probability Distributions (CPD). Each
+node in the network is parameterized using <span class="math notranslate nohighlight">\(P(node | Pa(node))\)</span> where <span class="math notranslate nohighlight">\(Pa(node)\)</span> represents the parents of node in the network.</p>
+<p>We can take the example of the student model:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Image</span><span class="p">(</span><span class="s1">&#39;../images/2/student_full_param.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/detailed_notebooks_2._Bayesian_Networks_4_0.png" src="../_images/detailed_notebooks_2._Bayesian_Networks_4_0.png" />
+</div>
+</div>
+<p>In pgmpy we define the network structure and the CPDs separately and then associate them with the structure. Here’s an example for defining the above model:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">BayesianModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
+
+<span class="c1"># Defining the model structure. We can define the network by just passing a list of edges.</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">BayesianModel</span><span class="p">([(</span><span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">)])</span>
+
+<span class="c1"># Defining individual CPDs.</span>
+<span class="n">cpd_d</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">]])</span>
+<span class="n">cpd_i</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.7</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">]])</span>
+
+<span class="c1"># The representation of CPD in pgmpy is a bit different than the CPD shown in the above picture. In pgmpy the colums</span>
+<span class="c1"># are the evidences and rows are the states of the variable. So the grade CPD is represented like this:</span>
+<span class="c1">#</span>
+<span class="c1">#    +---------+---------+---------+---------+---------+</span>
+<span class="c1">#    | diff    | intel_0 | intel_0 | intel_1 | intel_1 |</span>
+<span class="c1">#    +---------+---------+---------+---------+---------+</span>
+<span class="c1">#    | intel   | diff_0  | diff_1  | diff_0  | diff_1  |</span>
+<span class="c1">#    +---------+---------+---------+---------+---------+</span>
+<span class="c1">#    | grade_0 | 0.3     | 0.05    | 0.9     | 0.5     |</span>
+<span class="c1">#    +---------+---------+---------+---------+---------+</span>
+<span class="c1">#    | grade_1 | 0.4     | 0.25    | 0.08    | 0.3     |</span>
+<span class="c1">#    +---------+---------+---------+---------+---------+</span>
+<span class="c1">#    | grade_2 | 0.3     | 0.7     | 0.02    | 0.2     |</span>
+<span class="c1">#    +---------+---------+---------+---------+---------+</span>
+
+<span class="n">cpd_g</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                   <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">],</span>
+                           <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+                           <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span>  <span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]],</span>
+                  <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">],</span>
+                  <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+
+<span class="n">cpd_l</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                   <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">],</span>
+                           <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">]],</span>
+                   <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;G&#39;</span><span class="p">],</span>
+                   <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+<span class="n">cpd_s</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                   <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>
+                           <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">]],</span>
+                   <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;I&#39;</span><span class="p">],</span>
+                   <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+<span class="c1"># Associating the CPDs with the network</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_d</span><span class="p">,</span> <span class="n">cpd_i</span><span class="p">,</span> <span class="n">cpd_g</span><span class="p">,</span> <span class="n">cpd_l</span><span class="p">,</span> <span class="n">cpd_s</span><span class="p">)</span>
+
+<span class="c1"># check_model checks for the network structure and CPDs and verifies that the CPDs are correctly</span>
+<span class="c1"># defined and sum to 1.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># CPDs can also be defined using the state names of the variables. If the state names are not provided</span>
+<span class="c1"># like in the previous example, pgmpy will automatically assign names as: 0, 1, 2, ....</span>
+
+<span class="n">cpd_d_sn</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">]],</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;D&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Easy&#39;</span><span class="p">,</span> <span class="s1">&#39;Hard&#39;</span><span class="p">]})</span>
+<span class="n">cpd_i_sn</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.7</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">]],</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;I&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Dumb&#39;</span><span class="p">,</span> <span class="s1">&#39;Intelligent&#39;</span><span class="p">]})</span>
+<span class="n">cpd_g_sn</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                      <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">],</span>
+                              <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.08</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+                              <span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span>  <span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">]],</span>
+                      <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="s1">&#39;D&#39;</span><span class="p">],</span>
+                      <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                      <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;G&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">],</span>
+                                   <span class="s1">&#39;I&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Dumb&#39;</span><span class="p">,</span> <span class="s1">&#39;Intelligent&#39;</span><span class="p">],</span>
+                                   <span class="s1">&#39;D&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Easy&#39;</span><span class="p">,</span> <span class="s1">&#39;Hard&#39;</span><span class="p">]})</span>
+
+<span class="n">cpd_l_sn</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                      <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">],</span>
+                              <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">]],</span>
+                      <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;G&#39;</span><span class="p">],</span>
+                      <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                      <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;L&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Bad&#39;</span><span class="p">,</span> <span class="s1">&#39;Good&#39;</span><span class="p">],</span>
+                                   <span class="s1">&#39;G&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">]})</span>
+
+<span class="n">cpd_s_sn</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                      <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.95</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>
+                              <span class="p">[</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">]],</span>
+                      <span class="n">evidence</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;I&#39;</span><span class="p">],</span>
+                      <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                      <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;S&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Bad&#39;</span><span class="p">,</span> <span class="s1">&#39;Good&#39;</span><span class="p">],</span>
+                                   <span class="s1">&#39;I&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Dumb&#39;</span><span class="p">,</span> <span class="s1">&#39;Intelligent&#39;</span><span class="p">]})</span>
+
+<span class="c1"># These defined CPDs can be added to the model. Since, the model already has CPDs associated to variables, it will</span>
+<span class="c1"># show warning that pmgpy is now replacing those CPDs with the new ones.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_d_sn</span><span class="p">,</span> <span class="n">cpd_i_sn</span><span class="p">,</span> <span class="n">cpd_g_sn</span><span class="p">,</span> <span class="n">cpd_l_sn</span><span class="p">,</span> <span class="n">cpd_s_sn</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">check_model</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING:root:Replacing existing CPD for D
+WARNING:root:Replacing existing CPD for I
+WARNING:root:Replacing existing CPD for G
+WARNING:root:Replacing existing CPD for L
+WARNING:root:Replacing existing CPD for S
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We can now call some methods on the BayesianModel object.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;TabularCPD representing P(D:2) at 0x7f1585d3e278&gt;,
+ &lt;TabularCPD representing P(I:2) at 0x7f1585d3e320&gt;,
+ &lt;TabularCPD representing P(G:3 | I:2, D:2) at 0x7f1585d3e390&gt;,
+ &lt;TabularCPD representing P(L:2 | G:3) at 0x7f1585d3e2b0&gt;,
+ &lt;TabularCPD representing P(S:2 | I:2) at 0x7f1585d3e358&gt;]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Printing a CPD which doesn&#39;t have state names defined.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">cpd_g</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+------+------+------+------+
+| I    | I(0) | I(0) | I(1) | I(1) |
++------+------+------+------+------+
+| D    | D(0) | D(1) | D(0) | D(1) |
++------+------+------+------+------+
+| G(0) | 0.3  | 0.05 | 0.9  | 0.5  |
++------+------+------+------+------+
+| G(1) | 0.4  | 0.25 | 0.08 | 0.3  |
++------+------+------+------+------+
+| G(2) | 0.3  | 0.7  | 0.02 | 0.2  |
++------+------+------+------+------+
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Printing a CPD with it&#39;s state names defined.</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="s1">&#39;G&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+---------+---------+----------------+----------------+
+| I    | I(Dumb) | I(Dumb) | I(Intelligent) | I(Intelligent) |
++------+---------+---------+----------------+----------------+
+| D    | D(Easy) | D(Hard) | D(Easy)        | D(Hard)        |
++------+---------+---------+----------------+----------------+
+| G(A) | 0.3     | 0.05    | 0.9            | 0.5            |
++------+---------+---------+----------------+----------------+
+| G(B) | 0.4     | 0.25    | 0.08           | 0.3            |
++------+---------+---------+----------------+----------------+
+| G(C) | 0.3     | 0.7     | 0.02           | 0.2            |
++------+---------+---------+----------------+----------------+
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="s1">&#39;G&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+3
+</pre></div></div>
+</div>
+</section>
+<section id="2.-Independencies-in-Bayesian-Networks">
+<h3>2. Independencies in Bayesian Networks<a class="headerlink" href="#2.-Independencies-in-Bayesian-Networks" title="Link to this heading">#</a></h3>
+<p>Independencies implied by the network structure of a Bayesian Network can be categorized in 2 types:</p>
+<ol class="arabic">
+<li><p><strong>Local Independencies:</strong> Any variable in the network is independent of its non-descendents given its parents. Mathematically it can be written as:</p>
+<div class="math notranslate nohighlight">
+\[(X \perp NonDesc(X) | Pa(X)\]</div>
+<p>where <span class="math notranslate nohighlight">\(NonDesc(X)\)</span> is the set of variables which are not descendents of <span class="math notranslate nohighlight">\(X\)</span> and <span class="math notranslate nohighlight">\(Pa(X)\)</span> is the set of variables which are parents of <span class="math notranslate nohighlight">\(X\)</span>.</p>
+</li>
+<li><p><strong>Global Independencies:</strong> For discussing global independencies in Bayesian Networks we need to look at the various network structures possible. Starting with the case of 2 nodes, there are only 2 possible ways for it to be connected:</p></li>
+</ol>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Image</span><span class="p">(</span><span class="s1">&#39;../images/2/two_nodes.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/detailed_notebooks_2._Bayesian_Networks_13_0.png" src="../_images/detailed_notebooks_2._Bayesian_Networks_13_0.png" />
+</div>
+</div>
+<p>In the above two cases it is fairly obvious that change in any of the node will affect the other. For the first case we can take the example of <span class="math notranslate nohighlight">\(difficulty \rightarrow grade\)</span>. If we increase the difficulty of the course the probability of getting a higher grade decreases. For the second case we can take the example of <span class="math notranslate nohighlight">\(SAT \leftarrow Intel\)</span>. Now if we increase the probability of getting a good score in SAT that would imply that the student is intelligent, hence increasing the
+probability of <span class="math notranslate nohighlight">\(i_1\)</span>. Therefore in both the cases shown above any change in the variables leads to change in the other variable.</p>
+<p>Now, there are four possible ways of connection between 3 nodes:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Image</span><span class="p">(</span><span class="s1">&#39;../images/2/three_nodes.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/detailed_notebooks_2._Bayesian_Networks_15_0.png" src="../_images/detailed_notebooks_2._Bayesian_Networks_15_0.png" />
+</div>
+</div>
+<p>Now in the above cases we will see the flow of influence from <span class="math notranslate nohighlight">\(A\)</span> to <span class="math notranslate nohighlight">\(C\)</span> under various cases.</p>
+<ol class="arabic simple">
+<li><p><strong>Causal:</strong> In the general case when we make any changes in the variable <span class="math notranslate nohighlight">\(A\)</span>, it will have effect of variable <span class="math notranslate nohighlight">\(B\)</span> (as we discussed above) and this change in <span class="math notranslate nohighlight">\(B\)</span> will change the values in <span class="math notranslate nohighlight">\(C\)</span>. One other possible case can be when <span class="math notranslate nohighlight">\(B\)</span> is observed i.e. we know the value of <span class="math notranslate nohighlight">\(B\)</span>. So, in this case any change in <span class="math notranslate nohighlight">\(A\)</span> won’t affect <span class="math notranslate nohighlight">\(B\)</span> since we already know the value. And hence there won’t be any change in <span class="math notranslate nohighlight">\(C\)</span> as it depends only on <span class="math notranslate nohighlight">\(B\)</span>.
+Mathematically we can say that: <span class="math notranslate nohighlight">\((A \perp C | B)\)</span>.</p></li>
+<li><p><strong>Evidential:</strong> Similarly in this case also observing <span class="math notranslate nohighlight">\(B\)</span> renders <span class="math notranslate nohighlight">\(C\)</span> independent of <span class="math notranslate nohighlight">\(A\)</span>. Otherwise when <span class="math notranslate nohighlight">\(B\)</span> is not observed the influence flows from <span class="math notranslate nohighlight">\(A\)</span> to <span class="math notranslate nohighlight">\(C\)</span>. Hence <span class="math notranslate nohighlight">\((A \perp C | B)\)</span>.</p></li>
+<li><p><strong>Common Evidence:</strong> This case is a bit different from the others. When <span class="math notranslate nohighlight">\(B\)</span> is not observed any change in <span class="math notranslate nohighlight">\(A\)</span> reflects some change in <span class="math notranslate nohighlight">\(B\)</span> but not in <span class="math notranslate nohighlight">\(C\)</span>. Let’s take the example of <span class="math notranslate nohighlight">\(D \rightarrow G \leftarrow I\)</span>. In this case if we increase the difficulty of the course the probability of getting a higher grade reduces but this has no effect on the intelligence of the student. But when <span class="math notranslate nohighlight">\(B\)</span> is observed let’s say that the student got a good grade. Now if we
+increase the difficulty of the course this will increase the probability of the student to be intelligent since we already know that he got a good grade. Hence in this case <span class="math notranslate nohighlight">\((A \perp C)\)</span> and <span class="math notranslate nohighlight">\(( A \not\perp C | B)\)</span>. This structure is also commonly known as V structure.</p></li>
+<li><p><strong>Common Cause:</strong> The influence flows from <span class="math notranslate nohighlight">\(A\)</span> to <span class="math notranslate nohighlight">\(C\)</span> when <span class="math notranslate nohighlight">\(B\)</span> is not observed. But when <span class="math notranslate nohighlight">\(B\)</span> is observed and change in <span class="math notranslate nohighlight">\(A\)</span> doesn’t affect <span class="math notranslate nohighlight">\(C\)</span> since it’s only dependent on <span class="math notranslate nohighlight">\(B\)</span>. Hence here also <span class="math notranslate nohighlight">\(( A \perp C | B)\)</span>.</p></li>
+</ol>
+<p>Let’s not see a few examples for finding the independencies in a newtork using pgmpy:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Getting the local independencies of a variable.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">local_independencies</span><span class="p">(</span><span class="s1">&#39;G&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(G _|_ S | I, D)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Getting all the local independencies in the network.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">local_independencies</span><span class="p">([</span><span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(D _|_ I, S)
+(I _|_ D)
+(S _|_ G, L, D | I)
+(G _|_ S | I, D)
+(L _|_ I, D, S | G)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Active trail: For any two variables A and B in a network if any change in A influences the values of B then we say</span>
+<span class="c1">#               that there is an active trail between A and B.</span>
+<span class="c1"># In pgmpy active_trail_nodes gives a set of nodes which are affected (i.e. correlated) by any</span>
+<span class="c1"># change in the node passed in the argument.</span>
+<span class="n">model</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">(</span><span class="s1">&#39;D&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;D&#39;: {&#39;D&#39;, &#39;G&#39;, &#39;L&#39;}}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">active_trail_nodes</span><span class="p">(</span><span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="s1">&#39;G&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;D&#39;: {&#39;D&#39;, &#39;I&#39;, &#39;S&#39;}}
+</pre></div></div>
+</div>
+</section>
+<section id="3.-How-is-this-Bayesian-Network-representing-the-Joint-Distribution-over-the-variables-?">
+<h3>3. How is this Bayesian Network representing the Joint Distribution over the variables ?<a class="headerlink" href="#3.-How-is-this-Bayesian-Network-representing-the-Joint-Distribution-over-the-variables-?" title="Link to this heading">#</a></h3>
+<p>Till now we just have been considering that the Bayesian Network can represent the Joint Distribution without any proof. Now let’s see how to compute the Joint Distribution from the Bayesian Network.</p>
+<p>From the chain rule of probabiliy we know that:</p>
+<p><span class="math notranslate nohighlight">\(P(A, B) = P(A | B) * P(B)\)</span></p>
+<p>Now in this case:</p>
+<p><span class="math notranslate nohighlight">\(P(D, I, G, L, S) = P(L| S, G, D, I) * P(S | G, D, I) * P(G | D, I) * P(D | I) * P(I)\)</span></p>
+<p>Applying the local independence conditions in the above equation we will get:</p>
+<p><span class="math notranslate nohighlight">\(P(D, I, G, L, S) = P(L|G) * P(S|I) * P(G| D, I) * P(D) * P(I)\)</span></p>
+<p>From the above equation we can clearly see that the Joint Distribution over all the variables is just the product of all the CPDs in the network. Hence encoding the independencies in the Joint Distribution in a graph structure helped us in reducing the number of parameters that we need to store.</p>
+</section>
+<section id="4.-Inference-in-Bayesian-Models">
+<h3>4. Inference in Bayesian Models<a class="headerlink" href="#4.-Inference-in-Bayesian-Models" title="Link to this heading">#</a></h3>
+<p>Till now we discussed just about representing Bayesian Networks. Now let’s see how we can do inference in a Bayesian Model and use it to predict values over new data points for machine learning tasks. In this section we will consider that we already have our model. We will talk about constructing the models from data in later parts of this tutorial.</p>
+<p>In inference we try to answer probability queries over the network given some other variables. So, we might want to know the probable grade of an intelligent student in a difficult class given that he scored good in SAT. So for computing these values from a Joint Distribution we will have to reduce over the given variables that is <span class="math notranslate nohighlight">\(I = 1\)</span>, <span class="math notranslate nohighlight">\(D = 1\)</span>, <span class="math notranslate nohighlight">\(S = 1\)</span> and then marginalize over the other variables that is <span class="math notranslate nohighlight">\(L\)</span> to get <span class="math notranslate nohighlight">\(P(G | I=1, D=1, S=1)\)</span>. But carrying on
+marginalize and reduce operation on the complete Joint Distribution is computationaly expensive since we need to iterate over the whole table for each operation and the table is exponential is size to the number of variables. But in Graphical Models we exploit the independencies to break these operations in smaller parts making it much faster.</p>
+<p>One of the very basic methods of inference in Graphical Models is <strong>Variable Elimination</strong>.</p>
+<section id="Variable-Elimination">
+<h4>Variable Elimination<a class="headerlink" href="#Variable-Elimination" title="Link to this heading">#</a></h4>
+<p>We know that:</p>
+<p><span class="math notranslate nohighlight">\(P(D, I, G, L, S) = P(L|G) * P(S|I) * P(G|D, I) * P(D) * P(I)\)</span></p>
+<p>Now let’s say we just want to compute the probability of G. For that we will need to marginalize over all the other variables.</p>
+<p><span class="math notranslate nohighlight">\(P(G) = \sum_{D, I, L, S} P(D, I, G, L, S)\)</span></p>
+<p><span class="math notranslate nohighlight">\(P(G) = \sum_{D, I, L, S} P(L|G) * P(S|I) * P(G|D, I) * P(D) * P(I)\)</span></p>
+<p><span class="math notranslate nohighlight">\(P(G) = \sum_D \sum_I \sum_L \sum_S P(L|G) * P(S|I) * P(G|D, I) * P(D) * P(I)\)</span></p>
+<p>Now since not all the conditional distributions depend on all the variables we can push the summations inside:</p>
+<p><span class="math notranslate nohighlight">\(P(G) = \sum_D \sum_I \sum_L \sum_S P(L|G) * P(S|I) * P(G|D, I) * P(D) * P(I)\)</span></p>
+<p><span class="math notranslate nohighlight">\(P(G) = \sum_D P(D) \sum_I P(G|D, I) * P(I) \sum_S P(S|I) \sum_L P(L|G)\)</span></p>
+<p>So, by pushing the summations inside we have saved a lot of computation because we have to now iterate over much smaller tables.</p>
+<p>Let’s take an example for inference using Variable Elimination in pgmpy:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[52]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">VariableElimination</span>
+<span class="n">infer</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">g_dist</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s1">&#39;G&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">g_dist</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Finding Elimination Order: : 100%|██████████| 4/4 [00:00&lt;00:00, 1210.13it/s]
+Eliminating: I: 100%|██████████| 4/4 [00:00&lt;00:00, 240.56it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+----------+
+| G    |   phi(G) |
++======+==========+
+| G(A) |   0.3620 |
++------+----------+
+| G(B) |   0.2884 |
++------+----------+
+| G(C) |   0.3496 |
++------+----------+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+<p>There can be cases in which we want to compute the conditional distribution let’s say <span class="math notranslate nohighlight">\(P(G | D=0, I=1)\)</span>. In such cases we need to modify our equations a bit:</p>
+<p><span class="math notranslate nohighlight">\(P(G | D=0, I=1) = \sum_L \sum_S P(L|G) * P(S| I=1) * P(G| D=0, I=1) * P(D=0) * P(I=1)\)</span></p>
+<p><span class="math notranslate nohighlight">\(P(G | D=0, I=1) = P(D=0) * P(I=1) * P(G | D=0, I=1) * \sum_L P(L | G) * \sum_S P(S | I=1)\)</span></p>
+<p>In pgmpy we will just need to pass an extra argument in the case of conditional distributions:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[58]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="s1">&#39;G&#39;</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;D&#39;</span><span class="p">:</span> <span class="s1">&#39;Easy&#39;</span><span class="p">,</span> <span class="s1">&#39;I&#39;</span><span class="p">:</span> <span class="s1">&#39;Intelligent&#39;</span><span class="p">}))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Finding Elimination Order: : 100%|██████████| 2/2 [00:00&lt;00:00, 552.57it/s]
+Eliminating: S: 100%|██████████| 2/2 [00:00&lt;00:00, 326.68it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++------+----------+
+| G    |   phi(G) |
++======+==========+
+| G(A) |   0.9000 |
++------+----------+
+| G(B) |   0.0800 |
++------+----------+
+| G(C) |   0.0200 |
++------+----------+
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+
+</pre></div></div>
+</div>
+</section>
+<section id="Predicting-values-from-new-data-points">
+<h4>Predicting values from new data points<a class="headerlink" href="#Predicting-values-from-new-data-points" title="Link to this heading">#</a></h4>
+<p>Predicting values from new data points is quite similar to computing the conditional probabilities. We need to query for the variable that we need to predict given all the other features. The only difference is that rather than getting the probabilitiy distribution we are interested in getting the most probable state of the variable.</p>
+<p>In pgmpy this is known as MAP query. Here’s an example:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[59]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">infer</span><span class="o">.</span><span class="n">map_query</span><span class="p">([</span><span class="s1">&#39;G&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Finding Elimination Order: : 100%|██████████| 4/4 [00:00&lt;00:00, 1073.12it/s]
+Eliminating: I: 100%|██████████| 4/4 [00:00&lt;00:00, 273.20it/s]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[59]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;G&#39;: &#39;A&#39;}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[60]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">infer</span><span class="o">.</span><span class="n">map_query</span><span class="p">([</span><span class="s1">&#39;G&#39;</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;D&#39;</span><span class="p">:</span> <span class="s1">&#39;Easy&#39;</span><span class="p">,</span> <span class="s1">&#39;I&#39;</span><span class="p">:</span> <span class="s1">&#39;Intelligent&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Finding Elimination Order: : 100%|██████████| 2/2 [00:00&lt;00:00, 417.30it/s]
+Eliminating: S: 100%|██████████| 2/2 [00:00&lt;00:00, 219.08it/s]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[60]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;G&#39;: &#39;A&#39;}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[61]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">infer</span><span class="o">.</span><span class="n">map_query</span><span class="p">([</span><span class="s1">&#39;G&#39;</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;D&#39;</span><span class="p">:</span> <span class="s1">&#39;Easy&#39;</span><span class="p">,</span> <span class="s1">&#39;I&#39;</span><span class="p">:</span> <span class="s1">&#39;Intelligent&#39;</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">:</span> <span class="s1">&#39;Good&#39;</span><span class="p">,</span> <span class="s1">&#39;S&#39;</span><span class="p">:</span> <span class="s1">&#39;Good&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Finding Elimination Order: : : 0it [00:00, ?it/s]
+0it [00:00, ?it/s]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[61]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;G&#39;: &#39;A&#39;}
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="5.-Other-methods-for-Inference">
+<h3>5. Other methods for Inference<a class="headerlink" href="#5.-Other-methods-for-Inference" title="Link to this heading">#</a></h3>
+<p>Even though exact inference algorithms like Variable Elimination optimize the inference task, it is still computationally quite expensive in the case of large models. For such cases we can use approximate algorithms like Message Passing Algorithms, Sampling Algorithms etc. We will talk about a few other exact and approximate algorithms in later parts of the tutorial.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="1.%20Introduction%20to%20Probabilistic%20Graphical%20Models.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Introduction to Probabilitic Graphical Models</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="3.%20Causal%20Bayesian%20Networks.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Causal Bayesian Networks</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Bayesian-Models">Bayesian Models</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#1.-What-are-Bayesian-Models">1. What are Bayesian Models</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#2.-Independencies-in-Bayesian-Networks">2. Independencies in Bayesian Networks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#3.-How-is-this-Bayesian-Network-representing-the-Joint-Distribution-over-the-variables-?">3. How is this Bayesian Network representing the Joint Distribution over the variables ?</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#4.-Inference-in-Bayesian-Models">4. Inference in Bayesian Models</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#Variable-Elimination">Variable Elimination</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#Predicting-values-from-new-data-points">Predicting values from new data points</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#5.-Other-methods-for-Inference">5. Other methods for Inference</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, pgmpy developers.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

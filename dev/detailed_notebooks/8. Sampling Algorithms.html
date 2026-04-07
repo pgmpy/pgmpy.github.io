@@ -1,0 +1,1443 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Sampling In Continuous Graphical Models" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pgmpy.org/dev/detailed_notebooks/8.%20Sampling%20Algorithms.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="As we know inference is asking conditional probability questions to the models, the exact solution of these problems quickly becomes intractable. Sampling algorithms can be used to get approximate ..." />
+<meta property="og:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
+<meta property="og:image:alt" content="pgmpy" />
+<meta name="description" content="As we know inference is asking conditional probability questions to the models, the exact solution of these problems quickly becomes intractable. Sampling algorithms can be used to get approximate ..." />
+<meta name="twitter:card" content="summary_large_image" />
+
+<meta name="twitter:description" content="pgmpy is a Python library for causal inference, probabilistic modeling, Bayesian networks, and directed acyclic graphs." />
+<meta name="twitter:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
+<meta name="robots" content="noindex,nofollow,noarchive" />
+<link rel="canonical" href="https://pgmpy.org/dev/detailed_notebooks/8.%20Sampling%20Algorithms.html" />
+    <title>Sampling In Continuous Graphical Models &#8212; pgmpy</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=18a852c8" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../_static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'detailed_notebooks/8. Sampling Algorithms';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://pgmpy.org/dev/detailed_notebooks/8.%20Sampling%20Algorithms.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Reading and Writing from pgmpy file formats" href="9.%20Reading%20and%20Writing%20from%20pgmpy%20file%20formats.html" />
+    <link rel="prev" title="Parameterizing with Continuous Variables" href="7.%20Parameterizing%20with%20Continuous%20Variables.html" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  
+    
+  <script type="application/ld+json">{"@context": "https://schema.org", "@id": "https://pgmpy.org/dev/#organization", "@type": "Organization", "logo": "https://pgmpy.org/dev/_static/images/logo.png", "name": "pgmpy", "sameAs": ["https://github.com/pgmpy/pgmpy", "https://pypi.org/project/pgmpy/", "https://www.linkedin.com/company/pgmpy/"], "url": "https://pgmpy.org/dev"}</script>
+    
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "item": "https://pgmpy.org/dev/index.html", "name": "Key Features", "position": 1}]}</script>
+    
+  
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HCFR07M31W');
+  </script>
+  <!-- EthicalAds -->
+  <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.png" class="logo__image only-light" alt=""/>
+    <img src="../_static/logo.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pgmpy</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../documentation.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development.html">
+    Getting Involved
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container pgmpy-version-switcher">
+  <select
+    class="form-select form-select-sm pgmpy-version-select"
+    aria-label="Select Version"
+    data-current-version="dev"
+    data-current-label="dev"
+    data-target-uri="detailed_notebooks/8.%20Sampling%20Algorithms.html"
+  >
+    
+    
+    <optgroup label="Releases">
+      
+      <option value="stable" data-url="https://pgmpy.org/" >
+        v1.1 (stable)
+      </option>
+      
+      
+      <option value="v1.1" data-url="https://pgmpy.org/v1.1/" >
+        v1.1
+      </option>
+      
+    </optgroup>
+    
+
+    
+    <optgroup label="In Development">
+      
+      <option value="dev" data-url="https://pgmpy.org/dev/" selected>
+        dev
+      </option>
+      
+    </optgroup>
+    
+  </select>
+</div>
+
+<script>
+  (function() {
+    const selects = document.querySelectorAll(".pgmpy-version-select:not([data-pgmpy-version-init])");
+    selects.forEach(function(select) {
+      select.dataset.pgmpyVersionInit = "true";
+
+      const currentVersion = select.dataset.currentVersion;
+      const currentLabel = select.dataset.currentLabel || currentVersion;
+      const currentTargetUri = (select.dataset.targetUri || "").replace(/^\/+/, "");
+
+      if (!Array.from(select.options).some(function(option) { return option.value === currentVersion; })) {
+        const option = document.createElement("option");
+        option.value = currentVersion;
+        option.textContent = currentLabel;
+        option.selected = true;
+        select.insertBefore(option, select.firstChild);
+      }
+
+      const buildTargetUrl = function(baseUrl) {
+        if (!currentTargetUri || currentTargetUri === "index.html") {
+          return baseUrl;
+        }
+        return new URL(currentTargetUri, baseUrl).toString();
+      };
+
+      const navigateToVersion = async function(option) {
+        const baseUrl = option.dataset.url;
+        if (!baseUrl) {
+          return;
+        }
+
+        const targetUrl = buildTargetUrl(baseUrl);
+
+        if (targetUrl === baseUrl) {
+          window.location.href = baseUrl;
+          return;
+        }
+
+        try {
+          const response = await fetch(targetUrl, { method: "HEAD" });
+          window.location.href = response.ok ? targetUrl : baseUrl;
+        } catch (error) {
+          window.location.href = targetUrl;
+        }
+      };
+
+      select.addEventListener("change", function(event) {
+        const option = event.target.selectedOptions[0];
+        if (!option) {
+          return;
+        }
+        navigateToVersion(option);
+      });
+    });
+  })();
+</script></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pgmpy/pgmpy" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/DRkdKaumBs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/company/pgmpy/" title="LinkedIn" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">LinkedIn</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../documentation.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development.html">
+    Getting Involved
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container pgmpy-version-switcher">
+  <select
+    class="form-select form-select-sm pgmpy-version-select"
+    aria-label="Select Version"
+    data-current-version="dev"
+    data-current-label="dev"
+    data-target-uri="detailed_notebooks/8.%20Sampling%20Algorithms.html"
+  >
+    
+    
+    <optgroup label="Releases">
+      
+      <option value="stable" data-url="https://pgmpy.org/" >
+        v1.1 (stable)
+      </option>
+      
+      
+      <option value="v1.1" data-url="https://pgmpy.org/v1.1/" >
+        v1.1
+      </option>
+      
+    </optgroup>
+    
+
+    
+    <optgroup label="In Development">
+      
+      <option value="dev" data-url="https://pgmpy.org/dev/" selected>
+        dev
+      </option>
+      
+    </optgroup>
+    
+  </select>
+</div>
+
+<script>
+  (function() {
+    const selects = document.querySelectorAll(".pgmpy-version-select:not([data-pgmpy-version-init])");
+    selects.forEach(function(select) {
+      select.dataset.pgmpyVersionInit = "true";
+
+      const currentVersion = select.dataset.currentVersion;
+      const currentLabel = select.dataset.currentLabel || currentVersion;
+      const currentTargetUri = (select.dataset.targetUri || "").replace(/^\/+/, "");
+
+      if (!Array.from(select.options).some(function(option) { return option.value === currentVersion; })) {
+        const option = document.createElement("option");
+        option.value = currentVersion;
+        option.textContent = currentLabel;
+        option.selected = true;
+        select.insertBefore(option, select.firstChild);
+      }
+
+      const buildTargetUrl = function(baseUrl) {
+        if (!currentTargetUri || currentTargetUri === "index.html") {
+          return baseUrl;
+        }
+        return new URL(currentTargetUri, baseUrl).toString();
+      };
+
+      const navigateToVersion = async function(option) {
+        const baseUrl = option.dataset.url;
+        if (!baseUrl) {
+          return;
+        }
+
+        const targetUrl = buildTargetUrl(baseUrl);
+
+        if (targetUrl === baseUrl) {
+          window.location.href = baseUrl;
+          return;
+        }
+
+        try {
+          const response = await fetch(targetUrl, { method: "HEAD" });
+          window.location.href = response.ok ? targetUrl : baseUrl;
+        } catch (error) {
+          window.location.href = targetUrl;
+        }
+      };
+
+      select.addEventListener("change", function(event) {
+        const option = event.target.selectedOptions[0];
+        if (!option) {
+          return;
+        }
+        navigateToVersion(option);
+      });
+    });
+  })();
+</script></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pgmpy/pgmpy" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/DRkdKaumBs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/company/pgmpy/" title="LinkedIn" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">LinkedIn</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../examples/Creating_Discrete_BN.html">Creating Discrete Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Creating_Linear_BN.html">Creating Linear Gaussian Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Defining_CPDs.html">How to define TabularCPD and LinearGaussianCPD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Basic_Operations_on_BN.html">Basic Operations on Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Structure_Learning.html">Structure Learning in Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Structure_Learning_Chow_Liu.html">Learning Tree Structure from Data using the Chow-Liu Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Structure_Learning_TAN.html">Learning Tree-augmented Naive Bayes (TAN) Structure from Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Expert_Knowledge.html">Expert Knowledge Integration with Causal Discovery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Parameter_Learning_Discrete_BN.html">Parameter Learning in Discrete Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Parameter_Learning_Factor_Graphs.html">Marginal Learning in Discrete Markov Networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="../examples/Inference_Discrete_BN.html">Inference in Discrete Bayesian Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Monty_Hall.html">Monty Hall Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Causal_Inference.html">Causal Inference Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Causal_Games.html">Causal Games</a></li>
+
+
+
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="../examples/Simulating_Data.html">Simulating Data From Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Extending_pgmpy.html">Extending pgmpy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Functional_Bayesian_Network_Tutorial.html">Functional Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/Junction_Tree_Inference.html">Junction Tree Exact Inference</a></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="1.%20Introduction%20to%20Probabilistic%20Graphical%20Models.html">Introduction to Probabilitic Graphical Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="2.%20Bayesian%20Networks.html">Bayesian Network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3.%20Causal%20Bayesian%20Networks.html">Causal Bayesian Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4.%20Markov%20Models.html">Markov Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5.%20Exact%20Inference%20in%20Graphical%20Models.html">Exact Inference in Graphical Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="6.%20Approximate%20Inference%20in%20Graphical%20Models.html">Approximate Inference in Graphical Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="7.%20Parameterizing%20with%20Continuous%20Variables.html">Parameterizing with Continuous Variables</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">Sampling In Continuous Graphical Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="9.%20Reading%20and%20Writing%20from%20pgmpy%20file%20formats.html">Reading and Writing from pgmpy file formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="10.%20Learning%20Bayesian%20Networks%20from%20Data.html">Learning Bayesian Networks from Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="11.%20A%20Bayesian%20Network%20to%20model%20the%20influence%20of%20energy%20consumption%20on%20greenhouse%20gases%20in%20Italy.html">A Bayesian Network to model the influence of energy consumption on greenhouse gases in Italy</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+  <div class="pgmpy-primary-sidebar-ad">
+    <div
+        id="ethical-ad-placement"
+        class="flat adaptive-css"
+        data-ea-publisher="pgmpyorg"
+        data-ea-type="image">
+    </div>
+  </div>
+</div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Example Notebooks</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="../tutorial.html" class="nav-link">Tutorial Notebooks</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Sampling In Continuous Graphical Models</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="Sampling-In-Continuous-Graphical-Models">
+<h1>Sampling In Continuous Graphical Models<a class="headerlink" href="#Sampling-In-Continuous-Graphical-Models" title="Link to this heading">#</a></h1>
+<p>As we know inference is asking conditional probability questions to the models, the exact solution of these problems quickly becomes intractable. Sampling algorithms can be used to get approximate inference results by generating a large number of coherent samples that converge to original distribution. In this notebook we take a look at some of the sampling algorithms that can be used to sample from continuous case models.</p>
+<ol class="arabic simple">
+<li><p>Hamiltonian Monte Carlo</p></li>
+<li><p>No-U-Turn Sample</p></li>
+</ol>
+<section id="Hamiltonian-Monte-Carlo">
+<h2>Hamiltonian Monte Carlo<a class="headerlink" href="#Hamiltonian-Monte-Carlo" title="Link to this heading">#</a></h2>
+<p>Hamiltonian Monte Carlo (HMC) is a Markov Chain Monte Carlo (MCMC) that proposes future states in Markov Chain using Hamiltonian Dynamics. Before understanding the HMC algorithm lets first understand Hamiltonian Dynamics.</p>
+<section id="Hamiltonian-Dynamics">
+<h3>Hamiltonian Dynamics<a class="headerlink" href="#Hamiltonian-Dynamics" title="Link to this heading">#</a></h3>
+<p>Hamiltonian dynamics are used to describe how objects move throughout a system. Hamiltonian dynamics is defined in terms of object location <span class="math notranslate nohighlight">\(x\)</span> and its momentum <span class="math notranslate nohighlight">\(p\)</span> (equivalent to object’s mass times velocity) at some time <span class="math notranslate nohighlight">\(t\)</span>. For each location of object there is an associated potential energy <span class="math notranslate nohighlight">\(U(x)\)</span> and with momentum there is associated kinetic energy <span class="math notranslate nohighlight">\(K(p)\)</span>. The total energy of system is constant and is called as Hamiltonian <span class="math notranslate nohighlight">\(H(x, p)\)</span>, defined as the sum of
+potential energy and kinetic energy:</p>
+<div class="math notranslate nohighlight">
+\[H(x, p) = U(x) + K(p)\]</div>
+<p>The partial derivatives of the Hamiltonian determines how position <span class="math notranslate nohighlight">\(x\)</span> and momentum <span class="math notranslate nohighlight">\(p\)</span> change over time <span class="math notranslate nohighlight">\(t\)</span>, according to Hamiltonian’s equations:</p>
+<div class="math notranslate nohighlight">
+\[\frac{dx_i}{dt} = \frac{\partial H}{\partial p_i} = \frac{\partial K(p)}{\partial p_i}\]</div>
+<div class="math notranslate nohighlight">
+\[\frac{dp_i}{dt} = -\frac{\partial H}{\partial x_i} = -\frac{\partial U(x)}{\partial x_i}\]</div>
+<p>The above equations operates on a <em>d-dimensional position vector</em> <span class="math notranslate nohighlight">\(x\)</span> and a <em>d-dimensional momentum vector</em> <span class="math notranslate nohighlight">\(p\)</span>, for <span class="math notranslate nohighlight">\(i = 1, 2, \cdots, d\)</span>.</p>
+<p>Thus, if we can evaluate <span class="math notranslate nohighlight">\(\frac{\partial U(x)}{\partial x_i}\)</span> and <span class="math notranslate nohighlight">\(\frac{\partial K(p)}{\partial p_i}\)</span> and have a set of initial conditions i.e an initial position and initial momentum at time <span class="math notranslate nohighlight">\(t_0\)</span>, then we can predict the location and momentum of object at any future time <span class="math notranslate nohighlight">\(t = t_0 + T\)</span> by simulating dynamics for a time duration <span class="math notranslate nohighlight">\(T\)</span>.</p>
+</section>
+<section id="Discretizing-Hamiltonian's-Equations">
+<h3>Discretizing Hamiltonian’s Equations<a class="headerlink" href="#Discretizing-Hamiltonian's-Equations" title="Link to this heading">#</a></h3>
+<p>The Hamiltonian’s equations describes an object’s motion in regard to time, which is a continuous variable. For simulating dynamics on a computer, Hamiltonian’s equations must be numerically approximated by discretizing time. This is done by splitting the time interval <span class="math notranslate nohighlight">\(T\)</span> into small intervals of size <span class="math notranslate nohighlight">\(\epsilon\)</span>.</p>
+<section id="Euler's-Method">
+<h4>Euler’s Method<a class="headerlink" href="#Euler's-Method" title="Link to this heading">#</a></h4>
+<p>For Hamiltonian’s equations, this method performs the following steps, for each component of position and momentum (indexed by <span class="math notranslate nohighlight">\(i=1, ...,d\)</span>)</p>
+<div class="math notranslate nohighlight">
+\[p_i(t + \epsilon) = p_i(t) + \epsilon \frac{dp_i}{dt}(t) = p_i(t) - \epsilon \frac{\partial U}{\partial x_i(t)}\]</div>
+<div class="math notranslate nohighlight">
+\[x_i(t + \epsilon) = x_i(t) + \epsilon \frac{dx_i}{dt} = x_i(t) + \epsilon \frac{\partial K}{\partial p_i(t)}\]</div>
+<p>Even better results can be obtained if we use updated value of momentum in later equation</p>
+<div class="math notranslate nohighlight">
+\[x_i(t + \epsilon) = x_i(t) + \epsilon \frac{\partial K}{\partial p_i(t + \epsilon)}\]</div>
+<p>This method is called as <strong>Modified Euler’s method</strong>.</p>
+</section>
+<section id="Leapfrog-Method">
+<h4>Leapfrog Method<a class="headerlink" href="#Leapfrog-Method" title="Link to this heading">#</a></h4>
+<p>Unlike Euler’s method where we take full steps for updating position and momentum in leapfrog method we take half steps to update momentum value.</p>
+<div class="math notranslate nohighlight">
+\[p_i(t + \epsilon / 2) = p_i(t) - (\epsilon / 2) \frac{\partial U}{\partial x_i(t)}\]</div>
+<div class="math notranslate nohighlight">
+\[x_i(t + \epsilon) = x_i(t) + \epsilon \frac{\partial K}{\partial p_i(t + \epsilon /2)}\]</div>
+<div class="math notranslate nohighlight">
+\[p_i(t + \epsilon) = p_i(t) - (\epsilon / 2) \frac{\partial U}{\partial x_i(t + \epsilon)}\]</div>
+<p>Leapfrog method yields even better result than Modified Euler Method.</p>
+</section>
+<section id="Example:-Simulating-Hamiltonian-dynamics-of-a-simple-pendulum">
+<h4>Example: Simulating Hamiltonian dynamics of a simple pendulum<a class="headerlink" href="#Example:-Simulating-Hamiltonian-dynamics-of-a-simple-pendulum" title="Link to this heading">#</a></h4>
+<p>Imagine a bob of mass <span class="math notranslate nohighlight">\(m = 1\)</span> attached to a string of length <span class="math notranslate nohighlight">\(l=1.5\)</span> whose one end is fixed at point <span class="math notranslate nohighlight">\((x=0, y=0)\)</span>. The equilibrium position of the pendulum is at <span class="math notranslate nohighlight">\(x = 0\)</span>. Now keeping string stretched we move it some distance horizontally say <span class="math notranslate nohighlight">\(x_0\)</span>. The corresponding change in potential energy is given by</p>
+<p><span class="math notranslate nohighlight">\(U(h) = mg\Delta h\)</span>, where <span class="math notranslate nohighlight">\(\Delta h\)</span> is change in height and <span class="math notranslate nohighlight">\(g\)</span> is gravity of earth.</p>
+<p>Using simple trigonometry one can derive relationship between <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(\Delta h\)</span>.</p>
+<div class="math notranslate nohighlight">
+\[U(x) = mgl(1 - cos(sin^{-1}(x/l)))\]</div>
+<p>Kinetic energy of bob can be written in terms of momentum as</p>
+<div class="math notranslate nohighlight">
+\[K(v) = \frac{mv^2}{2} = \frac{(mv)^2}{2m} = \frac{p^2}{2m} = K(p)\]</div>
+<p>Further, partial derivatives of potential and kinetic energy can be written as:</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial U}{\partial x} = \frac{mglx}{\sqrt{l^2 - x^2}}\]</div>
+<p>and</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial K}{\partial p} = \frac{p}{m}\]</div>
+<p>Here is a animation that uses these equations to simulate the dynamics of simple pendulum <img alt="Drawing" src="../_images/simple_pendulum.gif" /></p>
+<p>The sub-plot in the right upper half of the output demonstrates the energies. The red portion of first bar plot represents potential energy and black represents kinetic energy. The second bar plot represents the Hamiltonian. The lower right sub-plot shows the phase space showing how momentum and position are varying. We can see that phase space maps out an ellipse without deviating from its path. In case of Euler method the particle doesn’t fully trace a ellipse instead diverges slowly towards
+infinity. One can clearly see that value of position and momentum are not completely random, but takes a deterministic circular kind of trajectory. If we use Leapfrog method to propose future states than we can avoid random-walk behavior which we saw in Metropolis-Hastings algorithm. This is the main reason for good performance of HMC algorithm.</p>
+</section>
+</section>
+<section id="Hamiltonian-and-Probability:-Canonical-Distributions">
+<h3>Hamiltonian and Probability: Canonical Distributions<a class="headerlink" href="#Hamiltonian-and-Probability:-Canonical-Distributions" title="Link to this heading">#</a></h3>
+<p>Now having a bit of understanding what is Hamiltonian and how we can simulate Hamiltonian dynamics, we now need to understand how we can use these Hamiltonian dynamics for MCMC. We need to develop some relation between probability distribution and Hamiltonian so that we can use Hamiltonian dynamics to explore the distribution. To relate <span class="math notranslate nohighlight">\(H(x, p)\)</span> to target distribution <span class="math notranslate nohighlight">\(P(x)\)</span> we use a concept from statistical mechanics known as the canonical distribution. For any energy function
+<span class="math notranslate nohighlight">\(E(q)\)</span>, defined over a set of variables <span class="math notranslate nohighlight">\(q\)</span>, we can find corresponding <span class="math notranslate nohighlight">\(P(q)\)</span></p>
+<div class="math notranslate nohighlight">
+\[P(q) = \frac{1}{Z} exp \left( \frac{-E(q)}{T} \right)\]</div>
+<p>, where <span class="math notranslate nohighlight">\(Z\)</span> is normalizing constant called Partition function and <span class="math notranslate nohighlight">\(T\)</span> is temperature of system. For our use case we will consider <span class="math notranslate nohighlight">\(T=1\)</span>.</p>
+<p>Since, the Hamiltonian is an energy function for the joint state of “position”, <span class="math notranslate nohighlight">\(x\)</span> and “momentum”, <span class="math notranslate nohighlight">\(p\)</span>, so we can define a joint distribution for them as follows:</p>
+<div class="math notranslate nohighlight">
+\[P(x, p) = \frac{e^{-H(x, p)}}{Z}\]</div>
+<p>Since <span class="math notranslate nohighlight">\(H(x, p) = U(x) + K(p)\)</span>, we can write above equation as</p>
+<div class="math notranslate nohighlight">
+\[P(x, p) = \frac{e^{-U(x)-K(p)}}{z}\]</div>
+<div class="math notranslate nohighlight">
+\[P(x, p) = \frac{e^{-U(x)}e^{-K(p)}}{Z}\]</div>
+<p>Furthermore we can associate probability distribution with each of the potential and kinetic energy (<span class="math notranslate nohighlight">\(P(x)\)</span> with potential energy and <span class="math notranslate nohighlight">\(P(p)\)</span>, with kinetic energy). Thus, we can write above equation as:</p>
+<div class="math notranslate nohighlight">
+\[P(x, p) = \frac{P(x)P(p)}{Z'}\]</div>
+<p>,where <span class="math notranslate nohighlight">\(Z'\)</span> is new normalizing constant. Since joint distribution factorizes over <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(p\)</span>, we can conclude that <span class="math notranslate nohighlight">\(P(x)\)</span> and <span class="math notranslate nohighlight">\(P(p)\)</span> are independent. Because of this independence we can choose any distribution from which we want to sample the momentum variable. A common choice is to use a zero mean and unit variance Normal distribution <span class="math notranslate nohighlight">\(N(0, I)\)</span> The target distribution of interest <span class="math notranslate nohighlight">\(P(x)\)</span> from which we actually want to sample from is associated with
+potential energy.</p>
+<div class="math notranslate nohighlight">
+\[U(x) = - log (P(x))\]</div>
+<p>Thus, if we can calculate <span class="math notranslate nohighlight">\(\frac{\partial log(P(x))}{\partial x_i}\)</span>, then we are in business and we can use Hamiltonian dynamics to generate samples.</p>
+</section>
+<section id="Hamiltonian-Monte-Carlo-Algorithm">
+<h3>Hamiltonian Monte Carlo Algorithm<a class="headerlink" href="#Hamiltonian-Monte-Carlo-Algorithm" title="Link to this heading">#</a></h3>
+<p>Given initial state <span class="math notranslate nohighlight">\(x_0\)</span>, stepsize <span class="math notranslate nohighlight">\(\epsilon\)</span>, number of steps <span class="math notranslate nohighlight">\(L\)</span>, log density function <span class="math notranslate nohighlight">\(U\)</span>, number of samples to be drawn <span class="math notranslate nohighlight">\(M\)</span>, we can write HMC algorithm as:</p>
+<ul class="simple">
+<li><p>set $m = 0 $</p></li>
+<li><p>repeat until <span class="math notranslate nohighlight">\(m = M\)</span></p>
+<ol class="arabic simple">
+<li><p>set <span class="math notranslate nohighlight">\(m \leftarrow m + 1\)</span></p></li>
+<li><p>Sample new initial momentum <span class="math notranslate nohighlight">\(p_0\)</span> ~ <span class="math notranslate nohighlight">\(N(0, I)\)</span></p></li>
+<li><p>Set <span class="math notranslate nohighlight">\(x_m \leftarrow x_{m-1}, x' \leftarrow x_{m-1}, p' \leftarrow p_0\)</span></p></li>
+<li><p>repeat for <span class="math notranslate nohighlight">\(L\)</span> steps</p>
+<ul>
+<li><p>Set <span class="math notranslate nohighlight">\(x', p' \leftarrow Leapfrog(x', p', \epsilon)\)</span></p></li>
+</ul>
+</li>
+<li><p>Calculate acceptance probability <span class="math notranslate nohighlight">\(\alpha = min \left(1, \frac{exp( U(x') - (p'.p')/2 )}{exp( U(x_{m-1}) - (p_0.p_0)/2 )} \right)\)</span></p></li>
+<li><p>Draw a random number u ~ Uniform(0, 1)</p></li>
+<li><p>if <span class="math notranslate nohighlight">\(u \leq \alpha\)</span> then <span class="math notranslate nohighlight">\(x_m \leftarrow x', p_m \leftarrow -p'\)</span></p></li>
+</ol>
+</li>
+</ul>
+<p><span class="math notranslate nohighlight">\(Leapfrog\)</span> is a function that runs a single iteration of Leapfrog method.</p>
+<p>In practice sometimes instead of explicitly giving number of steps <span class="math notranslate nohighlight">\(L\)</span>, we use <strong>trajectory length</strong> which is product of number of steps <span class="math notranslate nohighlight">\(L\)</span>, and stepsize <span class="math notranslate nohighlight">\(\epsilon\)</span>.</p>
+</section>
+<section id="Hamiltonian-Monte-Carlo-in-pgmpy">
+<h3>Hamiltonian Monte Carlo in pgmpy<a class="headerlink" href="#Hamiltonian-Monte-Carlo-in-pgmpy" title="Link to this heading">#</a></h3>
+<p>In pgmpy one can use Hamiltonian Monte Carlo algorithm by importing HamiltonianMC from pgmpy.inference.continuous</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">HamiltonianMC</span> <span class="k">as</span> <span class="n">HMC</span>
+</pre></div>
+</div>
+</div>
+<p>Lets use the HamiltonianMC implementation and draw some samples from a multivariate disrtibution <span class="math notranslate nohighlight">\(P(x) = N(\mu, \Sigma)\)</span>, where</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\mu = [0, 0], \qquad
+\Sigma = \left[
+    \begin{array}{cc}
+    1 &amp; 0.97 \\
+    0.97 &amp; 1
+    \end{array}
+    \right]\end{split}\]</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">GaussianDistribution</span> <span class="k">as</span> <span class="n">JGD</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">LeapFrog</span><span class="p">,</span> <span class="n">GradLogPDFGaussian</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">77777</span><span class="p">)</span>
+<span class="c1"># Defining a multivariate distribution model</span>
+<span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.97</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.97</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">JGD</span><span class="p">([</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="n">mean</span><span class="p">,</span> <span class="n">covariance</span><span class="p">)</span>
+
+<span class="c1"># Creating a HMC sampling instance</span>
+<span class="n">sampler</span> <span class="o">=</span> <span class="n">HMC</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="o">=</span><span class="n">GradLogPDFGaussian</span><span class="p">,</span> <span class="n">simulate_dynamics</span><span class="o">=</span><span class="n">LeapFrog</span><span class="p">)</span>
+<span class="c1"># Drawing samples</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">initial_pos</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">num_samples</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+                         <span class="n">trajectory_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">stepsize</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">));</span> <span class="n">plt</span><span class="o">.</span><span class="n">hold</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;HMC samples&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">100</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">100</span><span class="p">],</span> <span class="s1">&#39;r-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;First 100 samples&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">hold</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/utgup/anaconda3/lib/python3.5/site-packages/ipykernel/__main__.py:18: MatplotlibDeprecationWarning: pyplot.hold is deprecated.
+    Future behavior will be consistent with the long-time default:
+    plot commands add elements without first clearing the
+    Axes and/or Figure.
+/home/utgup/anaconda3/lib/python3.5/site-packages/matplotlib/__init__.py:917: UserWarning: axes.hold is deprecated. Please remove it from your matplotlibrc and/or style files.
+  warnings.warn(self.msg_depr_set % key)
+/home/utgup/anaconda3/lib/python3.5/site-packages/matplotlib/rcsetup.py:152: UserWarning: axes.hold is deprecated, will be removed in 3.0
+  warnings.warn(&#34;axes.hold is deprecated, will be removed in 3.0&#34;)
+/home/utgup/anaconda3/lib/python3.5/site-packages/ipykernel/__main__.py:21: MatplotlibDeprecationWarning: pyplot.hold is deprecated.
+    Future behavior will be consistent with the long-time default:
+    plot commands add elements without first clearing the
+    Axes and/or Figure.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/detailed_notebooks_8._Sampling_Algorithms_3_1.png" src="../_images/detailed_notebooks_8._Sampling_Algorithms_3_1.png" />
+</div>
+</div>
+<p>One, can change the values of parameters <code class="docutils literal notranslate"><span class="pre">stepsize</span></code> and <code class="docutils literal notranslate"><span class="pre">trajectory_length</span></code> and see the convergence towards target distribution. For example set the value of <code class="docutils literal notranslate"><span class="pre">stepsize</span> <span class="pre">=</span> <span class="pre">0.5</span></code> and let rest parameters have the same value and see the output. With this you might get a feel that performance of HMC critically depends upon choice of these parameters.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">stepsize</span></code> parameter for HamiltonianMC implementation is optional, but should be use only as starting point value. One should hand-tune the model using this stepsize value for good performance.</p>
+</section>
+<section id="Hamiltonian-Monte-Carlo-with-dual-averaging">
+<h3>Hamiltonian Monte Carlo with dual averaging<a class="headerlink" href="#Hamiltonian-Monte-Carlo-with-dual-averaging" title="Link to this heading">#</a></h3>
+<p>In pgmpy we have implemented an another variant of HMC in which we adapt the stepsize during the course of sampling thus completely eliminates the need of specifying <code class="docutils literal notranslate"><span class="pre">stepsize</span></code> (but still requires <code class="docutils literal notranslate"><span class="pre">trajectory_length</span></code> to be specified by user). This variant of HMC is known as Hamiltonian Monte Carlo with dual averaging (HamiltonianMCda in pgmpy). One can also use Modified Euler to simulate dynamics instead of leapfrog, or even can plug-in one’s own implementation for simulating dynamics using
+base class for it.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">HamiltonianMCDA</span> <span class="k">as</span> <span class="n">HMCda</span><span class="p">,</span> <span class="n">ModifiedEuler</span>
+<span class="c1"># Using modified euler instead of Leapfrog for simulating dynamics</span>
+<span class="n">sampler_da</span> <span class="o">=</span> <span class="n">HMCda</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">GradLogPDFGaussian</span><span class="p">,</span> <span class="n">simulate_dynamics</span><span class="o">=</span><span class="n">ModifiedEuler</span><span class="p">)</span>
+<span class="c1"># num_adapt is number of iteration to run adaptation of stepsize</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">sampler_da</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">initial_pos</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">num_adapt</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">trajectory_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Acceptance rate:&quot;</span><span class="p">,</span><span class="n">sampler_da</span><span class="o">.</span><span class="n">acceptance_rate</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+               x         y
+0   7.000000e+00  0.000000
+1  3.458460e-323  0.000000
+2  3.458460e-323  0.000000
+3  3.458460e-323  0.000000
+4  3.458460e-323  0.000000
+5   3.614684e+00  0.780326
+6   1.316832e+00  0.643645
+7   1.316832e+00  0.643645
+8  -1.111247e-01 -0.306480
+9   1.163398e+00  1.357304
+
+Acceptance rate: 0.5
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/utgup/anaconda3/lib/python3.5/site-packages/pgmpy-0.1.6-py3.5.egg/pgmpy/sampling/HMC.py:111: RuntimeWarning: divide by zero encountered in double_scalars
+  return (1/(acceptance_prob ** a)) &gt; (2**(-a))
+</pre></div></div>
+</div>
+<p>The values returned by HamiltonianMC and HamiltonianMCda depends upon the installation available in the working environment. In working env has a installation of pandas, it returns a pandas.DataFrame object otherwise it returns a numpy.recarry (numpy recorded arrays).</p>
+<p>Lets now use base class for simulating hamiltonian dynamics and write our own Modified Euler method</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSimulateHamiltonianDynamics</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ModifiedEulerMethod</span><span class="p">(</span><span class="n">BaseSimulateHamiltonianDynamics</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span> <span class="n">stepsize</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="p">,</span> <span class="n">grad_log_position</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">BaseSimulateHamiltonianDynamics</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">momentum</span><span class="p">,</span>
+                                                 <span class="n">stepsize</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="p">,</span> <span class="n">grad_log_position</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_momentum</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_grad_logp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_proposed_values</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_proposed_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">new_momentum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">momentum</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stepsize</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_log_position</span>
+        <span class="n">new_position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stepsize</span> <span class="o">*</span> <span class="n">new_momentum</span>
+
+        <span class="n">grad_log</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_log_pdf</span><span class="p">(</span><span class="n">new_position</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_gradient_log_pdf</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">new_position</span><span class="p">,</span> <span class="n">new_momentum</span><span class="p">,</span> <span class="n">grad_log</span>
+
+<span class="n">hmc_sampler</span> <span class="o">=</span> <span class="n">HMC</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">GradLogPDFGaussian</span><span class="p">,</span> <span class="n">simulate_dynamics</span><span class="o">=</span><span class="n">ModifiedEulerMethod</span><span class="p">)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">hmc_sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">initial_pos</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">trajectory_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">stepsize</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total accepted proposal:&quot;</span><span class="p">,</span> <span class="n">hmc_sampler</span><span class="o">.</span><span class="n">accepted_proposals</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+          x         y
+0  0.000000  0.000000
+1  0.624716  0.680638
+2  0.928227  1.143031
+3 -0.234847 -0.118653
+4 -1.633648 -1.977647
+5 -1.282438 -1.442565
+6 -1.734446 -1.282935
+7 -1.552439 -1.300669
+8  0.729025  0.793016
+9 -0.489195 -0.430182
+Total accepted proposal: 10.0
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="No-U-Turn-Sampler">
+<h2>No-U-Turn Sampler<a class="headerlink" href="#No-U-Turn-Sampler" title="Link to this heading">#</a></h2>
+<p>Both (HMC and HMCda) of these algorithms requires some hand-tuning from user, which can be time consuming especially for high dimensional complex model. No-U-Turn Sampler(NUTS) is an extension of HMC that eliminates the need to specify the trajectory length but requires user to specify stepsize.</p>
+<p>NUTS, removes the need of parameter number of steps by considering a metric to evaluate whether we have ran Leapfrog algorithm for long enough, that is when running the simulation for more steps would no longer increase the distance between the proposal value of <span class="math notranslate nohighlight">\(x\)</span> and initial value of <span class="math notranslate nohighlight">\(x\)</span></p>
+<p>At high level, NUTS uses the leapfrog method to trace out a path forward and backward in fictitious time, first running forwards or backwards 1 step, the forwards and backwards 2 steps, then forwards or backwards 4 steps etc. This doubling process builds a balanced binary tree whose leaf nodes correspond to position-momentum states. The doubling process is halted when the sub-trajectory from the leftmost to the rightmost nodes of any balanced subtree of the overall binary tree starts to double
+back on itself (i.e., the fictional particle starts to make a “U-Turn”). At this point NUTS stops the simulation and samples from among the set of points computed during the simulation, taking are to preserve detailed balance.</p>
+<p>Lets use NUTS and draw some samples.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">NoUTurnSampler</span> <span class="k">as</span> <span class="n">NUTS</span>
+<span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="n">covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mi">4</span><span class="p">]])</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">JGD</span><span class="p">([</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">],</span> <span class="n">mean</span><span class="p">,</span> <span class="n">covariance</span><span class="p">)</span>
+
+<span class="c1"># Creating sampling instance of NUTS</span>
+<span class="n">NUTS_sampler</span> <span class="o">=</span> <span class="n">NUTS</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="o">=</span><span class="n">GradLogPDFGaussian</span><span class="p">)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">NUTS_sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">initial_pos</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">stepsize</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpl_toolkits.mplot3d</span><span class="w"> </span><span class="kn">import</span> <span class="n">Axes3D</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">Axes3D</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hold</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;NUTS Samples&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">][:</span><span class="mi">50</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">][:</span><span class="mi">50</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">][:</span><span class="mi">50</span><span class="p">],</span> <span class="s1">&#39;r-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Warm-up period&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Scatter plot of samples&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hold</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/utgup/anaconda3/lib/python3.5/site-packages/pgmpy-0.1.6-py3.5.egg/pgmpy/sampling/NUTS.py:130: RuntimeWarning: invalid value encountered in true_divide
+  if np.random.rand() &lt; candidate_set_size2 / (candidate_set_size2 + candidate_set_size):
+/home/utgup/anaconda3/lib/python3.5/site-packages/ipykernel/__main__.py:13: MatplotlibDeprecationWarning: pyplot.hold is deprecated.
+    Future behavior will be consistent with the long-time default:
+    plot commands add elements without first clearing the
+    Axes and/or Figure.
+/home/utgup/anaconda3/lib/python3.5/site-packages/matplotlib/__init__.py:917: UserWarning: axes.hold is deprecated. Please remove it from your matplotlibrc and/or style files.
+  warnings.warn(self.msg_depr_set % key)
+/home/utgup/anaconda3/lib/python3.5/site-packages/matplotlib/rcsetup.py:152: UserWarning: axes.hold is deprecated, will be removed in 3.0
+  warnings.warn(&#34;axes.hold is deprecated, will be removed in 3.0&#34;)
+/home/utgup/anaconda3/lib/python3.5/site-packages/ipykernel/__main__.py:18: MatplotlibDeprecationWarning: pyplot.hold is deprecated.
+    Future behavior will be consistent with the long-time default:
+    plot commands add elements without first clearing the
+    Axes and/or Figure.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/detailed_notebooks_8._Sampling_Algorithms_9_1.png" src="../_images/detailed_notebooks_8._Sampling_Algorithms_9_1.png" />
+</div>
+</div>
+<p>The <strong>Warm-up period</strong> a.k.a <strong>Burn-in period</strong> of Markov chain , is the amount of time it takes for the markov chain to reach the target stationary distribution. The samples generated during this period of Markov chain are usually thrown away because they don’t show the characteristics of distribution from which they are sampled.</p>
+<p>Since it is difficult to visualize more than 3-Dimensions we generally use a trace-plot of Markov chain to determine this warm-up period.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hold</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span><span class="s1">&#39;b-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">],</span> <span class="s1">&#39;g-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">],</span> <span class="s1">&#39;c-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;z&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">9</span><span class="p">],</span> <span class="s1">&#39;k-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Warm-up period&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Trace plot of Markov Chain&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hold</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/utgup/anaconda3/lib/python3.5/site-packages/ipykernel/__main__.py:2: MatplotlibDeprecationWarning: pyplot.hold is deprecated.
+    Future behavior will be consistent with the long-time default:
+    plot commands add elements without first clearing the
+    Axes and/or Figure.
+  from ipykernel import kernelapp as app
+/home/utgup/anaconda3/lib/python3.5/site-packages/matplotlib/__init__.py:917: UserWarning: axes.hold is deprecated. Please remove it from your matplotlibrc and/or style files.
+  warnings.warn(self.msg_depr_set % key)
+/home/utgup/anaconda3/lib/python3.5/site-packages/matplotlib/rcsetup.py:152: UserWarning: axes.hold is deprecated, will be removed in 3.0
+  warnings.warn(&#34;axes.hold is deprecated, will be removed in 3.0&#34;)
+/home/utgup/anaconda3/lib/python3.5/site-packages/ipykernel/__main__.py:9: MatplotlibDeprecationWarning: pyplot.hold is deprecated.
+    Future behavior will be consistent with the long-time default:
+    plot commands add elements without first clearing the
+    Axes and/or Figure.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/detailed_notebooks_8._Sampling_Algorithms_11_1.png" src="../_images/detailed_notebooks_8._Sampling_Algorithms_11_1.png" />
+</div>
+</div>
+<section id="No-U-Turn-Sampler-with-dual-averaging">
+<h3>No-U-Turn Sampler with dual averaging<a class="headerlink" href="#No-U-Turn-Sampler-with-dual-averaging" title="Link to this heading">#</a></h3>
+<p>Like HMCda in No-U-Turn sampler with dual averaging (NUTSda) we adapt the stepsize during the course of sampling thus completely eliminates the need of specifying <code class="docutils literal notranslate"><span class="pre">stepsize</span></code>. Thus we can use NUTSda without any hand tuning at all.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">NoUTurnSamplerDA</span> <span class="k">as</span> <span class="n">NUTSda</span>
+<span class="n">NUTSda_sampler</span> <span class="o">=</span> <span class="n">NUTSda</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="o">=</span><span class="n">GradLogPDFGaussian</span><span class="p">)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">NUTSda_sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">initial_pos</span><span class="o">=</span><span class="p">[</span><span class="mf">0.457420</span><span class="p">,</span> <span class="mf">0.500307</span><span class="p">,</span> <span class="mf">0.211056</span><span class="p">],</span> <span class="n">num_adapt</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+          x         y         z
+0  0.457420  0.500307  0.211056
+1  0.457420  0.500307  0.211056
+2  0.457420  0.500307  0.211056
+3  0.457420  0.500307  0.211056
+4  1.822813  0.537422  0.005842
+5 -0.195423  1.578560  1.047900
+6  0.522322  0.176574  1.763822
+7  0.124225  0.655759  4.003954
+8  0.124225  0.655759  4.003954
+9  0.337818  1.170382  4.146218
+</pre></div></div>
+</div>
+<p>Apart from the <code class="docutils literal notranslate"><span class="pre">sample</span></code> method all the four algorithms (HMC, HMCda, NUTS, NUTSda) provides another method to sample from model named <code class="docutils literal notranslate"><span class="pre">generate_sample</span></code> method. <code class="docutils literal notranslate"><span class="pre">generate_sample</span></code> method returns a generator type object whose each iteration yields a sample. The sample returned is a simple numpy.array object. The arguments for <code class="docutils literal notranslate"><span class="pre">generate_sample</span></code> method and <code class="docutils literal notranslate"><span class="pre">sample</span></code> method for all algorithms are same</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">generate_samples</span> <span class="o">=</span> <span class="n">NUTSda_sampler</span><span class="o">.</span><span class="n">generate_sample</span><span class="p">(</span><span class="n">initial_pos</span><span class="o">=</span><span class="p">[</span><span class="mf">0.4574</span><span class="p">,</span> <span class="mf">0.503</span><span class="p">,</span> <span class="mf">0.211</span><span class="p">],</span> <span class="n">num_adapt</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sample</span> <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">generate_samples</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[[  1.23158312e+00   2.08966925e+00   5.47064070e+00]
+ [  1.23158312e+00   2.08966925e+00   5.47064070e+00]
+ [  1.23158312e+00   2.08966925e+00   5.47064070e+00]
+ [  2.42754370e-04  -9.07581018e-01   2.22786641e+00]
+ [  3.80037176e+00   4.20666799e+00   2.93898094e+00]
+ [  1.84557224e+00   3.03691158e+00   5.05047756e+00]
+ [  1.84557224e+00   3.03691158e+00   5.05047756e+00]
+ [  1.90819711e+00   3.83294495e+00   4.98059422e+00]
+ [  9.22139874e-01   4.11755511e+00   4.50041160e+00]
+ [  9.22139874e-01   4.11755511e+00   4.50041160e+00]]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/utgup/anaconda3/lib/python3.5/site-packages/pgmpy-0.1.6-py3.5.egg/pgmpy/sampling/NUTS.py:412: RuntimeWarning: invalid value encountered in true_divide
+  if np.random.rand() &lt; candidate_set_size2 / (candidate_set_size2 + candidate_set_size):
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Support-for-coustom-Models">
+<h2>Support for coustom Models<a class="headerlink" href="#Support-for-coustom-Models" title="Link to this heading">#</a></h2>
+<p>One can also use HMC, HMCda, NUTS and NUTSda to sample from a user defined model, all one has to do is create class for finding log of probability density function and gradient log of probability density function using base class provided by pgmpy, and give this class as a parameter to <code class="docutils literal notranslate"><span class="pre">grad_log_pdf</span></code> argument in all of these algorithms (HMC[da], NUTS[da]).</p>
+<p>In this example we will define our own logisitcs distribution and use NUTSda to sample from it.</p>
+<p>The probability density of logistic distribution is given by:</p>
+<div class="math notranslate nohighlight">
+\[P(x; \mu, s) = \frac{e^{-\frac{x- \mu}{s}}}{s(1 + e^{-\frac{x - \mu}{s}})^2}\]</div>
+<p>Thus the log of this probability density function (potential energy function) can be written as:</p>
+<div class="math notranslate nohighlight">
+\[log(P(x; \mu, s)) = -\frac{x - \mu}{s} - log(s) - 2 log(1 + e^{-\frac{x - \mu}{s}})\]</div>
+<p>And the gradient of potential energy :</p>
+<div class="math notranslate nohighlight">
+\[\frac{\partial log(P(x; \mu, s))}{\partial x} = - \frac{1}{s} + \frac{2e^{-\frac{x - \mu}{s}}}{s(1 + e^{-\frac{x - \mu}{s}})}\]</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Importing th base class structure for log and gradient log of probability density function</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseGradLogPDF</span>
+
+<span class="c1"># Base class for user defined continuous factor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">CustomDistribution</span>
+
+
+<span class="c1"># Defining pdf of a Logistic distribution with mu = 5, s = 2</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">logistic_pdf</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">power</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mf">5.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">power</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">power</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># Calculating log of logistic pdf</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">log_logistic</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">power</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mf">5.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+    <span class="k">return</span> <span class="n">power</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">power</span><span class="p">))</span>
+
+<span class="c1"># Calculating gradient log of logistic pdf</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">grad_log_logistic</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">power</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mf">5.0</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span>
+    <span class="k">return</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">power</span><span class="p">)))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">power</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span>
+
+<span class="c1"># Creating a logistic model</span>
+<span class="n">logistic_model</span> <span class="o">=</span> <span class="n">CustomDistribution</span><span class="p">([</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">logistic_pdf</span><span class="p">)</span>
+
+<span class="c1"># Creating a class using base class for gradient log and log probability density function</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GradLogLogistic</span><span class="p">(</span><span class="n">BaseGradLogPDF</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_assignments</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="n">BaseGradLogPDF</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable_assignments</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grad_log</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_pdf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_gradient_log_pdf</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_gradient_log_pdf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">grad_log_logistic</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_assignments</span><span class="p">),</span>
+                <span class="n">log_logistic</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_assignments</span><span class="p">))</span>
+
+<span class="c1"># Generating samples using NUTS</span>
+<span class="n">sampler</span> <span class="o">=</span> <span class="n">NUTSda</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">logistic_model</span><span class="p">,</span> <span class="n">grad_log_pdf</span><span class="o">=</span><span class="n">GradLogLogistic</span><span class="p">)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">initial_pos</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]),</span> <span class="n">num_adapt</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+                         <span class="n">num_samples</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">10000</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="n">logistic_pdf</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hold</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;real logistic pdf&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">histtype</span><span class="o">=</span><span class="s1">&#39;step&#39;</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Samples NUTSda&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hold</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/utgup/anaconda3/lib/python3.5/site-packages/pgmpy-0.1.6-py3.5.egg/pgmpy/sampling/NUTS.py:412: RuntimeWarning: invalid value encountered in true_divide
+  if np.random.rand() &lt; candidate_set_size2 / (candidate_set_size2 + candidate_set_size):
+/home/utgup/anaconda3/lib/python3.5/site-packages/ipykernel/__main__.py:45: MatplotlibDeprecationWarning: pyplot.hold is deprecated.
+    Future behavior will be consistent with the long-time default:
+    plot commands add elements without first clearing the
+    Axes and/or Figure.
+/home/utgup/anaconda3/lib/python3.5/site-packages/matplotlib/__init__.py:917: UserWarning: axes.hold is deprecated. Please remove it from your matplotlibrc and/or style files.
+  warnings.warn(self.msg_depr_set % key)
+/home/utgup/anaconda3/lib/python3.5/site-packages/matplotlib/rcsetup.py:152: UserWarning: axes.hold is deprecated, will be removed in 3.0
+  warnings.warn(&#34;axes.hold is deprecated, will be removed in 3.0&#34;)
+/home/utgup/anaconda3/lib/python3.5/site-packages/ipykernel/__main__.py:49: MatplotlibDeprecationWarning: pyplot.hold is deprecated.
+    Future behavior will be consistent with the long-time default:
+    plot commands add elements without first clearing the
+    Axes and/or Figure.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/detailed_notebooks_8._Sampling_Algorithms_17_1.png" src="../_images/detailed_notebooks_8._Sampling_Algorithms_17_1.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="7.%20Parameterizing%20with%20Continuous%20Variables.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Parameterizing with Continuous Variables</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="9.%20Reading%20and%20Writing%20from%20pgmpy%20file%20formats.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Reading and Writing from pgmpy file formats</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Hamiltonian-Monte-Carlo">Hamiltonian Monte Carlo</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Hamiltonian-Dynamics">Hamiltonian Dynamics</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Discretizing-Hamiltonian's-Equations">Discretizing Hamiltonian’s Equations</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#Euler's-Method">Euler’s Method</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#Leapfrog-Method">Leapfrog Method</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#Example:-Simulating-Hamiltonian-dynamics-of-a-simple-pendulum">Example: Simulating Hamiltonian dynamics of a simple pendulum</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Hamiltonian-and-Probability:-Canonical-Distributions">Hamiltonian and Probability: Canonical Distributions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Hamiltonian-Monte-Carlo-Algorithm">Hamiltonian Monte Carlo Algorithm</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Hamiltonian-Monte-Carlo-in-pgmpy">Hamiltonian Monte Carlo in pgmpy</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#Hamiltonian-Monte-Carlo-with-dual-averaging">Hamiltonian Monte Carlo with dual averaging</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#No-U-Turn-Sampler">No-U-Turn Sampler</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#No-U-Turn-Sampler-with-dual-averaging">No-U-Turn Sampler with dual averaging</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#Support-for-coustom-Models">Support for coustom Models</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, pgmpy developers.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
