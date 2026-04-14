@@ -699,7 +699,15 @@
 <span class="sd">    transform one graph to the other. It is a symmetrical measure.</span>
 
 <span class="sd">    The code first accounts for edges that need to be deleted (from true_model), added (to true_model) and finally edges</span>
-<span class="sd">    that need to be reversed. All operations count as 1.</span>
+<span class="sd">    that need to be reversed. All operations count as 1. Alternatively, setting `edge_reverse_penalty=2` counts</span>
+<span class="sd">    reversals as a distance of 2 (one deletion and one addition).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    edge_reverse_penalty: int (default: 1)</span>
+<span class="sd">        The penalty for edge reversals. When set to 1, all basic operations (add,</span>
+<span class="sd">        delete, reverse) count as 1. When set to 2, additions and deletions count</span>
+<span class="sd">        as 1, while reversals count as 2.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
@@ -710,6 +718,9 @@
 <span class="sd">    &gt;&gt;&gt; shd = SHD()</span>
 <span class="sd">    &gt;&gt;&gt; shd(true_causal_graph=dag1, est_causal_graph=dag2)</span>
 <span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; shd_double = SHD(edge_reverse_penalty=2)</span>
+<span class="sd">    &gt;&gt;&gt; shd_double(true_causal_graph=dag1, est_causal_graph=dag2)</span>
+<span class="sd">    2</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span>
@@ -722,7 +733,14 @@
         <span class="s2">&quot;is_default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">}</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edge_reverse_penalty</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">edge_reverse_penalty</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;edge_reverse_penalty must be 1 or 2, got &#39;</span><span class="si">{</span><span class="n">edge_reverse_penalty</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edge_reverse_penalty</span> <span class="o">=</span> <span class="n">edge_reverse_penalty</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_causal_graph</span><span class="p">,</span> <span class="n">est_causal_graph</span><span class="p">):</span>
+
         <span class="n">nodes_list</span> <span class="o">=</span> <span class="n">true_causal_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
 
         <span class="n">dag_true</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">(</span><span class="n">true_causal_graph</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
@@ -751,7 +769,8 @@
 
         <span class="c1"># Edges that need to be simply reversed</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">m1</span> <span class="o">-</span> <span class="n">m2</span><span class="p">)</span>
-        <span class="n">shd</span> <span class="o">=</span> <span class="n">shd</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">d</span> <span class="o">+</span> <span class="n">d</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">reversal_count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">d</span> <span class="o">+</span> <span class="n">d</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">shd</span> <span class="o">=</span> <span class="n">shd</span> <span class="o">+</span> <span class="p">(</span><span class="n">reversal_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_reverse_penalty</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">shd</span><span class="p">)</span></div>
 
