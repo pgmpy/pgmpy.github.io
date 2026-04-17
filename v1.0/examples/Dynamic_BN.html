@@ -1,0 +1,1347 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="<no title>" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pgmpy.org/v1.0/examples/Dynamic_BN.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:image" content="https://pgmpy.org/v1.0/_static/images/logo.png" />
+<meta property="og:image:alt" content="pgmpy" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<meta name="description" content="pgmpy is a Python library for causal inference, probabilistic modeling, Bayesian networks, and directed acyclic graphs." />
+<meta property="og:description" content="pgmpy is a Python library for causal inference, probabilistic modeling, Bayesian networks, and directed acyclic graphs." />
+<meta name="twitter:description" content="pgmpy is a Python library for causal inference, probabilistic modeling, Bayesian networks, and directed acyclic graphs." />
+<meta name="twitter:image" content="https://pgmpy.org/v1.0/_static/images/logo.png" />
+<meta name="robots" content="index,follow,max-image-preview:large" />
+<link rel="canonical" href="https://pgmpy.org/v1.0/examples/Dynamic_BN.html" />
+    <title>&lt;no title&gt; &#8212; pgmpy</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=18a852c8" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../_static/documentation_options.js?v=e160b93e"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/Dynamic_BN';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://pgmpy.org/v1.0/examples/Dynamic_BN.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to define TabularCPD and LinearGaussianCPD" href="Defining_CPDs.html" />
+    <link rel="prev" title="Creating Linear Gaussian Bayesian Networks" href="Creating_Linear_BN.html" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v1.0" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  
+    
+  <script type="application/ld+json">{"@context": "https://schema.org", "@id": "https://pgmpy.org/v1.0/#organization", "@type": "Organization", "logo": "https://pgmpy.org/v1.0/_static/images/logo.png", "name": "pgmpy", "sameAs": ["https://github.com/pgmpy/pgmpy", "https://pypi.org/project/pgmpy/", "https://www.linkedin.com/company/pgmpy/"], "url": "https://pgmpy.org/v1.0"}</script>
+    
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "item": "https://pgmpy.org/v1.0/index.html", "name": "Key Features", "position": 1}, {"@type": "ListItem", "item": "https://pgmpy.org/v1.0/examples.html", "name": "Example Notebooks", "position": 2}]}</script>
+    
+  
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HCFR07M31W');
+  </script>
+  <!-- EthicalAds -->
+  <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.png" class="logo__image only-light" alt=""/>
+    <img src="../_static/logo.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pgmpy</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../documentation.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development.html">
+    Getting Involved
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container pgmpy-version-switcher">
+  <select
+    class="form-select form-select-sm pgmpy-version-select"
+    aria-label="Select Version"
+    data-current-version="v1.0"
+    data-current-label="v1.0"
+    data-target-uri="examples/Dynamic_BN.html"
+  >
+    
+    
+    <optgroup label="Releases">
+      
+      <option value="stable" data-url="https://pgmpy.org/" >
+        v1.1 (stable)
+      </option>
+      
+      
+      <option value="v1.0" data-url="https://pgmpy.org/v1.0/" selected>
+        v1.0
+      </option>
+      
+      <option value="v1.1" data-url="https://pgmpy.org/v1.1/" >
+        v1.1
+      </option>
+      
+    </optgroup>
+    
+
+    
+    <optgroup label="In Development">
+      
+      <option value="dev" data-url="https://pgmpy.org/dev/" >
+        dev
+      </option>
+      
+    </optgroup>
+    
+  </select>
+</div>
+
+<script>
+  (function() {
+    const selects = document.querySelectorAll(".pgmpy-version-select:not([data-pgmpy-version-init])");
+    selects.forEach(function(select) {
+      select.dataset.pgmpyVersionInit = "true";
+
+      const currentVersion = select.dataset.currentVersion;
+      const currentLabel = select.dataset.currentLabel || currentVersion;
+      const currentTargetUri = (select.dataset.targetUri || "").replace(/^\/+/, "");
+
+      if (!Array.from(select.options).some(function(option) { return option.value === currentVersion; })) {
+        const option = document.createElement("option");
+        option.value = currentVersion;
+        option.textContent = currentLabel;
+        option.selected = true;
+        select.insertBefore(option, select.firstChild);
+      }
+
+      const buildTargetUrl = function(baseUrl) {
+        if (!currentTargetUri || currentTargetUri === "index.html") {
+          return baseUrl;
+        }
+        return new URL(currentTargetUri, baseUrl).toString();
+      };
+
+      const navigateToVersion = async function(option) {
+        const baseUrl = option.dataset.url;
+        if (!baseUrl) {
+          return;
+        }
+
+        const targetUrl = buildTargetUrl(baseUrl);
+
+        if (targetUrl === baseUrl) {
+          window.location.href = baseUrl;
+          return;
+        }
+
+        try {
+          const response = await fetch(targetUrl, { method: "HEAD" });
+          window.location.href = response.ok ? targetUrl : baseUrl;
+        } catch (error) {
+          window.location.href = targetUrl;
+        }
+      };
+
+      select.addEventListener("change", function(event) {
+        const option = event.target.selectedOptions[0];
+        if (!option) {
+          return;
+        }
+        navigateToVersion(option);
+      });
+    });
+  })();
+</script></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pgmpy/pgmpy" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/DRkdKaumBs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/company/pgmpy/" title="LinkedIn" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">LinkedIn</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../documentation.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development.html">
+    Getting Involved
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container pgmpy-version-switcher">
+  <select
+    class="form-select form-select-sm pgmpy-version-select"
+    aria-label="Select Version"
+    data-current-version="v1.0"
+    data-current-label="v1.0"
+    data-target-uri="examples/Dynamic_BN.html"
+  >
+    
+    
+    <optgroup label="Releases">
+      
+      <option value="stable" data-url="https://pgmpy.org/" >
+        v1.1 (stable)
+      </option>
+      
+      
+      <option value="v1.0" data-url="https://pgmpy.org/v1.0/" selected>
+        v1.0
+      </option>
+      
+      <option value="v1.1" data-url="https://pgmpy.org/v1.1/" >
+        v1.1
+      </option>
+      
+    </optgroup>
+    
+
+    
+    <optgroup label="In Development">
+      
+      <option value="dev" data-url="https://pgmpy.org/dev/" >
+        dev
+      </option>
+      
+    </optgroup>
+    
+  </select>
+</div>
+
+<script>
+  (function() {
+    const selects = document.querySelectorAll(".pgmpy-version-select:not([data-pgmpy-version-init])");
+    selects.forEach(function(select) {
+      select.dataset.pgmpyVersionInit = "true";
+
+      const currentVersion = select.dataset.currentVersion;
+      const currentLabel = select.dataset.currentLabel || currentVersion;
+      const currentTargetUri = (select.dataset.targetUri || "").replace(/^\/+/, "");
+
+      if (!Array.from(select.options).some(function(option) { return option.value === currentVersion; })) {
+        const option = document.createElement("option");
+        option.value = currentVersion;
+        option.textContent = currentLabel;
+        option.selected = true;
+        select.insertBefore(option, select.firstChild);
+      }
+
+      const buildTargetUrl = function(baseUrl) {
+        if (!currentTargetUri || currentTargetUri === "index.html") {
+          return baseUrl;
+        }
+        return new URL(currentTargetUri, baseUrl).toString();
+      };
+
+      const navigateToVersion = async function(option) {
+        const baseUrl = option.dataset.url;
+        if (!baseUrl) {
+          return;
+        }
+
+        const targetUrl = buildTargetUrl(baseUrl);
+
+        if (targetUrl === baseUrl) {
+          window.location.href = baseUrl;
+          return;
+        }
+
+        try {
+          const response = await fetch(targetUrl, { method: "HEAD" });
+          window.location.href = response.ok ? targetUrl : baseUrl;
+        } catch (error) {
+          window.location.href = targetUrl;
+        }
+      };
+
+      select.addEventListener("change", function(event) {
+        const option = event.target.selectedOptions[0];
+        if (!option) {
+          return;
+        }
+        navigateToVersion(option);
+      });
+    });
+  })();
+</script></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pgmpy/pgmpy" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/DRkdKaumBs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/company/pgmpy/" title="LinkedIn" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">LinkedIn</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Creating_Discrete_BN.html">Creating Discrete Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Creating_Linear_BN.html">Creating Linear Gaussian Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Defining_CPDs.html">How to define TabularCPD and LinearGaussianCPD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Basic_Operations_on_BN.html">Basic Operations on Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Structure_Learning.html">Structure Learning in Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Structure_Learning_Chow_Liu.html">Learning Tree Structure from Data using the Chow-Liu Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Structure_Learning_TAN.html">Learning Tree-augmented Naive Bayes (TAN) Structure from Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Expert_Knowledge.html">Expert Knowledge Integration with Causal Discovery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Parameter_Learning_Discrete_BN.html">Parameter Learning in Discrete Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Parameter_Learning_Factor_Graphs.html">Marginal Learning in Discrete Markov Networks</a></li>
+
+<li class="toctree-l1"><a class="reference internal" href="Inference_Discrete_BN.html">Inference in Discrete Bayesian Network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Monty_Hall.html">Monty Hall Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Causal_Inference.html">Causal Inference Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Causal_Games.html">Causal Games</a></li>
+
+
+
+
+
+
+
+<li class="toctree-l1"><a class="reference internal" href="Simulating_Data.html">Simulating Data From Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Extending_pgmpy.html">Extending pgmpy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Functional_Bayesian_Network_Tutorial.html">Functional Bayesian Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Junction_Tree_Inference.html">Junction Tree Exact Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorial.html">Tutorial Notebooks</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+  <div class="pgmpy-primary-sidebar-ad">
+    <div
+        id="ethical-ad-placement"
+        class="flat adaptive-css"
+        data-ea-publisher="pgmpyorg"
+        data-ea-type="image">
+    </div>
+  </div>
+</div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Example Notebooks</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">&lt;no title&gt;</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Imports</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DynamicBayesianNetwork</span> <span class="k">as</span> <span class="n">DBN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize a simple DBN model modeling the Weather (W), Rain (O), Temperature (T), and Humidity (H).</span>
+
+<span class="n">dbn</span> <span class="o">=</span> <span class="n">DBN</span><span class="p">()</span>
+
+<span class="c1"># pgmpy requires the user to define the structure of the first time slice and the edges connecting the first time slice to the second time slice.</span>
+<span class="c1"># pgmpy assumes that this structure remains constant for further time slices, i.e., it is a 2-TBN.</span>
+
+<span class="c1"># Add intra-slice edges for both time slices</span>
+<span class="n">dbn</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([</span>
+    <span class="p">((</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>  <span class="c1"># Weather influences ground observation</span>
+    <span class="p">((</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>  <span class="c1"># Temperature influences humidity</span>
+    <span class="p">((</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>   <span class="c1"># Weather influences humidity</span>
+<span class="p">])</span>
+
+<span class="c1"># Add inter-slice edges</span>
+<span class="n">dbn</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([</span>
+    <span class="p">((</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>  <span class="c1"># Weather transition</span>
+    <span class="p">((</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>  <span class="c1"># Temperature transition</span>
+    <span class="p">((</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>   <span class="c1"># Weather influences future temperature</span>
+<span class="p">])</span>
+
+<span class="c1"># Define the parameters of the model. Again pgmpy assumes that these CPDs remain the same for future time slices.</span>
+
+<span class="c1"># Define CPDs</span>
+<span class="c1"># CPD for W (Weather transition)</span>
+<span class="n">cpd_w_0</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="c1"># Sunny, Cloudy, Rainy</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">]],</span>  <span class="c1"># Initial probabilities</span>
+<span class="p">)</span>
+
+<span class="n">cpd_w_1</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>  <span class="c1"># P(Sunny | W_0)</span>
+        <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>  <span class="c1"># P(Cloudy | W_0)</span>
+        <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>   <span class="c1"># P(Rainy | W_0)</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+
+<span class="c1"># CPD for T (Temperature transition)</span>
+<span class="n">cpd_t_0</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="c1"># Hot, Mild, Cold</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[[</span><span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">]]</span>  <span class="c1"># Initial probabilities</span>
+<span class="p">)</span>
+
+<span class="n">cpd_t_1</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">[</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>  <span class="c1"># P(Hot | T_0, W_0)</span>
+        <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>  <span class="c1"># P(Mild | T_0, W_0)</span>
+        <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">]</span>   <span class="c1"># P(Cold | T_0, W_0)</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># CPD for O (Ground observation)</span>
+<span class="n">cpd_o</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># Dry, Wet</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>  <span class="c1"># P(Dry | Sunny, Cloudy, Rainy)</span>
+        <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">]</span>   <span class="c1"># P(Wet | Sunny, Cloudy, Rainy)</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># CPD for H (Humidity observation)</span>
+<span class="n">cpd_h</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+    <span class="n">variable</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+    <span class="n">variable_card</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>  <span class="c1"># Low, Medium, High</span>
+    <span class="n">evidence</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)],</span>
+    <span class="n">evidence_card</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="n">values</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">],</span>  <span class="c1"># P(Low | T_0, W_0)</span>
+        <span class="p">[</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>  <span class="c1"># P(Medium | T_0, W_0)</span>
+        <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">]</span>   <span class="c1"># P(High | T_0, W_0)</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># Add CPDs to the DBN</span>
+<span class="n">dbn</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_w_0</span><span class="p">,</span> <span class="n">cpd_w_1</span><span class="p">,</span> <span class="n">cpd_t_0</span><span class="p">,</span> <span class="n">cpd_t_1</span><span class="p">,</span> <span class="n">cpd_o</span><span class="p">,</span> <span class="n">cpd_h</span><span class="p">)</span>
+
+<span class="c1"># After defining the model, call the initialization method that generates the required data structures for further computation.</span>
+<span class="n">dbn</span><span class="o">.</span><span class="n">initialize_initial_state</span><span class="p">()</span>
+
+<span class="c1"># Simulate some data from the defined model.</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">dbn</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">n_time_slices</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">samples</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>(W, 0)</th>
+      <th>(O, 0)</th>
+      <th>(H, 0)</th>
+      <th>(T, 0)</th>
+      <th>(W, 1)</th>
+      <th>(O, 1)</th>
+      <th>(H, 1)</th>
+      <th>(T, 1)</th>
+      <th>(W, 2)</th>
+      <th>(O, 2)</th>
+      <th>...</th>
+      <th>(H, 7)</th>
+      <th>(T, 7)</th>
+      <th>(W, 8)</th>
+      <th>(O, 8)</th>
+      <th>(H, 8)</th>
+      <th>(W, 9)</th>
+      <th>(T, 9)</th>
+      <th>(O, 9)</th>
+      <th>(H, 9)</th>
+      <th>(T, 8)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>...</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>2</td>
+      <td>2</td>
+      <td>1</td>
+      <td>...</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2</td>
+      <td>1</td>
+      <td>2</td>
+      <td>1</td>
+      <td>2</td>
+      <td>1</td>
+      <td>2</td>
+      <td>1</td>
+      <td>2</td>
+      <td>0</td>
+      <td>...</td>
+      <td>0</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>2</td>
+      <td>0</td>
+      <td>0</td>
+      <td>2</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>...</td>
+      <td>2</td>
+      <td>2</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>2</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>...</td>
+      <td>1</td>
+      <td>2</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 40 columns</p>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fitting model parameters to a defined network structure.</span>
+
+<span class="c1"># Define the network structure for which to learn the model parameters. Here, we have assumeed the same model</span>
+<span class="c1"># structure that we simulated the data from</span>
+<span class="n">dbn</span> <span class="o">=</span> <span class="n">DBN</span><span class="p">()</span>
+<span class="n">dbn</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([</span>
+    <span class="p">((</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;O&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>  <span class="c1"># Weather influences ground observation</span>
+    <span class="p">((</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)),</span>  <span class="c1"># Temperature influences humidity</span>
+    <span class="p">((</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>   <span class="c1"># Weather influences humidity</span>
+<span class="p">])</span>
+<span class="n">dbn</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([</span>
+    <span class="p">((</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>  <span class="c1"># Weather transition</span>
+    <span class="p">((</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>  <span class="c1"># Temperature transition</span>
+    <span class="p">((</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>   <span class="c1"># Weather influences future temperature</span>
+<span class="p">])</span>
+
+<span class="c1"># Fit the model using simulated samples</span>
+<span class="n">dbn</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+<span class="n">dbn</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;TabularCPD representing P((H, 0):3 | (T, 0):3, (W, 0):3) at 0x726d1a2b0cb0&gt;,
+ &lt;TabularCPD representing P((T, 0):3) at 0x726d1a2b08c0&gt;,
+ &lt;TabularCPD representing P((W, 0):3) at 0x726d1a2b0dd0&gt;,
+ &lt;TabularCPD representing P((O, 0):2 | (W, 0):3) at 0x726d1a2b0d40&gt;,
+ &lt;TabularCPD representing P((H, 1):3 | (T, 1):3, (W, 1):3) at 0x726d1a2b0830&gt;,
+ &lt;TabularCPD representing P((T, 1):3 | (T, 0):3, (W, 0):3) at 0x726d1a2b03b0&gt;,
+ &lt;TabularCPD representing P((W, 1):3 | (W, 0):3) at 0x726d1a2b0320&gt;,
+ &lt;TabularCPD representing P((O, 1):2 | (W, 1):3) at 0x726d1a2b07a0&gt;]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">dbn</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">((</span><span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
++-----------+---------------------+---------------------+---------------------+
+| (W, 0)    | (W, 0)(0)           | (W, 0)(1)           | (W, 0)(2)           |
++-----------+---------------------+---------------------+---------------------+
+| (W, 1)(0) | 0.7004921418172009  | 0.31049438383598194 | 0.20921204376971736 |
++-----------+---------------------+---------------------+---------------------+
+| (W, 1)(1) | 0.19523741956078264 | 0.4021998199276747  | 0.2642262957939027  |
++-----------+---------------------+---------------------+---------------------+
+| (W, 1)(2) | 0.10427043862201643 | 0.2873057962363434  | 0.5265616604363799  |
++-----------+---------------------+---------------------+---------------------+
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Learning the model structure from data.</span>
+
+<span class="c1"># pgmpy doesn&#39;t implement any specific methods for DBN structure learning. This is a hackish method to utilize the</span>
+<span class="c1"># existing BN learning algorithms to estimate the structure of the DBN. Essentially, we remove the time-information from the</span>
+<span class="c1"># given data and try to learn the 2-DBN network that remains constant across time-slices.</span>
+
+<span class="c1"># First convert the given dataset into long form removing the time information such that it is suitable to learn the 2-DBN network.</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="c1"># Use sorted() to ensure consistent node ordering across all iterations</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">dbn</span><span class="o">.</span><span class="n">_nodes</span><span class="p">())</span>
+<span class="n">colnames</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span> <span class="o">+</span> <span class="s1">&#39;0&#39;</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">node</span> <span class="o">+</span> <span class="s1">&#39;1&#39;</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+<span class="n">df_long</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">colnames</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[(</span><span class="n">node</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span> <span class="o">+</span> <span class="p">[(</span><span class="n">node</span><span class="p">,</span> <span class="n">t</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
+    <span class="n">samples_t</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">cols</span><span class="p">]</span>
+    <span class="n">samples_t</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">colnames</span>
+    <span class="n">df_long</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df_long</span><span class="p">,</span> <span class="n">samples_t</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">df_long</span> <span class="o">=</span> <span class="n">df_long</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">df_long</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>H0</th>
+      <th>O0</th>
+      <th>T0</th>
+      <th>W0</th>
+      <th>H1</th>
+      <th>O1</th>
+      <th>T1</th>
+      <th>W1</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+      <td>2</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2</td>
+      <td>2</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use this long data frame to learn the first two time frames of the DBN. Because we are using structure learning algorithms we\n&quot;,</span>
+<span class="c1"># need to add constraints such that the algorithm doesn&#39;t learn edges from time slice 1 to 0.\n&quot;,</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">HillClimbSearch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExpertKnowledge</span>
+
+<span class="c1"># Constraints to learn edges in only time forward direction.</span>
+<span class="n">expert</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">(</span><span class="n">forbidden_edges</span><span class="o">=</span>
+                         <span class="p">[(</span><span class="s1">&#39;W1&#39;</span><span class="p">,</span> <span class="s1">&#39;W0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;W1&#39;</span><span class="p">,</span> <span class="s1">&#39;O0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;W1&#39;</span><span class="p">,</span> <span class="s1">&#39;T0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;W1&#39;</span><span class="p">,</span> <span class="s1">&#39;H0&#39;</span><span class="p">),</span>
+                          <span class="p">(</span><span class="s1">&#39;O1&#39;</span><span class="p">,</span> <span class="s1">&#39;W0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;O1&#39;</span><span class="p">,</span> <span class="s1">&#39;O0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;O1&#39;</span><span class="p">,</span> <span class="s1">&#39;T0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;O1&#39;</span><span class="p">,</span> <span class="s1">&#39;H0&#39;</span><span class="p">),</span>
+                          <span class="p">(</span><span class="s1">&#39;T1&#39;</span><span class="p">,</span> <span class="s1">&#39;W0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;T1&#39;</span><span class="p">,</span> <span class="s1">&#39;O0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;T1&#39;</span><span class="p">,</span> <span class="s1">&#39;T0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;T1&#39;</span><span class="p">,</span> <span class="s1">&#39;H0&#39;</span><span class="p">),</span>
+                          <span class="p">(</span><span class="s1">&#39;H1&#39;</span><span class="p">,</span> <span class="s1">&#39;W0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;H1&#39;</span><span class="p">,</span> <span class="s1">&#39;O0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;H1&#39;</span><span class="p">,</span> <span class="s1">&#39;T0&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;H1&#39;</span><span class="p">,</span> <span class="s1">&#39;H0&#39;</span><span class="p">),])</span>
+<span class="n">est</span> <span class="o">=</span> <span class="n">HillClimbSearch</span><span class="p">(</span><span class="n">expert_knowledge</span><span class="o">=</span><span class="n">expert</span><span class="p">)</span>
+<span class="n">est</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">df_long</span><span class="p">)</span>
+<span class="n">est</span><span class="o">.</span><span class="n">causal_graph_</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span> <span class="c1"># Use this learned DAG to define a DBN.&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "f8381c1908cb4048b5055b009ccdafbe", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+OutEdgeView([(&#39;W0&#39;, &#39;T0&#39;), (&#39;W0&#39;, &#39;H0&#39;), (&#39;W0&#39;, &#39;T1&#39;), (&#39;W0&#39;, &#39;O0&#39;), (&#39;W0&#39;, &#39;W1&#39;), (&#39;T0&#39;, &#39;T1&#39;), (&#39;T0&#39;, &#39;H0&#39;), (&#39;T0&#39;, &#39;W0&#39;), (&#39;H0&#39;, &#39;W0&#39;), (&#39;H0&#39;, &#39;T0&#39;), (&#39;T1&#39;, &#39;H1&#39;), (&#39;T1&#39;, &#39;T0&#39;), (&#39;T1&#39;, &#39;W0&#39;), (&#39;W1&#39;, &#39;H1&#39;), (&#39;W1&#39;, &#39;O1&#39;), (&#39;W1&#39;, &#39;W0&#39;), (&#39;O1&#39;, &#39;W1&#39;), (&#39;O0&#39;, &#39;W0&#39;)])
+</pre></div></div>
+</div>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Creating_Linear_BN.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Creating Linear Gaussian Bayesian Networks</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Defining_CPDs.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">How to define TabularCPD and LinearGaussianCPD</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="simple pst-show_toc_level nav section-nav flex-column">
+</ul>
+
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, pgmpy developers.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

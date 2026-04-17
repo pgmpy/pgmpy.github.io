@@ -1,0 +1,988 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:title" content="Causal Discovery and Structure Learning" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://pgmpy.org/v1.0/guides/causal_discovery.html" />
+<meta property="og:site_name" content="pgmpy" />
+<meta property="og:description" content="Causal discovery recovers the causal graph from observational data — determining which variables directly cause which others. Given a dataset of jointly observed variables, pgmpy searches over grap..." />
+<meta property="og:image" content="https://pgmpy.org/v1.0/_static/images/logo.png" />
+<meta property="og:image:alt" content="pgmpy" />
+<meta name="description" content="Causal discovery recovers the causal graph from observational data — determining which variables directly cause which others. Given a dataset of jointly observed variables, pgmpy searches over grap..." />
+<meta name="twitter:card" content="summary_large_image" />
+
+<meta name="twitter:description" content="Learn causal graphs from data using the unified causal discovery APIs in pgmpy." />
+<meta name="twitter:image" content="https://pgmpy.org/v1.0/_static/images/logo.png" />
+<meta name="robots" content="index,follow,max-image-preview:large" />
+<link rel="canonical" href="https://pgmpy.org/v1.0/guides/causal_discovery.html" />
+    <title>Causal Discovery and Structure Learning &#8212; pgmpy</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=18a852c8" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="../_static/documentation_options.js?v=e160b93e"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'guides/causal_discovery';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://pgmpy.org/v1.0/guides/causal_discovery.html" />
+    <link rel="icon" href="../_static/logo_favi.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Parameter Estimation" href="parameter_estimation.html" />
+    <link rel="prev" title="User Guide" href="../documentation.html" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v1.0" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  
+    
+  <script type="application/ld+json">{"@context": "https://schema.org", "@id": "https://pgmpy.org/v1.0/#organization", "@type": "Organization", "logo": "https://pgmpy.org/v1.0/_static/images/logo.png", "name": "pgmpy", "sameAs": ["https://github.com/pgmpy/pgmpy", "https://pypi.org/project/pgmpy/", "https://www.linkedin.com/company/pgmpy/"], "url": "https://pgmpy.org/v1.0"}</script>
+    
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "item": "https://pgmpy.org/v1.0/index.html", "name": "Key Features", "position": 1}, {"@type": "ListItem", "item": "https://pgmpy.org/v1.0/documentation.html", "name": "User Guide", "position": 2}, {"@type": "ListItem", "item": "https://pgmpy.org/v1.0/guides/causal_discovery.html", "name": "Causal Discovery and Structure Learning", "position": 3}]}</script>
+    
+  
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HCFR07M31W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HCFR07M31W');
+  </script>
+  <!-- EthicalAds -->
+  <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.png" class="logo__image only-light" alt=""/>
+    <img src="../_static/logo.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">pgmpy</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../documentation.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development.html">
+    Getting Involved
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+<div class="version-switcher__container pgmpy-version-switcher">
+  <select
+    class="form-select form-select-sm pgmpy-version-select"
+    aria-label="Select Version"
+    data-current-version="v1.0"
+    data-current-label="v1.0"
+    data-target-uri="guides/causal_discovery.html"
+  >
+    
+    
+    <optgroup label="Releases">
+      
+      <option value="stable" data-url="https://pgmpy.org/" >
+        v1.1 (stable)
+      </option>
+      
+      
+      <option value="v1.0" data-url="https://pgmpy.org/v1.0/" selected>
+        v1.0
+      </option>
+      
+      <option value="v1.1" data-url="https://pgmpy.org/v1.1/" >
+        v1.1
+      </option>
+      
+    </optgroup>
+    
+
+    
+    <optgroup label="In Development">
+      
+      <option value="dev" data-url="https://pgmpy.org/dev/" >
+        dev
+      </option>
+      
+    </optgroup>
+    
+  </select>
+</div>
+
+<script>
+  (function() {
+    const selects = document.querySelectorAll(".pgmpy-version-select:not([data-pgmpy-version-init])");
+    selects.forEach(function(select) {
+      select.dataset.pgmpyVersionInit = "true";
+
+      const currentVersion = select.dataset.currentVersion;
+      const currentLabel = select.dataset.currentLabel || currentVersion;
+      const currentTargetUri = (select.dataset.targetUri || "").replace(/^\/+/, "");
+
+      if (!Array.from(select.options).some(function(option) { return option.value === currentVersion; })) {
+        const option = document.createElement("option");
+        option.value = currentVersion;
+        option.textContent = currentLabel;
+        option.selected = true;
+        select.insertBefore(option, select.firstChild);
+      }
+
+      const buildTargetUrl = function(baseUrl) {
+        if (!currentTargetUri || currentTargetUri === "index.html") {
+          return baseUrl;
+        }
+        return new URL(currentTargetUri, baseUrl).toString();
+      };
+
+      const navigateToVersion = async function(option) {
+        const baseUrl = option.dataset.url;
+        if (!baseUrl) {
+          return;
+        }
+
+        const targetUrl = buildTargetUrl(baseUrl);
+
+        if (targetUrl === baseUrl) {
+          window.location.href = baseUrl;
+          return;
+        }
+
+        try {
+          const response = await fetch(targetUrl, { method: "HEAD" });
+          window.location.href = response.ok ? targetUrl : baseUrl;
+        } catch (error) {
+          window.location.href = targetUrl;
+        }
+      };
+
+      select.addEventListener("change", function(event) {
+        const option = event.target.selectedOptions[0];
+        if (!option) {
+          return;
+        }
+        navigateToVersion(option);
+      });
+    });
+  })();
+</script></div>
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pgmpy/pgmpy" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/DRkdKaumBs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/company/pgmpy/" title="LinkedIn" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">LinkedIn</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../documentation.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citation.html">
+    Citation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development.html">
+    Getting Involved
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<div class="version-switcher__container pgmpy-version-switcher">
+  <select
+    class="form-select form-select-sm pgmpy-version-select"
+    aria-label="Select Version"
+    data-current-version="v1.0"
+    data-current-label="v1.0"
+    data-target-uri="guides/causal_discovery.html"
+  >
+    
+    
+    <optgroup label="Releases">
+      
+      <option value="stable" data-url="https://pgmpy.org/" >
+        v1.1 (stable)
+      </option>
+      
+      
+      <option value="v1.0" data-url="https://pgmpy.org/v1.0/" selected>
+        v1.0
+      </option>
+      
+      <option value="v1.1" data-url="https://pgmpy.org/v1.1/" >
+        v1.1
+      </option>
+      
+    </optgroup>
+    
+
+    
+    <optgroup label="In Development">
+      
+      <option value="dev" data-url="https://pgmpy.org/dev/" >
+        dev
+      </option>
+      
+    </optgroup>
+    
+  </select>
+</div>
+
+<script>
+  (function() {
+    const selects = document.querySelectorAll(".pgmpy-version-select:not([data-pgmpy-version-init])");
+    selects.forEach(function(select) {
+      select.dataset.pgmpyVersionInit = "true";
+
+      const currentVersion = select.dataset.currentVersion;
+      const currentLabel = select.dataset.currentLabel || currentVersion;
+      const currentTargetUri = (select.dataset.targetUri || "").replace(/^\/+/, "");
+
+      if (!Array.from(select.options).some(function(option) { return option.value === currentVersion; })) {
+        const option = document.createElement("option");
+        option.value = currentVersion;
+        option.textContent = currentLabel;
+        option.selected = true;
+        select.insertBefore(option, select.firstChild);
+      }
+
+      const buildTargetUrl = function(baseUrl) {
+        if (!currentTargetUri || currentTargetUri === "index.html") {
+          return baseUrl;
+        }
+        return new URL(currentTargetUri, baseUrl).toString();
+      };
+
+      const navigateToVersion = async function(option) {
+        const baseUrl = option.dataset.url;
+        if (!baseUrl) {
+          return;
+        }
+
+        const targetUrl = buildTargetUrl(baseUrl);
+
+        if (targetUrl === baseUrl) {
+          window.location.href = baseUrl;
+          return;
+        }
+
+        try {
+          const response = await fetch(targetUrl, { method: "HEAD" });
+          window.location.href = response.ok ? targetUrl : baseUrl;
+        } catch (error) {
+          window.location.href = targetUrl;
+        }
+      };
+
+      select.addEventListener("change", function(event) {
+        const option = event.target.selectedOptions[0];
+        if (!option) {
+          return;
+        }
+        navigateToVersion(option);
+      });
+    });
+  })();
+</script></div>
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pgmpy/pgmpy" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discord.gg/DRkdKaumBs" title="Discord" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discord fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Discord</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://www.linkedin.com/company/pgmpy/" title="LinkedIn" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-linkedin fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">LinkedIn</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Causal Discovery and Structure Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parameter_estimation.html">Parameter Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="probabilistic_inference.html">Probabilistic Inference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="causal_identification.html">Causal Identification</a></li>
+<li class="toctree-l1"><a class="reference internal" href="causal_estimation.html">Causal Estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics.html">Metrics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Example Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_models.html">Example Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulations.html">Simulations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Exporting / Importing Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_model.html">Defining a Custom Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="plotting.html">Plotting Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extensibility.html">Extensibility</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+  <div class="pgmpy-primary-sidebar-ad">
+    <div
+        id="ethical-ad-placement"
+        class="flat adaptive-css"
+        data-ea-publisher="pgmpyorg"
+        data-ea-type="image">
+    </div>
+  </div>
+</div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../documentation.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Causal Discovery and Structure Learning</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="causal-discovery-and-structure-learning">
+<h1>Causal Discovery and Structure Learning<a class="headerlink" href="#causal-discovery-and-structure-learning" title="Link to this heading">#</a></h1>
+<p>Causal discovery recovers the causal graph from observational data — determining which
+variables directly cause which others. Given a dataset of jointly observed variables,
+pgmpy searches over graph structures to produce a DAG or PDAG representing the causal
+relationships.</p>
+<section id="at-a-glance">
+<h2>At a Glance<a class="headerlink" href="#at-a-glance" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="#api"><span class="std std-ref">Unified API</span></a></strong>: All discovery algorithms share a consistent <code class="docutils literal notranslate"><span class="pre">fit</span></code> / <code class="docutils literal notranslate"><span class="pre">causal_graph_</span></code> / <code class="docutils literal notranslate"><span class="pre">score</span></code> interface.</p></li>
+<li><p><strong><a class="reference internal" href="#expert-knowledge"><span class="std std-ref">Expert Knowledge</span></a></strong>: Encode required edges, forbidden edges, and temporal orderings to constrain the search.</p></li>
+<li><p><strong><a class="reference internal" href="#scoring-and-evaluation"><span class="std std-ref">Scoring and Evaluation</span></a></strong>: Compare learned graphs against data or a known reference using a unified <code class="docutils literal notranslate"><span class="pre">score(...)</span></code> method.</p></li>
+<li><p><strong><a class="reference internal" href="#scikit-learn-compatibility"><span class="std std-ref">Scikit-learn Compatibility</span></a></strong>: Use discovery estimators in sklearn pipelines and tooling.</p></li>
+</ul>
+</section>
+<section id="api">
+<h2>API<a class="headerlink" href="#api" title="Link to this heading">#</a></h2>
+<p>All discovery algorithms follow the same pattern — instantiate, fit, and read the result:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">PC</span>   <span class="c1"># swap in any discovery algorithm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.structure_score</span><span class="w"> </span><span class="kn">import</span> <span class="n">BIC</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">&quot;sachs_discrete&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">data</span>
+
+<span class="n">est</span> <span class="o">=</span> <span class="n">PC</span><span class="p">(</span><span class="n">ci_test</span><span class="o">=</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dag&quot;</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">est</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">est</span><span class="o">.</span><span class="n">causal_graph_</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">est</span><span class="o">.</span><span class="n">adjacency_matrix_</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Switching algorithms requires only changing the class and its constructor arguments.
+The fitted result is always accessed through <code class="docutils literal notranslate"><span class="pre">causal_graph_</span></code> and <code class="docutils literal notranslate"><span class="pre">adjacency_matrix_</span></code>.</p>
+</section>
+<section id="expert-knowledge">
+<h2>Expert Knowledge<a class="headerlink" href="#expert-knowledge" title="Link to this heading">#</a></h2>
+<p>pgmpy supports incorporating domain knowledge into the discovery process through the
+<code class="docutils literal notranslate"><span class="pre">ExpertKnowledge</span></code> class. You can encode:</p>
+<ul class="simple">
+<li><p><strong>Required edges</strong> that must appear in the learned graph.</p></li>
+<li><p><strong>Forbidden edges</strong> that must not appear.</p></li>
+<li><p><strong>Temporal orderings</strong> that constrain edge directions.</p></li>
+<li><p><strong>Search-space restrictions</strong> that limit which variables are considered.</p></li>
+</ul>
+<p>Both constraint-based and score-based algorithms accept an <code class="docutils literal notranslate"><span class="pre">expert_knowledge</span></code> parameter:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">HillClimbSearch</span><span class="p">,</span> <span class="n">ExpertKnowledge</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">&quot;sachs_discrete&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">data</span>
+
+<span class="n">expert</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">(</span>
+    <span class="n">required_edges</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;PKC&quot;</span><span class="p">,</span> <span class="s2">&quot;PKA&quot;</span><span class="p">)],</span>
+    <span class="n">forbidden_edges</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;PKA&quot;</span><span class="p">,</span> <span class="s2">&quot;PKC&quot;</span><span class="p">)],</span>
+    <span class="n">temporal_order</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;PKC&quot;</span><span class="p">,</span> <span class="s2">&quot;Raf&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;Mek&quot;</span><span class="p">,</span> <span class="s2">&quot;PKA&quot;</span><span class="p">]],</span>
+<span class="p">)</span>
+
+<span class="n">est</span> <span class="o">=</span> <span class="n">HillClimbSearch</span><span class="p">(</span>
+    <span class="n">scoring_method</span><span class="o">=</span><span class="s2">&quot;bic-d&quot;</span><span class="p">,</span> <span class="n">expert_knowledge</span><span class="o">=</span><span class="n">expert</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+<span class="n">est</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">est</span><span class="o">.</span><span class="n">causal_graph_</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+<section id="scoring-and-evaluation">
+<h2>Scoring and Evaluation<a class="headerlink" href="#scoring-and-evaluation" title="Link to this heading">#</a></h2>
+<p>All discovery estimators expose a unified <code class="docutils literal notranslate"><span class="pre">score(...)</span></code> method for comparing results:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">HillClimbSearch</span><span class="p">,</span> <span class="n">PC</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.structure_score</span><span class="w"> </span><span class="kn">import</span> <span class="n">BIC</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">&quot;sachs_discrete&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">data</span>
+
+<span class="n">hc</span> <span class="o">=</span> <span class="n">HillClimbSearch</span><span class="p">(</span><span class="n">scoring_method</span><span class="o">=</span><span class="n">BIC</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="n">pc</span> <span class="o">=</span> <span class="n">PC</span><span class="p">(</span><span class="n">ci_test</span><span class="o">=</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dag&quot;</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="c1"># Score against data (no ground truth needed)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">hc</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;correlation_score&quot;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;correlation_score&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>You can score against data using unsupervised metrics, or against a known reference
+graph using supervised metrics. Use <code class="docutils literal notranslate"><span class="pre">pgmpy.metrics.get_metrics(...)</span></code> to discover
+available metrics programmatically.</p>
+</section>
+<section id="scikit-learn-compatibility">
+<h2>Scikit-learn Compatibility<a class="headerlink" href="#scikit-learn-compatibility" title="Link to this heading">#</a></h2>
+<p>Discovery estimators inherit from <code class="docutils literal notranslate"><span class="pre">sklearn.base.BaseEstimator</span></code> and work with sklearn
+tooling — cloning, parameter inspection, and pipelines:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">PC</span>
+
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span>
+    <span class="n">steps</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;discover&quot;</span><span class="p">,</span> <span class="n">PC</span><span class="p">(</span><span class="n">ci_test</span><span class="o">=</span><span class="s2">&quot;chi_square&quot;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dag&quot;</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)),</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+<span class="n">pipeline</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">causal_graph_</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="common-recipes">
+<h2>Common Recipes<a class="headerlink" href="#common-recipes" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">&quot;sachs_discrete&quot;</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">data</span>
+</pre></div>
+</div>
+<p><strong>Score-based discovery with BIC:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">HillClimbSearch</span>
+
+<span class="n">est</span> <span class="o">=</span> <span class="n">HillClimbSearch</span><span class="p">(</span><span class="n">scoring_method</span><span class="o">=</span><span class="s2">&quot;bic-d&quot;</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Constraint-based discovery with a different CI test:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">PC</span>
+
+<span class="n">est</span> <span class="o">=</span> <span class="n">PC</span><span class="p">(</span><span class="n">ci_test</span><span class="o">=</span><span class="s2">&quot;g_sq&quot;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dag&quot;</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>GES returning a PDAG:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">GES</span>
+
+<span class="n">est</span> <span class="o">=</span> <span class="n">GES</span><span class="p">(</span><span class="n">scoring_method</span><span class="o">=</span><span class="s2">&quot;bic-d&quot;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;pdag&quot;</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Score against ground truth:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">est</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">true_graph</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">ground_truth</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;shd&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Auto-detect scoring for continuous data:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">est</span> <span class="o">=</span> <span class="n">HillClimbSearch</span><span class="p">(</span><span class="n">scoring_method</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">continuous_data</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="parameter_estimation.html"><span class="doc">Parameter Estimation</span></a> — Estimate CPDs once you have a graph.</p></li>
+<li><p><a class="reference internal" href="metrics.html"><span class="doc">Metrics</span></a> — Evaluate learned graphs with supervised and unsupervised metrics.</p></li>
+</ul>
+</div>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">#</a></h2>
+<p>For the full list of discovery algorithms, scoring methods, and conditional independence
+tests:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../api/structure_learning.html"><span class="doc">Causal Discovery API</span></a></p></li>
+<li><p><a class="reference internal" href="../api/ci_test.html"><span class="doc">Conditional Independence Tests API</span></a></p></li>
+<li><p><a class="reference internal" href="../api/structure_score.html"><span class="doc">Structure Scoring API</span></a></p></li>
+<li><p><a class="reference internal" href="../api/metrics.html"><span class="doc">Metrics API</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../documentation.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">User Guide</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="parameter_estimation.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Parameter Estimation</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#at-a-glance">At a Glance</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api">API</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#expert-knowledge">Expert Knowledge</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scoring-and-evaluation">Scoring and Evaluation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#scikit-learn-compatibility">Scikit-learn Compatibility</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#common-recipes">Common Recipes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#see-also">See Also</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api-reference">API Reference</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, pgmpy developers.
+      <br/>
+    
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>
