@@ -2228,27 +2228,34 @@
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_random</span><span class="p">(</span>
         <span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-        <span class="n">edge_prob</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">n_edges</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">edge_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">node_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DAG</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a randomly generated DAG with `n_nodes` number of nodes with</span>
-<span class="sd">        edge probability being `edge_prob`.</span>
+<span class="sd">        Returns a randomly generated DAG with `n_nodes` number of nodes.</span>
+
+<span class="sd">        If `n_edges` is specified, generates a DAG with exactly that many edges.</span>
+<span class="sd">        If `n_edges` is None, edges are added randomly with probability `edge_prob`.</span>
+<span class="sd">        If both `n_edges` and `edge_prob` are None, uses default `edge_prob=0.5`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        n_nodes: int</span>
 <span class="sd">            The number of nodes in the randomly generated DAG.</span>
 
-<span class="sd">        edge_prob: float</span>
+<span class="sd">        n_edges: int or None (default: None)</span>
+<span class="sd">            The number of edges in the randomly generated DAG.</span>
+
+<span class="sd">        edge_prob: float or None</span>
 <span class="sd">            The probability of edge between any two nodes in the topologically</span>
 <span class="sd">            sorted DAG.</span>
 
 <span class="sd">        node_names: list (default: None)</span>
 <span class="sd">            A list of variables names to use in the random graph.</span>
-<span class="sd">            If None, the node names are integer values starting from 0.</span>
+<span class="sd">            If None, the node names are &quot;X_0&quot;, &quot;X_1&quot;, ..., &quot;X_{n-1}&quot;.</span>
 
 <span class="sd">        latents: bool (default: False)</span>
 <span class="sd">            If True, includes latent variables in the generated DAG.</span>
@@ -2261,6 +2268,13 @@
 <span class="sd">        Random DAG: pgmpy.base.DAG</span>
 <span class="sd">            The randomly generated DAG.</span>
 
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If `len(node_names) != n_nodes`.</span>
+<span class="sd">            If `n_edges` is outside `[0, n_nodes * (n_nodes - 1) // 2]`.</span>
+<span class="sd">            If both `n_edges` and `edge_prob` are specified.</span>
+
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
@@ -2268,22 +2282,55 @@
 <span class="sd">        &gt;&gt;&gt; sorted(random_dag.nodes())</span>
 <span class="sd">        [&#39;X_0&#39;, &#39;X_1&#39;, &#39;X_2&#39;, &#39;X_3&#39;, &#39;X_4&#39;, &#39;X_5&#39;, &#39;X_6&#39;, &#39;X_7&#39;, &#39;X_8&#39;, &#39;X_9&#39;]</span>
 <span class="sd">        &gt;&gt;&gt; sorted(random_dag.edges())  # doctest: +NORMALIZE_WHITESPACE</span>
-<span class="sd">        [(&#39;X_0&#39;, &#39;X_2&#39;), (&#39;X_0&#39;, &#39;X_5&#39;), (&#39;X_0&#39;, &#39;X_6&#39;), (&#39;X_0&#39;, &#39;X_7&#39;),</span>
-<span class="sd">         (&#39;X_1&#39;, &#39;X_3&#39;), (&#39;X_1&#39;, &#39;X_8&#39;), (&#39;X_2&#39;, &#39;X_3&#39;), (&#39;X_2&#39;, &#39;X_4&#39;),</span>
-<span class="sd">         (&#39;X_4&#39;, &#39;X_5&#39;), (&#39;X_7&#39;, &#39;X_9&#39;)]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Step 1: Generate a matrix of 0 and 1. Prob of choosing 1 = edge_prob</span>
-        <span class="n">gen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
-        <span class="n">adj_mat</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span> <span class="o">-</span> <span class="n">edge_prob</span><span class="p">,</span> <span class="n">edge_prob</span><span class="p">])</span>
+<span class="sd">        [(&#39;X_0&#39;, &#39;X_2&#39;), (&#39;X_0&#39;, &#39;X_3&#39;), (&#39;X_2&#39;, &#39;X_9&#39;), (&#39;X_3&#39;, &#39;X_1&#39;),</span>
+<span class="sd">         (&#39;X_3&#39;, &#39;X_4&#39;), (&#39;X_3&#39;, &#39;X_8&#39;), (&#39;X_5&#39;, &#39;X_2&#39;), (&#39;X_5&#39;, &#39;X_6&#39;),</span>
+<span class="sd">         (&#39;X_5&#39;, &#39;X_9&#39;), (&#39;X_6&#39;, &#39;X_0&#39;), (&#39;X_6&#39;, &#39;X_1&#39;), (&#39;X_6&#39;, &#39;X_3&#39;),</span>
+<span class="sd">         (&#39;X_6&#39;, &#39;X_4&#39;), (&#39;X_6&#39;, &#39;X_9&#39;), (&#39;X_7&#39;, &#39;X_1&#39;), (&#39;X_7&#39;, &#39;X_2&#39;),</span>
+<span class="sd">         (&#39;X_7&#39;, &#39;X_4&#39;), (&#39;X_7&#39;, &#39;X_8&#39;)]</span>
 
-        <span class="c1"># Step 2: Use the upper triangular part of the matrix as adjacency.</span>
+<span class="sd">        &gt;&gt;&gt; dag = DAG.get_random(n_nodes=5, n_edges=6, seed=42)</span>
+<span class="sd">        &gt;&gt;&gt; dag.number_of_edges()</span>
+<span class="sd">        6</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">gen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">node_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">node_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;X_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)]</span>
 
-        <span class="n">adj_pd</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">adj_mat</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="n">node_names</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">node_names</span><span class="p">)</span>
-        <span class="n">nx_dag</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">from_pandas_adjacency</span><span class="p">(</span><span class="n">adj_pd</span><span class="p">,</span> <span class="n">create_using</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">node_names</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_nodes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Length of node_names (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">node_names</span><span class="p">)</span><span class="si">}</span><span class="s2">) must be equal to n_nodes (</span><span class="si">{</span><span class="n">n_nodes</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">n_edges</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">edge_prob</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only one of n_edges or edge_prob can be specified.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n_edges</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">edge_prob</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">edge_prob</span> <span class="o">=</span> <span class="mf">0.5</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Using default edge_prob=0.5 since neither n_edges nor edge_prob were specified.&quot;</span><span class="p">)</span>
+
+        <span class="n">shuffled_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">node_names</span><span class="p">)</span>
+        <span class="n">gen</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">shuffled_names</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_edges</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_edges</span> <span class="o">=</span> <span class="n">n_nodes</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_nodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="k">if</span> <span class="n">n_edges</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">n_edges</span> <span class="o">&gt;</span> <span class="n">max_edges</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid n_edges=</span><span class="si">{</span><span class="n">n_edges</span><span class="si">}</span><span class="s2">. For n_nodes=</span><span class="si">{</span><span class="n">n_nodes</span><span class="si">}</span><span class="s2">, valid range is [0, </span><span class="si">{</span><span class="n">max_edges</span><span class="si">}</span><span class="s2">].&quot;</span><span class="p">)</span>
+            <span class="c1"># Apply a random node permutation to avoid label-order bias</span>
+            <span class="n">perm</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)</span>
+            <span class="n">upper_i</span><span class="p">,</span> <span class="n">upper_j</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">chosen</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">upper_i</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">n_edges</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="n">adj_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">adj_mat</span><span class="p">[</span><span class="n">perm</span><span class="p">[</span><span class="n">upper_i</span><span class="p">[</span><span class="n">chosen</span><span class="p">]],</span> <span class="n">perm</span><span class="p">[</span><span class="n">upper_j</span><span class="p">[</span><span class="n">chosen</span><span class="p">]]]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">adj_pd</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">adj_mat</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">shuffled_names</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">shuffled_names</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Step 1: Generate a matrix of 0 and 1. Prob of choosing 1 = edge_prob</span>
+            <span class="n">adj_mat</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">n_nodes</span><span class="p">),</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span> <span class="o">-</span> <span class="n">edge_prob</span><span class="p">,</span> <span class="n">edge_prob</span><span class="p">])</span>
+            <span class="c1"># Step 2: Use the upper triangular part of the matrix as adjacency.</span>
+            <span class="n">adj_pd</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">triu</span><span class="p">(</span><span class="n">adj_mat</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="n">shuffled_names</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">shuffled_names</span><span class="p">)</span>
+
+        <span class="n">nx_dag</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">from_pandas_adjacency</span><span class="p">(</span><span class="n">adj_pd</span><span class="p">,</span> <span class="n">create_using</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">)</span>
         <span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">(</span><span class="n">nx_dag</span><span class="p">)</span>
+
         <span class="n">dag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">node_names</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">latents</span><span class="p">:</span>

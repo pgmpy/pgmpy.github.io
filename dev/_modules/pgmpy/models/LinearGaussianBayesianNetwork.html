@@ -1988,7 +1988,8 @@
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_random</span><span class="p">(</span>
         <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
-        <span class="n">edge_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">n_edges</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">edge_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">node_names</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">latents</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">loc</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
@@ -2005,13 +2006,17 @@
 <span class="sd">            Number of nodes.</span>
 <span class="sd">            The number of nodes in the randomly generated DAG.</span>
 
+<span class="sd">        n_edges: int or None (default: None)</span>
+<span class="sd">            The number of edges in the randomly generated DAG.</span>
+
+<span class="sd">        edge_prob: float or None</span>
 <span class="sd">            Probability of an edge (consistent with a topological order).</span>
 <span class="sd">            The probability of edge between any two nodes in the topologically</span>
 <span class="sd">            sorted DAG.</span>
 
 <span class="sd">        node_names: list (default: None)</span>
 <span class="sd">            A list of variables names to use in the random graph.</span>
-<span class="sd">            If None, the node names are integer values starting from 0.</span>
+<span class="sd">            If None, the node names are &quot;X_0&quot;, &quot;X_1&quot;, ..., &quot;X_{n-1}&quot;.</span>
 
 <span class="sd">        latents: bool (default: False)</span>
 <span class="sd">        loc: float</span>
@@ -2038,15 +2043,22 @@
 <span class="sd">        &gt;&gt;&gt; sorted(model.nodes())</span>
 <span class="sd">        [&#39;X_0&#39;, &#39;X_1&#39;, &#39;X_2&#39;, &#39;X_3&#39;, &#39;X_4&#39;]</span>
 <span class="sd">        &gt;&gt;&gt; sorted(model.edges())</span>
-<span class="sd">        [(&#39;X_0&#39;, &#39;X_2&#39;), (&#39;X_0&#39;, &#39;X_3&#39;), (&#39;X_1&#39;, &#39;X_2&#39;), (&#39;X_2&#39;, &#39;X_3&#39;), (&#39;X_3&#39;, &#39;X_4&#39;)]</span>
+<span class="sd">        [(&#39;X_2&#39;, &#39;X_0&#39;), (&#39;X_3&#39;, &#39;X_0&#39;), (&#39;X_4&#39;, &#39;X_0&#39;), (&#39;X_4&#39;, &#39;X_1&#39;), (&#39;X_4&#39;, &#39;X_2&#39;)]</span>
 <span class="sd">        &gt;&gt;&gt; sorted(model.cpds, key=lambda cpd: cpd.variable) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE</span>
-<span class="sd">        [&lt;LinearGaussianCPD: P(X_0) = N(...; ...) at 0x...,</span>
-<span class="sd">        &lt;LinearGaussianCPD: P(X_1) = N(...; ...) at 0x...,</span>
-<span class="sd">        &lt;LinearGaussianCPD: P(X_2 | X_0, X_1) = N(...) at 0x...,</span>
-<span class="sd">        &lt;LinearGaussianCPD: P(X_3 | X_0, X_2) = N(...) at 0x...,</span>
-<span class="sd">        &lt;LinearGaussianCPD: P(X_4 | X_3) = N(...) at 0x...]</span>
+<span class="sd">        [&lt;LinearGaussianCPD: P(X_0 | X_4, X_2, X_3) = N(...) at 0x...,</span>
+<span class="sd">        &lt;LinearGaussianCPD: P(X_1 | X_4) = N(...) at 0x...,</span>
+<span class="sd">        &lt;LinearGaussianCPD: P(X_2 | X_4) = N(...) at 0x...,</span>
+<span class="sd">        &lt;LinearGaussianCPD: P(X_3) = N(...; ...) at 0x...,</span>
+<span class="sd">        &lt;LinearGaussianCPD: P(X_4) = N(...; ...) at 0x...]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span><span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">edge_prob</span><span class="o">=</span><span class="n">edge_prob</span><span class="p">,</span> <span class="n">node_names</span><span class="o">=</span><span class="n">node_names</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span>
+            <span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span>
+            <span class="n">n_edges</span><span class="o">=</span><span class="n">n_edges</span><span class="p">,</span>
+            <span class="n">edge_prob</span><span class="o">=</span><span class="n">edge_prob</span><span class="p">,</span>
+            <span class="n">node_names</span><span class="o">=</span><span class="n">node_names</span><span class="p">,</span>
+            <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">,</span>
+            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="c1"># Initialize with full DAG to preserve isolated nodes</span>
         <span class="n">lgbn_model</span> <span class="o">=</span> <span class="n">LinearGaussianBayesianNetwork</span><span class="p">(</span><span class="n">dag</span><span class="p">)</span>
         <span class="n">lgbn_model</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="n">dag</span><span class="o">.</span><span class="n">latents</span>
