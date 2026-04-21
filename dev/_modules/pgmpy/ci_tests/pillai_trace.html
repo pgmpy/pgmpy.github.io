@@ -34,8 +34,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
@@ -43,10 +43,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=18a852c8" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
     <script src="../../../_static/documentation_options.js?v=3ce10a4d"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -100,7 +100,9 @@
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -845,17 +847,20 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.cross_decomposition</span><span class="w"> </span><span class="kn">import</span> <span class="n">CCA</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BaseCITest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">preprocess_data</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BaseCITest</span><span class="p">,</span> <span class="n">_ResidualMixin</span>
 
 
 <div class="viewcode-block" id="PillaiTrace">
 <a class="viewcode-back" href="../../../api/generated/ci_test/pgmpy.ci_tests.PillaiTrace.html#pgmpy.ci_tests.PillaiTrace">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">PillaiTrace</span><span class="p">(</span><span class="n">_BaseCITest</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PillaiTrace</span><span class="p">(</span><span class="n">_ResidualMixin</span><span class="p">,</span> <span class="n">_BaseCITest</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Pillai&#39;s trace test for conditional independence with mixed data [1].</span>
 
-<span class="sd">    This test first residualizes :math:`X` and :math:`Y` with respect to :math:`[1, Z]` using an estimator (XGBoost by</span>
-<span class="sd">    default). For a continuous target :math:`T`, the residual is</span>
+<span class="sd">    This test first residualizes :math:`X` and :math:`Y` with respect to :math:`[1, Z]` using an estimator (a</span>
+<span class="sd">    RandomForest estimator by default, but any sklearn-compatible estimator can be provided). For a continuous target</span>
+<span class="sd">    :math:`T`, the residual is</span>
 
 <span class="sd">    .. math::</span>
 <span class="sd">        r_T = T - \hat{T}(Z).</span>
@@ -889,8 +894,11 @@
 <span class="sd">    data : pandas.DataFrame</span>
 <span class="sd">        The dataset in which to test the independence condition.</span>
 
-<span class="sd">    seed : int, optional</span>
-<span class="sd">        Random seed used for the underlying XGBoost models.</span>
+<span class="sd">    estimator : estimator instance, optional</span>
+<span class="sd">        Any sklearn-compatible estimator with ``fit``, ``predict``, and ``predict_proba``</span>
+<span class="sd">        (if testing discrete variables) methods. If ``None`` (default), uses</span>
+<span class="sd">        ``RandomForestClassifier`` for categorical targets and ``RandomForestRegressor``</span>
+<span class="sd">        for continuous targets. Conditioning variables are one-hot encoded before fitting.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -917,51 +925,10 @@
         <span class="s2">&quot;requires_data&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span> <span class="o">=</span> <span class="n">estimator</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get XGBoost predictions for X and Y given Z.</span>
-<span class="sd">        Uses ``self.seed`` for reproducibility.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">xgboost</span><span class="w"> </span><span class="kn">import</span> <span class="n">XGBClassifier</span><span class="p">,</span> <span class="n">XGBRegressor</span>
-        <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. xgboost is required for using pillai_trace test. Please install using: pip install xgboost&quot;</span>
-            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
-
-        <span class="n">enable_categorical</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">]</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">)</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">fit_predict</span><span class="p">(</span><span class="n">target_col</span><span class="p">):</span>
-            <span class="n">is_cat</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">target_col</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span>
-            <span class="n">model_cls</span> <span class="o">=</span> <span class="n">XGBClassifier</span> <span class="k">if</span> <span class="n">is_cat</span> <span class="k">else</span> <span class="n">XGBRegressor</span>
-            <span class="n">model</span> <span class="o">=</span> <span class="n">model_cls</span><span class="p">(</span>
-                <span class="n">enable_categorical</span><span class="o">=</span><span class="n">enable_categorical</span><span class="p">,</span>
-                <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
-                <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
-            <span class="p">)</span>
-
-            <span class="n">target_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">target_col</span><span class="p">]</span>
-            <span class="n">cat_index</span> <span class="o">=</span> <span class="kc">None</span>
-
-            <span class="k">if</span> <span class="n">is_cat</span><span class="p">:</span>
-                <span class="n">y_encoded</span><span class="p">,</span> <span class="n">cat_index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">factorize</span><span class="p">(</span><span class="n">target_data</span><span class="p">)</span>
-                <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">],</span> <span class="n">y_encoded</span><span class="p">)</span>
-                <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">],</span> <span class="n">target_data</span><span class="p">)</span>
-                <span class="n">pred</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">])</span>
-
-            <span class="k">return</span> <span class="n">pred</span><span class="p">,</span> <span class="n">cat_index</span>
-
-        <span class="n">pred_x</span><span class="p">,</span> <span class="n">x_cat_index</span> <span class="o">=</span> <span class="n">fit_predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
-        <span class="n">pred_y</span><span class="p">,</span> <span class="n">y_cat_index</span> <span class="o">=</span> <span class="n">fit_predict</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">pred_x</span><span class="p">,</span> <span class="n">pred_y</span><span class="p">,</span> <span class="n">x_cat_index</span><span class="p">,</span> <span class="n">y_cat_index</span>
 
 <div class="viewcode-block" id="PillaiTrace.run_test">
 <a class="viewcode-back" href="../../../api/generated/ci_test/pgmpy.ci_tests.PillaiTrace.html#pgmpy.ci_tests.PillaiTrace.run_test">[docs]</a>
@@ -975,46 +942,47 @@
 <span class="sd">        Compute Pillai&#39;s trace statistic and p-value.</span>
 
 <span class="sd">        Sets ``self.statistic_`` (Pillai&#39;s trace) and ``self.p_value_``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : str</span>
+<span class="sd">            The first variable for testing X _|_ Y | Z.</span>
+<span class="sd">        Y : str</span>
+<span class="sd">            The second variable for testing X _|_ Y | Z.</span>
+<span class="sd">        Z : list</span>
+<span class="sd">            Conditioning variables.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        statistic : float</span>
+<span class="sd">            The Pillai&#39;s trace statistic.</span>
+<span class="sd">        p_value : float</span>
+<span class="sd">            The p-value.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
-        <span class="c1"># Step 1: Add an intercept term for conditional variables.</span>
-        <span class="n">Z</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;_intercept_Z&quot;</span><span class="p">]</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">_intercept_Z</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="c1"># Steps 1: Compute residuals of X and Y given Z.</span>
+        <span class="n">res_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_residuals</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
+        <span class="n">res_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_residuals</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
 
-        <span class="c1"># Step 2: Get the predictions</span>
-        <span class="n">pred_x</span><span class="p">,</span> <span class="n">pred_y</span><span class="p">,</span> <span class="n">x_cat_index</span><span class="p">,</span> <span class="n">y_cat_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_predictions</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-
-        <span class="c1"># Step 3: Compute the residuals</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">get_residuals</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">cat_index</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">col_name</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;category&quot;</span><span class="p">:</span>
-                <span class="n">dummies</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">get_dummies</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">col_name</span><span class="p">])</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">cat_index</span><span class="o">.</span><span class="n">categories</span><span class="p">[</span><span class="n">cat_index</span><span class="o">.</span><span class="n">codes</span><span class="p">]]</span>
-                <span class="c1"># Drop last column to avoid multicollinearity</span>
-                <span class="k">return</span> <span class="p">(</span><span class="n">dummies</span> <span class="o">-</span> <span class="n">pred</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">col_name</span><span class="p">]</span> <span class="o">-</span> <span class="n">pred</span>
-
-        <span class="n">res_x</span> <span class="o">=</span> <span class="n">get_residuals</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">pred_x</span><span class="p">,</span> <span class="n">x_cat_index</span><span class="p">)</span>
-        <span class="n">res_y</span> <span class="o">=</span> <span class="n">get_residuals</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">pred_y</span><span class="p">,</span> <span class="n">y_cat_index</span><span class="p">)</span>
-
-        <span class="c1"># Step 4: Compute Pillai&#39;s trace.</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res_x</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
             <span class="n">res_x</span> <span class="o">=</span> <span class="n">res_x</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res_y</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
             <span class="n">res_y</span> <span class="o">=</span> <span class="n">res_y</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
 
-        <span class="n">cca</span> <span class="o">=</span> <span class="n">CCA</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="c1"># Step 2: Compute Pillai&#39;s trace test statistic via CCA.</span>
+        <span class="n">n_components</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">cca</span> <span class="o">=</span> <span class="n">CCA</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">)</span>
         <span class="n">res_x_c</span><span class="p">,</span> <span class="n">res_y_c</span> <span class="o">=</span> <span class="n">cca</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">res_x</span><span class="p">,</span> <span class="n">res_y</span><span class="p">)</span>
 
         <span class="n">cancor</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_components</span><span class="p">):</span>
             <span class="n">cancor</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">res_x_c</span><span class="p">[:,</span> <span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">res_y_c</span><span class="p">[:,</span> <span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">.</span><span class="n">T</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 
         <span class="n">coef</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cancor</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
-        <span class="c1"># Step 5: Compute p-value using f-approximation.</span>
+        <span class="c1"># Step 3: Compute p-value using F-approximation.</span>
         <span class="n">s</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">df1</span> <span class="o">=</span> <span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">df2</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">s</span> <span class="o">-</span> <span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">df2</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">s</span> <span class="o">-</span> <span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">f_stat</span> <span class="o">=</span> <span class="p">(</span><span class="n">coef</span> <span class="o">/</span> <span class="n">df1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">df2</span> <span class="o">/</span> <span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="n">coef</span><span class="p">))</span>
         <span class="n">p_value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">stats</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">f_stat</span><span class="p">,</span> <span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">)</span>
 
@@ -1053,8 +1021,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
