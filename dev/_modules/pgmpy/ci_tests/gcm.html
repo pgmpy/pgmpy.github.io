@@ -845,15 +845,16 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">clone</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.linear_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearRegression</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BaseCITest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">preprocess_data</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BaseCITest</span><span class="p">,</span> <span class="n">_ResidualMixin</span>
 
 
 <div class="viewcode-block" id="GCM">
 <a class="viewcode-back" href="../../../api/generated/ci_test/pgmpy.ci_tests.GCM.html#pgmpy.ci_tests.GCM">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">GCM</span><span class="p">(</span><span class="n">_BaseCITest</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GCM</span><span class="p">(</span><span class="n">_ResidualMixin</span><span class="p">,</span> <span class="n">_BaseCITest</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generalized Covariance Measure (GCM) [1] test for conditional independence.</span>
 
@@ -895,19 +896,8 @@
     <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
-
-        <span class="k">if</span> <span class="n">estimator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span> <span class="o">=</span> <span class="n">LinearRegression</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Check if estimator is sklearn compatible.</span>
-            <span class="n">required_methods</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;fit&quot;</span><span class="p">,</span> <span class="s2">&quot;predict&quot;</span><span class="p">,</span> <span class="s2">&quot;get_params&quot;</span><span class="p">,</span> <span class="s2">&quot;set_params&quot;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">required_methods</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;`estimator` must be a scikit-learn compatible.&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;It must have fit, predict methods and be clonable.&quot;</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span> <span class="o">=</span> <span class="n">estimator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span> <span class="o">=</span> <span class="n">LinearRegression</span><span class="p">()</span> <span class="k">if</span> <span class="n">estimator</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">estimator</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -924,22 +914,15 @@
 
 <span class="sd">        Sets ``self.statistic_`` (t-statistic) and ``self.p_value_``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Step 1: Append intercept column to ensure Z is never empty</span>
-        <span class="n">Z_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="nb">list</span><span class="p">(</span><span class="n">Z</span><span class="p">)]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span>
+        <span class="c1"># Step 1: Compute residuals of X and Y given Z.</span>
+        <span class="n">res_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_residuals</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">))</span>
+        <span class="n">res_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_residuals</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">))</span>
 
-        <span class="c1"># Step 2: Compute residuals using the provided estimator</span>
-        <span class="n">est_x</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">)</span>
-        <span class="n">est_y</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator</span><span class="p">)</span>
-        <span class="n">est_x</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">Z_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">])</span>
-        <span class="n">est_y</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">Z_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">])</span>
-        <span class="n">res_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">]</span> <span class="o">-</span> <span class="n">est_x</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">Z_data</span><span class="p">)</span>
-        <span class="n">res_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">]</span> <span class="o">-</span> <span class="n">est_y</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">Z_data</span><span class="p">)</span>
-
-        <span class="c1"># Step 3: Compute the Generalised Covariance Measure.</span>
+        <span class="c1"># Step 2: Compute the Generalised Covariance Measure.</span>
         <span class="n">n</span> <span class="o">=</span> <span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">t_stat</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">res_x</span><span class="p">,</span> <span class="n">res_y</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">res_x</span> <span class="o">*</span> <span class="n">res_y</span><span class="p">)</span>
 
-        <span class="c1"># Step 4: Compute p-value using standard normal distribution.</span>
+        <span class="c1"># Step 3: Compute p-value using standard normal distribution.</span>
         <span class="n">p_value</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t_stat</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">statistic_</span> <span class="o">=</span> <span class="n">t_stat</span>
