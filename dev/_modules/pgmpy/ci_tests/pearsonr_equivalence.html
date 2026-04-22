@@ -846,6 +846,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_CITestResult</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.pearsonr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pearsonr</span>
 
 
@@ -926,9 +927,9 @@
         <span class="s2">&quot;requires_data&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">delta_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">delta_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">use_cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delta_threshold</span> <span class="o">=</span> <span class="n">delta_threshold</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="n">use_cache</span><span class="p">)</span>
 
 <div class="viewcode-block" id="PearsonrEquivalence.is_independent">
 <a class="viewcode-back" href="../../../api/generated/ci_test/pgmpy.ci_tests.PearsonrEquivalence.html#pgmpy.ci_tests.PearsonrEquivalence.is_independent">[docs]</a>
@@ -950,16 +951,12 @@
 <span class="sd">        bool</span>
 <span class="sd">            True if X ⊥⊥ Y | Z (p_value_ &lt; significance_level), else False.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_inputs</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">run_test</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">Z</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_value_</span> <span class="o">&lt;</span> <span class="n">significance_level</span></div>
 
 
-<div class="viewcode-block" id="PearsonrEquivalence.run_test">
-<a class="viewcode-back" href="../../../api/generated/ci_test/pgmpy.ci_tests.PearsonrEquivalence.html#pgmpy.ci_tests.PearsonrEquivalence.run_test">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run_test</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_result</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">X</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">Y</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -968,11 +965,11 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute Pearson equivalence statistic and p-value.</span>
 
-<span class="sd">        Sets ``self.statistic_`` (Fisher z-transformed partial correlation) and ``self.p_value_``.</span>
+<span class="sd">        Returns the Fisher z-transformed partial correlation statistic and p-value.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Step 2: Compute Partial Pearson Correlation via parent and clip to avoid infinities</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">run_test</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
-        <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statistic_</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.999999</span><span class="p">,</span> <span class="mf">0.999999</span><span class="p">)</span>
+        <span class="n">pearsonr_result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_compute_result</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">pearsonr_result</span><span class="o">.</span><span class="n">statistic</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.999999</span><span class="p">,</span> <span class="mf">0.999999</span><span class="p">)</span>
 
         <span class="c1"># Step 3: Fisher Z-Transformation</span>
         <span class="n">coeff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctanh</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span>
@@ -992,11 +989,11 @@
         <span class="n">z_score_upper</span> <span class="o">=</span> <span class="n">std_error_factor</span> <span class="o">*</span> <span class="p">(</span><span class="n">coeff</span> <span class="o">-</span> <span class="n">z_delta</span><span class="p">)</span>
         <span class="n">p_value_upper</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">z_score_upper</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">statistic_</span> <span class="o">=</span> <span class="n">coeff</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">p_value_</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">p_value_lower</span><span class="p">,</span> <span class="n">p_value_upper</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">statistic_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_value_</span></div>
-</div>
+        <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span>
+            <span class="n">statistic</span><span class="o">=</span><span class="n">coeff</span><span class="p">,</span>
+            <span class="n">p_value</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">p_value_lower</span><span class="p">,</span> <span class="n">p_value_upper</span><span class="p">),</span>
+            <span class="n">attributes</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">pearsonr_result</span><span class="o">.</span><span class="n">attributes</span><span class="p">),</span>
+        <span class="p">)</span></div>
 
 </pre></div>
 

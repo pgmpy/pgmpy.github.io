@@ -849,7 +849,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">preprocess_data</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BaseCITest</span><span class="p">,</span> <span class="n">_ResidualMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BaseCITest</span><span class="p">,</span> <span class="n">_CITestResult</span><span class="p">,</span> <span class="n">_ResidualMixin</span>
 
 
 <div class="viewcode-block" id="RoysLargestRoot">
@@ -913,20 +913,19 @@
         <span class="s2">&quot;data_types&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;discrete&quot;</span><span class="p">,</span> <span class="s2">&quot;continuous&quot;</span><span class="p">,</span> <span class="s2">&quot;mixed&quot;</span><span class="p">),</span>
         <span class="s2">&quot;default_for&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="s2">&quot;requires_data&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;is_symmetric&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span> <span class="o">=</span> <span class="n">estimator</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">use_cache</span><span class="o">=</span><span class="n">use_cache</span><span class="p">)</span>
 
-<div class="viewcode-block" id="RoysLargestRoot.run_test">
-<a class="viewcode-back" href="../../../api/generated/ci_test/pgmpy.ci_tests.RoysLargestRoot.html#pgmpy.ci_tests.RoysLargestRoot.run_test">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run_test</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Z</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Z</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute Roy&#39;s largest root statistic and its upper-bound p-value.</span>
 
-<span class="sd">        Sets ``self.statistic_`` (:math:`\\hat{\\rho}_1^2`) and ``self.p_value_``.</span>
+<span class="sd">        Returns Roy&#39;s largest root statistic and its p-value.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -977,10 +976,7 @@
         <span class="n">F_stat</span> <span class="o">=</span> <span class="p">(</span><span class="n">RLR_clipped</span> <span class="o">/</span> <span class="n">a</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">RLR_clipped</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
         <span class="n">p_value</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">stats</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">F_stat</span><span class="p">,</span> <span class="n">df1</span><span class="p">,</span> <span class="n">df2</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">statistic_</span> <span class="o">=</span> <span class="n">RLR</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">p_value_</span> <span class="o">=</span> <span class="n">p_value</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">statistic_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_value_</span></div>
-</div>
+        <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span><span class="n">statistic</span><span class="o">=</span><span class="n">RLR</span><span class="p">,</span> <span class="n">p_value</span><span class="o">=</span><span class="n">p_value</span><span class="p">)</span></div>
 
 </pre></div>
 
