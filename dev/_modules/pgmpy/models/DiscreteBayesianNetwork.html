@@ -1467,7 +1467,7 @@
 
 <div class="viewcode-block" id="DiscreteBayesianNetwork.fit">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.DiscreteBayesianNetwork.html#pgmpy.models.DiscreteBayesianNetwork.fit">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="p">[],</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DAG</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DAG</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Estimates the CPD for each variable based on a given data set.</span>
 
@@ -1478,22 +1478,14 @@
 <span class="sd">            (If some values in the data are missing the data cells should be set to `numpy.nan`.</span>
 <span class="sd">            Note that pandas converts each column containing `numpy.nan`s to dtype `float`.)</span>
 
-<span class="sd">        estimator: Estimator class</span>
-<span class="sd">            One of:</span>
-<span class="sd">            - MaximumLikelihoodEstimator (default)</span>
-<span class="sd">            - BayesianEstimator: In this case, pass &#39;prior_type&#39; and either &#39;pseudo_counts&#39;</span>
-<span class="sd">            or &#39;equivalent_sample_size&#39; as additional keyword arguments.</span>
-<span class="sd">            See `BayesianEstimator.get_parameters()` for usage.</span>
-<span class="sd">            - ExpectationMaximization</span>
+<span class="sd">        estimator: DiscreteMLE, DiscreteBayesianEstimator, or DiscreteEM, optional</span>
+<span class="sd">            An initialized discrete parameter estimator from</span>
+<span class="sd">            `pgmpy.parameter_estimator`. If not specified, defaults to</span>
+<span class="sd">            `DiscreteMLE()`.</span>
 
-<span class="sd">        state_names: dict (optional)</span>
-<span class="sd">            A dict indicating, for each variable, the discrete set of states</span>
-<span class="sd">            that the variable can take. If unspecified, the observed values</span>
-<span class="sd">            in the data set are taken to be the only possible states.</span>
-
-<span class="sd">        n_jobs: int (default: 1)</span>
-<span class="sd">            Number of threads/processes to use for estimation. Using n_jobs &gt; 1</span>
-<span class="sd">            for small models or datasets might be slower.</span>
+<span class="sd">        sample_weight: array-like of shape (n_samples,), optional</span>
+<span class="sd">            Per-row weights for `data`. Forwarded to the estimator&#39;s `fit`. Only</span>
+<span class="sd">            accepted by estimators whose `supports_weighted_data` tag is True.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1504,42 +1496,37 @@
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.datasets import load_dataset</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(data={&quot;A&quot;: [0, 0, 1], &quot;B&quot;: [0, 1, 0], &quot;C&quot;: [1, 1, 0]})</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&quot;A&quot;, &quot;C&quot;), (&quot;B&quot;, &quot;C&quot;)])</span>
-<span class="sd">        &gt;&gt;&gt; fitted_model = model.fit(data)</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.parameter_estimator import DiscreteMLE</span>
+<span class="sd">        &gt;&gt;&gt; data = load_dataset(&quot;college_plans&quot;).data</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [(&quot;ses&quot;, &quot;iq&quot;), (&quot;sex&quot;, &quot;pe&quot;), (&quot;ses&quot;, &quot;pe&quot;), (&quot;iq&quot;, &quot;cp&quot;), (&quot;pe&quot;, &quot;cp&quot;)]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; fitted_model = model.fit(data, estimator=DiscreteMLE())</span>
 <span class="sd">        &gt;&gt;&gt; len(fitted_model.get_cpds())</span>
-<span class="sd">        3</span>
+<span class="sd">        5</span>
 <span class="sd">        &gt;&gt;&gt; fitted_model.get_cpds()  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE</span>
-<span class="sd">        [&lt;TabularCPD representing P(A:2) at 0x...&gt;,</span>
-<span class="sd">        &lt;TabularCPD representing P(C:2 | A:2, B:2) at 0x...&gt;,</span>
-<span class="sd">        &lt;TabularCPD representing P(B:2) at 0x...&gt;]</span>
+<span class="sd">        [&lt;TabularCPD representing P(ses:4) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(iq:4 | ses:4) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(sex:2) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(pe:2 | ses:4, sex:2) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(cp:2 | iq:4, pe:2) at 0x...&gt;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">MaximumLikelihoodEstimator</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">):</span>
-            <span class="n">bn</span> <span class="o">=</span> <span class="bp">self</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">bn</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
-            <span class="n">bn</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.parameter_estimator</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteMLE</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.parameter_estimator.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteParameterEstimator</span>
 
         <span class="k">if</span> <span class="n">estimator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">estimator</span> <span class="o">=</span> <span class="n">MaximumLikelihoodEstimator</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="n">BaseEstimator</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Estimator object should be a valid pgmpy estimator.&quot;</span><span class="p">)</span>
+            <span class="n">estimator</span> <span class="o">=</span> <span class="n">DiscreteMLE</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="n">DiscreteParameterEstimator</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;Estimator should be an instance of a discrete parameter estimator. &quot;</span>
+                <span class="s2">&quot;Pass an initialized estimator, for example `DiscreteMLE()`.&quot;</span>
+            <span class="p">)</span>
 
-        <span class="n">_estimator</span> <span class="o">=</span> <span class="n">estimator</span><span class="p">(</span>
-            <span class="n">bn</span><span class="p">,</span>
-            <span class="n">data</span><span class="p">,</span>
-            <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">cpds_list</span> <span class="o">=</span> <span class="n">_estimator</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">bn</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds_list</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">bn</span></div>
+        <span class="n">estimator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">sample_weight</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">estimator</span><span class="o">.</span><span class="n">parameters_</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
 
 
 <div class="viewcode-block" id="DiscreteBayesianNetwork.fit_update">
@@ -1547,7 +1534,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">fit_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">n_prev_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method to update the parameters of the DiscreteBayesianNetwork with more data.</span>
-<span class="sd">        Internally, uses BayesianEstimator with dirichlet prior, and uses</span>
+<span class="sd">        Internally, uses DiscreteBayesianEstimator with dirichlet prior, and uses</span>
 <span class="sd">        the current CPDs (along with `n_prev_samples`) to compute the pseudo_counts.</span>
 
 <span class="sd">        Parameters</span>
@@ -1578,7 +1565,7 @@
 <span class="sd">        &gt;&gt;&gt; data = BayesianModelSampling(model).forward_sample(int(1e3))</span>
 <span class="sd">        &gt;&gt;&gt; model.fit_update(data)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">BayesianEstimator</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.parameter_estimator</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianEstimator</span>
 
         <span class="k">if</span> <span class="n">n_prev_samples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">n_prev_samples</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1594,8 +1581,14 @@
             <span class="n">state_names</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">state_names</span><span class="p">)</span>
 
         <span class="c1"># Step 3: Estimate the new CPDs.</span>
-        <span class="n">_est</span> <span class="o">=</span> <span class="n">BayesianEstimator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">)</span>
-        <span class="n">cpds</span> <span class="o">=</span> <span class="n">_est</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">(</span><span class="n">prior_type</span><span class="o">=</span><span class="s2">&quot;dirichlet&quot;</span><span class="p">,</span> <span class="n">pseudo_counts</span><span class="o">=</span><span class="n">pseudo_counts</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)</span>
+        <span class="n">_est</span> <span class="o">=</span> <span class="n">DiscreteBayesianEstimator</span><span class="p">(</span>
+            <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">,</span>
+            <span class="n">prior_type</span><span class="o">=</span><span class="s2">&quot;dirichlet&quot;</span><span class="p">,</span>
+            <span class="n">pseudo_counts</span><span class="o">=</span><span class="n">pseudo_counts</span><span class="p">,</span>
+            <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">_est</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">cpds</span> <span class="o">=</span> <span class="n">_est</span><span class="o">.</span><span class="n">parameters_</span>
 
         <span class="c1"># Temporarily suppress logger to stop giving warning about replacing CPDs.</span>
         <span class="n">_prev_level</span> <span class="o">=</span> <span class="n">logger</span><span class="o">.</span><span class="n">level</span>

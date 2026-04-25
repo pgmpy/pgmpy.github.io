@@ -898,24 +898,24 @@ conditional probability distribution (CPD) for every node given its parents.</p>
 </section>
 <section id="api">
 <h2>API<a class="headerlink" href="#api" title="Link to this heading">#</a></h2>
-<p>The recommended entry point is <code class="docutils literal notranslate"><span class="pre">model.fit(...)</span></code>. Provide the graph, the data, and the
-estimator class:</p>
+<p>The recommended entry point is <code class="docutils literal notranslate"><span class="pre">model.fit(...)</span></code>. Provide the graph, the data, and an
+initialized estimator instance:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.example_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaximumLikelihoodEstimator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.parameter_estimator</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteMLE</span>
 
 <span class="n">reference</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="s2">&quot;bnlearn/alarm&quot;</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">reference</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
-<span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="n">MaximumLikelihoodEstimator</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="n">DiscreteMLE</span><span class="p">())</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="s2">&quot;HISTORY&quot;</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>Switching the estimation method only requires changing the <code class="docutils literal notranslate"><span class="pre">estimator</span></code> argument.
-For finer control, you can instantiate estimator classes directly and call their
-parameter-generation methods before adding the CPDs to the model.</p>
+<p>Switching the estimation method only requires changing the estimator instance.
+For finer control, you can instantiate estimators directly and call their <code class="docutils literal notranslate"><span class="pre">fit(...)</span></code>
+methods before adding the CPDs to the model.</p>
 </section>
 <section id="prior-based-smoothing">
 <h2>Prior-Based Smoothing<a class="headerlink" href="#prior-based-smoothing" title="Link to this heading">#</a></h2>
@@ -931,9 +931,10 @@ iterative estimation, alternating between imputing missing values and updating p
 </section>
 <section id="parallel-estimation">
 <h2>Parallel Estimation<a class="headerlink" href="#parallel-estimation" title="Link to this heading">#</a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">n_jobs</span></code> parameter in <code class="docutils literal notranslate"><span class="pre">model.fit(...)</span></code> parallelizes parameter estimation across nodes,
-which can speed up fitting for larger models. The <code class="docutils literal notranslate"><span class="pre">state_names</span></code> parameter lets you
-specify the supported states explicitly when some states may not appear in small datasets.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">n_jobs</span></code> parameter on estimators such as <code class="docutils literal notranslate"><span class="pre">DiscreteMLE(n_jobs=...)</span></code> parallelizes
+parameter estimation across nodes, which can speed up fitting for larger models. The
+<code class="docutils literal notranslate"><span class="pre">state_names</span></code> parameter lets you specify the supported states explicitly when some states
+may not appear in small datasets.</p>
 </section>
 <section id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>

@@ -14,8 +14,8 @@
 <meta property="og:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
 <meta name="twitter:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
 <meta name="robots" content="noindex,nofollow,noarchive" />
-<link rel="canonical" href="https://pgmpy.org/dev/_modules/pgmpy/estimators/BayesianEstimator.html" />
-    <title>pgmpy.estimators.BayesianEstimator &#8212; pgmpy</title>
+<link rel="canonical" href="https://pgmpy.org/dev/_modules/pgmpy/parameter_estimator/discrete_bayesian.html" />
+    <title>pgmpy.parameter_estimator.discrete_bayesian &#8212; pgmpy</title>
   
   
   
@@ -55,9 +55,9 @@
     <script src="../../../_static/copybutton.js?v=f281be69"></script>
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pgmpy/estimators/BayesianEstimator';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pgmpy/parameter_estimator/discrete_bayesian';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
-    <link rel="canonical" href="https://pgmpy.org/dev/_modules/pgmpy/estimators/BayesianEstimator.html" />
+    <link rel="canonical" href="https://pgmpy.org/dev/_modules/pgmpy/parameter_estimator/discrete_bayesian.html" />
     <link rel="icon" href="../../../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -249,7 +249,7 @@
     aria-label="Select Version"
     data-current-version="dev"
     data-current-label="dev"
-    data-target-uri="_modules/pgmpy/estimators/BayesianEstimator.html"
+    data-target-uri="_modules/pgmpy/parameter_estimator/discrete_bayesian.html"
     data-site-root="https://pgmpy.org"
     data-manifest-url="https://pgmpy.org/versions.json"
   >
@@ -565,7 +565,7 @@
     aria-label="Select Version"
     data-current-version="dev"
     data-current-label="dev"
-    data-target-uri="_modules/pgmpy/estimators/BayesianEstimator.html"
+    data-target-uri="_modules/pgmpy/parameter_estimator/discrete_bayesian.html"
     data-site-root="https://pgmpy.org"
     data-manifest-url="https://pgmpy.org/versions.json"
   >
@@ -824,7 +824,7 @@
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pgmpy.estimators.BayesianEstimator</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pgmpy.parameter_estimator.discrete_bayesian</span></li>
   </ul>
 </nav>
 </div>
@@ -841,265 +841,182 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <h1>Source code for pgmpy.estimators.BayesianEstimator</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hashable</span>
+  <h1>Source code for pgmpy.parameter_estimator.discrete_bayesian</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">chain</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">joblib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParameterEstimator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_state_counts</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteParameterEstimator</span>
 
 
-<div class="viewcode-block" id="BayesianEstimator">
-<a class="viewcode-back" href="../../../api/generated/parameter_estimation/pgmpy.estimators.BayesianEstimator.html#pgmpy.estimators.BayesianEstimator">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">BayesianEstimator</span><span class="p">(</span><span class="n">ParameterEstimator</span><span class="p">):</span>
+<div class="viewcode-block" id="DiscreteBayesianEstimator">
+<a class="viewcode-back" href="../../../api/generated/parameter_estimation/pgmpy.parameter_estimator.DiscreteBayesianEstimator.html#pgmpy.parameter_estimator.DiscreteBayesianEstimator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DiscreteBayesianEstimator</span><span class="p">(</span><span class="n">DiscreteParameterEstimator</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class used to compute parameters for a model using Bayesian Parameter Estimation.</span>
-<span class="sd">    See `MaximumLikelihoodEstimator` for constructor parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    state_names: dict, optional</span>
+<span class="sd">        A dict indicating, for each variable, the discrete set of states that the variable can take. If unspecified, the</span>
+<span class="sd">        observed values in the data set are taken to be the only possible states.</span>
+
+<span class="sd">    prior_type: {&quot;dirichlet&quot;, &quot;BDeu&quot;, &quot;K2&quot;}, default=&quot;BDeu&quot;</span>
+<span class="sd">        String indicating which type of prior to use for the model parameters. If `prior_type` is `&quot;dirichlet&quot;`,</span>
+<span class="sd">        `pseudo_counts` specifies the Dirichlet hyperparameters. If `prior_type` is `&quot;BDeu&quot;`, then</span>
+<span class="sd">        `equivalent_sample_size` is used to construct uniform pseudo counts. `&quot;K2&quot;` is a shorthand for a Dirichlet prior</span>
+<span class="sd">        with all pseudo counts set to 1.</span>
+
+<span class="sd">    equivalent_sample_size: int, float, or dict, default=5</span>
+<span class="sd">        Equivalent sample size used for the BDeu prior. Can be a single value or a dict specifying the size for each</span>
+<span class="sd">        variable separately.</span>
+
+<span class="sd">    pseudo_counts: int, float, dict, or None, default=None</span>
+<span class="sd">        Pseudo counts used with the Dirichlet prior. Can be a single value or a dict containing, for each variable, a</span>
+<span class="sd">        2-D array of shape `(node_cardinality, product(parents_cardinalities))`.</span>
+
+<span class="sd">    n_jobs: int, default=1</span>
+<span class="sd">        Number of jobs to run in parallel. Using `n_jobs &gt; 1` for small models might be slower.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parameters_ : list of TabularCPD</span>
+<span class="sd">        Learned conditional probability distributions, one per variable in the</span>
+<span class="sd">        model, ordered by `self._model.nodes()`. Populated by `fit`.</span>
+
+<span class="sd">    state_names_ : dict</span>
+<span class="sd">        Mapping from variable name to the list of states for that variable,</span>
+<span class="sd">        inferred from the data (or taken from the `state_names` constructor</span>
+<span class="sd">        argument when supplied). Populated by `fit`.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.datasets import load_dataset</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.parameter_estimator import DiscreteBayesianEstimator</span>
+<span class="sd">    &gt;&gt;&gt; data = load_dataset(&quot;college_plans&quot;).data</span>
+<span class="sd">    &gt;&gt;&gt; model = DiscreteBayesianNetwork(</span>
+<span class="sd">    ...     [(&quot;ses&quot;, &quot;iq&quot;), (&quot;sex&quot;, &quot;pe&quot;), (&quot;ses&quot;, &quot;pe&quot;), (&quot;iq&quot;, &quot;cp&quot;), (&quot;pe&quot;, &quot;cp&quot;)]</span>
+<span class="sd">    ... )</span>
+<span class="sd">    &gt;&gt;&gt; estimator = DiscreteBayesianEstimator(prior_type=&quot;BDeu&quot;, equivalent_sample_size=5)</span>
+<span class="sd">    &gt;&gt;&gt; estimator.fit(model, data).parameters_  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE</span>
+<span class="sd">    [&lt;TabularCPD representing P(ses:4) at 0x...&gt;,</span>
+<span class="sd">     &lt;TabularCPD representing P(iq:4 | ses:4) at 0x...&gt;,</span>
+<span class="sd">     &lt;TabularCPD representing P(sex:2) at 0x...&gt;,</span>
+<span class="sd">     &lt;TabularCPD representing P(pe:2 | ses:4, sex:2) at 0x...&gt;,</span>
+<span class="sd">     &lt;TabularCPD representing P(cp:2 | iq:4, pe:2) at 0x...&gt;]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;supports_latent_variables&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;supports_weighted_data&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">model</span><span class="p">:</span> <span class="n">DAG</span> <span class="o">|</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">,</span>
-        <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">&quot;Bayesian Parameter Estimation is only implemented for DAG or DiscreteBayesianNetwork&quot;</span>
-            <span class="p">)</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Bayesian Parameter Estimation works only &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;on models with all observed variables. Found latent variables: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">latents</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
-
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DAG</span><span class="p">):</span>
-                <span class="n">edges</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
-                <span class="n">nodes</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
-                <span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
-                <span class="n">model</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
-
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-<div class="viewcode-block" id="BayesianEstimator.get_parameters">
-<a class="viewcode-back" href="../../../api/generated/parameter_estimation/pgmpy.estimators.BayesianEstimator.html#pgmpy.estimators.BayesianEstimator.get_parameters">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_parameters</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state_names</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">prior_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;BDeu&quot;</span><span class="p">,</span>
-        <span class="n">equivalent_sample_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
-        <span class="n">pseudo_counts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">equivalent_sample_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">pseudo_counts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">TabularCPD</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Method to estimate the model parameters (CPDs).</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prior_type</span> <span class="o">=</span> <span class="n">prior_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">equivalent_sample_size</span> <span class="o">=</span> <span class="n">equivalent_sample_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pseudo_counts</span> <span class="o">=</span> <span class="n">pseudo_counts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">)</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        prior_type: &#39;dirichlet&#39;, &#39;BDeu&#39;, or &#39;K2&#39;</span>
-<span class="sd">            string indicting which type of prior to use for the model parameters.</span>
-<span class="sd">            - If &#39;prior_type&#39; is &#39;dirichlet&#39;, the following must be provided:</span>
-<span class="sd">                &#39;pseudo_counts&#39; = dirichlet hyperparameters; a single number or a dict containing, for each</span>
-<span class="sd">                 variable, a 2-D array of the shape (node_card, product of parents_card) with a &quot;virtual&quot;</span>
-<span class="sd">                 count for each variable state in the CPD, that is added to the state counts.</span>
-<span class="sd">                 (lexicographic ordering of states assumed)</span>
-<span class="sd">            - If &#39;prior_type&#39; is &#39;BDeu&#39;, then an &#39;equivalent_sample_size&#39;</span>
-<span class="sd">                must be specified instead of &#39;pseudo_counts&#39;. This is equivalent to</span>
-<span class="sd">                &#39;prior_type=dirichlet&#39; and using uniform &#39;pseudo_counts&#39; of</span>
-<span class="sd">                `equivalent_sample_size/(node_cardinality*np.prod(parents_cardinalities))` for each node.</span>
-<span class="sd">                &#39;equivalent_sample_size&#39; can either be a numerical value or a dict that specifies</span>
-<span class="sd">                the size for each variable separately.</span>
-<span class="sd">            - A prior_type of &#39;K2&#39; is a shorthand for &#39;dirichlet&#39; + setting every pseudo_count to 1,</span>
-<span class="sd">                regardless of the cardinality of the variable.</span>
-
-<span class="sd">        equivalent_sample_size: int</span>
-<span class="sd">            Refer `prior_type` for more details.</span>
-
-<span class="sd">        pseudo_counts: int (default: None)</span>
-<span class="sd">            Refer `prior_type` for more details.</span>
-
-<span class="sd">        n_jobs: int (default: 1)</span>
-<span class="sd">            Number of jobs to run in parallel. Default: 1.</span>
-<span class="sd">            Using n_jobs &gt; 1 for small models might be slower.</span>
-
-<span class="sd">        weighted: bool</span>
-<span class="sd">            If weighted=True, the data must contain a `_weight` column specifying the</span>
-<span class="sd">            weight of each datapoint (row). If False, assigns an equal weight to each</span>
-<span class="sd">            datapoint.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        parameters: list</span>
-<span class="sd">            List of TabularCPDs, one for each variable of the model</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import BayesianEstimator</span>
-<span class="sd">        &gt;&gt;&gt; np.random.seed(42)</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
-<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 4)),</span>
-<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;],</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&quot;A&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;B&quot;), (&quot;C&quot;, &quot;D&quot;)])</span>
-<span class="sd">        &gt;&gt;&gt; estimator = BayesianEstimator(model, values)</span>
-<span class="sd">        &gt;&gt;&gt; estimator.get_parameters(</span>
-<span class="sd">        ...     prior_type=&quot;BDeu&quot;, equivalent_sample_size=5</span>
-<span class="sd">        ... )  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE</span>
-<span class="sd">        [&lt;TabularCPD representing P(A:2) at 0x...&gt;,</span>
-<span class="sd">         &lt;TabularCPD representing P(B:2 | A:2, C:2) at 0x...&gt;,</span>
-<span class="sd">         &lt;TabularCPD representing P(C:2) at 0x...&gt;,</span>
-<span class="sd">         &lt;TabularCPD representing P(D:2 | C:2) at 0x...&gt;]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">_get_node_param</span><span class="p">(</span><span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TabularCPD</span><span class="p">:</span>
-            <span class="n">_equivalent_sample_size</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">equivalent_sample_size</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">equivalent_sample_size</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">equivalent_sample_size</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
-                <span class="n">_pseudo_counts</span> <span class="o">=</span> <span class="n">pseudo_counts</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">_pseudo_counts</span> <span class="o">=</span> <span class="n">pseudo_counts</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="k">if</span> <span class="n">pseudo_counts</span> <span class="k">else</span> <span class="kc">None</span>
-
-            <span class="n">cpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate_cpd</span><span class="p">(</span>
-                <span class="n">node</span><span class="p">,</span>
-                <span class="n">prior_type</span><span class="o">=</span><span class="n">prior_type</span><span class="p">,</span>
-                <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="n">_equivalent_sample_size</span><span class="p">,</span>
-                <span class="n">pseudo_counts</span><span class="o">=</span><span class="n">_pseudo_counts</span><span class="p">,</span>
-                <span class="n">weighted</span><span class="o">=</span><span class="n">weighted</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="k">return</span> <span class="n">cpd</span>
-
-        <span class="n">parameters</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)(</span><span class="n">delayed</span><span class="p">(</span><span class="n">_get_node_param</span><span class="p">)(</span><span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
-        <span class="c1"># TODO: A hacky solution to return correct value for the chosen backend. Ref #1675</span>
-        <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="n">parameters</span></div>
-
-
-<div class="viewcode-block" id="BayesianEstimator.estimate_cpd">
-<a class="viewcode-back" href="../../../api/generated/parameter_estimation/pgmpy.estimators.BayesianEstimator.html#pgmpy.estimators.BayesianEstimator.estimate_cpd">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">estimate_cpd</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span>
-        <span class="n">prior_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;BDeu&quot;</span><span class="p">,</span>
-        <span class="n">pseudo_counts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="p">[],</span>
-        <span class="n">equivalent_sample_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
-        <span class="n">weighted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TabularCPD</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Method to estimate the CPD for a given variable.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        node: int, string (any hashable python object)</span>
-<span class="sd">            The name of the variable for which the CPD is to be estimated.</span>
-
-<span class="sd">        prior_type: &#39;dirichlet&#39;, &#39;BDeu&#39;, &#39;K2&#39;,</span>
-<span class="sd">            string indicting which type of prior to use for the model parameters.</span>
-<span class="sd">            - If &#39;prior_type&#39; is &#39;dirichlet&#39;, the following must be provided:</span>
-<span class="sd">                &#39;pseudo_counts&#39; = dirichlet hyperparameters; a single number or 2-D array</span>
-<span class="sd">                 of shape (node_card, product of parents_card) with a &quot;virtual&quot; count for</span>
-<span class="sd">                 each variable state in the CPD. The virtual counts are added to the</span>
-<span class="sd">                 actual state counts found in the data. (if a list is provided, a</span>
-<span class="sd">                 lexicographic ordering of states is assumed)</span>
-<span class="sd">            - If &#39;prior_type&#39; is &#39;BDeu&#39;, then an &#39;equivalent_sample_size&#39;</span>
-<span class="sd">                 must be specified instead of &#39;pseudo_counts&#39;. This is equivalent to</span>
-<span class="sd">                 &#39;prior_type=dirichlet&#39; and using uniform &#39;pseudo_counts&#39; of</span>
-<span class="sd">                 `equivalent_sample_size/(node_cardinality*np.prod(parents_cardinalities))`.</span>
-<span class="sd">                 &#39;equivalent_sample_size&#39; can either be a numerical value or a dict that specifies</span>
-<span class="sd">                 the size for each variable separately.</span>
-<span class="sd">            - A prior_type of &#39;K2&#39; is a shorthand for &#39;dirichlet&#39; + setting every</span>
-<span class="sd">              pseudo_count to 1, regardless of the cardinality of the variable.</span>
-
-<span class="sd">        weighted: bool</span>
-<span class="sd">            If weighted=True, the data must contain a `_weight` column specifying the</span>
-<span class="sd">            weight of each datapoint (row). If False, assigns an equal weight to each</span>
-<span class="sd">            datapoint.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        CPD: TabularCPD</span>
-<span class="sd">            The estimated CPD for `node`.</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import BayesianEstimator</span>
-<span class="sd">        &gt;&gt;&gt; data = pd.DataFrame(data={&quot;A&quot;: [0, 0, 1], &quot;B&quot;: [0, 1, 0], &quot;C&quot;: [1, 1, 0]})</span>
-<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork([(&quot;A&quot;, &quot;C&quot;), (&quot;B&quot;, &quot;C&quot;)])</span>
-<span class="sd">        &gt;&gt;&gt; estimator = BayesianEstimator(model, data)</span>
-<span class="sd">        &gt;&gt;&gt; cpd_C = estimator.estimate_cpd(</span>
-<span class="sd">        ...     node=&quot;C&quot;,</span>
-<span class="sd">        ...     prior_type=&quot;dirichlet&quot;,</span>
-<span class="sd">        ...     pseudo_counts=[[1, 1, 1, 1], [2, 2, 2, 2]],</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; print(cpd_C)</span>
-<span class="sd">        +------+------+------+------+--------------------+</span>
-<span class="sd">        | A    | A(0) | A(0) | A(1) | A(1)               |</span>
-<span class="sd">        +------+------+------+------+--------------------+</span>
-<span class="sd">        | B    | B(0) | B(1) | B(0) | B(1)               |</span>
-<span class="sd">        +------+------+------+------+--------------------+</span>
-<span class="sd">        | C(0) | 0.25 | 0.25 | 0.5  | 0.3333333333333333 |</span>
-<span class="sd">        +------+------+------+------+--------------------+</span>
-<span class="sd">        | C(1) | 0.75 | 0.75 | 0.5  | 0.6666666666666666 |</span>
-<span class="sd">        +------+------+------+------+--------------------+</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">node_cardinality</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
-        <span class="n">parents</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
-        <span class="n">parents_cardinalities</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">parent</span><span class="p">])</span> <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">]</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_pseudo_counts</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">state_names</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">node</span><span class="p">,</span>
+        <span class="n">prior_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">equivalent_sample_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">pseudo_counts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="n">node_cardinality</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_names</span><span class="p">[</span><span class="n">node</span><span class="p">])</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+        <span class="n">parents_cardinalities</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">state_names</span><span class="p">[</span><span class="n">parent</span><span class="p">])</span> <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">]</span>
         <span class="n">cpd_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">node_cardinality</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">parents_cardinalities</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
 
         <span class="n">prior_type</span> <span class="o">=</span> <span class="n">prior_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">node_pseudo_counts</span> <span class="o">=</span> <span class="n">pseudo_counts</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+            <span class="n">node_pseudo_counts</span> <span class="o">=</span> <span class="n">pseudo_counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
 
-        <span class="c1"># Throw a warning if pseudo_count is specified without prior_type=dirichlet</span>
-        <span class="c1">#     cast to np.array first to use the array.size attribute, which returns 0 also for [[],[]]</span>
-        <span class="c1">#     (where len([[],[]]) evaluates to 2)</span>
-        <span class="k">if</span> <span class="n">pseudo_counts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="n">prior_type</span> <span class="o">!=</span> <span class="s2">&quot;dirichlet&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">node_pseudo_counts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">node_pseudo_counts</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="n">prior_type</span> <span class="o">!=</span> <span class="s2">&quot;dirichlet&quot;</span><span class="p">):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;pseudo count specified with </span><span class="si">{</span><span class="n">prior_type</span><span class="si">}</span><span class="s2"> prior. It will be ignored, &quot;</span>
                 <span class="s2">&quot;use dirichlet prior for specifying pseudo_counts&quot;</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">prior_type</span> <span class="o">==</span> <span class="s2">&quot;k2&quot;</span><span class="p">:</span>
-            <span class="n">pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">resolved_pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">prior_type</span> <span class="o">==</span> <span class="s2">&quot;bdeu&quot;</span><span class="p">:</span>
             <span class="n">equivalent_sample_size_val</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">equivalent_sample_size</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">equivalent_sample_size</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
                 <span class="k">else</span> <span class="n">equivalent_sample_size</span>
             <span class="p">)</span>
-            <span class="n">alpha</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">equivalent_sample_size_val</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">node_cardinality</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">parents_cardinalities</span><span class="p">))</span>
-            <span class="n">pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">*</span> <span class="n">alpha</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">equivalent_sample_size_val</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">node_cardinality</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">parents_cardinalities</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
+            <span class="n">resolved_pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">*</span> <span class="n">alpha</span>
         <span class="k">elif</span> <span class="n">prior_type</span> <span class="o">==</span> <span class="s2">&quot;dirichlet&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
-                <span class="n">pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> <span class="o">*</span> <span class="n">pseudo_counts</span>
-
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node_pseudo_counts</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+                <span class="n">resolved_pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> <span class="o">*</span> <span class="n">node_pseudo_counts</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">pseudo_counts</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">cpd_shape</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;The shape of pseudo_counts for the node: </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2"> must be of shape: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span>
+                <span class="n">node_pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span> <span class="k">if</span> <span class="n">node_pseudo_counts</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">node_pseudo_counts</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">node_pseudo_counts</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">resolved_pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">node_pseudo_counts</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">cpd_shape</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;The shape of pseudo_counts for the node: </span><span class="si">{</span><span class="n">node</span><span class="si">}</span><span class="s2"> must be of shape: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+                    <span class="n">resolved_pseudo_counts</span> <span class="o">=</span> <span class="n">node_pseudo_counts</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;prior_type&#39; not specified&quot;</span><span class="p">)</span>
 
-        <span class="n">state_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_counts</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">weighted</span><span class="o">=</span><span class="n">weighted</span><span class="p">)</span>
-        <span class="n">bayesian_counts</span> <span class="o">=</span> <span class="n">state_counts</span> <span class="o">+</span> <span class="n">pseudo_counts</span>
+        <span class="k">return</span> <span class="n">resolved_pseudo_counts</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="n">parents_cardinalities</span><span class="p">,</span> <span class="n">node_cardinality</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_estimate_cpd</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">state_names</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">node</span><span class="p">,</span>
+        <span class="n">prior_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;BDeu&quot;</span><span class="p">,</span>
+        <span class="n">equivalent_sample_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">pseudo_counts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TabularCPD</span><span class="p">:</span>
+        <span class="n">resolved_pseudo_counts</span><span class="p">,</span> <span class="n">parents</span><span class="p">,</span> <span class="n">parents_cardinalities</span><span class="p">,</span> <span class="n">node_cardinality</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">DiscreteBayesianEstimator</span><span class="o">.</span><span class="n">_resolve_pseudo_counts</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+                <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">,</span>
+                <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">,</span>
+                <span class="n">prior_type</span><span class="o">=</span><span class="n">prior_type</span><span class="p">,</span>
+                <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="n">equivalent_sample_size</span><span class="p">,</span>
+                <span class="n">pseudo_counts</span><span class="o">=</span><span class="n">pseudo_counts</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">state_counts</span> <span class="o">=</span> <span class="n">get_state_counts</span><span class="p">(</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+            <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">,</span>
+            <span class="n">variable</span><span class="o">=</span><span class="n">node</span><span class="p">,</span>
+            <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span>
+            <span class="n">sample_weight</span><span class="o">=</span><span class="n">sample_weight</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">bayesian_counts</span> <span class="o">=</span> <span class="n">state_counts</span> <span class="o">+</span> <span class="n">resolved_pseudo_counts</span>
 
         <span class="n">cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
             <span class="n">node</span><span class="p">,</span>
@@ -1107,10 +1024,67 @@
             <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">bayesian_counts</span><span class="p">),</span>
             <span class="n">evidence</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span>
             <span class="n">evidence_card</span><span class="o">=</span><span class="n">parents_cardinalities</span><span class="p">,</span>
-            <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">([</span><span class="n">node</span><span class="p">],</span> <span class="n">parents</span><span class="p">)},</span>
+            <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">([</span><span class="n">node</span><span class="p">],</span> <span class="n">parents</span><span class="p">)},</span>
         <span class="p">)</span>
         <span class="n">cpd</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">cpd</span></div>
+        <span class="k">return</span> <span class="n">cpd</span>
+
+<div class="viewcode-block" id="DiscreteBayesianEstimator.fit">
+<a class="viewcode-back" href="../../../api/generated/parameter_estimation/pgmpy.parameter_estimator.DiscreteBayesianEstimator.html#pgmpy.parameter_estimator.DiscreteBayesianEstimator.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimate model parameters using Bayesian Parameter Estimation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model: pgmpy.base.DAG or pgmpy.models.DiscreteBayesianNetwork</span>
+<span class="sd">            The model structure for which to estimate CPDs.</span>
+
+<span class="sd">        data: pandas.DataFrame</span>
+<span class="sd">            DataFrame object with column names identical to the variable names of the network.</span>
+
+<span class="sd">        sample_weight: array-like of shape (n_samples,), optional</span>
+<span class="sd">            Per-row weights for `data`. If None, each row is weighted equally.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        self: DiscreteBayesianEstimator</span>
+<span class="sd">            Fitted estimator with learned CPDs stored in `parameters_`.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.datasets import load_dataset</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.models import DiscreteBayesianNetwork</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.parameter_estimator import DiscreteBayesianEstimator</span>
+<span class="sd">        &gt;&gt;&gt; data = load_dataset(&quot;college_plans&quot;).data</span>
+<span class="sd">        &gt;&gt;&gt; model = DiscreteBayesianNetwork(</span>
+<span class="sd">        ...     [(&quot;ses&quot;, &quot;iq&quot;), (&quot;sex&quot;, &quot;pe&quot;), (&quot;ses&quot;, &quot;pe&quot;), (&quot;iq&quot;, &quot;cp&quot;), (&quot;pe&quot;, &quot;cp&quot;)]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; estimator = DiscreteBayesianEstimator(prior_type=&quot;BDeu&quot;, equivalent_sample_size=5)</span>
+<span class="sd">        &gt;&gt;&gt; estimator.fit(model, data).parameters_  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE</span>
+<span class="sd">        [&lt;TabularCPD representing P(ses:4) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(iq:4 | ses:4) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(sex:2) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(pe:2 | ses:4, sex:2) at 0x...&gt;,</span>
+<span class="sd">         &lt;TabularCPD representing P(cp:2 | iq:4, pe:2) at 0x...&gt;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">sample_weight</span><span class="p">)</span>
+
+        <span class="n">parameters</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">)(</span>
+            <span class="n">delayed</span><span class="p">(</span><span class="n">DiscreteBayesianEstimator</span><span class="o">.</span><span class="n">_estimate_cpd</span><span class="p">)(</span>
+                <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span>
+                <span class="n">state_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names_</span><span class="p">,</span>
+                <span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">,</span>
+                <span class="n">prior_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_type</span><span class="p">,</span>
+                <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">equivalent_sample_size</span><span class="p">,</span>
+                <span class="n">pseudo_counts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pseudo_counts</span><span class="p">,</span>
+                <span class="n">sample_weight</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample_weight</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sort_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
 </div>
 
 </pre></div>

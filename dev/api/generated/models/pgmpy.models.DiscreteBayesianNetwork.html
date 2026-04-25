@@ -1166,7 +1166,7 @@ DiscreteBayesianNetwork modified by the do operation.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.models.DiscreteBayesianNetwork.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">estimator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../base/pgmpy.base.DAG.html#pgmpy.base.DAG" title="pgmpy.base.DAG.DAG"><span class="pre">DAG</span></a></span></span><a class="reference internal" href="../../../_modules/pgmpy/models/DiscreteBayesianNetwork.html#DiscreteBayesianNetwork.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.models.DiscreteBayesianNetwork.fit" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">estimator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../base/pgmpy.base.DAG.html#pgmpy.base.DAG" title="pgmpy.base.DAG.DAG"><span class="pre">DAG</span></a></span></span><a class="reference internal" href="../../../_modules/pgmpy/models/DiscreteBayesianNetwork.html#DiscreteBayesianNetwork.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.models.DiscreteBayesianNetwork.fit" title="Link to this definition">#</a></dt>
 <dd><p>Estimates the CPD for each variable based on a given data set.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1175,19 +1175,12 @@ DiscreteBayesianNetwork modified by the do operation.</p>
 (If some values in the data are missing the data cells should be set to <cite>numpy.nan</cite>.
 Note that pandas converts each column containing <cite>numpy.nan`s to dtype `float</cite>.)</p>
 </dd>
-<dt><strong>estimator: Estimator class</strong></dt><dd><p>One of:
-- MaximumLikelihoodEstimator (default)
-- BayesianEstimator: In this case, pass ‘prior_type’ and either ‘pseudo_counts’
-or ‘equivalent_sample_size’ as additional keyword arguments.
-See <cite>BayesianEstimator.get_parameters()</cite> for usage.
-- ExpectationMaximization</p>
+<dt><strong>estimator: DiscreteMLE, DiscreteBayesianEstimator, or DiscreteEM, optional</strong></dt><dd><p>An initialized discrete parameter estimator from
+<cite>pgmpy.parameter_estimator</cite>. If not specified, defaults to
+<cite>DiscreteMLE()</cite>.</p>
 </dd>
-<dt><strong>state_names: dict (optional)</strong></dt><dd><p>A dict indicating, for each variable, the discrete set of states
-that the variable can take. If unspecified, the observed values
-in the data set are taken to be the only possible states.</p>
-</dd>
-<dt><strong>n_jobs: int (default: 1)</strong></dt><dd><p>Number of threads/processes to use for estimation. Using n_jobs &gt; 1
-for small models or datasets might be slower.</p>
+<dt><strong>sample_weight: array-like of shape (n_samples,), optional</strong></dt><dd><p>Per-row weights for <cite>data</cite>. Forwarded to the estimator’s <cite>fit</cite>. Only
+accepted by estimators whose <cite>supports_weighted_data</cite> tag is True.</p>
 </dd>
 </dl>
 </dd>
@@ -1201,18 +1194,22 @@ This allows the DAG to represent both the structure and the parameters of a Baye
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;A&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s2">&quot;B&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;C&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">([(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">fitted_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.parameter_estimator</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteMLE</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="s2">&quot;college_plans&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">[(</span><span class="s2">&quot;ses&quot;</span><span class="p">,</span> <span class="s2">&quot;iq&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;sex&quot;</span><span class="p">,</span> <span class="s2">&quot;pe&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;ses&quot;</span><span class="p">,</span> <span class="s2">&quot;pe&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;iq&quot;</span><span class="p">,</span> <span class="s2">&quot;cp&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;pe&quot;</span><span class="p">,</span> <span class="s2">&quot;cp&quot;</span><span class="p">)]</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fitted_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">estimator</span><span class="o">=</span><span class="n">DiscreteMLE</span><span class="p">())</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">fitted_model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">())</span>
-<span class="go">3</span>
+<span class="go">5</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">fitted_model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">()</span>
-<span class="go">[&lt;TabularCPD representing P(A:2) at 0x...&gt;,</span>
-<span class="go">&lt;TabularCPD representing P(C:2 | A:2, B:2) at 0x...&gt;,</span>
-<span class="go">&lt;TabularCPD representing P(B:2) at 0x...&gt;]</span>
+<span class="go">[&lt;TabularCPD representing P(ses:4) at 0x...&gt;,</span>
+<span class="go"> &lt;TabularCPD representing P(iq:4 | ses:4) at 0x...&gt;,</span>
+<span class="go"> &lt;TabularCPD representing P(sex:2) at 0x...&gt;,</span>
+<span class="go"> &lt;TabularCPD representing P(pe:2 | ses:4, sex:2) at 0x...&gt;,</span>
+<span class="go"> &lt;TabularCPD representing P(cp:2 | iq:4, pe:2) at 0x...&gt;]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1221,7 +1218,7 @@ This allows the DAG to represent both the structure and the parameters of a Baye
 <dt class="sig sig-object py" id="pgmpy.models.DiscreteBayesianNetwork.fit_update">
 <span class="sig-name descname"><span class="pre">fit_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_prev_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/pgmpy/models/DiscreteBayesianNetwork.html#DiscreteBayesianNetwork.fit_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.models.DiscreteBayesianNetwork.fit_update" title="Link to this definition">#</a></dt>
 <dd><p>Method to update the parameters of the DiscreteBayesianNetwork with more data.
-Internally, uses BayesianEstimator with dirichlet prior, and uses
+Internally, uses DiscreteBayesianEstimator with dirichlet prior, and uses
 the current CPDs (along with <cite>n_prev_samples</cite>) to compute the pseudo_counts.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
