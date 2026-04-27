@@ -915,23 +915,47 @@ divergence statistic is:</p>
 \sum_{i, j} O_{ij} \left[\left(\frac{O_{ij}}{E_{ij}}\right)^\lambda - 1\right],\]</div>
 <p>for <span class="math notranslate nohighlight">\(\lambda \notin \{-1, 0\}\)</span>. Different values of <span class="math notranslate nohighlight">\(\lambda\)</span> recover common special cases such as the
 Pearson chi-square test and the log-likelihood ratio test.</p>
-<p>If <span class="math notranslate nohighlight">\(Z = \emptyset\)</span>, the implementation constructs the contingency table of <span class="math notranslate nohighlight">\(X\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> from the
-full dataset and computes <span class="math notranslate nohighlight">\(T_\lambda\)</span> with <code class="xref py py-func docutils literal notranslate"><span class="pre">scipy.stats.chi2_contingency()</span></code>.</p>
-<p>If <span class="math notranslate nohighlight">\(Z \neq \emptyset\)</span>, the data are partitioned by each observed configuration <span class="math notranslate nohighlight">\(z\)</span> of <span class="math notranslate nohighlight">\(Z\)</span>. For
-each stratum, a contingency table for <span class="math notranslate nohighlight">\(X\)</span> and <span class="math notranslate nohighlight">\(Y\)</span> is constructed and its power divergence statistic
-<span class="math notranslate nohighlight">\(T_\lambda^{(z)}\)</span> and degrees of freedom <span class="math notranslate nohighlight">\(\nu^{(z)}\)</span> are computed. The overall statistic used in the
-code is:</p>
+<p>If <span class="math notranslate nohighlight">\(Z = \emptyset\)</span>, all observations form a single stratum. Otherwise the data are partitioned by each
+observed configuration <span class="math notranslate nohighlight">\(z\)</span> of <span class="math notranslate nohighlight">\(Z\)</span>. For every stratum the observed counts <span class="math notranslate nohighlight">\(O_{ij}^{(z)}\)</span> and
+expected counts under independence <span class="math notranslate nohighlight">\(E_{ij}^{(z)} = R_i^{(z)} C_j^{(z)} / n^{(z)}\)</span> are computed, where
+<span class="math notranslate nohighlight">\(R_i^{(z)}\)</span> and <span class="math notranslate nohighlight">\(C_j^{(z)}\)</span> are the row and column marginals of the stratum and <span class="math notranslate nohighlight">\(n^{(z)}\)</span> is
+the stratum size. The overall statistic and degrees of freedom are aggregated over strata:</p>
 <div class="math notranslate nohighlight">
 \[T = \sum_{z} T_\lambda^{(z)},
 \qquad
-\nu = \sum_{z} \nu^{(z)},\]</div>
-<p>where the sum runs over strata whose contingency tables do not contain an all-zero row or all-zero column. Strata
-with such degenerate tables are skipped.</p>
+\nu = \sum_{z} \nu^{(z)}.\]</div>
 <p>Under the null hypothesis, <span class="math notranslate nohighlight">\(T\)</span> is treated with the usual chi-square asymptotic approximation, so the
 p-value is computed as:</p>
 <div class="math notranslate nohighlight">
 \[p = 1 - F_{\chi^2_\nu}(T),\]</div>
 <p>where <span class="math notranslate nohighlight">\(F_{\chi^2_\nu}\)</span> is the CDF of the chi-square distribution with <span class="math notranslate nohighlight">\(\nu\)</span> degrees of freedom.</p>
+<p>Two corrections are applied during this aggregation. They make this implementation match
+<code class="xref py py-func docutils literal notranslate"><span class="pre">scipy.stats.chi2_contingency()</span></code> and may cause numerical differences against other discrete CI test
+implementations (notably R’s <code class="docutils literal notranslate"><span class="pre">bnlearn::ci.test(test=&quot;x2&quot;)</span></code> and <code class="docutils literal notranslate"><span class="pre">dagitty::ciTest(type=&quot;cis.chisq&quot;)</span></code>).</p>
+<p><strong>1. Adjusted (sparse) degrees of freedom.</strong> <span class="math notranslate nohighlight">\(\nu^{(z)}\)</span> is computed from the rows and columns that are
+actually observed in the stratum, not from the full cardinalities of <span class="math notranslate nohighlight">\(X\)</span> and <span class="math notranslate nohighlight">\(Y\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\nu^{(z)} = (|I_z^+| - 1)\,(|J_z^+| - 1),
+\qquad
+I_z^+ = \{\,i : R_i^{(z)} &gt; 0\,\},
+\quad
+J_z^+ = \{\,j : C_j^{(z)} &gt; 0\,\}.\]</div>
+<p>A row or column that never occurs in a stratum contributes zero to both <span class="math notranslate nohighlight">\(\nu^{(z)}\)</span> and
+<span class="math notranslate nohighlight">\(T_\lambda^{(z)}\)</span> (its expected counts are zero, so its per-cell terms vanish). A stratum that collapses
+to a single active row or column has <span class="math notranslate nohighlight">\(\nu^{(z)} = 0\)</span> and is effectively skipped. This convention agrees
+with <code class="xref py py-func docutils literal notranslate"><span class="pre">scipy.stats.chi2_contingency()</span></code> and with dagitty’s chi-square CI test, but differs from bnlearn’s
+<code class="docutils literal notranslate"><span class="pre">x2</span></code> which uses the structural dof <span class="math notranslate nohighlight">\((|\mathcal{X}|-1)(|\mathcal{Y}|-1) \prod_k |\mathcal{Z}_k|\)</span>
+regardless of sparsity.</p>
+<p><strong>2. Yates’ continuity correction on 2x2 strata.</strong> Whenever a stratum’s active contingency table is 2x2
+(equivalently, <span class="math notranslate nohighlight">\(\nu^{(z)} = 1\)</span>), Yates’ continuity correction is applied to the observed counts before
+the per-cell power-divergence terms are evaluated:</p>
+<div class="math notranslate nohighlight">
+\[\tilde{O}_{ij}^{(z)} = O_{ij}^{(z)} + \min\!\bigl(0.5,\; |E_{ij}^{(z)} - O_{ij}^{(z)}|\bigr)
+\cdot \operatorname{sign}\!\bigl(E_{ij}^{(z)} - O_{ij}^{(z)}\bigr).\]</div>
+<p>This shrinks each observed count by up to 0.5 toward its expectation, slightly reducing the statistic on small
+or sparse 2x2 tables and improving the calibration of the chi-square approximation. It matches
+<code class="xref py py-func docutils literal notranslate"><span class="pre">scipy.stats.chi2_contingency()</span></code>. bnlearn and dagitty do not apply this correction; on 2x2 strata, this
+implementation will report a statistic roughly 0.5%-2% smaller than theirs.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl>

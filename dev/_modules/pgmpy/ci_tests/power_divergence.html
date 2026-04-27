@@ -844,11 +844,18 @@
   <h1>Source code for pgmpy.ci_tests.power_divergence</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">special</span><span class="p">,</span> <span class="n">stats</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BaseCITest</span><span class="p">,</span> <span class="n">_CITestResult</span>
+
+<span class="n">_LAMBDA_ALIASES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;pearson&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;log-likelihood&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="s2">&quot;freeman-tuckey&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="s2">&quot;mod-log-likelihood&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;neyman&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.0</span><span class="p">,</span>
+    <span class="s2">&quot;cressie-read&quot;</span><span class="p">:</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span>
+<span class="p">}</span>
 
 
 <div class="viewcode-block" id="PowerDivergence">
@@ -868,21 +875,16 @@
 <span class="sd">    for :math:`\lambda \notin \{-1, 0\}`. Different values of :math:`\lambda` recover common special cases such as the</span>
 <span class="sd">    Pearson chi-square test and the log-likelihood ratio test.</span>
 
-<span class="sd">    If :math:`Z = \emptyset`, the implementation constructs the contingency table of :math:`X` and :math:`Y` from the</span>
-<span class="sd">    full dataset and computes :math:`T_\lambda` with :func:`scipy.stats.chi2_contingency`.</span>
-
-<span class="sd">    If :math:`Z \neq \emptyset`, the data are partitioned by each observed configuration :math:`z` of :math:`Z`. For</span>
-<span class="sd">    each stratum, a contingency table for :math:`X` and :math:`Y` is constructed and its power divergence statistic</span>
-<span class="sd">    :math:`T_\lambda^{(z)}` and degrees of freedom :math:`\nu^{(z)}` are computed. The overall statistic used in the</span>
-<span class="sd">    code is:</span>
+<span class="sd">    If :math:`Z = \emptyset`, all observations form a single stratum. Otherwise the data are partitioned by each</span>
+<span class="sd">    observed configuration :math:`z` of :math:`Z`. For every stratum the observed counts :math:`O_{ij}^{(z)}` and</span>
+<span class="sd">    expected counts under independence :math:`E_{ij}^{(z)} = R_i^{(z)} C_j^{(z)} / n^{(z)}` are computed, where</span>
+<span class="sd">    :math:`R_i^{(z)}` and :math:`C_j^{(z)}` are the row and column marginals of the stratum and :math:`n^{(z)}` is</span>
+<span class="sd">    the stratum size. The overall statistic and degrees of freedom are aggregated over strata:</span>
 
 <span class="sd">    .. math::</span>
 <span class="sd">        T = \sum_{z} T_\lambda^{(z)},</span>
 <span class="sd">        \qquad</span>
-<span class="sd">        \nu = \sum_{z} \nu^{(z)},</span>
-
-<span class="sd">    where the sum runs over strata whose contingency tables do not contain an all-zero row or all-zero column. Strata</span>
-<span class="sd">    with such degenerate tables are skipped.</span>
+<span class="sd">        \nu = \sum_{z} \nu^{(z)}.</span>
 
 <span class="sd">    Under the null hypothesis, :math:`T` is treated with the usual chi-square asymptotic approximation, so the</span>
 <span class="sd">    p-value is computed as:</span>
@@ -891,6 +893,40 @@
 <span class="sd">        p = 1 - F_{\chi^2_\nu}(T),</span>
 
 <span class="sd">    where :math:`F_{\chi^2_\nu}` is the CDF of the chi-square distribution with :math:`\nu` degrees of freedom.</span>
+
+<span class="sd">    Two corrections are applied during this aggregation. They make this implementation match</span>
+<span class="sd">    :func:`scipy.stats.chi2_contingency` and may cause numerical differences against other discrete CI test</span>
+<span class="sd">    implementations (notably R&#39;s ``bnlearn::ci.test(test=&quot;x2&quot;)`` and ``dagitty::ciTest(type=&quot;cis.chisq&quot;)``).</span>
+
+<span class="sd">    **1. Adjusted (sparse) degrees of freedom.** :math:`\nu^{(z)}` is computed from the rows and columns that are</span>
+<span class="sd">    actually observed in the stratum, not from the full cardinalities of :math:`X` and :math:`Y`:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        \nu^{(z)} = (|I_z^+| - 1)\,(|J_z^+| - 1),</span>
+<span class="sd">        \qquad</span>
+<span class="sd">        I_z^+ = \{\,i : R_i^{(z)} &gt; 0\,\},</span>
+<span class="sd">        \quad</span>
+<span class="sd">        J_z^+ = \{\,j : C_j^{(z)} &gt; 0\,\}.</span>
+
+<span class="sd">    A row or column that never occurs in a stratum contributes zero to both :math:`\nu^{(z)}` and</span>
+<span class="sd">    :math:`T_\lambda^{(z)}` (its expected counts are zero, so its per-cell terms vanish). A stratum that collapses</span>
+<span class="sd">    to a single active row or column has :math:`\nu^{(z)} = 0` and is effectively skipped. This convention agrees</span>
+<span class="sd">    with :func:`scipy.stats.chi2_contingency` and with dagitty&#39;s chi-square CI test, but differs from bnlearn&#39;s</span>
+<span class="sd">    ``x2`` which uses the structural dof :math:`(|\mathcal{X}|-1)(|\mathcal{Y}|-1) \prod_k |\mathcal{Z}_k|`</span>
+<span class="sd">    regardless of sparsity.</span>
+
+<span class="sd">    **2. Yates&#39; continuity correction on 2x2 strata.** Whenever a stratum&#39;s active contingency table is 2x2</span>
+<span class="sd">    (equivalently, :math:`\nu^{(z)} = 1`), Yates&#39; continuity correction is applied to the observed counts before</span>
+<span class="sd">    the per-cell power-divergence terms are evaluated:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        \tilde{O}_{ij}^{(z)} = O_{ij}^{(z)} + \min\!\bigl(0.5,\; |E_{ij}^{(z)} - O_{ij}^{(z)}|\bigr)</span>
+<span class="sd">        \cdot \operatorname{sign}\!\bigl(E_{ij}^{(z)} - O_{ij}^{(z)}\bigr).</span>
+
+<span class="sd">    This shrinks each observed count by up to 0.5 toward its expectation, slightly reducing the statistic on small</span>
+<span class="sd">    or sparse 2x2 tables and improving the calibration of the chi-square approximation. It matches</span>
+<span class="sd">    :func:`scipy.stats.chi2_contingency`. bnlearn and dagitty do not apply this correction; on 2x2 strata, this</span>
+<span class="sd">    implementation will report a statistic roughly 0.5%-2% smaller than theirs.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -956,6 +992,12 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">lambda_</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="s2">&quot;cressie-read&quot;</span><span class="p">,</span> <span class="n">use_cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span> <span class="o">=</span> <span class="n">lambda_</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_codes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cardinalities</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">codes</span><span class="p">,</span> <span class="n">uniques</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">factorize</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">sort</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_na_sentinel</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_codes</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">codes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cardinalities</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">uniques</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">use_cache</span><span class="o">=</span><span class="n">use_cache</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_compute_result</span><span class="p">(</span>
@@ -965,46 +1007,85 @@
         <span class="n">Z</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute power divergence statistic, p-value, and degrees of freedom.</span>
+<span class="sd">        Compute the power-divergence statistic, p-value, and degrees of freedom.</span>
 
-<span class="sd">        Returns the chi-squared statistic, p-value, and degrees of freedom.</span>
+<span class="sd">        Each row is encoded as a flat index into an ``(n_strata, kx, ky)``</span>
+<span class="sd">        contingency built in a single ``np.bincount``. Marginals, expected</span>
+<span class="sd">        counts, dof, Yates&#39; correction (on 2x2 strata), and the per-cell</span>
+<span class="sd">        statistic are all computed via numpy broadcasting over that 3D table,</span>
+<span class="sd">        then summed to a single chi and one ``chi2.sf`` call.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">x_codes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_codes</span><span class="p">[</span><span class="n">X</span><span class="p">]</span>
+        <span class="n">y_codes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_codes</span><span class="p">[</span><span class="n">Y</span><span class="p">]</span>
+        <span class="n">kx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cardinalities</span><span class="p">[</span><span class="n">X</span><span class="p">]</span>
+        <span class="n">ky</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cardinalities</span><span class="p">[</span><span class="n">Y</span><span class="p">]</span>
 
-        <span class="c1"># Step 1: Do a simple contingency test if there are no conditional variables.</span>
+        <span class="c1"># Step 1: Densify the observed Z strata. For |Z|=0, all rows go into a single stratum.</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">chi</span><span class="p">,</span> <span class="n">p_value</span><span class="p">,</span> <span class="n">dof</span><span class="p">,</span> <span class="n">expected</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2_contingency</span><span class="p">(</span>
-                <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">],</span> <span class="n">observed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
-                <span class="n">lambda_</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="c1"># Step 3: If there are conditionals variables, iterate over unique states</span>
+            <span class="n">z_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_codes</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+            <span class="n">n_strata</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">chi</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">dof</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">z_state</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">Z</span><span class="p">),</span> <span class="n">observed</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-                <span class="c1"># Compute the contingency table</span>
-                <span class="n">unique_x</span><span class="p">,</span> <span class="n">x_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">X</span><span class="p">],</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">unique_y</span><span class="p">,</span> <span class="n">y_inv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">Y</span><span class="p">],</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">contingency</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span>
-                    <span class="n">x_inv</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_y</span><span class="p">)</span> <span class="o">+</span> <span class="n">y_inv</span><span class="p">,</span>
-                    <span class="n">minlength</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_x</span><span class="p">)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_y</span><span class="p">),</span>
-                <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_x</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_y</span><span class="p">))</span>
+            <span class="n">z_combined</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_codes</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">Z</span><span class="p">:</span>
+                <span class="n">z_combined</span> <span class="o">=</span> <span class="n">z_combined</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cardinalities</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_codes</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+            <span class="n">unique_z</span><span class="p">,</span> <span class="n">z_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">z_combined</span><span class="p">,</span> <span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">n_strata</span> <span class="o">=</span> <span class="n">unique_z</span><span class="o">.</span><span class="n">size</span>
 
-                <span class="c1"># If all values of a column in the contingency table are zeros, skip the test.</span>
-                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">contingency</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">contingency</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">z_state</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping the test </span><span class="si">{</span><span class="n">X</span><span class="si">}</span><span class="s2"> _|_ </span><span class="si">{</span><span class="n">Y</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">Z</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">z_state</span><span class="si">}</span><span class="s2">. Not enough samples&quot;</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">z_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="n">z_state</span><span class="p">)])</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Skipping the test </span><span class="si">{</span><span class="n">X</span><span class="si">}</span><span class="s2"> _|_ </span><span class="si">{</span><span class="n">Y</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">z_str</span><span class="si">}</span><span class="s2">. Not enough samples&quot;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">c</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2_contingency</span><span class="p">(</span><span class="n">contingency</span><span class="p">,</span> <span class="n">lambda_</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span><span class="p">)</span>
-                    <span class="n">chi</span> <span class="o">+=</span> <span class="n">c</span>
-                    <span class="n">dof</span> <span class="o">+=</span> <span class="n">d</span>
-            <span class="n">p_value</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">chi</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">dof</span><span class="p">)</span>
+        <span class="c1"># Step 2: Build the (n_strata, kx, ky) contingency table in one bincount.</span>
+        <span class="n">flat</span> <span class="o">=</span> <span class="p">(</span><span class="n">z_idx</span> <span class="o">*</span> <span class="n">kx</span> <span class="o">+</span> <span class="n">x_codes</span><span class="p">)</span> <span class="o">*</span> <span class="n">ky</span> <span class="o">+</span> <span class="n">y_codes</span>
+        <span class="n">observed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">flat</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n_strata</span> <span class="o">*</span> <span class="n">kx</span> <span class="o">*</span> <span class="n">ky</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n_strata</span><span class="p">,</span> <span class="n">kx</span><span class="p">,</span> <span class="n">ky</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span><span class="n">statistic</span><span class="o">=</span><span class="n">chi</span><span class="p">,</span> <span class="n">p_value</span><span class="o">=</span><span class="n">p_value</span><span class="p">,</span> <span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dof_&quot;</span><span class="p">:</span> <span class="n">dof</span><span class="p">})</span></div>
+        <span class="c1"># Step 3: Per-stratum marginals and expected counts.</span>
+        <span class="n">row_sums</span> <span class="o">=</span> <span class="n">observed</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">col_sums</span> <span class="o">=</span> <span class="n">observed</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">n_per</span> <span class="o">=</span> <span class="n">observed</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">expected</span> <span class="o">=</span> <span class="n">row_sums</span> <span class="o">*</span> <span class="n">col_sums</span> <span class="o">/</span> <span class="n">n_per</span>
+        <span class="n">safe</span> <span class="o">=</span> <span class="n">expected</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="c1"># Step 4: Per-stratum dof = (active_rows - 1) * (active_cols - 1).</span>
+        <span class="n">rows_active</span> <span class="o">=</span> <span class="p">(</span><span class="n">row_sums</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">cols_active</span> <span class="o">=</span> <span class="p">(</span><span class="n">col_sums</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">dof_per</span> <span class="o">=</span> <span class="p">(</span><span class="n">rows_active</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">cols_active</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">dof</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dof_per</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+        <span class="c1"># Step 5: Yates&#39; continuity correction on 2x2 strata, matching scipy.stats.chi2_contingency.</span>
+        <span class="n">correction_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">dof_per</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">correction_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="n">expected</span> <span class="o">-</span> <span class="n">observed</span>
+            <span class="n">adjustment</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">diff</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span>
+            <span class="n">observed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">correction_mask</span><span class="p">,</span> <span class="n">observed</span> <span class="o">+</span> <span class="n">adjustment</span><span class="p">,</span> <span class="n">observed</span><span class="p">)</span>
+
+        <span class="c1"># Step 6: Power-divergence statistic and p-value. dof=0 (every stratum</span>
+        <span class="c1"># degenerate) yields p_value=NaN, treated as &quot;not independent&quot; downstream.</span>
+        <span class="n">terms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_power_divergence_terms</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="n">safe</span><span class="p">)</span>
+        <span class="n">chi</span> <span class="o">=</span> <span class="n">terms</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">p_value</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">chi</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">dof</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span><span class="n">statistic</span><span class="o">=</span><span class="n">chi</span><span class="p">,</span> <span class="n">p_value</span><span class="o">=</span><span class="n">p_value</span><span class="p">,</span> <span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dof_&quot;</span><span class="p">:</span> <span class="n">dof</span><span class="p">})</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_power_divergence_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="n">safe</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-cell power-divergence contribution for the (n_strata, kx, ky) table.&quot;&quot;&quot;</span>
+        <span class="n">lam</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lam</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">lam</span> <span class="o">=</span> <span class="n">_LAMBDA_ALIASES</span><span class="p">[</span><span class="n">lam</span><span class="p">]</span>
+
+        <span class="c1"># Pearson: (O - E)^2 / E.</span>
+        <span class="k">if</span> <span class="n">lam</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">terms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">expected</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">((</span><span class="n">observed</span> <span class="o">-</span> <span class="n">expected</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">terms</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">safe</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">terms</span>
+        <span class="c1"># Log-likelihood: 2 * O * log(O / E).</span>
+        <span class="k">if</span> <span class="n">lam</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">special</span><span class="o">.</span><span class="n">xlogy</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">observed</span><span class="p">)</span> <span class="o">-</span> <span class="n">special</span><span class="o">.</span><span class="n">xlogy</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">))</span>
+        <span class="c1"># Modified log-likelihood: 2 * E * log(E / O).</span>
+        <span class="k">if</span> <span class="n">lam</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">special</span><span class="o">.</span><span class="n">xlogy</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">expected</span><span class="p">)</span> <span class="o">-</span> <span class="n">special</span><span class="o">.</span><span class="n">xlogy</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">observed</span><span class="p">))</span>
+
+        <span class="c1"># General Cressie-Read on E &gt; 0 cells; zero elsewhere.</span>
+        <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+            <span class="n">ratio</span> <span class="o">=</span> <span class="n">observed</span> <span class="o">/</span> <span class="n">expected</span>
+            <span class="n">full</span> <span class="o">=</span> <span class="n">observed</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">ratio</span><span class="p">,</span> <span class="n">lam</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">lam</span> <span class="o">*</span> <span class="p">(</span><span class="n">lam</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">safe</span><span class="p">,</span> <span class="n">full</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span></div>
 
 </pre></div>
 
