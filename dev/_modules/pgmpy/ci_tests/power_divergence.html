@@ -894,39 +894,22 @@
 
 <span class="sd">    where :math:`F_{\chi^2_\nu}` is the CDF of the chi-square distribution with :math:`\nu` degrees of freedom.</span>
 
-<span class="sd">    Two corrections are applied during this aggregation. They make this implementation match</span>
-<span class="sd">    :func:`scipy.stats.chi2_contingency` and may cause numerical differences against other discrete CI test</span>
-<span class="sd">    implementations (notably R&#39;s ``bnlearn::ci.test(test=&quot;x2&quot;)`` and ``dagitty::ciTest(type=&quot;cis.chisq&quot;)``).</span>
+<span class="sd">    Two corrections are applied during this aggregation:</span>
 
-<span class="sd">    **1. Adjusted (sparse) degrees of freedom.** :math:`\nu^{(z)}` is computed from the rows and columns that are</span>
-<span class="sd">    actually observed in the stratum, not from the full cardinalities of :math:`X` and :math:`Y`:</span>
-
-<span class="sd">    .. math::</span>
-<span class="sd">        \nu^{(z)} = (|I_z^+| - 1)\,(|J_z^+| - 1),</span>
-<span class="sd">        \qquad</span>
-<span class="sd">        I_z^+ = \{\,i : R_i^{(z)} &gt; 0\,\},</span>
-<span class="sd">        \quad</span>
-<span class="sd">        J_z^+ = \{\,j : C_j^{(z)} &gt; 0\,\}.</span>
-
-<span class="sd">    A row or column that never occurs in a stratum contributes zero to both :math:`\nu^{(z)}` and</span>
-<span class="sd">    :math:`T_\lambda^{(z)}` (its expected counts are zero, so its per-cell terms vanish). A stratum that collapses</span>
-<span class="sd">    to a single active row or column has :math:`\nu^{(z)} = 0` and is effectively skipped. This convention agrees</span>
-<span class="sd">    with :func:`scipy.stats.chi2_contingency` and with dagitty&#39;s chi-square CI test, but differs from bnlearn&#39;s</span>
-<span class="sd">    ``x2`` which uses the structural dof :math:`(|\mathcal{X}|-1)(|\mathcal{Y}|-1) \prod_k |\mathcal{Z}_k|`</span>
-<span class="sd">    regardless of sparsity.</span>
+<span class="sd">    **1. Adjusted (sparse) degrees of freedom.** A row or column that never occurs in a stratum contributes zero to both</span>
+<span class="sd">    :math:`\nu^{(z)}` and :math:`T_\lambda^{(z)}` (its expected counts are zero, so its per-cell terms vanish). A</span>
+<span class="sd">    stratum that collapses to a single active row or column has :math:`\nu^{(z)} = 0` and is effectively skipped.</span>
 
 <span class="sd">    **2. Yates&#39; continuity correction on 2x2 strata.** Whenever a stratum&#39;s active contingency table is 2x2</span>
 <span class="sd">    (equivalently, :math:`\nu^{(z)} = 1`), Yates&#39; continuity correction is applied to the observed counts before</span>
 <span class="sd">    the per-cell power-divergence terms are evaluated:</span>
 
-<span class="sd">    .. math::</span>
-<span class="sd">        \tilde{O}_{ij}^{(z)} = O_{ij}^{(z)} + \min\!\bigl(0.5,\; |E_{ij}^{(z)} - O_{ij}^{(z)}|\bigr)</span>
-<span class="sd">        \cdot \operatorname{sign}\!\bigl(E_{ij}^{(z)} - O_{ij}^{(z)}\bigr).</span>
+<span class="sd">    The effect size is Cramér&#39;s V:</span>
 
-<span class="sd">    This shrinks each observed count by up to 0.5 toward its expectation, slightly reducing the statistic on small</span>
-<span class="sd">    or sparse 2x2 tables and improving the calibration of the chi-square approximation. It matches</span>
-<span class="sd">    :func:`scipy.stats.chi2_contingency`. bnlearn and dagitty do not apply this correction; on 2x2 strata, this</span>
-<span class="sd">    implementation will report a statistic roughly 0.5%-2% smaller than theirs.</span>
+<span class="sd">    .. math::</span>
+<span class="sd">        V = \sqrt{\frac{T}{n \cdot (k - 1)}},</span>
+
+<span class="sd">    where :math:`k = \min(|X|, |Y|)` is the smaller number of categories and :math:`n` is the sample size.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -952,6 +935,8 @@
 <span class="sd">        The p-value for the test. Set after calling the test.</span>
 <span class="sd">    dof_ : int</span>
 <span class="sd">        Degrees of freedom :math:`\nu` for the test. Set after calling the test.</span>
+<span class="sd">    effect_size_ : float</span>
+<span class="sd">        Cramér&#39;s V. Set after calling the test.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -1061,7 +1046,11 @@
         <span class="n">chi</span> <span class="o">=</span> <span class="n">terms</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="n">p_value</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">chi2</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">chi</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">dof</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span><span class="n">statistic</span><span class="o">=</span><span class="n">chi</span><span class="p">,</span> <span class="n">p_value</span><span class="o">=</span><span class="n">p_value</span><span class="p">,</span> <span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dof_&quot;</span><span class="p">:</span> <span class="n">dof</span><span class="p">})</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">X</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">Y</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">())</span>
+        <span class="n">effect_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">chi</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span><span class="n">statistic</span><span class="o">=</span><span class="n">chi</span><span class="p">,</span> <span class="n">p_value</span><span class="o">=</span><span class="n">p_value</span><span class="p">,</span> <span class="n">effect_size</span><span class="o">=</span><span class="n">effect_size</span><span class="p">,</span> <span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dof_&quot;</span><span class="p">:</span> <span class="n">dof</span><span class="p">})</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_power_divergence_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observed</span><span class="p">,</span> <span class="n">expected</span><span class="p">,</span> <span class="n">safe</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-cell power-divergence contribution for the (n_strata, kx, ky) table.&quot;&quot;&quot;</span>

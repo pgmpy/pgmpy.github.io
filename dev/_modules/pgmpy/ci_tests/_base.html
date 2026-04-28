@@ -966,6 +966,7 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">_CITestResult</span><span class="p">:</span>
     <span class="n">statistic</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="n">p_value</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">effect_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 
 
@@ -1032,8 +1033,9 @@
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
-<span class="sd">        Always sets ``self.statistic_`` and ``self.p_value_`` as side effects,</span>
-<span class="sd">        regardless of the return value. Access these attributes to inspect raw results.</span>
+<span class="sd">        Always sets ``self.statistic_``, ``self.p_value_``, and ``self.effect_size_``</span>
+<span class="sd">        as side effects, regardless of the return value. Access these attributes to</span>
+<span class="sd">        inspect raw results.</span>
 <span class="sd">        CI test instances are not thread-safe; use a separate instance per thread</span>
 <span class="sd">        for parallel computation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1083,6 +1085,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">statistic_</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">statistic</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p_value_</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">p_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">effect_size_</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">effect_size</span>
         <span class="k">for</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_value</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr_value</span><span class="p">)</span>
 
@@ -1109,7 +1112,7 @@
 
 <div class="viewcode-block" id="get_ci_test">
 <a class="viewcode-back" href="../../../api/generated/ci_test/pgmpy.ci_tests.get_ci_test.html#pgmpy.ci_tests.get_ci_test">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_ci_test</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_ci_test</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return an instantiated CI test object given a test name, instance, or data.</span>
 
@@ -1218,8 +1221,9 @@
         <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">&quot;requires_data&quot;</span><span class="p">,</span> <span class="n">tag_value_default</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CI test &#39;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&#39; requires data, but data is None.&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="n">use_cache</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">use_cache</span><span class="o">=</span><span class="n">use_cache</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown CI test: </span><span class="si">{</span><span class="n">test</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 </pre></div>

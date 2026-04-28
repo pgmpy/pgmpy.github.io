@@ -854,6 +854,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base._mixin_roles</span><span class="w"> </span><span class="kn">import</span> <span class="n">_GraphRolesMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.ci_tests</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_ci_test</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.independencies</span><span class="w"> </span><span class="kn">import</span> <span class="n">Independencies</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_dagitty</span><span class="p">,</span> <span class="n">parse_lavaan</span>
 
@@ -2569,7 +2570,7 @@
 
 <div class="viewcode-block" id="DAG.edge_strength">
 <a class="viewcode-back" href="../../../api/generated/base/pgmpy.base.DAG.html#pgmpy.base.DAG.edge_strength">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">edge_strength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">edge_strength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ci_test</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the strength of each edge in `edges`. The strength is bounded</span>
 <span class="sd">        between 0 and 1, with 1 signifying strong effect.</span>
@@ -2597,6 +2598,9 @@
 <span class="sd">            - None: Compute for all DAG edges.</span>
 <span class="sd">            - Tuple (X, Y): Compute for edge X → Y.</span>
 <span class="sd">            - List of tuples: Compute for selected edges.</span>
+
+<span class="sd">        ci_test : str or instance of _BaseCITest</span>
+<span class="sd">            The conditional independence test whose effect size to use as edge strength</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -2638,8 +2642,6 @@
 <span class="sd">        on Artificial Intelligence.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators.CITests</span><span class="w"> </span><span class="kn">import</span> <span class="n">pillai_trace</span>
-
         <span class="c1"># If edges is None, compute for all edges in the DAG</span>
         <span class="k">if</span> <span class="n">edges</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">edges_to_compute</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
@@ -2653,6 +2655,8 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;edges parameter must be either None, a 2-tuple (X, Y), or a list of 2-tuples [(X1, Y1), (X2, Y2), ...]&quot;</span>
             <span class="p">)</span>
+
+        <span class="n">ci_test</span> <span class="o">=</span> <span class="n">get_ci_test</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="n">ci_test</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
 
         <span class="n">strengths</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">skipped_edges</span> <span class="o">=</span> <span class="p">[]</span>
@@ -2672,13 +2676,13 @@
             <span class="n">conditioning_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">pa_Y</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">}</span>
 
             <span class="c1"># Run CI test and get effect size</span>
-            <span class="n">effect_size</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">pillai_trace</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">conditioning_set</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">ci_test</span><span class="o">.</span><span class="n">run_test</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">conditioning_set</span><span class="p">))</span>
 
             <span class="c1"># Store the edge strength</span>
-            <span class="n">strengths</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span> <span class="o">=</span> <span class="n">effect_size</span>
+            <span class="n">strengths</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span> <span class="o">=</span> <span class="n">ci_test</span><span class="o">.</span><span class="n">effect_size_</span>
 
             <span class="c1"># store the values in the graph as well</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s2">&quot;strength&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">effect_size</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s2">&quot;strength&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ci_test</span><span class="o">.</span><span class="n">effect_size_</span>
 
         <span class="k">if</span> <span class="n">skipped_edges</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
