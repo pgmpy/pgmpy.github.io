@@ -845,29 +845,35 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span><span class="p">,</span> <span class="n">PDAG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">_BaseSupervisedMetric</span>
 
 
 <div class="viewcode-block" id="SHD">
 <a class="viewcode-back" href="../../../api/generated/metrics/pgmpy.metrics.SHD.html#pgmpy.metrics.SHD">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SHD</span><span class="p">(</span><span class="n">_BaseSupervisedMetric</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Computes the Structural Hamming Distance between `true_causal_graph` and `est_causal_graph`.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes the Structural Hamming Distance (SHD) between two graphs.</span>
 
-<span class="sd">    SHD is defined as total number of basic operations: adding edges, removing edges, and reversing edges required to</span>
-<span class="sd">    transform one graph to the other. It is a symmetrical measure.</span>
+<span class="sd">    Given two graphs (DAGs or PDAGs) :math:`G_1` and :math:`G_2` over the same vertex set, let :math:`S(G)` denote the</span>
+<span class="sd">    skeleton (underlying undirected graph) of :math:`G`. The SHD is:</span>
 
-<span class="sd">    The code first accounts for edges that need to be deleted (from true_model), added (to true_model) and finally edges</span>
-<span class="sd">    that need to be reversed. All operations count as 1. Alternatively, setting `edge_reverse_penalty=2` counts</span>
-<span class="sd">    reversals as a distance of 2 (one deletion and one addition).</span>
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \text{SHD}(G_1, G_2) = |S(G_1) \triangle S(G_2)|</span>
+<span class="sd">            + p \cdot |\{e \in S(G_1) \cap S(G_2) :</span>
+<span class="sd">            \text{orient}(e, G_1) \neq \text{orient}(e, G_2)\}|</span>
+
+<span class="sd">    where :math:`\triangle` js the symmetric difference and :math:`p` is the ``edge_reverse_penalty`` (default 1; set to</span>
+<span class="sd">    2 to count a reversal as one deletion plus one addition).</span>
+
+<span class="sd">    For PDAGs, an undirected edge is represented as a pair of directed edges, so any orientation mismatch on a shared</span>
+<span class="sd">    skeleton edge counts as one operation.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    edge_reverse_penalty: int (default: 1)</span>
-<span class="sd">        The penalty for edge reversals. When set to 1, all basic operations (add,</span>
-<span class="sd">        delete, reverse) count as 1. When set to 2, additions and deletions count</span>
-<span class="sd">        as 1, while reversals count as 2.</span>
+<span class="sd">        Penalty :math:`p` for orientation mismatches on shared skeleton edges.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
@@ -881,6 +887,14 @@
 <span class="sd">    &gt;&gt;&gt; shd_double = SHD(edge_reverse_penalty=2)</span>
 <span class="sd">    &gt;&gt;&gt; shd_double(true_causal_graph=dag1, est_causal_graph=dag2)</span>
 <span class="sd">    2</span>
+
+<span class="sd">    PDAGs are also supported:</span>
+
+<span class="sd">    &gt;&gt;&gt; from pgmpy.base import PDAG</span>
+<span class="sd">    &gt;&gt;&gt; pdag1 = PDAG(directed_ebunch=[(1, 2)], undirected_ebunch=[(2, 3)])</span>
+<span class="sd">    &gt;&gt;&gt; pdag2 = PDAG(directed_ebunch=[(1, 2), (2, 3)])</span>
+<span class="sd">    &gt;&gt;&gt; shd(true_causal_graph=pdag1, est_causal_graph=pdag2)</span>
+<span class="sd">    1</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span>
@@ -889,7 +903,7 @@
         <span class="s2">&quot;requires_data&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
         <span class="s2">&quot;lower_is_better&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">&quot;is_symmetric&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;supported_graph_types&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">DAG</span><span class="p">,),</span>
+        <span class="s2">&quot;supported_graph_types&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">DAG</span><span class="p">,</span> <span class="n">PDAG</span><span class="p">),</span>
         <span class="s2">&quot;is_default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">}</span>
 
@@ -913,8 +927,12 @@
 
         <span class="n">shd</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">s1</span> <span class="o">=</span> <span class="n">m1</span> <span class="o">+</span> <span class="n">m1</span><span class="o">.</span><span class="n">T</span>
-        <span class="n">s2</span> <span class="o">=</span> <span class="n">m2</span> <span class="o">+</span> <span class="n">m2</span><span class="o">.</span><span class="n">T</span>
+        <span class="c1"># Skeletons: 1 wherever there is any edge (directed or undirected) between a pair.</span>
+        <span class="c1"># For PDAGs, undirected edges have both m[i, j] and m[j, i] set to 1, so m + m.T</span>
+        <span class="c1"># produces a 2 at those positions; clipping to {0, 1} keeps the skeleton comparison</span>
+        <span class="c1"># honest and avoids double-counting an undirected-vs-nothing difference.</span>
+        <span class="n">s1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">m1</span> <span class="o">+</span> <span class="n">m1</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">s2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">m2</span> <span class="o">+</span> <span class="n">m2</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
         <span class="c1"># Edges that are in m1 but not in m2 (deletions from m1)</span>
         <span class="n">ds</span> <span class="o">=</span> <span class="n">s1</span> <span class="o">-</span> <span class="n">s2</span>
