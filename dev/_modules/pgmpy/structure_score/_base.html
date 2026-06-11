@@ -894,6 +894,9 @@
 <span class="sd">    state_names : dict, optional</span>
 <span class="sd">        Dictionary mapping each variable name to its allowed states. If not specified, the</span>
 <span class="sd">        observed values in the data are used.</span>
+<span class="sd">    max_cache_size : int or None, default=10000</span>
+<span class="sd">        Maximum number of local scores to cache. If None, the cache is unlimited.</span>
+<span class="sd">        Increase this for large datasets to avoid cache thrashing.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span>
@@ -903,14 +906,17 @@
         <span class="s2">&quot;is_parameteric&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_cache_size</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache_size</span> <span class="o">=</span> <span class="n">max_cache_size</span>
+        <span class="k">if</span> <span class="n">max_cache_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">max_cache_size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cache_size must be a positive integer or None. Got: </span><span class="si">{</span><span class="n">max_cache_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span> <span class="o">=</span> <span class="n">build_state_names</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_local_score</span> <span class="o">=</span> <span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">10000</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local_score</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_local_score</span> <span class="o">=</span> <span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">max_cache_size</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local_score</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BaseStructureScore.local_score">
 <a class="viewcode-back" href="../../../api/generated/structure_score/pgmpy.structure_score.BaseStructureScore.html#pgmpy.structure_score.BaseStructureScore.local_score">[docs]</a>
@@ -956,6 +962,56 @@
     <span class="n">scoring_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">BaseStructureScore</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseStructureScore</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a structure score instance.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    scoring_method : str or BaseStructureScore or None</span>
+<span class="sd">        The scoring method whose instance is to be returned.</span>
+
+<span class="sd">        - If a string is provided, the corresponding scoring method is</span>
+<span class="sd">        instantiated with default parameters.</span>
+<span class="sd">        - If a ``BaseStructureScore`` instance is provided, it is returned</span>
+<span class="sd">        unchanged.</span>
+<span class="sd">        - If ``None``, the default scoring method for the data type is</span>
+<span class="sd">        selected automatically.</span>
+
+<span class="sd">    data : pandas.DataFrame</span>
+<span class="sd">        Dataset used to determine the default scoring method and to</span>
+<span class="sd">        initialize score instances.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    BaseStructureScore</span>
+<span class="sd">        An initialized structure score instance.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.structure_score import BDeu, get_scoring_method</span>
+<span class="sd">    &gt;&gt;&gt; model = load_model(&quot;bnlearn/asia&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; data = model.simulate(n_samples=1000, seed=42)</span>
+
+<span class="sd">    Use a scoring method by name:</span>
+
+<span class="sd">    &gt;&gt;&gt; score = get_scoring_method(&quot;k2&quot;, data)</span>
+
+<span class="sd">    Use the default scoring method for the dataset type:</span>
+
+<span class="sd">    &gt;&gt;&gt; score = get_scoring_method(None, data)</span>
+
+<span class="sd">    Use a custom scoring method with non-default parameters:</span>
+
+<span class="sd">    &gt;&gt;&gt; score = BDeu(data, equivalent_sample_size=20, max_cache_size=20000)</span>
+<span class="sd">    &gt;&gt;&gt; score = get_scoring_method(score, data)</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If ``scoring_method`` is invalid, unknown, or if ``data`` is</span>
+<span class="sd">        required but not provided.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">BaseStructureScore</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">scoring_method</span>
 
