@@ -868,6 +868,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
@@ -876,7 +877,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">skbase.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseObject</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">skbase.lookup</span><span class="w"> </span><span class="kn">import</span> <span class="n">all_objects</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span><span class="p">,</span> <span class="n">DAG</span><span class="p">,</span> <span class="n">MAG</span><span class="p">,</span> <span class="n">PDAG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExpertKnowledge</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils.hf_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_hf_file</span>
 
@@ -886,7 +887,7 @@
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
     <span class="n">expert_knowledge</span><span class="p">:</span> <span class="n">ExpertKnowledge</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">ground_truth</span><span class="p">:</span> <span class="n">DAG</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ground_truth</span><span class="p">:</span> <span class="n">DAG</span> <span class="o">|</span> <span class="n">PDAG</span> <span class="o">|</span> <span class="n">ADMG</span> <span class="o">|</span> <span class="n">MAG</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="n">tags</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -996,9 +997,17 @@
         <span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_dataframe</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_dataframe</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Fetches/reads from cache the data associated with the dataset.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int, optional</span>
+<span class="sd">            If provided, return a random subsample of this size. Capped at the</span>
+<span class="sd">            dataset size.</span>
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            Random seed for reproducible subsampling.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">raw_data</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_get_raw_data</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">data_url</span><span class="p">)</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">raw_data</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;sep&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">))</span>
@@ -1013,6 +1022,13 @@
             <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">order</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ordinal_variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">cat_type</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">cat_type</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">n_samples</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Requested </span><span class="si">{</span><span class="n">n_samples</span><span class="si">}</span><span class="s2"> samples but dataset only has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2">. Returning all </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">df</span>
 
     <span class="nd">@classmethod</span>
@@ -1026,8 +1042,15 @@
         <span class="k">return</span> <span class="n">expert_knowledge</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_ground_truth</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DAG</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fetches/reads from cache the ground truth DAG associated with the dataset.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_ground_truth</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DAG</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fetches/reads from cache the ground truth graph associated with the dataset.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Absorbed for call-signature compatibility with ``load_dataset()``.</span>
+<span class="sd">            Static datasets ignore all forwarded arguments.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">&quot;has_ground_truth&quot;</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">None</span>
 
@@ -1035,12 +1058,15 @@
         <span class="k">return</span> <span class="n">DAG</span><span class="o">.</span><span class="n">from_dagitty</span><span class="p">(</span><span class="n">raw_data</span><span class="p">)</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">_CovarianceMixin</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseCovarianceDataset</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This mixin class provides functionality to load datasets defined by a covariance matrix. Mainly the `load_dataframe`</span>
-<span class="sd">    method is overridden to generate data from the covariance matrix instead of loading a static data file as is the</span>
-<span class="sd">    case with `BaseDataset`.</span>
+<span class="sd">    Base class for datasets defined by a covariance matrix.</span>
+
+<span class="sd">    Instead of loading a static data file, ``load_dataframe`` generates samples from a multivariate normal distribution</span>
+<span class="sd">    parameterized by the dataset&#39;s covariance matrix.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;is_simulated&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_load_covariance_matrix</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -1064,24 +1090,32 @@
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">names</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">names</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_dataframe</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to create data from covariance matrix. When the `_CovarDatasetMixin is</span>
-<span class="sd">        used this method is supposed to override the BaseDataset.load_dataframe method.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_dataframe</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate data from a covariance matrix.</span>
 
-<span class="sd">        ** Hence, when using this mixin, _CovarDatasetMixin should be the first parent class. **</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int, optional</span>
+<span class="sd">            Number of samples to generate.  Defaults to the class tag</span>
+<span class="sd">            ``n_samples`` when not provided.</span>
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            Random seed for reproducible generation.  When ``None``, the</span>
+<span class="sd">            existing unseeded behavior is preserved.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cov_matrix</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_load_covariance_matrix</span><span class="p">()</span>
         <span class="n">mean</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">&quot;n_variables&quot;</span><span class="p">)</span>
+        <span class="n">actual_n</span> <span class="o">=</span> <span class="n">n_samples</span> <span class="k">if</span> <span class="n">n_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">&quot;n_samples&quot;</span><span class="p">)</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span> <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov_matrix</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">&quot;n_samples&quot;</span><span class="p">)),</span>
+            <span class="n">rng</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">cov_matrix</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">actual_n</span><span class="p">),</span>
             <span class="n">columns</span><span class="o">=</span><span class="n">cov_matrix</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">data</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">_TubingenBenchmarkMixin</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseTubingenDataset</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Mixin for Tubingen datasets that consist of multiple independent pairs/files.</span>
+<span class="sd">    Base class for benchmark datasets that consist of multiple independent cause-effect pairs/files.</span>
 <span class="sd">    URL: https://webdav.tuebingen.mpg.de/cause-effect/</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1097,9 +1131,35 @@
         <span class="k">return</span> <span class="n">DAG</span><span class="o">.</span><span class="n">from_dagitty</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
 
 
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseSimulatedDataset</span><span class="p">(</span><span class="n">BaseDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for simulated datasets.</span>
+
+<span class="sd">    Concrete subclasses generate data and the corresponding ground-truth graph programmatically instead of</span>
+<span class="sd">    loading static files, and must implement ``load_dataframe()`` and ``load_ground_truth()``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;is_simulated&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_dataframe</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate and return simulated data. Must be implemented by each simulator.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> must implement load_dataframe().&quot;</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_ground_truth</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DAG</span> <span class="o">|</span> <span class="n">PDAG</span> <span class="o">|</span> <span class="n">ADMG</span> <span class="o">|</span> <span class="n">MAG</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct and return the ground-truth graph. Must be implemented by each simulator.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> must implement load_ground_truth().&quot;</span><span class="p">)</span>
+
+
 <div class="viewcode-block" id="load_dataset">
 <a class="viewcode-back" href="../../../api/generated/data/pgmpy.datasets.load_dataset.html#pgmpy.datasets.load_dataset">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_dataset</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dataset</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_dataset</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dataset</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Load a dataset by name.</span>
 
@@ -1107,6 +1167,17 @@
 <span class="sd">    ----------</span>
 <span class="sd">    name : str</span>
 <span class="sd">        Name of the dataset to load.</span>
+<span class="sd">    n_samples : int, optional</span>
+<span class="sd">        For static datasets, return a random subsample of this size (capped</span>
+<span class="sd">        at the dataset size).  For simulated datasets, the number of samples</span>
+<span class="sd">        to generate.</span>
+<span class="sd">    seed : int, optional</span>
+<span class="sd">        Random seed for reproducible subsampling or simulation.</span>
+<span class="sd">    **sim_kwargs : dict, optional</span>
+<span class="sd">        Additional keyword arguments forwarded to the simulator&#39;s</span>
+<span class="sd">        ``load_dataframe()`` and ``load_ground_truth()`` methods. Passing</span>
+<span class="sd">        simulator kwargs to a static dataset raises ``TypeError``. For Tubingen</span>
+<span class="sd">        datasets, these kwargs are ignored with a warning.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
@@ -1114,6 +1185,10 @@
 <span class="sd">    &gt;&gt;&gt; dataset = load_dataset(&quot;sachs_mixed&quot;)</span>
 <span class="sd">    &gt;&gt;&gt; df = dataset.data</span>
 <span class="sd">    &gt;&gt;&gt; ground_truth = dataset.ground_truth</span>
+
+<span class="sd">    Subsample a static dataset:</span>
+
+<span class="sd">    &gt;&gt;&gt; dataset = load_dataset(&quot;sachs_continuous&quot;, n_samples=100, seed=42)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">all_datasets</span> <span class="o">=</span> <span class="n">all_objects</span><span class="p">(</span><span class="n">object_types</span><span class="o">=</span><span class="n">BaseDataset</span><span class="p">,</span> <span class="n">package_name</span><span class="o">=</span><span class="s2">&quot;pgmpy.datasets&quot;</span><span class="p">,</span> <span class="n">return_names</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;tubingen&quot;</span><span class="p">):</span>
@@ -1123,12 +1198,25 @@
 
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">pair_id</span> <span class="o">&lt;=</span> <span class="mi">108</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tubingen pair ID must be between 1 and 108. Got </span><span class="si">{</span><span class="n">pair_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sim_kwargs</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;Tubingen datasets ignore simulator kwargs.&quot;</span><span class="p">,</span>
+                    <span class="ne">UserWarning</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="n">target_cls</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
                 <span class="p">(</span><span class="bp">cls</span> <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">all_datasets</span> <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;tubingen&quot;</span><span class="p">),</span>
                 <span class="kc">None</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">df</span> <span class="o">=</span> <span class="n">target_cls</span><span class="o">.</span><span class="n">load_dataframe</span><span class="p">(</span><span class="n">pair_id</span><span class="p">)</span>
             <span class="n">gt</span> <span class="o">=</span> <span class="n">target_cls</span><span class="o">.</span><span class="n">load_ground_truth</span><span class="p">(</span><span class="n">pair_id</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">n_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">n_samples</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Requested </span><span class="si">{</span><span class="n">n_samples</span><span class="si">}</span><span class="s2"> samples but dataset only has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2">. Returning all </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows.&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
             <span class="n">tags</span> <span class="o">=</span> <span class="n">target_cls</span><span class="o">.</span><span class="n">get_class_tags</span><span class="p">()</span>
             <span class="n">tags</span><span class="p">[</span><span class="s2">&quot;n_samples&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1154,9 +1242,9 @@
 
     <span class="k">return</span> <span class="n">Dataset</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
-        <span class="n">data</span><span class="o">=</span><span class="n">target_cls</span><span class="o">.</span><span class="n">load_dataframe</span><span class="p">(),</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">target_cls</span><span class="o">.</span><span class="n">load_dataframe</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">),</span>
         <span class="n">expert_knowledge</span><span class="o">=</span><span class="n">target_cls</span><span class="o">.</span><span class="n">load_expert_knowledge</span><span class="p">(),</span>
-        <span class="n">ground_truth</span><span class="o">=</span><span class="n">target_cls</span><span class="o">.</span><span class="n">load_ground_truth</span><span class="p">(),</span>
+        <span class="n">ground_truth</span><span class="o">=</span><span class="n">target_cls</span><span class="o">.</span><span class="n">load_ground_truth</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">),</span>
         <span class="n">tags</span><span class="o">=</span><span class="n">target_cls</span><span class="o">.</span><span class="n">get_class_tags</span><span class="p">(),</span>
     <span class="p">)</span></div>
 
