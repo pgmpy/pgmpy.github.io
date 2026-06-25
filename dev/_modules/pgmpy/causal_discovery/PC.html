@@ -869,6 +869,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">clone</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDAG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExpertKnowledge</span>
@@ -889,44 +890,13 @@
 <span class="sd">    (conditional) dependencies in data set using statistical independence tests</span>
 <span class="sd">    and estimates a DAG pattern that satisfies the identified dependencies.</span>
 
-<span class="sd">    When used with expert knowledge, the following flowchart can help you figure</span>
-<span class="sd">    out the expected results based on different choices of parameters and the</span>
-<span class="sd">    structure learned from the data.</span>
-
-<span class="sd">                                        ┌──────────────────┐    No      ┌─────────────┐</span>
-<span class="sd">                                        │ Expert Knowledge ├──────────► │  Normal PC  │</span>
-<span class="sd">                                        │    specified?    │            │    run      │</span>
-<span class="sd">                                        └────────┬─────────┘            └─────────────┘</span>
-<span class="sd">                                                 │</span>
-<span class="sd">                                            Yes  │</span>
-<span class="sd">                                                 │</span>
-<span class="sd">                                                 ▼</span>
-<span class="sd">                                        ┌──────────────────┐</span>
-<span class="sd">                                        │  Enforce expert  │</span>
-<span class="sd">                                        │    knowledge?    │</span>
-<span class="sd">                                        └────────┬─────────┘</span>
-<span class="sd">                                                 │</span>
-<span class="sd">                                                 │</span>
-<span class="sd">                                Yes              │                No</span>
-<span class="sd">                       ┌─────────────────────────┴───────────────────────┐</span>
-<span class="sd">                       │                                                 │</span>
-<span class="sd">                       ▼                                                 ▼</span>
-<span class="sd">        ┌──────────────────────────────┐                     ┌─────────────────────────┐</span>
-<span class="sd">        │                              │                     │                         │</span>
-<span class="sd">        │ 1) Forbidden edges are       │                     │ Conflicts with learned  │</span>
-<span class="sd">        │    removed from the skeleton │                     │   structure (opposite   │</span>
-<span class="sd">        │                              │                     │  edge orientations)?    │</span>
-<span class="sd">        │ 2) Required edges will be    │                     │                         │</span>
-<span class="sd">        │    present in the final      │                     └───────────┬─────────────┘</span>
-<span class="sd">        │    model (but direction is   │                                 │</span>
-<span class="sd">        │    not guaranteed)           │                ┌────────────────┴──────────────────┐</span>
-<span class="sd">        │                              │            Yes │                                   │ No</span>
-<span class="sd">        └──────────────────────────────┘                │                                   │</span>
-<span class="sd">                                                        ▼                                   ▼</span>
-<span class="sd">                                            ┌───────────────────┐                ┌──────────────────┐</span>
-<span class="sd">                                            │ Conflicting edges │                │ Expert knowledge │</span>
-<span class="sd">                                            │    are ignored    │                │  applied fully   │</span>
-<span class="sd">                                            └───────────────────┘                └──────────────────┘</span>
+<span class="sd">    When expert knowledge is provided, it is always applied as hard directional</span>
+<span class="sd">    constraints (consistent with :class:`~pgmpy.causal_discovery.HillClimbSearch`):</span>
+<span class="sd">    forbidden edges never appear in the forbidden direction, required edges are retained</span>
+<span class="sd">    and oriented as specified, and ``search_space`` (if given) restricts which adjacencies</span>
+<span class="sd">    may appear. A pair forbidden in both directions (e.g. the complement of a given</span>
+<span class="sd">    ``search_space``) becomes a non-adjacency, while a single-direction forbidden edge that</span>
+<span class="sd">    still appears inside a learned collider is left in place with a warning.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -972,25 +942,11 @@
 <span class="sd">        - ``&quot;effect&quot;``: Same as ``&quot;pvalue&quot;`` but uses effect sizes instead of p-values for testing colliders and</span>
 <span class="sd">          resolving conflicts.</span>
 
-<span class="sd">    expert_knowledge : :class:`pgmpy.estimators.ExpertKnowledge`, optional</span>
+<span class="sd">    expert_knowledge : :class:`pgmpy.causal_discovery.ExpertKnowledge`, optional</span>
 <span class="sd">        Expert knowledge to be used in the causal graph construction. This needs to be an instance of</span>
-<span class="sd">        :class:`pgmpy.estimators.ExpertKnowledge`. Users can specify knowledge in the form of required/forbidden edges,</span>
-<span class="sd">        temporal information, or restrict the search space.</span>
-
-<span class="sd">    enforce_expert_knowledge : bool, default=False</span>
-<span class="sd">        If True, the expert knowledge will be strictly enforced. This implies the following:</span>
-
-<span class="sd">        - For every edge (u, v) specified in `forbidden_edges`, there will be no edge between u and v.</span>
-<span class="sd">        - For every edge (u, v) specified in `required_edges`, one of the following would be present in the final model:</span>
-<span class="sd">          u -&gt; v, u &lt;- v, or u - v (if CPDAG is returned).</span>
-
-<span class="sd">        If False, the algorithm attempts to make the edge orientations as specified by expert knowledge after learning</span>
-<span class="sd">        the skeleton. This implies the following:</span>
-
-<span class="sd">        - For every edge (u, v) specified in `forbidden_edges`, the final graph would have either v &lt;- u or no edge</span>
-<span class="sd">          except if u -&gt; v is part of a collider structure in the learned skeleton.</span>
-<span class="sd">        - For every edge (u, v) specified in `required_edges`, the final graph would either have u -&gt; v or no edge</span>
-<span class="sd">          except if v &lt;- u is part of a collider structure in the learned skeleton.</span>
+<span class="sd">        :class:`pgmpy.causal_discovery.ExpertKnowledge`. Users can specify knowledge in the form of</span>
+<span class="sd">        required/forbidden edges, temporal information, or restrict the search space. The knowledge is</span>
+<span class="sd">        always applied as hard directional constraints after the skeleton is learned (see the note above).</span>
 
 <span class="sd">    n_jobs : int, default=-1</span>
 <span class="sd">        The number of jobs to run in parallel. This is only used when `variant=&quot;parallel&quot;`.</span>
@@ -1063,7 +1019,6 @@
         <span class="n">max_cond_vars</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
         <span class="n">orient_rule</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">expert_knowledge</span><span class="p">:</span> <span class="n">ExpertKnowledge</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">enforce_expert_knowledge</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
@@ -1074,7 +1029,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">max_cond_vars</span> <span class="o">=</span> <span class="n">max_cond_vars</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">orient_rule</span> <span class="o">=</span> <span class="n">orient_rule</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">expert_knowledge</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">enforce_expert_knowledge</span> <span class="o">=</span> <span class="n">enforce_expert_knowledge</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">show_progress</span> <span class="o">=</span> <span class="n">show_progress</span>
 
@@ -1097,13 +1051,15 @@
         <span class="c1"># CI test</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ci_test_</span> <span class="o">=</span> <span class="n">get_ci_test</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ci_test</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
 
+        <span class="c1"># Check if expert knowledge was specified</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">expert_knowledge</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">expert_knowledge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expert_knowledge</span>
+            <span class="c1"># Clone so the fitted (`*_`) attributes land on a fresh copy, not the user&#39;s object.</span>
+            <span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">clone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expert_knowledge</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">search_space</span><span class="p">:</span>
-            <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">limit_search_space</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="c1"># Resolve the expert knowledge into its fitted (`*_`) attributes.</span>
+        <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
         <span class="c1"># Step 1: Build the skeleton</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">skeleton_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">separating_sets_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_skeleton</span><span class="p">(</span>
@@ -1114,26 +1070,23 @@
             <span class="n">significance_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">significance_level</span><span class="p">,</span>
             <span class="n">max_cond_vars</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_cond_vars</span><span class="p">,</span>
             <span class="n">expert_knowledge</span><span class="o">=</span><span class="n">expert_knowledge</span><span class="p">,</span>
-            <span class="n">enforce_expert_knowledge</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">enforce_expert_knowledge</span><span class="p">,</span>
             <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># Step 2: Use separating sets to orient colliders</span>
         <span class="n">pdag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orient_colliders</span><span class="p">(</span>
-            <span class="n">temporal_ordering</span><span class="o">=</span><span class="n">expert_knowledge</span><span class="o">.</span><span class="n">temporal_ordering</span><span class="p">,</span>
+            <span class="n">temporal_ordering</span><span class="o">=</span><span class="n">expert_knowledge</span><span class="o">.</span><span class="n">temporal_ordering_</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="c1"># Step 3: apply orientation rules and expert knowledge</span>
-        <span class="k">if</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">temporal_order</span> <span class="o">!=</span> <span class="p">[[]]:</span>
-            <span class="n">pdag</span> <span class="o">=</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">apply_expert_knowledge</span><span class="p">(</span><span class="n">pdag</span><span class="p">)</span>
-            <span class="n">pdag</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">apply_meeks_rules</span><span class="p">(</span><span class="n">apply_r4</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enforce_expert_knowledge</span><span class="p">:</span>
-            <span class="n">pdag</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">apply_meeks_rules</span><span class="p">(</span><span class="n">apply_r4</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="n">pdag</span> <span class="o">=</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">apply_expert_knowledge</span><span class="p">(</span><span class="n">pdag</span><span class="p">)</span>
+        <span class="c1"># Step 3: Apply orientation rules and expert knowledge as hard directional constraints.</span>
+        <span class="k">if</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">temporal_order</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pdag</span> <span class="o">=</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">apply_to</span><span class="p">(</span><span class="n">pdag</span><span class="p">)</span>
             <span class="n">pdag</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">apply_meeks_rules</span><span class="p">(</span><span class="n">apply_r4</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">pdag</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">apply_meeks_rules</span><span class="p">(</span><span class="n">apply_r4</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">pdag</span> <span class="o">=</span> <span class="n">expert_knowledge</span><span class="o">.</span><span class="n">apply_to</span><span class="p">(</span><span class="n">pdag</span><span class="p">)</span>
+            <span class="n">pdag</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">apply_meeks_rules</span><span class="p">(</span><span class="n">apply_r4</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="n">pdag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
 
@@ -1203,8 +1156,12 @@
         <span class="k">if</span> <span class="n">orient_rule</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()),</span> <span class="mi">2</span><span class="p">):</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">skeleton</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+                    <span class="n">sepset</span> <span class="o">=</span> <span class="n">separating_sets</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)))</span>
+                    <span class="k">if</span> <span class="n">sepset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># This edge was removed by expert knowledge. Ignore.</span>
+                        <span class="k">continue</span>
                     <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">skeleton</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">skeleton</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">Y</span><span class="p">)):</span>
-                        <span class="k">if</span> <span class="n">Z</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">separating_sets</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">))]:</span>
+                        <span class="k">if</span> <span class="n">Z</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sepset</span><span class="p">:</span>
                             <span class="k">if</span> <span class="p">(</span><span class="n">temporal_ordering</span> <span class="o">==</span> <span class="nb">dict</span><span class="p">())</span> <span class="ow">or</span> <span class="p">(</span>
                                 <span class="p">(</span><span class="n">temporal_ordering</span><span class="p">[</span><span class="n">Z</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">temporal_ordering</span><span class="p">[</span><span class="n">X</span><span class="p">])</span>
                                 <span class="ow">and</span> <span class="p">(</span><span class="n">temporal_ordering</span><span class="p">[</span><span class="n">Z</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">temporal_ordering</span><span class="p">[</span><span class="n">Y</span><span class="p">])</span>
@@ -1219,6 +1176,9 @@
             <span class="n">candidates</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()),</span> <span class="mi">2</span><span class="p">):</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">skeleton</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">frozenset</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">))</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">separating_sets</span><span class="p">:</span>
+                        <span class="c1"># This edge was removed by expert knowledge. Ignore.</span>
+                        <span class="k">continue</span>
                     <span class="n">common_neighbors</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">skeleton</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">X</span><span class="p">))</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">skeleton</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">Y</span><span class="p">))</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">common_neighbors</span><span class="p">:</span>
                         <span class="k">continue</span>
