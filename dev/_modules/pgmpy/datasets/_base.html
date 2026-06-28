@@ -1135,21 +1135,20 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for simulated datasets.</span>
 
-<span class="sd">    Concrete subclasses generate data and the corresponding ground-truth graph programmatically instead of</span>
-<span class="sd">    loading static files, and must implement ``load_dataframe()`` and ``load_ground_truth()``.</span>
+<span class="sd">    Concrete subclasses build the model and its ground-truth graph once in ``__init__`` and expose them through the</span>
+<span class="sd">    instance methods ``load_dataframe()`` and ``load_ground_truth()``, so a single ``load_dataset`` call reuses one</span>
+<span class="sd">    model for both the data and the graph.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;is_simulated&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
 
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_dataframe</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate and return simulated data. Must be implemented by each simulator.&quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> must implement load_dataframe().&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> must implement load_dataframe().&quot;</span><span class="p">)</span>
 
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_ground_truth</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DAG</span> <span class="o">|</span> <span class="n">PDAG</span> <span class="o">|</span> <span class="n">ADMG</span> <span class="o">|</span> <span class="n">MAG</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_ground_truth</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DAG</span> <span class="o">|</span> <span class="n">PDAG</span> <span class="o">|</span> <span class="n">ADMG</span> <span class="o">|</span> <span class="n">MAG</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct and return the ground-truth graph. Must be implemented by each simulator.&quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> must implement load_ground_truth().&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> must implement load_ground_truth().&quot;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="load_dataset">
@@ -1239,6 +1238,20 @@
             <span class="k">break</span>
     <span class="k">if</span> <span class="n">target_cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset with name &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; not found. Please use list_datasets() to see available datasets.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">target_cls</span><span class="p">,</span> <span class="n">BaseSimulatedDataset</span><span class="p">):</span>
+        <span class="c1"># Build the model once and reuse it for both the data and the ground-truth graph.</span>
+        <span class="n">simulator</span> <span class="o">=</span> <span class="n">target_cls</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">load_dataframe</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="n">target_cls</span><span class="o">.</span><span class="n">get_class_tags</span><span class="p">()</span>
+        <span class="n">tags</span><span class="p">[</span><span class="s2">&quot;n_samples&quot;</span><span class="p">],</span> <span class="n">tags</span><span class="p">[</span><span class="s2">&quot;n_variables&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">return</span> <span class="n">Dataset</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+            <span class="n">expert_knowledge</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">ground_truth</span><span class="o">=</span><span class="n">simulator</span><span class="o">.</span><span class="n">load_ground_truth</span><span class="p">(),</span>
+            <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">Dataset</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
