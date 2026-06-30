@@ -876,7 +876,81 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructureEstimator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators.CITests</span><span class="w"> </span><span class="kn">import</span> <span class="n">ci_registry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators.ExpertKnowledge</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExpertKnowledge</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">llm_pairwise_orient</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">llm_pairwise_orient</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">,</span>
+    <span class="n">y</span><span class="p">,</span>
+    <span class="n">descriptions</span><span class="p">,</span>
+    <span class="n">system_prompt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">llm_model</span><span class="o">=</span><span class="s2">&quot;gemini/gemini-2.5-flash&quot;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Asks a Large Language Model (LLM) for the</span>
+<span class="sd">     orientation of an edge between `x` and `y`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: str</span>
+<span class="sd">        The first variable&#39;s name</span>
+
+<span class="sd">    y: str</span>
+<span class="sd">        The second variable&#39;s name</span>
+
+<span class="sd">    descriptions: dict</span>
+<span class="sd">        A dict of the form {variable: description}</span>
+<span class="sd">          containing text description of the variables.</span>
+
+<span class="sd">    system_prompt: str</span>
+<span class="sd">        A system prompt to give the LLM.</span>
+
+<span class="sd">    llm_model: str (default: gemini/gemini-2.5-flash)</span>
+<span class="sd">        The LLM model to use. Please refer to litellm</span>
+<span class="sd">          documentation (https://docs.litellm.ai/docs/providers)</span>
+<span class="sd">        for available model options.</span>
+
+<span class="sd">    kwargs: kwargs</span>
+<span class="sd">        Any additional parameters to pass to litellm.completion method.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple:</span>
+<span class="sd">        Returns a tuple (source, target) representing the edge direction.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">litellm</span><span class="w"> </span><span class="kn">import</span> <span class="n">completion</span>
+    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. litellm is required for using&quot;</span>
+            <span class="s2">&quot; LLM based pairwise orientation. &quot;</span>
+            <span class="s2">&quot;Please install using: pip install litellm&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">system_prompt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">system_prompt</span> <span class="o">=</span> <span class="s2">&quot;You are an expert in Causal Inference&quot;</span>
+
+    <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot; </span><span class="si">{</span><span class="n">system_prompt</span><span class="si">}</span><span class="s2">. You are</span>
+<span class="s2">      given two variables with the following descriptions:</span>
+<span class="s2">        &lt;A&gt;: </span><span class="si">{</span><span class="n">descriptions</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="si">}</span>
+<span class="s2">        &lt;B&gt;: </span><span class="si">{</span><span class="n">descriptions</span><span class="p">[</span><span class="n">y</span><span class="p">]</span><span class="si">}</span>
+
+<span class="s2">        Which of the following two options is the most likely causal direction between them:</span>
+<span class="s2">        1. &lt;A&gt; causes &lt;B&gt;</span>
+<span class="s2">        2. &lt;B&gt; causes &lt;A&gt;</span>
+
+<span class="s2">        Return a single number (1 or 2) as your answer. I do not need the reasoning behind it.</span>
+<span class="s2">        Do not add any formatting in the answer.</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">completion</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">llm_model</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">}])</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+    <span class="n">response_txt</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">response_txt</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">response_txt</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Results from the LLM are unclear. Try calling the function again.&quot;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="ExpertInLoop">
@@ -976,7 +1050,7 @@
 <span class="sd">            tries to automatically detect the suitable CI test based on the variable</span>
 <span class="sd">            types.</span>
 
-<span class="sd">        orientation_fn: callable (default: pgmpy.utils.llm_pairwise_orient)</span>
+<span class="sd">        orientation_fn: callable (default: pgmpy.estimators.llm_pairwise_orient)</span>
 <span class="sd">            A function to determine edge orientation. The function should at</span>
 <span class="sd">            least take two arguments (the names of the two variables) and</span>
 <span class="sd">            return either a tuple (source, target) representing the directed</span>
@@ -989,11 +1063,11 @@
 <span class="sd">            - `pgmpy.utils.manual_pairwise_orient`: Prompts the user to specify the direction</span>
 <span class="sd">              between two variables by presenting options and taking input.</span>
 
-<span class="sd">            - `pgmpy.utils.llm_pairwise_orient`: Uses a Large Language Model to determine direction.</span>
+<span class="sd">            - `pgmpy.estimators.llm_pairwise_orient`: Uses a Large Language Model to determine direction.</span>
 <span class="sd">              Requires additional parameters:</span>
 
 <span class="sd">              * variable_descriptions: dict of {var_name: description} for context</span>
-<span class="sd">              * llm_model: name of the LLM model (default: &quot;gemini/gemini-1.5-flash&quot;)</span>
+<span class="sd">              * llm_model: name of the LLM model (default: &quot;gemini/gemini-2.5-flash&quot;)</span>
 <span class="sd">              * system_prompt: optional custom system prompt</span>
 
 <span class="sd">            Custom functions can be provided that implement any desired logic</span>
@@ -1029,11 +1103,8 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.utils import (</span>
-<span class="sd">        ...     llm_pairwise_orient,</span>
-<span class="sd">        ...     manual_pairwise_orient,</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ExpertInLoop</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.utils import manual_pairwise_orient</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import ExpertInLoop, llm_pairwise_orient</span>
 <span class="sd">        &gt;&gt;&gt; model = load_model(&quot;bnlearn/cancer&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; df = model.simulate(int(1e3))</span>
 
@@ -1054,7 +1125,7 @@
 <span class="sd">        ...     effect_size_threshold=0.0001,</span>
 <span class="sd">        ...     orientation_fn=llm_pairwise_orient,</span>
 <span class="sd">        ...     variable_descriptions=variable_descriptions,</span>
-<span class="sd">        ...     llm_model=&quot;gemini/gemini-1.5-flash&quot;,</span>
+<span class="sd">        ...     llm_model=&quot;gemini/gemini-2.5-flash&quot;,</span>
 <span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; dag.edges()  # doctest: +SKIP</span>
 <span class="sd">        OutEdgeView([(&#39;Smoker&#39;, &#39;Cancer&#39;), (&#39;Cancer&#39;, &#39;Xray&#39;), (&#39;Cancer&#39;, &#39;Dyspnoea&#39;), (&#39;Pollution&#39;, &#39;Cancer&#39;)])</span>
