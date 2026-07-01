@@ -1067,18 +1067,23 @@
 
         <span class="n">conditional_vars</span> <span class="o">=</span> <span class="n">exposure</span> <span class="o">+</span> <span class="n">adjustment_vars</span>
 
-        <span class="n">predecessors</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">exposure_var</span> <span class="ow">in</span> <span class="n">exposure</span><span class="p">:</span>
-            <span class="n">predecessors</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">causal_graph</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">exposure_var</span><span class="p">))</span>
+        <span class="c1"># Parents of the exposure(s) that are themselves conditioned on are trivially separated.</span>
+        <span class="n">parents</span> <span class="o">=</span> <span class="n">causal_graph</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">exposure</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">conditional_vars</span><span class="p">)</span>
 
-        <span class="n">parents_d_sep</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">pred_var</span> <span class="ow">in</span> <span class="n">predecessors</span><span class="p">:</span>
-            <span class="n">outcome_d_seps</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">outcome_var</span> <span class="ow">in</span> <span class="n">outcome</span><span class="p">:</span>
-                <span class="n">outcome_d_seps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">causal_graph</span><span class="o">.</span><span class="n">is_dconnected</span><span class="p">(</span><span class="n">pred_var</span><span class="p">,</span> <span class="n">outcome_var</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">conditional_vars</span><span class="p">))</span>
-            <span class="n">parents_d_sep</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">outcome_d_seps</span><span class="p">))</span>
+        <span class="c1"># DAG has not migrated onto _CoreGraph yet and exposes d-separation as `is_dconnected`;</span>
+        <span class="c1"># this branch collapses into the `is_mseparated` call once it does.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">causal_graph</span><span class="p">,</span> <span class="n">DAG</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
+                <span class="ow">not</span> <span class="n">causal_graph</span><span class="o">.</span><span class="n">is_dconnected</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">outcome_var</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">conditional_vars</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">parents</span>
+                <span class="k">for</span> <span class="n">outcome_var</span> <span class="ow">in</span> <span class="n">outcome</span>
+            <span class="p">)</span>
 
-        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">parents_d_sep</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="n">causal_graph</span><span class="o">.</span><span class="n">is_mseparated</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">outcome_var</span><span class="p">,</span> <span class="n">conditioning_set</span><span class="o">=</span><span class="n">conditional_vars</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">parents</span>
+            <span class="k">for</span> <span class="n">outcome_var</span> <span class="ow">in</span> <span class="n">outcome</span>
+        <span class="p">)</span></div>
 
 </pre></div>
 

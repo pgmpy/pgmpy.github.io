@@ -827,7 +827,6 @@
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.PDAG.html">PDAG</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">ADMG</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.MAG.html">MAG</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pgmpy.base.AncestralBase.html">AncestralBase</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.SimpleCausalModel.html">SimpleCausalModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.UndirectedGraph.html">UndirectedGraph</a></li>
 </ul>
@@ -916,504 +915,40 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="pgmpy.base.ADMG">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pgmpy.base.</span></span><span class="sig-name descname"><span class="pre">ADMG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_GraphRolesMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">MultiDiGraph</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_CoreGraph</span></code></p>
 <p>A class representing an Acyclic Directed Mixed Graph (ADMG).</p>
-<p>An ADMG is a directed graph that allows for both directed and bidirected edges.
-This class extends the <cite>networkx.MultiDiGraph</cite> and provides additional functionality
-for operations involving directed and bidirected edges.</p>
+<p>An ADMG allows directed (<code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code>) and bidirected (<code class="docutils literal notranslate"><span class="pre">&quot;&lt;&gt;&quot;</span></code>) edges, where a bidirected edge
+<code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">&lt;&gt;</span> <span class="pre">Y</span></code> encodes a latent (unobserved) common cause of <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code>. The directed part is
+acyclic.</p>
+<p>Built on <code class="xref py py-class docutils literal notranslate"><span class="pre">_CoreGraph</span></code>, restricted to the directed/bidirected edge types
+via <code class="docutils literal notranslate"><span class="pre">SUPPORTED_EDGE_TYPES</span></code> (no undirected or circle endpoints).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>directed_ebunch</strong><span class="classifier">list of tuple, optional</span></dt><dd><p>List of directed edges to initialize the graph, where each tuple is (u, v).</p>
+<dt><strong>edge_list</strong><span class="classifier">iterable of tuples, optional</span></dt><dd><p>Edges of the form <code class="docutils literal notranslate"><span class="pre">(u,</span> <span class="pre">v,</span> <span class="pre">edge_type)</span></code> with <code class="docutils literal notranslate"><span class="pre">edge_type</span></code> one of <code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;&lt;-&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;&lt;&gt;&quot;</span></code>.</p>
 </dd>
-<dt><strong>bidirected_ebunch</strong><span class="classifier">list of tuple, optional</span></dt><dd><p>List of bidirected edges to initialize the graph, where each tuple is (u, v).</p>
+<dt><strong>latents</strong><span class="classifier">set, default=set()</span></dt><dd><p>Set of latent (unobserved) variables.</p>
 </dd>
-<dt><strong>latents</strong><span class="classifier">set of str, optional</span></dt><dd><p>Set of latent variables in the graph. These are not directly represented as nodes
-but are used to indicate the presence of bidirected edges.</p>
+<dt><strong>exposures, outcomes</strong><span class="classifier">set, default=set()</span></dt><dd><p>Treatment / response variables (causal-analysis roles).</p>
 </dd>
-<dt><strong>roles</strong><span class="classifier">dict, optional (default: None)</span></dt><dd><p>A dictionary mapping roles to node names.
-The keys are roles, and the values are role names (strings or iterables of str).
-If provided, this will automatically assign roles to the nodes in the graph.
-Passing a key-value pair via <code class="docutils literal notranslate"><span class="pre">roles</span></code> is equivalent to calling
-<code class="docutils literal notranslate"><span class="pre">with_role(role,</span> <span class="pre">variables)</span></code> for each key-value pair in the dictionary.</p>
+<dt><strong>roles</strong><span class="classifier">dict, optional (default: None)</span></dt><dd><p>A mapping of role name to node(s); equivalent to calling <code class="docutils literal notranslate"><span class="pre">with_role</span></code> for each entry.</p>
 </dd>
 </dl>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)],</span> <span class="n">bidirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)]</span>
-<span class="gp">... </span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;&gt;&quot;</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
 <span class="go">[&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
-<span class="go">[(&#39;X&#39;, &#39;Y&#39;), (&#39;X&#39;, &#39;Z&#39;), (&#39;Z&#39;, &#39;X&#39;), (&#39;Z&#39;, &#39;Y&#39;)]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">latents</span>
-<span class="go">set()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="go">[(&#39;X&#39;, &#39;Y&#39;, &#39;-&gt;&#39;), (&#39;X&#39;, &#39;Z&#39;, &#39;&lt;&gt;&#39;), (&#39;Z&#39;, &#39;Y&#39;, &#39;-&gt;&#39;)]</span>
 </pre></div>
 </div>
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.add_bidirected_edges">
-<span class="sig-name descname"><span class="pre">add_bidirected_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ebunch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.add_bidirected_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.add_bidirected_edges" title="Link to this definition">#</a></dt>
-<dd><p>Add bidirected edges (u &lt;-&gt; v) to the ADMG.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>ebunch</strong><span class="classifier">list of tuple</span></dt><dd><p>List of bidirected edges, where each tuple is (u, v).</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">add_bidirected_edges</span><span class="p">([(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
-<span class="go">[&#39;X&#39;, &#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
-<span class="go">[(&#39;X&#39;, &#39;Z&#39;), (&#39;Z&#39;, &#39;X&#39;)]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.add_directed_edges">
-<span class="sig-name descname"><span class="pre">add_directed_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ebunch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.add_directed_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.add_directed_edges" title="Link to this definition">#</a></dt>
-<dd><p>Add directed edges (u -&gt; v) to the ADMG.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>ebunch</strong><span class="classifier">list of tuple</span></dt><dd><p>List of directed edges, where each tuple is (u, v).</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">add_directed_edges</span><span class="p">([(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
-<span class="go">[&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
-<span class="go">[(&#39;X&#39;, &#39;Y&#39;), (&#39;Y&#39;, &#39;Z&#39;)]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.add_edge">
-<span class="sig-name descname"><span class="pre">add_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.add_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.add_edge" title="Link to this definition">#</a></dt>
-<dd><p>Raise an error if trying to add a regular edge.</p>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
-<span class="gt">Traceback (most recent call last):</span>
-<span class="w">    </span><span class="o">...</span>
-<span class="gr">NotImplementedError</span>: <span class="n">Use add_directed_edge or add_bidirected_edge to add edges.</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.get_ancestors">
-<span class="sig-name descname"><span class="pre">get_ancestors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.get_ancestors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.get_ancestors" title="Link to this definition">#</a></dt>
-<dd><p>Get ancestors of given nodes via directed paths.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Node or list of nodes.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>set</dt><dd><p>Set of ancestor nodes including the input nodes.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_ancestors</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">))</span>
-<span class="go">[&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_ancestors</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">))</span>
-<span class="go">[&#39;X&#39;]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.get_ancestral_graph">
-<span class="sig-name descname"><span class="pre">get_ancestral_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.get_ancestral_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.get_ancestral_graph" title="Link to this definition">#</a></dt>
-<dd><p>Return the ancestral graph induced by the input nodes.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Node or list of nodes to induce subgraph on.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>ADMG</dt><dd><p>Subgraph induced by ancestors of the given nodes.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt>ValueError</dt><dd><p>If any input node is not in the graph.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)],</span> <span class="n">bidirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)]</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">anc</span> <span class="o">=</span> <span class="n">admg</span><span class="o">.</span><span class="n">get_ancestral_graph</span><span class="p">([</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">anc</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
-<span class="go">[&#39;Y&#39;, &#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">anc2</span> <span class="o">=</span> <span class="n">admg</span><span class="o">.</span><span class="n">get_ancestral_graph</span><span class="p">([</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">anc2</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
-<span class="go">[&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.get_bidirected_parents">
-<span class="sig-name descname"><span class="pre">get_bidirected_parents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.get_bidirected_parents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.get_bidirected_parents" title="Link to this definition">#</a></dt>
-<dd><p>Get bidirected parents (nodes connected via bidirected edge) of the given nodes.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Node or list of nodes to query.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>set</dt><dd><p>Set of bidirected parents.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)],</span> <span class="n">bidirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_bidirected_parents</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">))</span>
-<span class="go">[&#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">get_bidirected_parents</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">)</span>
-<span class="go">set()</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.get_children">
-<span class="sig-name descname"><span class="pre">get_children</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.get_children"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.get_children" title="Link to this definition">#</a></dt>
-<dd><p>Get children of given nodes (i.e., targets of outgoing directed edges).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Node or list of nodes.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>set</dt><dd><p>Set of children nodes.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_children</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">))</span>
-<span class="go">[&#39;Y&#39;, &#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">get_children</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">)</span>
-<span class="go">set()</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.get_descendants">
-<span class="sig-name descname"><span class="pre">get_descendants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.get_descendants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.get_descendants" title="Link to this definition">#</a></dt>
-<dd><p>Get descendants of given nodes via directed paths.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Node or list of nodes.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>set</dt><dd><p>Set of descendant nodes including the input nodes.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_descendants</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">))</span>
-<span class="go">[&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_descendants</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">))</span>
-<span class="go">[&#39;Z&#39;]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.get_directed_parents">
-<span class="sig-name descname"><span class="pre">get_directed_parents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.get_directed_parents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.get_directed_parents" title="Link to this definition">#</a></dt>
-<dd><p>Get directed parents of given nodes.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Node or list of nodes to query.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>set</dt><dd><p>Set of directed parents.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_directed_parents</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">))</span>
-<span class="go">[&#39;X&#39;, &#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">get_directed_parents</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">)</span>
-<span class="go">set()</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.get_district">
-<span class="sig-name descname"><span class="pre">get_district</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.get_district"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.get_district" title="Link to this definition">#</a></dt>
-<dd><p>Return district of a node: maximal set connected via bidirected edges.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Node or list of nodes.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>set</dt><dd><p>Nodes in the same bidirected-connected component.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)],</span> <span class="n">bidirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_district</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">))</span>
-<span class="go">[&#39;X&#39;, &#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">get_district</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">)</span>
-<span class="go">{&#39;Y&#39;}</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.get_markov_blanket">
-<span class="sig-name descname"><span class="pre">get_markov_blanket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.get_markov_blanket"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.get_markov_blanket" title="Link to this definition">#</a></dt>
-<dd><p>Compute the Markov blanket for the given node(s).</p>
-<p>Includes:
-- Parents
-- Children
-- Spouses (nodes sharing a child)
-- Parents of nodes in the district</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Node or list of nodes.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>set</dt><dd><p>Set of nodes in the Markov blanket.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)],</span> <span class="n">bidirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)]</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_markov_blanket</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">))</span>
-<span class="go">[&#39;X&#39;, &#39;Z&#39;]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.get_spouses">
-<span class="sig-name descname"><span class="pre">get_spouses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.get_spouses"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.get_spouses" title="Link to this definition">#</a></dt>
-<dd><p>Get spouses of given nodes (i.e., nodes connected via bidirected edges).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Node or list of nodes.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>set</dt><dd><p>Set of spouses.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)],</span> <span class="n">bidirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_spouses</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">))</span>
-<span class="go">[&#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">get_spouses</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">)</span>
-<span class="go">set()</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.is_mconnected">
-<span class="sig-name descname"><span class="pre">is_mconnected</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes_u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditional_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.is_mconnected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.is_mconnected" title="Link to this definition">#</a></dt>
-<dd><p>Test m-connectedness between two node sets given a conditioning set.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes_u</strong><span class="classifier">str or iterable of str</span></dt><dd><p>First set of nodes.</p>
-</dd>
-<dt><strong>nodes_v</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Second set of nodes.</p>
-</dd>
-<dt><strong>conditional_set</strong><span class="classifier">set of str, optional</span></dt><dd><p>Conditioning set.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True if m-connected; False if m-separated.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">is_mconnected</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="n">conditional_set</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Y&quot;</span><span class="p">})</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">is_mconnected</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)</span>
-<span class="go">False</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.is_mseparated">
-<span class="sig-name descname"><span class="pre">is_mseparated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes_u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditional_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.is_mseparated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.is_mseparated" title="Link to this definition">#</a></dt>
-<dd><p>Test m-separation between two sets of nodes given a conditioning set.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes_u</strong><span class="classifier">str or iterable of str</span></dt><dd><p>First set of nodes.</p>
-</dd>
-<dt><strong>nodes_v</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Second set of nodes.</p>
-</dd>
-<dt><strong>conditional_set</strong><span class="classifier">set of str, optional</span></dt><dd><p>Conditioning set (default is empty set).</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True if nodes_u and nodes_v are m-separated; False otherwise.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">is_mseparated</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span><span class="o">.</span><span class="n">is_mseparated</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="n">conditional_set</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Y&quot;</span><span class="p">})</span>
-<span class="go">False</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.mconnected_nodes">
-<span class="sig-name descname"><span class="pre">mconnected_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes_u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_v</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditional_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.mconnected_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.mconnected_nodes" title="Link to this definition">#</a></dt>
-<dd><p>Find all nodes m-connected to nodes in <cite>nodes_u</cite> given <cite>conditional_set</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes_u</strong><span class="classifier">str or iterable of str</span></dt><dd><p>Set of source nodes.</p>
-</dd>
-<dt><strong>nodes_v</strong><span class="classifier">str or iterable of str, optional</span></dt><dd><p>If provided, filters the result to this set.</p>
-</dd>
-<dt><strong>conditional_set</strong><span class="classifier">set of str, optional</span></dt><dd><p>Conditioning set (default is empty set).</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>set</dt><dd><p>Nodes m-connected to <cite>nodes_u</cite> (or their intersection with <cite>nodes_v</cite> if provided).</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">mconnected_nodes</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="n">nodes_v</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">]))</span>
-<span class="go">[&#39;Y&#39;, &#39;Z&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">mconnected_nodes</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="n">nodes_v</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">]))</span>
-<span class="go">[&#39;Z&#39;]</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.ADMG.to_dag">
-<span class="sig-name descname"><span class="pre">to_dag</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/ADMG.html#ADMG.to_dag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.ADMG.to_dag" title="Link to this definition">#</a></dt>
-<dd><p>Project ADMG into a DAG by introducing latent variables for bidirected edges.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt>pgmpy.base.DAG.DAG</dt><dd><p>DAG with latent variables replacing bidirected edges.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base.ADMG</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADMG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">ADMG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)],</span> <span class="n">bidirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">)])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dag</span> <span class="o">=</span> <span class="n">admg</span><span class="o">.</span><span class="n">to_dag</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;L_X_Z&quot;</span> <span class="ow">in</span> <span class="n">dag</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">dag</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
-<span class="go">True</span>
-</pre></div>
-</div>
-</dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pgmpy.base.ADMG.SUPPORTED_EDGE_TYPES">
+<span class="sig-name descname"><span class="pre">SUPPORTED_EDGE_TYPES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'-&gt;',</span> <span class="pre">'&lt;-',</span> <span class="pre">'&lt;&gt;'})</span></span><a class="headerlink" href="#pgmpy.base.ADMG.SUPPORTED_EDGE_TYPES" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -1467,22 +1002,7 @@ Passing a key-value pair via <code class="docutils literal notranslate"><span cl
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG"><code class="docutils literal notranslate"><span class="pre">ADMG</span></code></a><ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.add_bidirected_edges"><code class="docutils literal notranslate"><span class="pre">ADMG.add_bidirected_edges()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.add_directed_edges"><code class="docutils literal notranslate"><span class="pre">ADMG.add_directed_edges()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.add_edge"><code class="docutils literal notranslate"><span class="pre">ADMG.add_edge()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.get_ancestors"><code class="docutils literal notranslate"><span class="pre">ADMG.get_ancestors()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.get_ancestral_graph"><code class="docutils literal notranslate"><span class="pre">ADMG.get_ancestral_graph()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.get_bidirected_parents"><code class="docutils literal notranslate"><span class="pre">ADMG.get_bidirected_parents()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.get_children"><code class="docutils literal notranslate"><span class="pre">ADMG.get_children()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.get_descendants"><code class="docutils literal notranslate"><span class="pre">ADMG.get_descendants()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.get_directed_parents"><code class="docutils literal notranslate"><span class="pre">ADMG.get_directed_parents()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.get_district"><code class="docutils literal notranslate"><span class="pre">ADMG.get_district()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.get_markov_blanket"><code class="docutils literal notranslate"><span class="pre">ADMG.get_markov_blanket()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.get_spouses"><code class="docutils literal notranslate"><span class="pre">ADMG.get_spouses()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.is_mconnected"><code class="docutils literal notranslate"><span class="pre">ADMG.is_mconnected()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.is_mseparated"><code class="docutils literal notranslate"><span class="pre">ADMG.is_mseparated()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.mconnected_nodes"><code class="docutils literal notranslate"><span class="pre">ADMG.mconnected_nodes()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.to_dag"><code class="docutils literal notranslate"><span class="pre">ADMG.to_dag()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.ADMG.SUPPORTED_EDGE_TYPES"><code class="docutils literal notranslate"><span class="pre">ADMG.SUPPORTED_EDGE_TYPES</span></code></a></li>
 </ul>
 </li>
 </ul>

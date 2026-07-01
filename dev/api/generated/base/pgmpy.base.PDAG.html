@@ -827,7 +827,6 @@
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">PDAG</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.ADMG.html">ADMG</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.MAG.html">MAG</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pgmpy.base.AncestralBase.html">AncestralBase</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.SimpleCausalModel.html">SimpleCausalModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.UndirectedGraph.html">UndirectedGraph</a></li>
 </ul>
@@ -916,113 +915,61 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="pgmpy.base.PDAG">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pgmpy.base.</span></span><span class="sig-name descname"><span class="pre">PDAG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_GraphRolesMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DiGraph</span></code></p>
-<p>Class for representing PDAGs (also known as CPDAG). PDAGs are the equivalence classes of
-DAGs and contain both directed and undirected edges.</p>
-<p>Note: In this class, undirected edges are represented using two edges in both direction i.e.
-an undirected edge between X - Y is represented using X -&gt; Y and X &lt;- Y.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_CoreGraph</span></code></p>
+<p>Class for representing PDAGs (also known as CPDAGs). PDAGs are the equivalence classes of DAGs
+and contain both directed (<code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code>) and undirected (<code class="docutils literal notranslate"><span class="pre">&quot;--&quot;</span></code>) edges.</p>
+<p>Built on <code class="xref py py-class docutils literal notranslate"><span class="pre">_CoreGraph</span></code>, restricted to directed/undirected edges via
+<code class="docutils literal notranslate"><span class="pre">SUPPORTED_EDGE_TYPES</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>directed_ebunch: list, array-like of 2-tuples</strong></dt><dd><p>List of directed edges in the PDAG.</p>
+<dt><strong>edge_list</strong><span class="classifier">iterable of tuples, optional</span></dt><dd><p>Edges of the form <code class="docutils literal notranslate"><span class="pre">(u,</span> <span class="pre">v,</span> <span class="pre">edge_type)</span></code> with <code class="docutils literal notranslate"><span class="pre">edge_type</span></code> one of <code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;&lt;-&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;--&quot;</span></code>.</p>
 </dd>
-<dt><strong>undirected_ebunch: list, array-like of 2-tuples</strong></dt><dd><p>List of undirected edges in the PDAG.</p>
+<dt><strong>latents</strong><span class="classifier">set, default=set()</span></dt><dd><p>Set of latent (unobserved) variables.</p>
 </dd>
-<dt><strong>latents: list, array-like</strong></dt><dd><p>List of nodes which are latent variables.</p>
+<dt><strong>exposures, outcomes</strong><span class="classifier">set, default=set()</span></dt><dd><p>Treatment / response variables (causal-analysis roles).</p>
 </dd>
-<dt><strong>exposures</strong><span class="classifier">set, default=set()</span></dt><dd><p>Set of exposure variables in the graph. These are the variables
-that represent the treatment or intervention being studied in a
-causal analysis. Default is an empty set.</p>
-</dd>
-<dt><strong>outcomes</strong><span class="classifier">set, default=set()</span></dt><dd><p>Set of outcome variables in the graph. These are the variables
-that represent the response or dependent variables being studied
-in a causal analysis. Default is an empty set.</p>
-</dd>
-<dt><strong>roles</strong><span class="classifier">dict, optional (default: None)</span></dt><dd><p>A dictionary mapping roles to node names.
-The keys are roles, and the values are role names (strings or iterables of str).
-If provided, this will automatically assign roles to the nodes in the graph.
-Passing a key-value pair via <code class="docutils literal notranslate"><span class="pre">roles</span></code> is equivalent to calling
-<code class="docutils literal notranslate"><span class="pre">with_role(role,</span> <span class="pre">variables)</span></code> for each key-value pair in the dictionary.</p>
+<dt><strong>roles</strong><span class="classifier">dict, optional (default: None)</span></dt><dd><p>A mapping of role name to node(s); equivalent to calling <code class="docutils literal notranslate"><span class="pre">with_role</span></code> for each entry.</p>
 </dd>
 </dl>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDAG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">)],</span>
-<span class="gp">... </span>    <span class="n">undirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">)],</span>
-<span class="gp">... </span>    <span class="n">latents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">],</span>
-<span class="gp">... </span>    <span class="n">roles</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;exposures&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">],</span> <span class="s2">&quot;outcomes&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">]},</span>
-<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">)],</span> <span class="n">latents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">directed_edges</span><span class="p">)</span>
 <span class="go">[(&#39;A&#39;, &#39;C&#39;), (&#39;D&#39;, &#39;C&#39;)]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">undirected_edges</span><span class="p">)</span>
-<span class="go">[(&#39;B&#39;, &#39;A&#39;), (&#39;B&#39;, &#39;D&#39;)]</span>
+<span class="go">[(&#39;A&#39;, &#39;B&#39;)]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span><span class="o">.</span><span class="n">latents</span>
 <span class="go">{&#39;A&#39;}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span><span class="o">.</span><span class="n">exposures</span>
-<span class="go">{&#39;A&#39;}</span>
 </pre></div>
 </div>
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.PDAG.all_neighbors">
-<span class="sig-name descname"><span class="pre">all_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.all_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.all_neighbors" title="Link to this definition">#</a></dt>
-<dd><p>Returns a set of all neighbors of a node in the PDAG. This includes both directed and undirected edges.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>node: any hashable python object</strong></dt><dd><p>The node for which to get the neighboring nodes.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>set: A set of neighboring nodes.</dt><dd></dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDAG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">)],</span>
-<span class="gp">... </span>    <span class="n">undirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">)],</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">all_neighbors</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">))</span>
-<span class="go">[&#39;B&#39;, &#39;C&#39;]</span>
-</pre></div>
-</div>
-</dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pgmpy.base.PDAG.SUPPORTED_EDGE_TYPES">
+<span class="sig-name descname"><span class="pre">SUPPORTED_EDGE_TYPES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'--',</span> <span class="pre">'-&gt;',</span> <span class="pre">'&lt;-'})</span></span><a class="headerlink" href="#pgmpy.base.PDAG.SUPPORTED_EDGE_TYPES" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.base.PDAG.apply_meeks_rules">
 <span class="sig-name descname"><span class="pre">apply_meeks_rules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apply_r4</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.apply_meeks_rules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.apply_meeks_rules" title="Link to this definition">#</a></dt>
-<dd><p>Applies the Meek’s rules to orient the undirected edges of a PDAG to return a CPDAG.</p>
+<dd><p>Applies Meek’s rules to orient the undirected edges of the PDAG, returning a (maximally
+oriented) CPDAG.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>apply_r4: boolean (default=False)</strong></dt><dd><p>If True, applies Rules 1 - 4 of Meek’s rules.
-If False, applies only Rules 1 - 3.</p>
+<dt><strong>apply_r4</strong><span class="classifier">bool (default: False)</span></dt><dd><p>If True, applies Rules 1-4; otherwise only Rules 1-3.</p>
 </dd>
-<dt><strong>inplace: boolean (default=False)</strong></dt><dd><p>If True, the PDAG object is modified inplace, otherwise a new modified copy is returned.</p>
+<dt><strong>inplace</strong><span class="classifier">bool (default: False)</span></dt><dd><p>If True, modify this PDAG and return None; otherwise return a modified copy.</p>
 </dd>
-<dt><strong>debug: boolean (default=False)</strong></dt><dd><p>If True, prints the rules being applied to the PDAG.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>None or pgmpy.base.PDAG: The modified PDAG object.</dt><dd><p>If inplace=True, returns None and the object itself is modified.
-If inplace=False, returns a PDAG object.</p>
+<dt><strong>debug</strong><span class="classifier">bool (default: False)</span></dt><dd><p>If True, log the rules being applied.</p>
 </dd>
 </dl>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDAG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">)],</span> <span class="n">undirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">)]</span>
-<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">apply_meeks_rules</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">directed_edges</span><span class="p">)</span>
 <span class="go">[(&#39;A&#39;, &#39;B&#39;), (&#39;B&#39;, &#39;C&#39;)]</span>
@@ -1031,43 +978,15 @@ If inplace=False, returns a PDAG object.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.PDAG.calibrate_directed_undirected_edges">
-<span class="sig-name descname"><span class="pre">calibrate_directed_undirected_edges</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.calibrate_directed_undirected_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.calibrate_directed_undirected_edges" title="Link to this definition">#</a></dt>
-<dd><p>Iterates through existing edges to correctly assign directed
-and undirected edges.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.base.PDAG.chain_component">
-<span class="sig-name descname"><span class="pre">chain_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Hashable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.chain_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.chain_component" title="Link to this definition">#</a></dt>
-<dd><p>Returns the chain component of <cite>node</cite>, i.e. all nodes reachable
-through undirected edges.</p>
+<span class="sig-name descname"><span class="pre">chain_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">set</span></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.chain_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.chain_component" title="Link to this definition">#</a></dt>
+<dd><p>Returns the chain component of <cite>node</cite>: all nodes reachable through undirected (<code class="docutils literal notranslate"><span class="pre">&quot;--&quot;</span></code>) edges.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.PDAG.copy">
-<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.copy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.copy" title="Link to this definition">#</a></dt>
-<dd><p>Returns a copy of the object instance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt>Copy of PDAG: pgmpy.dag.PDAG</dt><dd><p>Returns a copy of self.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.PDAG.directed_children">
-<span class="sig-name descname"><span class="pre">directed_children</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.directed_children"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.directed_children" title="Link to this definition">#</a></dt>
-<dd><p>Returns a set of children of node such that there is a directed edge from <cite>node</cite> to child.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.PDAG.directed_parents">
-<span class="sig-name descname"><span class="pre">directed_parents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.directed_parents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.directed_parents" title="Link to this definition">#</a></dt>
-<dd><p>Returns a set of parents of node such that there is a directed edge from the parent to <cite>node</cite>.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="pgmpy.base.PDAG.directed_edges">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">directed_edges</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#pgmpy.base.PDAG.directed_edges" title="Link to this definition">#</a></dt>
+<dd><p>The set of directed edges <code class="docutils literal notranslate"><span class="pre">(u,</span> <span class="pre">v)</span></code> (meaning <code class="docutils literal notranslate"><span class="pre">u</span> <span class="pre">-&gt;</span> <span class="pre">v</span></code>).</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1077,76 +996,40 @@ through undirected edges.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.PDAG.has_directed_edge">
-<span class="sig-name descname"><span class="pre">has_directed_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.has_directed_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.has_directed_edge" title="Link to this definition">#</a></dt>
-<dd><p>Returns True if there is a directed edge u -&gt; v in the PDAG.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.base.PDAG.has_semidirected_path">
-<span class="sig-name descname"><span class="pre">has_semidirected_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Hashable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Hashable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocked_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_direct_edge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.has_semidirected_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.has_semidirected_path" title="Link to this definition">#</a></dt>
-<dd><p>Returns True if there exists a semi-directed path from <cite>source</cite> to <cite>target</cite>.</p>
-<p>Semi-directed paths follow directed edges in their forward direction and
-can traverse undirected edges in either direction.</p>
+<span class="sig-name descname"><span class="pre">has_semidirected_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">blocked_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_direct_edge</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.has_semidirected_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.has_semidirected_path" title="Link to this definition">#</a></dt>
+<dd><p>Returns True if there is a semi-directed path from <cite>source</cite> to <cite>target</cite>, i.e. a path that
+follows directed edges forward and undirected edges in either direction.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>source, target: hashable</strong></dt><dd><p>The endpoints of the path.</p>
+<dt><strong>source, target</strong><span class="classifier">Hashable</span></dt><dd><p>The endpoints of the path.</p>
 </dd>
-<dt><strong>blocked_nodes: iterable, optional</strong></dt><dd><p>Nodes that are not allowed on the path.</p>
+<dt><strong>blocked_nodes</strong><span class="classifier">iterable, optional</span></dt><dd><p>Nodes not allowed on the path.</p>
 </dd>
-<dt><strong>ignore_direct_edge: bool</strong></dt><dd><p>If True, ignores the direct edge <cite>source -&gt; target</cite> when checking for
-a path.</p>
-</dd>
-</dl>
+<dt><strong>ignore_direct_edge</strong><span class="classifier">bool</span></dt><dd><p>If True, ignore the direct <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">-&gt;</span> <span class="pre">target</span></code> step.</p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.PDAG.has_undirected_edge">
-<span class="sig-name descname"><span class="pre">has_undirected_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.has_undirected_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.has_undirected_edge" title="Link to this definition">#</a></dt>
-<dd><p>Returns True if there is an undirected edge u - v in the PDAG.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.PDAG.is_adjacent">
-<span class="sig-name descname"><span class="pre">is_adjacent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.is_adjacent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.is_adjacent" title="Link to this definition">#</a></dt>
-<dd><p>Returns True if there is an edge between u and v. This can be either of u - v, u -&gt; v, or u &lt;- v.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.base.PDAG.is_clique">
-<span class="sig-name descname"><span class="pre">is_clique</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.is_clique"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.is_clique" title="Link to this definition">#</a></dt>
-<dd><p>Checks if a set of nodes forms a clique. A clique is a subgraph
-where every pair of nodes is connected by an edge (fully connected).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>nodes: Iterable</strong></dt><dd><p>The set of nodes to be checked for clique formation.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">is_clique</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.is_clique"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.is_clique" title="Link to this definition">#</a></dt>
+<dd><p>Whether every pair of <cite>nodes</cite> is joined by an undirected (<code class="docutils literal notranslate"><span class="pre">&quot;--&quot;</span></code>) edge.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.base.PDAG.orient_undirected_edge">
 <span class="sig-name descname"><span class="pre">orient_undirected_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.orient_undirected_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.orient_undirected_edge" title="Link to this definition">#</a></dt>
-<dd><p>Orients an undirected edge u - v as u -&gt; v.</p>
+<dd><p>Orients an undirected edge <code class="docutils literal notranslate"><span class="pre">u</span> <span class="pre">-</span> <span class="pre">v</span></code> as <code class="docutils literal notranslate"><span class="pre">u</span> <span class="pre">-&gt;</span> <span class="pre">v</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>u, v: Any hashable python objects</strong></dt><dd><p>The node names.</p>
+<dt><strong>u, v</strong><span class="classifier">Hashable</span></dt><dd><p>The node names.</p>
 </dd>
-<dt><strong>inplace: boolean (default=False)</strong></dt><dd><p>If True, the PDAG object is modified inplace, otherwise a new modified copy is returned.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>None or pgmpy.base.PDAG: The modified PDAG object.</dt><dd><p>If inplace=True, returns None and the object itself is modified.
-If inplace=False, returns a PDAG object.</p>
+<dt><strong>inplace</strong><span class="classifier">bool (default: False)</span></dt><dd><p>If True, modify this PDAG and return None; otherwise return a modified copy.</p>
 </dd>
 </dl>
 </dd>
@@ -1162,11 +1045,11 @@ If inplace=False, returns a PDAG object.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.base.PDAG.to_dag">
 <span class="sig-name descname"><span class="pre">to_dag</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.to_dag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.to_dag" title="Link to this definition">#</a></dt>
-<dd><p>Returns one possible DAG which is represented using the PDAG.</p>
+<dd><p>Returns one possible DAG represented by this PDAG.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt>pgmpy.base.DAG: Returns an instance of DAG.</dt><dd></dd>
+<dt>pgmpy.base.DAG</dt><dd></dd>
 </dl>
 </dd>
 </dl>
@@ -1174,59 +1057,12 @@ If inplace=False, returns a PDAG object.</p>
 <ul class="simple">
 <li><p><span class="bibtex-citation" id="id1">[<a class="reference internal" href="../../../references.html#id4" title="Dorit Dor and Michael Tarsi. A simple algorithm to construct a consistent extension of a partially oriented graph. Technical Report R-185, Cognitive Systems Laboratory, UCLA, 1992.">G3</a>]</span></p></li>
 </ul>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">)],</span>
-<span class="gp">... </span>    <span class="n">undirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">)],</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dag</span> <span class="o">=</span> <span class="n">pdag</span><span class="o">.</span><span class="n">to_dag</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
-<span class="go">[(&#39;A&#39;, &#39;B&#39;), (&#39;C&#39;, &#39;B&#39;), (&#39;D&#39;, &#39;A&#39;), (&#39;D&#39;, &#39;C&#39;)]</span>
-</pre></div>
-</div>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.PDAG.to_graphviz">
-<span class="sig-name descname"><span class="pre">to_graphviz</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">object</span></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.to_graphviz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.to_graphviz" title="Link to this definition">#</a></dt>
-<dd><p>Retuns a pygraphviz object for the DAG. pygraphviz is useful for
-visualizing the network structure.</p>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.example_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="s2">&quot;bnlearn/alarm&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">to_graphviz</span><span class="p">()</span>
-<span class="go">&lt;AGraph ...</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.PDAG.undirected_neighbors">
-<span class="sig-name descname"><span class="pre">undirected_neighbors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/PDAG.html#PDAG.undirected_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.PDAG.undirected_neighbors" title="Link to this definition">#</a></dt>
-<dd><p>Returns a set of neighboring nodes such that all of them have an undirected edge with <cite>node</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>node: any hashable python object</strong></dt><dd><p>The node for which to get the undirected neighboring nodes.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>set: A set of neighboring nodes.</dt><dd></dd>
-</dl>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDAG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">directed_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">)],</span>
-<span class="gp">... </span>    <span class="n">undirected_ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">)],</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pdag</span><span class="o">.</span><span class="n">undirected_neighbors</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">)</span>
-<span class="go">{&#39;B&#39;}</span>
-</pre></div>
-</div>
+<dl class="py property">
+<dt class="sig sig-object py" id="pgmpy.base.PDAG.undirected_edges">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">undirected_edges</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#pgmpy.base.PDAG.undirected_edges" title="Link to this definition">#</a></dt>
+<dd><p>The set of undirected edges, each as a sorted <code class="docutils literal notranslate"><span class="pre">(u,</span> <span class="pre">v)</span></code> tuple.</p>
 </dd></dl>
 
 </dd></dl>
@@ -1281,24 +1117,17 @@ visualizing the network structure.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG"><code class="docutils literal notranslate"><span class="pre">PDAG</span></code></a><ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.all_neighbors"><code class="docutils literal notranslate"><span class="pre">PDAG.all_neighbors()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.SUPPORTED_EDGE_TYPES"><code class="docutils literal notranslate"><span class="pre">PDAG.SUPPORTED_EDGE_TYPES</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.apply_meeks_rules"><code class="docutils literal notranslate"><span class="pre">PDAG.apply_meeks_rules()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.calibrate_directed_undirected_edges"><code class="docutils literal notranslate"><span class="pre">PDAG.calibrate_directed_undirected_edges()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.chain_component"><code class="docutils literal notranslate"><span class="pre">PDAG.chain_component()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.copy"><code class="docutils literal notranslate"><span class="pre">PDAG.copy()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.directed_children"><code class="docutils literal notranslate"><span class="pre">PDAG.directed_children()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.directed_parents"><code class="docutils literal notranslate"><span class="pre">PDAG.directed_parents()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.directed_edges"><code class="docutils literal notranslate"><span class="pre">PDAG.directed_edges</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.has_acyclic_extension"><code class="docutils literal notranslate"><span class="pre">PDAG.has_acyclic_extension()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.has_directed_edge"><code class="docutils literal notranslate"><span class="pre">PDAG.has_directed_edge()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.has_semidirected_path"><code class="docutils literal notranslate"><span class="pre">PDAG.has_semidirected_path()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.has_undirected_edge"><code class="docutils literal notranslate"><span class="pre">PDAG.has_undirected_edge()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.is_adjacent"><code class="docutils literal notranslate"><span class="pre">PDAG.is_adjacent()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.is_clique"><code class="docutils literal notranslate"><span class="pre">PDAG.is_clique()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.orient_undirected_edge"><code class="docutils literal notranslate"><span class="pre">PDAG.orient_undirected_edge()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.to_cpdag"><code class="docutils literal notranslate"><span class="pre">PDAG.to_cpdag()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.to_dag"><code class="docutils literal notranslate"><span class="pre">PDAG.to_dag()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.to_graphviz"><code class="docutils literal notranslate"><span class="pre">PDAG.to_graphviz()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.undirected_neighbors"><code class="docutils literal notranslate"><span class="pre">PDAG.undirected_neighbors()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.PDAG.undirected_edges"><code class="docutils literal notranslate"><span class="pre">PDAG.undirected_edges</span></code></a></li>
 </ul>
 </li>
 </ul>

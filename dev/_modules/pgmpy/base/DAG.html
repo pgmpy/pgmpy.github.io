@@ -1323,25 +1323,31 @@
 
 <div class="viewcode-block" id="DAG.get_parents">
 <a class="viewcode-back" href="../../../api/generated/base/pgmpy.base.DAG.html#pgmpy.base.DAG.get_parents">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_parents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="n">Hashable</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a list of parents of node.</span>
+<span class="sd">        Returns the parents of a node, or the union of parents over an iterable of nodes.</span>
 
-<span class="sd">        Throws an error if the node is not present in the graph.</span>
+<span class="sd">        A single node (``str``/``int``/``tuple``) returns a ``list`` of its parents (backward</span>
+<span class="sd">        compatible); a list or set of nodes returns the ``set`` union of their parents. Throws an</span>
+<span class="sd">        error if the node is not present in the graph.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        node: string, int or any hashable python object.</span>
-<span class="sd">            The node whose parents would be returned.</span>
+<span class="sd">        nodes: hashable, or iterable of hashable</span>
+<span class="sd">            The node (or collection of nodes) whose parents would be returned.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
 <span class="sd">        &gt;&gt;&gt; G = DAG(ebunch=[(&quot;diff&quot;, &quot;grade&quot;), (&quot;intel&quot;, &quot;grade&quot;)])</span>
-<span class="sd">        &gt;&gt;&gt; G.get_parents(node=&quot;grade&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; G.get_parents(&quot;grade&quot;)</span>
 <span class="sd">        [&#39;diff&#39;, &#39;intel&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; G.get_parents([&quot;grade&quot;, &quot;intel&quot;]) == {&quot;diff&quot;, &quot;intel&quot;}</span>
+<span class="sd">        True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span></div>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="nb">set</span><span class="p">()</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">nodes</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="DAG.moralize">
@@ -1420,15 +1426,18 @@
 
 <div class="viewcode-block" id="DAG.get_children">
 <a class="viewcode-back" href="../../../api/generated/base/pgmpy.base.DAG.html#pgmpy.base.DAG.get_children">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="n">Hashable</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a list of children of node.</span>
-<span class="sd">        Throws an error if the node is not present in the graph.</span>
+<span class="sd">        Returns the children of a node, or the union of children over an iterable of nodes.</span>
+
+<span class="sd">        A single node (``str``/``int``/``tuple``) returns a ``list`` of its children (backward</span>
+<span class="sd">        compatible); a list or set of nodes returns the ``set`` union of their children. Throws an</span>
+<span class="sd">        error if the node is not present in the graph.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        node: string, int or any hashable python object.</span>
-<span class="sd">            The node whose children would be returned.</span>
+<span class="sd">        nodes: hashable, or iterable of hashable</span>
+<span class="sd">            The node (or collection of nodes) whose children would be returned.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1443,10 +1452,52 @@
 <span class="sd">        ...         (&quot;E&quot;, &quot;G&quot;),</span>
 <span class="sd">        ...     ]</span>
 <span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; g.get_children(node=&quot;B&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; g.get_children(&quot;B&quot;)</span>
 <span class="sd">        [&#39;D&#39;, &#39;E&#39;, &#39;F&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; g.get_children([&quot;B&quot;, &quot;E&quot;]) == {&quot;D&quot;, &quot;E&quot;, &quot;F&quot;, &quot;G&quot;}</span>
+<span class="sd">        True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span></div>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="nb">set</span><span class="p">()</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">nodes</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="DAG.get_spouses">
+<a class="viewcode-back" href="../../../api/generated/base/pgmpy.base.DAG.html#pgmpy.base.DAG.get_spouses">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_spouses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the set of spouses (co-parents) of `node`.</span>
+
+<span class="sd">        In a Bayesian network the spouses of a node are its children&#39;s *other* parents -- the nodes</span>
+<span class="sd">        that share a child with `node`. This is the directed-graph counterpart of</span>
+<span class="sd">        ``_CoreGraph.get_spouses`` (which returns bidirected-edge neighbours): a DAG has no bidirected</span>
+<span class="sd">        edges, so the co-parent definition is the meaningful one. Throws an error if the node is not</span>
+<span class="sd">        present in the graph.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        node: string, int or any hashable python object.</span>
+<span class="sd">            The node whose spouses (co-parents) would be returned.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        spouses: set</span>
+<span class="sd">            The co-parents of `node`, excluding `node` itself.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
+<span class="sd">        &gt;&gt;&gt; g = DAG(ebunch=[(&quot;x&quot;, &quot;y&quot;), (&quot;z&quot;, &quot;y&quot;), (&quot;y&quot;, &quot;w&quot;), (&quot;u&quot;, &quot;w&quot;)])</span>
+<span class="sd">        &gt;&gt;&gt; sorted(g.get_spouses(node=&quot;x&quot;))</span>
+<span class="sd">        [&#39;z&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; sorted(g.get_spouses(node=&quot;y&quot;))</span>
+<span class="sd">        [&#39;u&#39;]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">spouses</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_children</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+            <span class="n">spouses</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">child</span><span class="p">))</span>
+        <span class="n">spouses</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">spouses</span></div>
 
 
 <div class="viewcode-block" id="DAG.get_independencies">
@@ -1685,7 +1736,7 @@
         <span class="k">if</span> <span class="p">(</span><span class="n">end</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">start</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="n">start</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">end</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No possible separators because start and end are adjacent&quot;</span><span class="p">)</span>
         <span class="n">an_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ancestral_graph</span><span class="p">([</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">])</span>
-        <span class="n">separator</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">end</span><span class="p">)))</span>
+        <span class="n">separator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">([</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">include_latents</span><span class="p">:</span>
             <span class="c1"># If any of the parents were latents, take the latent&#39;s parent</span>
@@ -1719,9 +1770,8 @@
 <a class="viewcode-back" href="../../../api/generated/base/pgmpy.base.DAG.html#pgmpy.base.DAG.get_markov_blanket">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_markov_blanket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a markov blanket for a random variable. In the case</span>
-<span class="sd">        of Bayesian Networks, the markov blanket is the set of</span>
-<span class="sd">        node&#39;s parents, its children and its children&#39;s other parents.</span>
+<span class="sd">        Returns a markov blanket for a random variable. In the case of Bayesian Networks, the markov blanket is the set</span>
+<span class="sd">        of node&#39;s parents, its children and its children&#39;s other parents.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1754,13 +1804,7 @@
 <span class="sd">        &gt;&gt;&gt; sorted(G.get_markov_blanket(&quot;y&quot;))</span>
 <span class="sd">        [&#39;s&#39;, &#39;u&#39;, &#39;v&#39;, &#39;w&#39;, &#39;x&#39;, &#39;z&#39;]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">children</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_children</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-        <span class="n">parents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-        <span class="n">blanket_nodes</span> <span class="o">=</span> <span class="n">children</span> <span class="o">+</span> <span class="n">parents</span>
-        <span class="k">for</span> <span class="n">child_node</span> <span class="ow">in</span> <span class="n">children</span><span class="p">:</span>
-            <span class="n">blanket_nodes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">child_node</span><span class="p">))</span>
-        <span class="n">blanket_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">blanket_nodes</span><span class="p">)</span>
-        <span class="n">blanket_nodes</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="n">blanket_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">node</span><span class="p">))</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_children</span><span class="p">(</span><span class="n">node</span><span class="p">))</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_spouses</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">blanket_nodes</span><span class="p">)</span></div>
 
 
@@ -1981,18 +2025,56 @@
                             <span class="n">edge_labels</span><span class="p">[(</span><span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">)]</span> <span class="o">=</span> <span class="s2">&quot;reversible&quot;</span>
 
         <span class="c1"># Create PDAG with directed and undirected edges</span>
-        <span class="n">directed_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">edge</span> <span class="k">for</span> <span class="n">edge</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">edge_labels</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;compelled&quot;</span><span class="p">]</span>
-        <span class="n">undirected_edges</span> <span class="o">=</span> <span class="p">[</span><span class="n">edge</span> <span class="k">for</span> <span class="n">edge</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">edge_labels</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;reversible&quot;</span><span class="p">]</span>
+        <span class="n">directed_edges</span> <span class="o">=</span> <span class="p">[(</span><span class="o">*</span><span class="n">edge</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">edge</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">edge_labels</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;compelled&quot;</span><span class="p">]</span>
+        <span class="n">undirected_edges</span> <span class="o">=</span> <span class="p">[(</span><span class="o">*</span><span class="n">edge</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">edge</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">edge_labels</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;reversible&quot;</span><span class="p">]</span>
 
         <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDAG</span>
 
-        <span class="n">pdag</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">(</span>
-            <span class="n">directed_ebunch</span><span class="o">=</span><span class="n">directed_edges</span><span class="p">,</span>
-            <span class="n">undirected_ebunch</span><span class="o">=</span><span class="n">undirected_edges</span><span class="p">,</span>
-            <span class="n">latents</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">latents</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="n">pdag</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">()</span>
+        <span class="n">pdag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">directed_edges</span><span class="p">)</span>
+        <span class="n">pdag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">undirected_edges</span><span class="p">)</span>
+        <span class="n">pdag</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latents</span>
         <span class="n">pdag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">pdag</span></div>
+
+
+<div class="viewcode-block" id="DAG.to_adjacency">
+<a class="viewcode-back" href="../../../api/generated/base/pgmpy.base.DAG.html#pgmpy.base.DAG.to_adjacency">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_adjacency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;edge_type&quot;</span><span class="p">,</span> <span class="n">nodelist</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the adjacency matrix of the DAG as a ``pandas.DataFrame``.</span>
+
+<span class="sd">        Temporary shim mirroring :meth:`pgmpy.base._base._CoreGraph.to_adjacency` until ``DAG`` itself</span>
+<span class="sd">        inherits ``_CoreGraph``. Every edge of a DAG is a directed ``u -&gt; v`` edge, so only the</span>
+<span class="sd">        ``&quot;edge_type&quot;`` and ``&quot;binary&quot;`` (alias ``&quot;bnlearn&quot;``) encodings are supported.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        encoding : str (default=&quot;edge_type&quot;)</span>
+<span class="sd">            - ``&quot;edge_type&quot;`` : ``M.loc[u, v]`` is ``&quot;-&gt;&quot;`` and ``M.loc[v, u]`` is ``&quot;&lt;-&quot;`` for an edge</span>
+<span class="sd">              ``u -&gt; v`` (else ``0``).</span>
+<span class="sd">            - ``&quot;binary&quot;`` / ``&quot;bnlearn&quot;`` : ``M.loc[u, v] = 1`` iff ``u -&gt; v`` (directed, asymmetric).</span>
+
+<span class="sd">        nodelist : list, optional (default=None)</span>
+<span class="sd">            Row/column ordering. If ``None``, the sorted node list is used.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pandas.DataFrame</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="k">if</span> <span class="n">nodelist</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodelist</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">encoding</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="s2">&quot;bnlearn&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">nx</span><span class="o">.</span><span class="n">to_pandas_adjacency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodelist</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">encoding</span> <span class="o">==</span> <span class="s2">&quot;edge_type&quot;</span><span class="p">:</span>
+            <span class="n">adj</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+                <span class="n">adj</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;-&gt;&quot;</span>
+                <span class="n">adj</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&lt;-&quot;</span>
+            <span class="k">return</span> <span class="n">adj</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;DAG.to_adjacency is a temporary shim supporting encoding in </span><span class="se">{{</span><span class="s2">&#39;edge_type&#39;, &#39;binary&#39;</span><span class="se">}}</span><span class="s2">; &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">encoding</span><span class="si">!r}</span><span class="s2">. Other encodings become available once DAG inherits _CoreGraph.&quot;</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DAG.do">

@@ -67,7 +67,7 @@
     <link rel="icon" href="../../../_static/logo_favi.ico"/>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="AncestralBase" href="pgmpy.base.AncestralBase.html" />
+    <link rel="next" title="SimpleCausalModel" href="pgmpy.base.SimpleCausalModel.html" />
     <link rel="prev" title="ADMG" href="pgmpy.base.ADMG.html" />
   
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -827,7 +827,6 @@
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.PDAG.html">PDAG</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.ADMG.html">ADMG</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">MAG</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pgmpy.base.AncestralBase.html">AncestralBase</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.SimpleCausalModel.html">SimpleCausalModel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pgmpy.base.UndirectedGraph.html">UndirectedGraph</a></li>
 </ul>
@@ -916,35 +915,26 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="pgmpy.base.MAG">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pgmpy.base.</span></span><span class="sig-name descname"><span class="pre">MAG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/MAG.html#MAG"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.MAG" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pgmpy.base.AncestralBase.html#pgmpy.base.AncestralBase" title="pgmpy.base.AncestralBase.AncestralBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">AncestralBase</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_CoreGraph</span></code></p>
 <p>Class for representing Maximal Ancestral Graphs (MAGs).</p>
-<p>A MAG is a type of graph used in causal inference to represent conditional
-independence relations when some variables are latent (unobserved). Unlike
-simple directed acyclic graphs (DAGs), MAGs allow for special edge types
-(directed and bidirected) that capture the presence of latent confounding
-and selection bias. Every pair of nodes in a MAG is connected in such a way
-that the graph is “maximal,” meaning no additional edges can be added
-without changing the set of implied conditional independence relations.</p>
+<p>A MAG is a graph used in causal inference to represent conditional independence relations when
+some variables are latent (unobserved) or selection is present. MAGs allow directed (<code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code>),
+bidirected (<code class="docutils literal notranslate"><span class="pre">&quot;&lt;&gt;&quot;</span></code>), and undirected (<code class="docutils literal notranslate"><span class="pre">&quot;--&quot;</span></code>) edges – bidirected edges encode latent
+confounding and undirected edges encode selection bias. A MAG is <em>maximal</em>: no edge can be added
+without changing the implied conditional-independence relations.</p>
+<p>Built on <code class="xref py py-class docutils literal notranslate"><span class="pre">_CoreGraph</span></code>, restricted to the directed/bidirected/undirected
+edge types via <code class="docutils literal notranslate"><span class="pre">SUPPORTED_EDGE_TYPES</span></code> (no circle endpoints – those are for PAGs).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>ebunch</strong><span class="classifier">iterable of tuples, optional</span></dt><dd><p>A list or iterable of edges to add at initialization.</p>
+<dt><strong>edge_list</strong><span class="classifier">iterable of tuples, optional</span></dt><dd><p>Edges of the form <code class="docutils literal notranslate"><span class="pre">(u,</span> <span class="pre">v,</span> <span class="pre">edge_type)</span></code> with <code class="docutils literal notranslate"><span class="pre">edge_type</span></code> one of <code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;&lt;-&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&quot;&lt;&gt;&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;--&quot;</span></code>.</p>
 </dd>
 <dt><strong>latents</strong><span class="classifier">set, default=set()</span></dt><dd><p>Set of latent (unobserved) variables.</p>
 </dd>
-<dt><strong>exposures</strong><span class="classifier">set, default=set()</span></dt><dd><p>Set of exposure variables in the graph. These are the variables
-that represent the treatment or intervention being studied in a
-causal analysis. Default is an empty set.</p>
+<dt><strong>exposures, outcomes</strong><span class="classifier">set, default=set()</span></dt><dd><p>Treatment / response variables (causal-analysis roles).</p>
 </dd>
-<dt><strong>outcomes</strong><span class="classifier">set, default=set()</span></dt><dd><p>Set of outcome variables in the graph. These are the variables
-that represent the response or dependent variables being studied
-in a causal analysis. Default is an empty set.</p>
-</dd>
-<dt><strong>roles</strong><span class="classifier">dict, optional (default: None)</span></dt><dd><p>A dictionary mapping roles to node names.
-The keys are roles, and the values are role names (strings or iterables of str).
-If provided, this will automatically assign roles to the nodes in the graph.
-Passing a key-value pair via <code class="docutils literal notranslate"><span class="pre">roles</span></code> is equivalent to calling
-<code class="docutils literal notranslate"><span class="pre">with_role(role,</span> <span class="pre">variables)</span></code> for each key-value pair in the dictionary.</p>
+<dt><strong>roles</strong><span class="classifier">dict, optional (default: None)</span></dt><dd><p>A mapping of role name to node(s); equivalent to calling <code class="docutils literal notranslate"><span class="pre">with_role</span></code> for each entry.</p>
 </dd>
 </dl>
 </dd>
@@ -955,71 +945,52 @@ Passing a key-value pair via <code class="docutils literal notranslate"><span cl
 </ul>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)],</span> <span class="n">latents</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;L&quot;</span><span class="p">})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">mag</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
-<span class="go">[&#39;A&#39;, &#39;B&#39;, &#39;C&#39;, &#39;L&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;&gt;&quot;</span><span class="p">)],</span> <span class="n">latents</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;L&quot;</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">mag</span><span class="o">.</span><span class="n">get_edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="go">[(&#39;A&#39;, &#39;B&#39;, &#39;&lt;&gt;&#39;), (&#39;L&#39;, &#39;A&#39;, &#39;-&gt;&#39;)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">latents</span>
+<span class="go">{&#39;L&#39;}</span>
 </pre></div>
 </div>
-<p>Roles can be assigned to nodes in the graph at construction or using methods.</p>
-<p>At construction:</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">ebunch</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)],</span>
-<span class="gp">... </span>    <span class="n">latents</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;L&quot;</span><span class="p">},</span>
-<span class="gp">... </span>    <span class="n">exposures</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;A&quot;</span><span class="p">},</span>
-<span class="gp">... </span>    <span class="n">outcomes</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;B&quot;</span><span class="p">},</span>
-<span class="gp">... </span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Roles can also be assigned after creation using <code class="docutils literal notranslate"><span class="pre">with_role</span></code> method.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">mag</span><span class="o">.</span><span class="n">with_role</span><span class="p">(</span><span class="s2">&quot;adjustment&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">})</span>
-</pre></div>
-</div>
-<p>Vertices of a specific role can be retrieved using <code class="docutils literal notranslate"><span class="pre">get_role</span></code> method.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">&quot;exposures&quot;</span><span class="p">)</span>
-<span class="go">[&#39;A&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">&quot;adjustment&quot;</span><span class="p">)</span>
-<span class="go">[&#39;L&#39;, &#39;C&#39;]</span>
-</pre></div>
-</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pgmpy.base.MAG.SUPPORTED_EDGE_TYPES">
+<span class="sig-name descname"><span class="pre">SUPPORTED_EDGE_TYPES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'--',</span> <span class="pre">'-&gt;',</span> <span class="pre">'&lt;-',</span> <span class="pre">'&lt;&gt;'})</span></span><a class="headerlink" href="#pgmpy.base.MAG.SUPPORTED_EDGE_TYPES" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.base.MAG.has_inducing_path">
-<span class="sig-name descname"><span class="pre">has_inducing_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">W</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/MAG.html#MAG.has_inducing_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.MAG.has_inducing_path" title="Link to this definition">#</a></dt>
-<dd><p>Check if there exists an inducing path between two nodes relative to W.</p>
-<p>An inducing path between u and v is a path such that:
-- The path has length &gt; 2 (at least one intermediate node),
-- Every intermediate node is a collider on the path,
-- Every intermediate node is either:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>in W, or</p></li>
-<li><p>an ancestor of u or v.</p></li>
-</ul>
-</div></blockquote>
+<dt class="sig sig-object py" id="pgmpy.base.MAG.is_maximal">
+<span class="sig-name descname"><span class="pre">is_maximal</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/MAG.html#MAG.is_maximal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.MAG.is_maximal" title="Link to this definition">#</a></dt>
+<dd><p>Check whether the graph is maximal.</p>
+<p>An ancestral graph is maximal when no edge can be added without changing the implied
+conditional-independence relations – equivalently, when every pair of non-adjacent nodes
+can be m-separated by some subset of the remaining nodes. By the characterization of
+<span class="bibtex-citation" id="id2">[<a class="reference internal" href="../../../references.html#id5" title="Jiji Zhang. Causal reasoning with ancestral graphs. Journal of Machine Learning Research, 9:1437–1474, 2008. URL: https://www.jmlr.org/papers/v9/zhang08a.html.">G4</a>]</span> this holds exactly when no <em>primitive</em> inducing path (an inducing
+path relative to the full vertex set: every intermediate node is a collider and an
+ancestor of an endpoint) joins a non-adjacent pair. The <code class="docutils literal notranslate"><span class="pre">latents</span></code> role is ignored:
+maximality is a property of the graph itself.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>u</strong><span class="classifier">Hashable</span></dt><dd><p>Source node.</p>
-</dd>
-<dt><strong>v</strong><span class="classifier">Hashable</span></dt><dd><p>Target node.</p>
-</dd>
-<dt><strong>W</strong><span class="classifier">set</span></dt><dd><p>Subset of nodes to check inducing paths through (often latents).</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True if there exists an inducing path, False otherwise.</p>
+<dt>bool</dt><dd><p>True if the graph is maximal, False otherwise.</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_inducing_path</span></code></dt><dd><p>The underlying inducing-path query.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_mseparated</span></code></dt><dd><p>The m-separation query maximality is defined through.</p>
+</dd>
+</dl>
+</div>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;L&quot;</span><span class="p">}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">has_inducing_path</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="n">mag</span><span class="o">.</span><span class="n">latents</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">edges</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MAG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="n">edges</span><span class="p">)</span><span class="o">.</span><span class="n">is_maximal</span><span class="p">()</span>  <span class="c1"># C ... D joined by an inducing path</span>
+<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MAG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="n">edges</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;&gt;&quot;</span><span class="p">)])</span><span class="o">.</span><span class="n">is_maximal</span><span class="p">()</span>
 <span class="go">True</span>
 </pre></div>
 </div>
@@ -1027,40 +998,27 @@ Passing a key-value pair via <code class="docutils literal notranslate"><span cl
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.base.MAG.is_visible_edge">
-<span class="sig-name descname"><span class="pre">is_visible_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/MAG.html#MAG.is_visible_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.MAG.is_visible_edge" title="Link to this definition">#</a></dt>
-<dd><p>Check if a directed edge u -&gt; v is visible in the MAG.</p>
-<p>A directed edge A → B in a MAG is considered visible if there exists a vertex C
-not adjacent to B such that either:</p>
-<blockquote>
-<div><ol class="arabic simple">
-<li><p>C → A exists, or</p></li>
-</ol>
-<p>2. There is a collider path from C to A that is into A, and every vertex
-on that path is a parent of B.</p>
-</div></blockquote>
+<span class="sig-name descname"><span class="pre">is_visible_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/MAG.html#MAG.is_visible_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.MAG.is_visible_edge" title="Link to this definition">#</a></dt>
+<dd><p>Whether the directed edge <code class="docutils literal notranslate"><span class="pre">u</span> <span class="pre">-&gt;</span> <span class="pre">v</span></code> is visible in the MAG.</p>
+<p>A directed edge <code class="docutils literal notranslate"><span class="pre">u</span> <span class="pre">-&gt;</span> <span class="pre">v</span></code> is visible if there is a node <code class="docutils literal notranslate"><span class="pre">c</span></code> not adjacent to <code class="docutils literal notranslate"><span class="pre">v</span></code> such
+that either <code class="docutils literal notranslate"><span class="pre">c</span> <span class="pre">*-&gt;</span> <span class="pre">u</span></code>, or there is a collider path from <code class="docutils literal notranslate"><span class="pre">c</span></code> into <code class="docutils literal notranslate"><span class="pre">u</span></code> on which every
+intermediate node is a parent of <code class="docutils literal notranslate"><span class="pre">v</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>u</strong><span class="classifier">Hashable</span></dt><dd><p>Source node (tail of the edge).</p>
-</dd>
-<dt><strong>v</strong><span class="classifier">Hashable</span></dt><dd><p>Target node (head of the edge).</p>
+<dt><strong>u, v</strong><span class="classifier">Hashable</span></dt><dd><p>The tail and head of the directed edge.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True if the edge u -&gt; v is visible, False otherwise.</p>
-</dd>
+<dt>bool</dt><dd></dd>
 </dl>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">edges</span> <span class="o">=</span> <span class="p">[</span>
-<span class="gp">... </span>    <span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">),</span>
-<span class="gp">... </span>    <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">),</span>
-<span class="gp">... </span>    <span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">),</span>
-<span class="gp">... </span><span class="p">]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">edges</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAG</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">is_visible_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">)</span>
 <span class="go">True</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">is_visible_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">)</span>
@@ -1072,42 +1030,31 @@ on that path is a parent of B.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.base.MAG.lower_manipulation">
 <span class="sig-name descname"><span class="pre">lower_manipulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/MAG.html#MAG.lower_manipulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.MAG.lower_manipulation" title="Link to this definition">#</a></dt>
-<dd><p>Performs lower manipulation.</p>
-<p>Removes all edges that are visible and originate from nodes in X.
-For edges from X that are invisible, adds bidirected edges from the other
-endpoint to its neighbors outside X to preserve conditional independencies.
-All other edges remain unchanged.</p>
+<dd><p>Return the MAG after lower manipulation of <cite>X</cite>.</p>
+<p>Visible directed edges out of <cite>X</cite> are removed; invisible ones are removed and replaced by a
+bidirected edge from the child to each of its other (non-<cite>X</cite>) neighbours, to preserve the
+conditional independencies.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>X</strong><span class="classifier">set</span></dt><dd><p>Set of nodes to perform manipulation on.</p>
+<dt><strong>X</strong><span class="classifier">set</span></dt><dd><p>The nodes to manipulate.</p>
 </dd>
-<dt><strong>inplace</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, modifies the current graph in place. Defaults to False.</p>
+<dt><strong>inplace</strong><span class="classifier">bool (default: False)</span></dt><dd><p>If True, modify and return this graph; otherwise return a modified copy.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt>MAG</dt><dd><p>A new MAG with outgoing edges from X removed.</p>
-</dd>
+<dt>MAG</dt><dd></dd>
 </dl>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">new_mag</span> <span class="o">=</span> <span class="n">mag</span><span class="o">.</span><span class="n">lower_manipulation</span><span class="p">({</span><span class="s2">&quot;A&quot;</span><span class="p">})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">edges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_mag</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
-<span class="go">1</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-<span class="go">(&#39;B&#39;, &#39;C&#39;)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;marks&#39;</span><span class="p">][</span><span class="s1">&#39;B&#39;</span><span class="p">],</span> <span class="n">edges</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;marks&#39;</span><span class="p">][</span><span class="s1">&#39;C&#39;</span><span class="p">]</span>
-<span class="go">(&#39;&gt;&#39;, &#39;&gt;&#39;)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">new_mag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;&gt;&quot;</span><span class="p">)</span>
+<span class="go">True</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1115,38 +1062,30 @@ All other edges remain unchanged.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.base.MAG.upper_manipulation">
 <span class="sig-name descname"><span class="pre">upper_manipulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/MAG.html#MAG.upper_manipulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.MAG.upper_manipulation" title="Link to this definition">#</a></dt>
-<dd><p>Performs upper manipulation.</p>
-<p>Deletes all edges (directed or bidirected) that have an arrowhead
-pointing to any variable in X. The rest of the graph remains unchanged.</p>
+<dd><p>Return the MAG after upper manipulation of <cite>X</cite>.</p>
+<p>Every edge with an arrowhead into a node of <cite>X</cite> (a directed edge <code class="docutils literal notranslate"><span class="pre">*</span> <span class="pre">-&gt;</span> <span class="pre">X</span></code> or a bidirected
+edge <code class="docutils literal notranslate"><span class="pre">*</span> <span class="pre">&lt;&gt;</span> <span class="pre">X</span></code>) is removed; all other edges are kept.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>X</strong><span class="classifier">set</span></dt><dd><p>Set of nodes to perform manipulation on.</p>
+<dt><strong>X</strong><span class="classifier">set</span></dt><dd><p>The nodes to manipulate.</p>
 </dd>
-<dt><strong>inplace</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, modifies the current graph in place. Defaults to False.</p>
+<dt><strong>inplace</strong><span class="classifier">bool (default: False)</span></dt><dd><p>If True, modify and return this graph; otherwise return a modified copy.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt>MAG</dt><dd><p>A new MAG with incoming edges to X removed.</p>
-</dd>
+<dt>MAG</dt><dd></dd>
 </dl>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="p">[(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">new_mag</span> <span class="o">=</span> <span class="n">mag</span><span class="o">.</span><span class="n">upper_manipulation</span><span class="p">({</span><span class="s2">&quot;X&quot;</span><span class="p">})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">new_mag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">new_mag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">)</span>
-<span class="go">False</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">new_mag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
-<span class="go">False</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">new_mag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">),</span> <span class="n">new_mag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;X&quot;</span><span class="p">),</span> <span class="n">new_mag</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">)</span>
+<span class="go">(True, False, False)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1175,11 +1114,11 @@ pointing to any variable in X. The rest of the graph remains unchanged.</p>
       </div>
     </a>
     <a class="right-next"
-       href="pgmpy.base.AncestralBase.html"
+       href="pgmpy.base.SimpleCausalModel.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">AncestralBase</p>
+        <p class="prev-next-title">SimpleCausalModel</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -1203,7 +1142,8 @@ pointing to any variable in X. The rest of the graph remains unchanged.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG"><code class="docutils literal notranslate"><span class="pre">MAG</span></code></a><ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG.has_inducing_path"><code class="docutils literal notranslate"><span class="pre">MAG.has_inducing_path()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG.SUPPORTED_EDGE_TYPES"><code class="docutils literal notranslate"><span class="pre">MAG.SUPPORTED_EDGE_TYPES</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG.is_maximal"><code class="docutils literal notranslate"><span class="pre">MAG.is_maximal()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG.is_visible_edge"><code class="docutils literal notranslate"><span class="pre">MAG.is_visible_edge()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG.lower_manipulation"><code class="docutils literal notranslate"><span class="pre">MAG.lower_manipulation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG.upper_manipulation"><code class="docutils literal notranslate"><span class="pre">MAG.upper_manipulation()</span></code></a></li>

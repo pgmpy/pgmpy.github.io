@@ -867,7 +867,6 @@
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Hashable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">combinations</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">clone</span>
 
@@ -1097,7 +1096,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;return_type must be one of: dag, pdag, or cpdag. Got: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">adjacency_matrix_</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">to_pandas_adjacency</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">causal_graph_</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adjacency_matrix_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_graph_</span><span class="o">.</span><span class="n">to_adjacency</span><span class="p">(</span>
+            <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;binary&quot;</span><span class="p">,</span> <span class="n">nodelist</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">causal_graph_</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span>
 
@@ -1143,7 +1144,7 @@
 <span class="sd">        &gt;&gt;&gt; df = load_model(&quot;bnlearn/cancer&quot;).simulate(int(1e3), seed=42)</span>
 <span class="sd">        &gt;&gt;&gt; est = PC(ci_test=&#39;chi_square&#39;).fit(df)</span>
 <span class="sd">        &gt;&gt;&gt; pdag = est._orient_colliders()</span>
-<span class="sd">        &gt;&gt;&gt; sorted(pdag.edges())</span>
+<span class="sd">        &gt;&gt;&gt; sorted(pdag.get_edges(data=False))</span>
 <span class="sd">        [(&#39;Pollution&#39;, &#39;Cancer&#39;), (&#39;Xray&#39;, &#39;Cancer&#39;)]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1229,7 +1230,8 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">directed_edges</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
 
-        <span class="n">pdag_oriented</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">(</span><span class="n">directed_ebunch</span><span class="o">=</span><span class="n">directed_edges</span><span class="p">,</span> <span class="n">undirected_ebunch</span><span class="o">=</span><span class="n">undirected_edges</span><span class="p">)</span>
+        <span class="n">ebunch</span> <span class="o">=</span> <span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;-&gt;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">directed_edges</span><span class="p">]</span> <span class="o">+</span> <span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">undirected_edges</span><span class="p">]</span>
+        <span class="n">pdag_oriented</span> <span class="o">=</span> <span class="n">PDAG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="n">ebunch</span><span class="p">)</span>
         <span class="n">pdag_oriented</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">pdag</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
 
         <span class="k">return</span> <span class="n">pdag_oriented</span></div>
