@@ -864,23 +864,12 @@
                 <article class="bd-article">
                   
   <h1>Source code for pgmpy.estimators.TreeSearch</h1><div class="highlight"><pre>
-<span></span><span class="ch">#!/usr/bin/env python</span>
+<span></span><span class="sd">&quot;&quot;&quot;Deprecated compatibility shims for :class:`pgmpy.causal_discovery.ChowLiu` / :class:`pgmpy.causal_discovery.TAN`.&quot;&quot;&quot;</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">combinations</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">joblib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">adjusted_mutual_info_score</span><span class="p">,</span>
-    <span class="n">mutual_info_score</span><span class="p">,</span>
-    <span class="n">normalized_mutual_info_score</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm.auto</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">TAN</span> <span class="k">as</span> <span class="n">_TAN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChowLiu</span> <span class="k">as</span> <span class="n">_ChowLiu</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructureEstimator</span>
 
 
@@ -888,47 +877,44 @@
 <a class="viewcode-back" href="../../../api/generated/structure_learning/pgmpy.estimators.TreeSearch.html#pgmpy.estimators.TreeSearch">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TreeSearch</span><span class="p">(</span><span class="n">StructureEstimator</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Search class for learning tree related graph structure. The algorithms</span>
-<span class="sd">    supported are Chow-Liu and Tree-augmented naive bayes (TAN).</span>
+<span class="sd">    Deprecated: use :class:`pgmpy.causal_discovery.ChowLiu` or</span>
+<span class="sd">    :class:`pgmpy.causal_discovery.TAN` instead.</span>
 
-<span class="sd">    Chow-Liu constructs the maximum-weight spanning tree with mutual information</span>
-<span class="sd">    score as edge weights.</span>
-
-<span class="sd">    TAN is an extension of Naive Bayes classifier to allow a tree structure over</span>
-<span class="sd">    the independent variables to account for interaction.</span>
+<span class="sd">    Search class for learning tree-related graph structures. The algorithms</span>
+<span class="sd">    supported are Chow-Liu and Tree-augmented naive bayes (TAN); both delegate</span>
+<span class="sd">    to their canonical implementations in `pgmpy.causal_discovery`.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    data: pandas.DataFrame object</span>
 <span class="sd">        dataframe object where each column represents one variable.</span>
 
-<span class="sd">    root_node: str, int, or any hashable python object, default is None.</span>
-<span class="sd">        The root node of the tree structure. If None then root node is auto-picked</span>
-<span class="sd">        as the node with the highest sum of edge weights.</span>
+<span class="sd">    root_node: str, int, or any hashable python object, optional</span>
+<span class="sd">        The root node of the tree structure. If None, then root node is</span>
+<span class="sd">        auto-picked as the node with the highest sum of edge weights.</span>
 
 <span class="sd">    n_jobs: int (default: -1)</span>
 <span class="sd">        Number of jobs to run in parallel. `-1` means use all processors.</span>
-
-<span class="sd">    References</span>
-<span class="sd">    ----------</span>
-<span class="sd">    - :cite:p:`chow_liu_1968`</span>
-<span class="sd">    - :cite:p:`friedman_geiger_goldszmidt_1997`</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">root_node</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;TreeSearch is deprecated. Please use pgmpy.causal_discovery.TreeSearch instead.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;TreeSearch is deprecated and will be removed in v2.0. Please use &quot;</span>
+            <span class="s2">&quot;pgmpy.causal_discovery.ChowLiu or pgmpy.causal_discovery.TAN instead.&quot;</span><span class="p">,</span>
             <span class="ne">FutureWarning</span><span class="p">,</span>
             <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">root_node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">root_node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Root node: </span><span class="si">{</span><span class="n">root_node</span><span class="si">}</span><span class="s2"> not found in data columns.&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">root_node</span> <span class="o">=</span> <span class="n">root_node</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
-
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Legacy private helpers, forwarded to the canonical tree-search mixin.</span>
+    <span class="n">_get_weights</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">_ChowLiu</span><span class="o">.</span><span class="n">_get_weights</span><span class="p">)</span>
+    <span class="n">_get_conditional_weights</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">_TAN</span><span class="o">.</span><span class="n">_get_conditional_weights</span><span class="p">)</span>
+    <span class="n">_create_tree_and_dag</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="n">_ChowLiu</span><span class="o">.</span><span class="n">_create_tree_and_dag</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TreeSearch.estimate">
 <a class="viewcode-back" href="../../../api/generated/structure_learning/pgmpy.estimators.TreeSearch.html#pgmpy.estimators.TreeSearch.estimate">[docs]</a>
@@ -940,314 +926,37 @@
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Estimate the `DAG` structure that fits best to the given data set without</span>
-<span class="sd">        parametrization.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        estimator_type: str (chow-liu | tan)</span>
-<span class="sd">            The algorithm to use for estimating the DAG.</span>
-
-<span class="sd">        class_node: string, int or any hashable python object. (optional)</span>
-<span class="sd">            Needed only if estimator_type = &#39;tan&#39;. In the estimated DAG, there would be</span>
-<span class="sd">            edges from class_node to each of the feature variables.</span>
-
-<span class="sd">        edge_weights_fn: str or function (default: mutual info)</span>
-<span class="sd">            Method to use for computing edge weights. By default, Mutual Info Score is</span>
-<span class="sd">            used.</span>
-
-<span class="sd">        show_progress: boolean</span>
-<span class="sd">            If True, shows a progress bar for the running algorithm.</span>
+<span class="sd">        Estimate the `DAG` structure that fits best to the given data set</span>
+<span class="sd">        without parametrization. Delegates to</span>
+<span class="sd">        :class:`pgmpy.causal_discovery.ChowLiu` (`estimator_type=&quot;chow-liu&quot;`)</span>
+<span class="sd">        or :class:`pgmpy.causal_discovery.TAN` (`estimator_type=&quot;tan&quot;`); refer</span>
+<span class="sd">        to their documentation for parameter details.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        Estimated Model: pgmpy.base.DAG</span>
+<span class="sd">        Estimated model: pgmpy.base.DAG</span>
 <span class="sd">            The estimated model structure.</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; import networkx as nx</span>
-<span class="sd">        &gt;&gt;&gt; import matplotlib.pyplot as plt</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import TreeSearch</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
-<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 5)),</span>
-<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;],</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; est = TreeSearch(values, root_node=&quot;B&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; model = est.estimate(estimator_type=&quot;chow-liu&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; nx.draw_circular(</span>
-<span class="sd">        ...     model, with_labels=True, arrowsize=20, arrowstyle=&quot;fancy&quot;, alpha=0.3</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; plt.show()</span>
-<span class="sd">        &gt;&gt;&gt; est = TreeSearch(values)</span>
-<span class="sd">        &gt;&gt;&gt; model = est.estimate(estimator_type=&quot;chow-liu&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; nx.draw_circular(</span>
-<span class="sd">        ...     model, with_labels=True, arrowsize=20, arrowstyle=&quot;fancy&quot;, alpha=0.3</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; plt.show()</span>
-<span class="sd">        &gt;&gt;&gt; est = TreeSearch(values, root_node=&quot;B&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; model = est.estimate(estimator_type=&quot;tan&quot;, class_node=&quot;A&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; nx.draw_circular(</span>
-<span class="sd">        ...     model, with_labels=True, arrowsize=20, arrowstyle=&quot;fancy&quot;, alpha=0.3</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; plt.show()</span>
-<span class="sd">        &gt;&gt;&gt; est = TreeSearch(values)</span>
-<span class="sd">        &gt;&gt;&gt; model = est.estimate(estimator_type=&quot;tan&quot;, class_node=&quot;A&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; nx.draw_circular(</span>
-<span class="sd">        ...     model, with_labels=True, arrowsize=20, arrowstyle=&quot;fancy&quot;, alpha=0.3</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; plt.show()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Step 1. Argument checks</span>
-        <span class="c1"># Step 1.1: Only chow-liu and tan allowed as estimator type.</span>
-        <span class="k">if</span> <span class="n">estimator_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;chow-liu&quot;</span><span class="p">,</span> <span class="s2">&quot;tan&quot;</span><span class="p">}:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid estimator_type. Expected either chow-liu or tan. Got: </span><span class="si">{</span><span class="n">estimator_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Step 1.2: If estimator_type=tan, class_node must be specified</span>
-        <span class="k">if</span> <span class="n">estimator_type</span> <span class="o">==</span> <span class="s2">&quot;tan&quot;</span> <span class="ow">and</span> <span class="n">class_node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;class_node argument must be specified for estimator_type=&#39;tan&#39;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">estimator_type</span> <span class="o">==</span> <span class="s2">&quot;tan&quot;</span> <span class="ow">and</span> <span class="n">class_node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Class node: </span><span class="si">{</span><span class="n">class_node</span><span class="si">}</span><span class="s2"> not found in data columns&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Step 1.3: If root_node isn&#39;t specified, get the node with the highest score.</span>
-        <span class="n">weights_computed</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_node</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">TreeSearch</span><span class="o">.</span><span class="n">_get_weights</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">edge_weights_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">show_progress</span><span class="p">)</span>
-            <span class="n">weights_computed</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">sum_weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">maxw_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">sum_weights</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">root_node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="n">maxw_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
-
-        <span class="c1"># Step 2. Compute all edge weights.</span>
         <span class="k">if</span> <span class="n">estimator_type</span> <span class="o">==</span> <span class="s2">&quot;chow-liu&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">weights_computed</span><span class="p">:</span>
-                <span class="n">weights</span> <span class="o">=</span> <span class="n">TreeSearch</span><span class="o">.</span><span class="n">_get_weights</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">edge_weights_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">show_progress</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">TreeSearch</span><span class="o">.</span><span class="n">_get_conditional_weights</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">class_node</span><span class="p">,</span> <span class="n">edge_weights_fn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">show_progress</span>
+            <span class="n">est</span> <span class="o">=</span> <span class="n">_ChowLiu</span><span class="p">(</span>
+                <span class="n">root_node</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">root_node</span><span class="p">,</span>
+                <span class="n">edge_weights_fn</span><span class="o">=</span><span class="n">edge_weights_fn</span><span class="p">,</span>
+                <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
             <span class="p">)</span>
-
-        <span class="c1"># Step 3: If estimator_type = &quot;chow-liu&quot;, estimate the DAG and return.</span>
-        <span class="k">if</span> <span class="n">estimator_type</span> <span class="o">==</span> <span class="s2">&quot;chow-liu&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">TreeSearch</span><span class="o">.</span><span class="n">_create_tree_and_dag</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_node</span><span class="p">)</span>
-
-        <span class="c1"># Step 4: If estimator_type = &quot;tan&quot;:</span>
         <span class="k">elif</span> <span class="n">estimator_type</span> <span class="o">==</span> <span class="s2">&quot;tan&quot;</span><span class="p">:</span>
-            <span class="c1"># Step 4.1: Checks root_node != class_node</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_node</span> <span class="o">==</span> <span class="n">class_node</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Root node: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">root_node</span><span class="si">}</span><span class="s2"> and class node: </span><span class="si">{</span><span class="n">class_node</span><span class="si">}</span><span class="s2"> are identical&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Step 4.2: Construct chow-liu DAG on {data.columns - class_node}</span>
-            <span class="n">class_node_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="o">==</span> <span class="n">class_node</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">class_node_idx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">class_node_idx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">reduced_columns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">class_node_idx</span><span class="p">)</span>
-            <span class="n">D</span> <span class="o">=</span> <span class="n">TreeSearch</span><span class="o">.</span><span class="n">_create_tree_and_dag</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">reduced_columns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_node</span><span class="p">)</span>
-
-            <span class="c1"># Step 4.3: Add edges from class_node to all other nodes.</span>
-            <span class="n">D</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">class_node</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">reduced_columns</span><span class="p">])</span>
-            <span class="k">return</span> <span class="n">D</span></div>
-
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_weights</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">edge_weights_fn</span><span class="o">=</span><span class="s2">&quot;mutual_info&quot;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Helper function to Chow-Liu algorithm for estimating tree structure from given data. Refer to</span>
-<span class="sd">        pgmpy.estimators.TreeSearch for more details. This function returns the edge weights matrix.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        data: pandas.DataFrame object</span>
-<span class="sd">            dataframe object where each column represents one variable.</span>
-
-<span class="sd">        edge_weights_fn: str or function (default: mutual_info)</span>
-<span class="sd">            Method to use for computing edge weights. Options are:</span>
-<span class="sd">                1. &#39;mutual_info&#39;: Mutual Information Score.</span>
-<span class="sd">                2. &#39;adjusted_mutual_info&#39;: Adjusted Mutual Information Score.</span>
-<span class="sd">                3. &#39;normalized_mutual_info&#39;: Normalized Mutual Information Score.</span>
-<span class="sd">                4. function(array[n_samples,], array[n_samples,]): Custom function.</span>
-
-<span class="sd">        n_jobs: int (default: -1)</span>
-<span class="sd">            Number of jobs to run in parallel. `-1` means use all processors.</span>
-
-<span class="sd">        show_progress: boolean</span>
-<span class="sd">            If True, shows a progress bar for the running algorithm.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        weights: numpy 2D array, shape = (n_columns, n_columns)</span>
-<span class="sd">            symmetric matrix where each element represents an edge weight.</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import TreeSearch</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
-<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 5)),</span>
-<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;],</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; est = TreeSearch(values, root_node=&quot;B&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; model = est.estimate(estimator_type=&quot;chow-liu&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Step 0: Check for edge weight computation method</span>
-        <span class="k">if</span> <span class="n">edge_weights_fn</span> <span class="o">==</span> <span class="s2">&quot;mutual_info&quot;</span><span class="p">:</span>
-            <span class="n">edge_weights_fn</span> <span class="o">=</span> <span class="n">mutual_info_score</span>
-        <span class="k">elif</span> <span class="n">edge_weights_fn</span> <span class="o">==</span> <span class="s2">&quot;adjusted_mutual_info&quot;</span><span class="p">:</span>
-            <span class="n">edge_weights_fn</span> <span class="o">=</span> <span class="n">adjusted_mutual_info_score</span>
-        <span class="k">elif</span> <span class="n">edge_weights_fn</span> <span class="o">==</span> <span class="s2">&quot;normalized_mutual_info&quot;</span><span class="p">:</span>
-            <span class="n">edge_weights_fn</span> <span class="o">=</span> <span class="n">normalized_mutual_info_score</span>
-        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">edge_weights_fn</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;edge_weights_fn should either be &#39;mutual_info&#39;, &#39;adjusted_mutual_info&#39;, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;&#39;normalized_mutual_info&#39;or a function of form fun(array, array). Got: f</span><span class="si">{</span><span class="n">edge_weights_fn</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">est</span> <span class="o">=</span> <span class="n">_TAN</span><span class="p">(</span>
+                <span class="n">class_node</span><span class="o">=</span><span class="n">class_node</span><span class="p">,</span>
+                <span class="n">root_node</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">root_node</span><span class="p">,</span>
+                <span class="n">edge_weights_fn</span><span class="o">=</span><span class="n">edge_weights_fn</span><span class="p">,</span>
+                <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span>
+                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
             <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`estimator_type` must be one of: chow-liu, tan. Got: </span><span class="si">{</span><span class="n">estimator_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Step 1: Compute edge weights for a fully connected graph.</span>
-        <span class="n">n_vars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
-        <span class="n">pbar</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span><span class="p">:</span>
-            <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">pbar</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="p">(</span><span class="n">n_vars</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_vars</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Building tree&quot;</span><span class="p">)</span>
-
-        <span class="n">vals</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)(</span><span class="n">delayed</span><span class="p">(</span><span class="n">edge_weights_fn</span><span class="p">)(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">u</span><span class="p">],</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">v</span><span class="p">])</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pbar</span><span class="p">)</span>
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_vars</span><span class="p">,</span> <span class="n">n_vars</span><span class="p">))</span>
-        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">n_vars</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">weights</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span>
-        <span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span>
-
-        <span class="k">return</span> <span class="n">weights</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_conditional_weights</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">class_node</span><span class="p">,</span> <span class="n">edge_weights_fn</span><span class="o">=</span><span class="s2">&quot;mutual_info&quot;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Helper function to TAN (Tree Augmented Naive Bayes) algorithm for</span>
-<span class="sd">        estimating tree structure from given data. Refer to</span>
-<span class="sd">        pgmpy.estimators.TreeSearch for more details. This function returns the</span>
-<span class="sd">        edge weights matrix.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        data: pandas.DataFrame object</span>
-<span class="sd">            dataframe object where each column represents one variable.</span>
-
-<span class="sd">        class_node: str</span>
-<span class="sd">            The class node for TAN. The edge weight is computed as I(X, Y | class_node).</span>
-
-<span class="sd">        edge_weights_fn: str or function (default: mutual_info)</span>
-<span class="sd">            Method to use for computing edge weights. Options are:</span>
-<span class="sd">                1. &#39;mutual_info&#39;: Mutual Information Score.</span>
-<span class="sd">                2. &#39;adjusted_mutual_info&#39;: Adjusted Mutual Information Score.</span>
-<span class="sd">                3. &#39;normalized_mutual_info&#39;: Normalized Mutual Information Score.</span>
-<span class="sd">                4. function(array[n_samples,], array[n_samples,]): Custom function.</span>
-
-<span class="sd">        n_jobs: int (default: -1)</span>
-<span class="sd">            Number of jobs to run in parallel. `-1` means use all processors.</span>
-
-<span class="sd">        show_progress: boolean</span>
-<span class="sd">            If True, shows a progress bar for the running algorithm.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        weights: numpy 2D array, shape = (n_columns, n_columns)</span>
-<span class="sd">            symmetric matrix where each element represents an edge weight.</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import TreeSearch</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
-<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 5)),</span>
-<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;],</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; est = TreeSearch(values, root_node=&quot;B&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; model = est.estimate(estimator_type=&quot;tan&quot;, class_node=&quot;A&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Step 0: Check for edge weight computation method</span>
-        <span class="k">if</span> <span class="n">edge_weights_fn</span> <span class="o">==</span> <span class="s2">&quot;mutual_info&quot;</span><span class="p">:</span>
-            <span class="n">edge_weights_fn</span> <span class="o">=</span> <span class="n">mutual_info_score</span>
-        <span class="k">elif</span> <span class="n">edge_weights_fn</span> <span class="o">==</span> <span class="s2">&quot;adjusted_mutual_info&quot;</span><span class="p">:</span>
-            <span class="n">edge_weights_fn</span> <span class="o">=</span> <span class="n">adjusted_mutual_info_score</span>
-        <span class="k">elif</span> <span class="n">edge_weights_fn</span> <span class="o">==</span> <span class="s2">&quot;normalized_mutual_info&quot;</span><span class="p">:</span>
-            <span class="n">edge_weights_fn</span> <span class="o">=</span> <span class="n">normalized_mutual_info_score</span>
-        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">edge_weights_fn</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;edge_weights_fn should either be &#39;mutual_info&#39;, &#39;adjusted_mutual_info&#39;, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;&#39;normalized_mutual_info&#39;or a function of form fun(array, array). Got: f</span><span class="si">{</span><span class="n">edge_weights_fn</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
-
-        <span class="c1"># Step 1: Compute edge weights for a fully connected graph.</span>
-        <span class="n">n_vars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
-        <span class="n">pbar</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span><span class="p">:</span>
-            <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">pbar</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="p">(</span><span class="n">n_vars</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_vars</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Building tree&quot;</span><span class="p">)</span>
-
-        <span class="k">def</span><span class="w"> </span><span class="nf">_conditional_edge_weights_fn</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Computes the conditional edge weight of variable index u and v conditioned on class_node</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-            <span class="n">cond_marginal</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">class_node</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span> <span class="o">/</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">cond_edge_weight</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">marg_prob</span> <span class="ow">in</span> <span class="n">cond_marginal</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">df_cond_subset</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">class_node</span><span class="p">]</span> <span class="o">==</span> <span class="n">index</span><span class="p">]</span>
-                <span class="n">cond_edge_weight</span> <span class="o">+=</span> <span class="n">marg_prob</span> <span class="o">*</span> <span class="n">edge_weights_fn</span><span class="p">(</span><span class="n">df_cond_subset</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">u</span><span class="p">],</span> <span class="n">df_cond_subset</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">v</span><span class="p">])</span>
-            <span class="k">return</span> <span class="n">cond_edge_weight</span>
-
-        <span class="n">vals</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">)(</span><span class="n">delayed</span><span class="p">(</span><span class="n">_conditional_edge_weights_fn</span><span class="p">)(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pbar</span><span class="p">)</span>
-        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_vars</span><span class="p">,</span> <span class="n">n_vars</span><span class="p">))</span>
-        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">triu_indices</span><span class="p">(</span><span class="n">n_vars</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">weights</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span>
-        <span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span>
-
-        <span class="k">return</span> <span class="n">weights</span>
-
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create_tree_and_dag</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">root_node</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Helper function to Chow-Liu algorithm for estimating tree structure from given data. Refer to</span>
-<span class="sd">        pgmpy.estimators.TreeSearch for more details. This function returns the DAG based on the edge weights matrix.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        weights: numpy 2D array, shape = (n_columns, n_columns)</span>
-<span class="sd">            symmetric matrix where each element represents an edge weight.</span>
-
-<span class="sd">        columns: list or array</span>
-<span class="sd">            Names of the columns (&amp; rows) of the weights matrix.</span>
-
-<span class="sd">        root_node: str, int, or any hashable python object.</span>
-<span class="sd">            The root node of the tree structure.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        model: pgmpy.base.DAG</span>
-<span class="sd">            The estimated model structure.</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.estimators import TreeSearch</span>
-<span class="sd">        &gt;&gt;&gt; values = pd.DataFrame(</span>
-<span class="sd">        ...     np.random.randint(low=0, high=2, size=(1000, 5)),</span>
-<span class="sd">        ...     columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;],</span>
-<span class="sd">        ... )</span>
-<span class="sd">        &gt;&gt;&gt; est = TreeSearch(values, root_node=&quot;B&quot;)</span>
-<span class="sd">        &gt;&gt;&gt; model = est.estimate(estimator_type=&quot;chow-liu&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Step 2: Compute the maximum spanning tree using the weights.</span>
-        <span class="n">T</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">maximum_spanning_tree</span><span class="p">(</span>
-            <span class="n">nx</span><span class="o">.</span><span class="n">from_pandas_adjacency</span><span class="p">(</span>
-                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">columns</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">),</span>
-                <span class="n">create_using</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
-
-        <span class="c1"># Step 3: Create DAG by directing edges away from root node and return</span>
-        <span class="n">D</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">bfs_tree</span><span class="p">(</span><span class="n">T</span><span class="p">,</span> <span class="n">root_node</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">DAG</span><span class="p">(</span><span class="n">D</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">est</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">causal_graph_</span></div>
+</div>
 
 </pre></div>
 

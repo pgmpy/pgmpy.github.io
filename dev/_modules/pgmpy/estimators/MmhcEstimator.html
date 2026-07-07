@@ -867,9 +867,10 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">UndirectedGraph</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">BDeu</span><span class="p">,</span> <span class="n">HillClimbSearch</span><span class="p">,</span> <span class="n">StructureEstimator</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators.CITests</span><span class="w"> </span><span class="kn">import</span> <span class="n">chi_square</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators.ExpertKnowledge</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExpertKnowledge</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExpertKnowledge</span><span class="p">,</span> <span class="n">HillClimbSearch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.ci_tests</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChiSquare</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructureEstimator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.structure_score</span><span class="w"> </span><span class="kn">import</span> <span class="n">BDeu</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils.mathext</span><span class="w"> </span><span class="kn">import</span> <span class="n">powerset</span>
 
 
@@ -947,26 +948,25 @@
 <span class="sd">        &gt;&gt;&gt; est = MmhcEstimator(data)</span>
 <span class="sd">        &gt;&gt;&gt; model = est.estimate()</span>
 <span class="sd">        &gt;&gt;&gt; print(model.edges())  # doctest: +NORMALIZE_WHITESPACE</span>
-<span class="sd">        [(&#39;Y&#39;, &#39;X&#39;), (&#39;Z&#39;, &#39;Y&#39;), (&#39;Z&#39;, &#39;X&#39;), (&#39;W&#39;, &#39;Y&#39;), (&#39;W&#39;, &#39;X&#39;), (&#39;W&#39;, &#39;Z&#39;),</span>
-<span class="sd">        (&#39;sum&#39;, &#39;X&#39;), (&#39;sum&#39;, &#39;W&#39;), (&#39;sum&#39;, &#39;Z&#39;), (&#39;sum&#39;, &#39;Y&#39;)]</span>
+<span class="sd">        [(&#39;X&#39;, &#39;sum&#39;), (&#39;Y&#39;, &#39;sum&#39;), (&#39;Z&#39;, &#39;sum&#39;), (&#39;W&#39;, &#39;sum&#39;)]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">scoring_method</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">scoring_method</span> <span class="o">=</span> <span class="n">BDeu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">equivalent_sample_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
         <span class="n">skel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mmpc</span><span class="p">(</span><span class="n">significance_level</span><span class="p">)</span>
-        <span class="n">hc</span> <span class="o">=</span> <span class="n">HillClimbSearch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
         <span class="n">possible_edges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">complete_graph</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">create_using</span><span class="o">=</span><span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">)</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
 
         <span class="n">expert_knowledge</span> <span class="o">=</span> <span class="n">ExpertKnowledge</span><span class="p">(</span><span class="n">forbidden_edges</span><span class="o">=</span><span class="n">possible_edges</span> <span class="o">-</span> <span class="n">skel</span><span class="o">.</span><span class="n">to_directed</span><span class="p">()</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
 
-        <span class="n">model</span> <span class="o">=</span> <span class="n">hc</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span>
+        <span class="n">hc</span> <span class="o">=</span> <span class="n">HillClimbSearch</span><span class="p">(</span>
             <span class="n">scoring_method</span><span class="o">=</span><span class="n">scoring_method</span><span class="p">,</span>
             <span class="n">expert_knowledge</span><span class="o">=</span><span class="n">expert_knowledge</span><span class="p">,</span>
             <span class="n">tabu_length</span><span class="o">=</span><span class="n">tabu_length</span><span class="p">,</span>
+            <span class="n">return_type</span><span class="o">=</span><span class="s2">&quot;dag&quot;</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">model</span></div>
+        <span class="k">return</span> <span class="n">hc</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">causal_graph_</span></div>
 
 
 <div class="viewcode-block" id="MmhcEstimator.mmpc">
@@ -1025,12 +1025,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">ci_test</span> <span class="o">=</span> <span class="n">ChiSquare</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">assoc</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Zs</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Measure for (conditional) association between variables. Use negative</span>
 <span class="sd">            p-value of independence test.</span>
 <span class="sd">            &quot;&quot;&quot;</span>
-            <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">chi_square</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Zs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">boolean</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">ci_test</span><span class="o">.</span><span class="n">run_test</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">Zs</span><span class="p">))[</span><span class="mi">1</span><span class="p">]</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">min_assoc</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Zs</span><span class="p">):</span>
             <span class="s2">&quot;Minimal association of X, Y given any subset of Zs.&quot;</span>
@@ -1066,11 +1067,10 @@
             <span class="k">for</span> <span class="n">neigh</span> <span class="ow">in</span> <span class="n">neighbors</span><span class="p">[</span><span class="n">node</span><span class="p">]:</span>
                 <span class="n">other_neighbors</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">neighbors</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="k">if</span> <span class="n">n</span> <span class="o">!=</span> <span class="n">neigh</span><span class="p">]</span>
                 <span class="k">for</span> <span class="n">sep_set</span> <span class="ow">in</span> <span class="n">powerset</span><span class="p">(</span><span class="n">other_neighbors</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="n">chi_square</span><span class="p">(</span>
+                    <span class="k">if</span> <span class="n">ci_test</span><span class="o">.</span><span class="n">is_independent</span><span class="p">(</span>
                         <span class="n">X</span><span class="o">=</span><span class="n">node</span><span class="p">,</span>
                         <span class="n">Y</span><span class="o">=</span><span class="n">neigh</span><span class="p">,</span>
-                        <span class="n">Z</span><span class="o">=</span><span class="n">sep_set</span><span class="p">,</span>
-                        <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                        <span class="n">Z</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">sep_set</span><span class="p">),</span>
                         <span class="n">significance_level</span><span class="o">=</span><span class="n">significance_level</span><span class="p">,</span>
                     <span class="p">):</span>
                         <span class="n">neighbors</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">neigh</span><span class="p">)</span>

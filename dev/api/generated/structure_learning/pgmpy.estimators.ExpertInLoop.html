@@ -919,140 +919,35 @@
 <dt class="sig sig-object py" id="pgmpy.estimators.ExpertInLoop">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pgmpy.estimators.</span></span><span class="sig-name descname"><span class="pre">ExpertInLoop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/estimators/expert.html#ExpertInLoop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.ExpertInLoop" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">StructureEstimator</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pgmpy.estimators.ExpertInLoop.estimate">
-<span class="sig-name descname"><span class="pre">estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">pval_threshold:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.05,</span> <span class="pre">effect_size_threshold:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.05,</span> <span class="pre">ci_test:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">orientation_fn:</span> <span class="pre">~collections.abc.Callable[[...],</span> <span class="pre">tuple[~collections.abc.Hashable,</span> <span class="pre">~collections.abc.Hashable]</span> <span class="pre">|</span> <span class="pre">None]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">llm_pairwise_orient&gt;,</span> <span class="pre">orientations:</span> <span class="pre">set[tuple[str,</span> <span class="pre">str]]</span> <span class="pre">=</span> <span class="pre">{},</span> <span class="pre">expert_knowledge:</span> <span class="pre">~pgmpy.estimators.ExpertKnowledge.ExpertKnowledge</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">use_cache:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True,</span> <span class="pre">show_progress:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True,</span> <span class="pre">**kwargs</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../base/pgmpy.base.DAG.html#pgmpy.base.DAG" title="pgmpy.base.DAG.DAG"><span class="pre">DAG</span></a></span></span><a class="reference internal" href="../../../_modules/pgmpy/estimators/expert.html#ExpertInLoop.estimate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.ExpertInLoop.estimate" title="Link to this definition">#</a></dt>
-<dd><p>Estimates a DAG from the data by utilizing expert knowledge.</p>
-<p>The method iteratively adds and removes edges between variables
-(similar to Greedy Equivalence Search (GES) algorithm) based on a
-global score metric that improves the model’s fit in each iteration.
-The score metric used is based on conditional independence testing.
-When adding an edge to the model, the method asks for expert knowledge
-to decide the orientation of the edge. Alternatively, an LLM can used
-to decide the orientation of the edge.</p>
-<dl class="field-list">
+<p>Deprecated: use <code class="xref py py-class docutils literal notranslate"><span class="pre">pgmpy.causal_discovery.ExpertInLoop</span></code> instead.</p>
+<p>Estimates a DAG from the data by iterating between a CI-test driven
+search and pairwise orientation queries (e.g. to an LLM or a human
+expert). This class delegates to the canonical implementation in
+<cite>pgmpy.causal_discovery</cite>.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><dl>
-<dt><strong>pval_threshold: float</strong></dt><dd><p>The p-value threshold to use for the test to determine whether
-there is a significant association between the variables or not.</p>
-</dd>
-<dt><strong>effect_size_threshold: float</strong></dt><dd><p>The effect size threshold to use to suggest a new edge. If the
-conditional effect size between two variables is greater than the
-threshold, the algorithm would suggest to add an edge between them.
-And if the effect size for an edge is less than the threshold,
-would suggest to remove the edge.</p>
-</dd>
-<dt><strong>ci_test: str or callable (default: None)</strong></dt><dd><p>The Conditional Independence test to use. When None, the algorithms
-tries to automatically detect the suitable CI test based on the variable
-types.</p>
-</dd>
-<dt><strong>orientation_fn: callable (default: pgmpy.estimators.llm_pairwise_orient)</strong></dt><dd><p>A function to determine edge orientation. The function should at
-least take two arguments (the names of the two variables) and
-return either a tuple (source, target) representing the directed
-edge from source to target or None representing no edge between the
-variables. Any additional keyword arguments passed to estimate()
-will be forwarded to this function.</p>
-<p>Built-in functions that can be used:</p>
-<ul class="simple">
-<li><p><cite>pgmpy.utils.manual_pairwise_orient</cite>: Prompts the user to specify the direction
-between two variables by presenting options and taking input.</p></li>
-<li><p><cite>pgmpy.estimators.llm_pairwise_orient</cite>: Uses a Large Language Model to determine direction.
-Requires additional parameters:</p>
-<ul>
-<li><p>variable_descriptions: dict of {var_name: description} for context</p></li>
-<li><p>llm_model: name of the LLM model (default: “gemini/gemini-2.5-flash”)</p></li>
-<li><p>system_prompt: optional custom system prompt</p></li>
-</ul>
-</li>
-</ul>
-<p>Custom functions can be provided that implement any desired logic
-for determining edge orientation, including using local LLMs or
-domain-specific heuristics.</p>
-</dd>
-<dt><strong>orientations: set</strong></dt><dd><p>Users can specify a set of edges which would be used as the
-preferred orientation for edges over the output of orientation_fn.</p>
-</dd>
-<dt><strong>expert_knowledge: pgmpy.estimators.ExpertKnowledge (default: None)</strong></dt><dd><p>Expert knowledge about the causal structure. This can include:
-- forbidden_edges: Edges that should not be present in the final model
-- required_edges: Edges that must be present in the final model (can be removed during pruning)
-- temporal_order: The temporal ordering of variables. Note that explicit orientations</p>
-<blockquote>
-<div><p>specified in the ‘orientations’ parameter will override this temporal ordering.</p>
-</div></blockquote>
-</dd>
-<dt><strong>use_cache: bool</strong></dt><dd><p>If True, the method will cache the results returned by
-<cite>orientation_fn</cite> and reuse it in future calls of the <cite>estimate</cite>
-method instead of calling the <cite>orientation_fn</cite>.</p>
-</dd>
-<dt><strong>show_progress: bool (default: True)</strong></dt><dd><p>If True, prints info of the running status.</p>
-</dd>
-<dt><strong>kwargs: kwargs</strong></dt><dd><p>Any additional parameters to pass to the <cite>orientation_fn</cite>.</p>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data: pandas DataFrame object</strong></dt><dd><p>dataframe object where each column represents one variable.</p>
 </dd>
 </dl>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><dl class="simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.estimators.ExpertInLoop.estimate">
+<span class="sig-name descname"><span class="pre">estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">pval_threshold:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.05,</span> <span class="pre">effect_size_threshold:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.05,</span> <span class="pre">ci_test:</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">orientation_fn:</span> <span class="pre">~collections.abc.Callable[[...],</span> <span class="pre">tuple[~collections.abc.Hashable,</span> <span class="pre">~collections.abc.Hashable]</span> <span class="pre">|</span> <span class="pre">None]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">llm_pairwise_orient&gt;,</span> <span class="pre">orientations:</span> <span class="pre">set[tuple[str,</span> <span class="pre">str]]</span> <span class="pre">=</span> <span class="pre">{},</span> <span class="pre">expert_knowledge:</span> <span class="pre">~pgmpy.estimators.ExpertKnowledge.ExpertKnowledge</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">use_cache:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True,</span> <span class="pre">show_progress:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True,</span> <span class="pre">**kwargs</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../base/pgmpy.base.DAG.html#pgmpy.base.DAG" title="pgmpy.base.DAG.DAG"><span class="pre">DAG</span></a></span></span><a class="reference internal" href="../../../_modules/pgmpy/estimators/expert.html#ExpertInLoop.estimate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.estimators.ExpertInLoop.estimate" title="Link to this definition">#</a></dt>
+<dd><p>Estimates a DAG from the data by delegating to
+<code class="xref py py-class docutils literal notranslate"><span class="pre">pgmpy.causal_discovery.ExpertInLoop</span></code>; refer to its
+documentation for details.</p>
+<p>The legacy <cite>orientation_fn</cite> callable (with any additional <cite>kwargs</cite>),
+the preferred <cite>orientations</cite> set, and the <cite>use_cache</cite> flag are adapted
+onto the canonical <cite>pairwise_estimator</cite> interface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
 <dt>pgmpy.base.DAG: A DAG representing the learned causal structure.</dt><dd></dd>
 </dl>
 </dd>
 </dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.example_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">manual_pairwise_orient</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExpertInLoop</span><span class="p">,</span> <span class="n">llm_pairwise_orient</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="s2">&quot;bnlearn/cancer&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">))</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Using manual orientation</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dag</span> <span class="o">=</span> <span class="n">ExpertInLoop</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">effect_size_threshold</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">orientation_fn</span><span class="o">=</span><span class="n">manual_pairwise_orient</span>
-<span class="gp">... </span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Using LLM-based orientation</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">variable_descriptions</span> <span class="o">=</span> <span class="p">{</span>
-<span class="gp">... </span>    <span class="s2">&quot;Smoker&quot;</span><span class="p">:</span> <span class="s2">&quot;A binary variable representing whether a person smokes or not.&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="s2">&quot;Cancer&quot;</span><span class="p">:</span> <span class="s2">&quot;A binary variable representing whether a person has cancer.&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="s2">&quot;Xray&quot;</span><span class="p">:</span> <span class="s2">&quot;A binary variable representing the result of an X-ray test.&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="s2">&quot;Pollution&quot;</span><span class="p">:</span> <span class="s2">&quot;A binary variable representing whether the person is in a high-pollution area or not.&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="s2">&quot;Dyspnoea&quot;</span><span class="p">:</span> <span class="s2">&quot;A binary variable representing whether a person has shortness of breath.&quot;</span><span class="p">,</span>
-<span class="gp">... </span><span class="p">}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dag</span> <span class="o">=</span> <span class="n">ExpertInLoop</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">effect_size_threshold</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">orientation_fn</span><span class="o">=</span><span class="n">llm_pairwise_orient</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">variable_descriptions</span><span class="o">=</span><span class="n">variable_descriptions</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">llm_model</span><span class="o">=</span><span class="s2">&quot;gemini/gemini-2.5-flash&quot;</span><span class="p">,</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dag</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
-<span class="go">OutEdgeView([(&#39;Smoker&#39;, &#39;Cancer&#39;), (&#39;Cancer&#39;, &#39;Xray&#39;), (&#39;Cancer&#39;, &#39;Dyspnoea&#39;), (&#39;Pollution&#39;, &#39;Cancer&#39;)])</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Using a custom orientation function</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">my_orientation_func</span><span class="p">(</span><span class="n">var1</span><span class="p">,</span> <span class="n">var2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="c1"># Custom logic to determine edge orientation</span>
-<span class="gp">... </span>    <span class="k">if</span> <span class="n">var1</span> <span class="o">==</span> <span class="s2">&quot;Pollution&quot;</span> <span class="ow">and</span> <span class="n">var2</span> <span class="o">==</span> <span class="s2">&quot;Cancer&quot;</span><span class="p">:</span>
-<span class="gp">... </span>        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;Pollution&quot;</span><span class="p">,</span> <span class="s2">&quot;Cancer&quot;</span><span class="p">)</span>  <span class="c1"># Pollution -&gt; Cancer</span>
-<span class="gp">... </span>    <span class="k">elif</span> <span class="n">var1</span> <span class="o">==</span> <span class="s2">&quot;Cancer&quot;</span> <span class="ow">and</span> <span class="n">var2</span> <span class="o">==</span> <span class="s2">&quot;Pollution&quot;</span><span class="p">:</span>
-<span class="gp">... </span>        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;Pollution&quot;</span><span class="p">,</span> <span class="s2">&quot;Cancer&quot;</span><span class="p">)</span>  <span class="c1"># Pollution -&gt; Cancer</span>
-<span class="gp">... </span>    <span class="k">elif</span> <span class="s2">&quot;Smoker&quot;</span> <span class="ow">in</span> <span class="p">(</span><span class="n">var1</span><span class="p">,</span> <span class="n">var2</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;Cancer&quot;</span> <span class="ow">in</span> <span class="p">(</span><span class="n">var1</span><span class="p">,</span> <span class="n">var2</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;Smoker&quot;</span><span class="p">,</span> <span class="s2">&quot;Cancer&quot;</span><span class="p">)</span>  <span class="c1"># Smoker -&gt; Cancer</span>
-<span class="gp">... </span>    <span class="c1"># For edges involving Xray, always orient from other variable to Xray</span>
-<span class="gp">... </span>    <span class="k">elif</span> <span class="s2">&quot;Xray&quot;</span> <span class="ow">in</span> <span class="p">(</span><span class="n">var1</span><span class="p">,</span> <span class="n">var2</span><span class="p">):</span>
-<span class="gp">... </span>        <span class="k">if</span> <span class="n">var1</span> <span class="o">==</span> <span class="s2">&quot;Xray&quot;</span><span class="p">:</span>
-<span class="gp">... </span>            <span class="k">return</span> <span class="p">(</span><span class="n">var2</span><span class="p">,</span> <span class="n">var1</span><span class="p">)</span>
-<span class="gp">... </span>        <span class="k">else</span><span class="p">:</span>
-<span class="gp">... </span>            <span class="k">return</span> <span class="p">(</span><span class="n">var1</span><span class="p">,</span> <span class="n">var2</span><span class="p">)</span>
-<span class="gp">... </span>    <span class="c1"># Default: use alphabetical ordering</span>
-<span class="gp">... </span>    <span class="k">return</span> <span class="p">(</span><span class="n">var1</span><span class="p">,</span> <span class="n">var2</span><span class="p">)</span> <span class="k">if</span> <span class="n">var1</span> <span class="o">&lt;</span> <span class="n">var2</span> <span class="k">else</span> <span class="p">(</span><span class="n">var2</span><span class="p">,</span> <span class="n">var1</span><span class="p">)</span>
-<span class="gp">...</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dag</span> <span class="o">=</span> <span class="n">ExpertInLoop</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">effect_size_threshold</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">orientation_fn</span><span class="o">=</span><span class="n">my_orientation_func</span>
-<span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">dag</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
-<span class="go">OutEdgeView([(&#39;Smoker&#39;, &#39;Cancer&#39;), (&#39;Cancer&#39;, &#39;Xray&#39;), (&#39;Cancer&#39;, &#39;Dyspnoea&#39;), (&#39;Pollution&#39;, &#39;Cancer&#39;)])</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py method">
