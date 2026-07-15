@@ -864,7 +864,9 @@
                 <article class="bd-article">
                   
   <h1>Source code for pgmpy.structure_score.log_likelihood_cond_gauss</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hashable</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">multivariate_normal</span>
 
@@ -949,7 +951,7 @@
             <span class="n">df_cov</span> <span class="o">=</span> <span class="n">df_cov</span> <span class="o">+</span> <span class="mf">1e-6</span>
         <span class="k">return</span> <span class="n">df_cov</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_cat_parents_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cat_parents_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="n">k</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">for</span> <span class="n">pa</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="n">pa</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;N&quot;</span><span class="p">:</span>
@@ -958,7 +960,7 @@
                     <span class="n">k</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">pa</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">k</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_num_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_num_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="n">parent_dtypes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span><span class="p">[</span><span class="n">pa</span><span class="p">]</span> <span class="k">for</span> <span class="n">pa</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">]</span>
         <span class="n">n_cont_parents</span> <span class="o">=</span> <span class="n">parent_dtypes</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;N&quot;</span><span class="p">)</span>
 
@@ -976,7 +978,7 @@
 
         <span class="k">return</span> <span class="n">k</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_log_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_log_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="n">parent_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">+</span> <span class="n">parent_list</span><span class="p">]</span>
 
@@ -1097,7 +1099,7 @@
                     <span class="n">log_like</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">p_c_d1d2</span> <span class="o">*</span> <span class="n">p_d1d2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">p_c_d2</span> <span class="o">*</span> <span class="n">p_d2</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()[</span><span class="mi">0</span><span class="p">])))</span>
             <span class="k">return</span> <span class="n">log_like</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_local_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">parents</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="n">ll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_likelihood</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">variable</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="n">parents</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ll</span></div>
 
