@@ -1154,14 +1154,26 @@ errors.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.models.DiscreteBayesianNetwork.do">
-<span class="sig-name descname"><span class="pre">do</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Hashable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pgmpy.models.DiscreteBayesianNetwork" title="pgmpy.models.DiscreteBayesianNetwork.DiscreteBayesianNetwork"><span class="pre">DiscreteBayesianNetwork</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/pgmpy/models/DiscreteBayesianNetwork.html#DiscreteBayesianNetwork.do"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.models.DiscreteBayesianNetwork.do" title="Link to this definition">#</a></dt>
-<dd><p>Applies the do operation. The do operation removes all incoming edges
-to variables in <cite>nodes</cite> and marginalizes their CPDs to only contain the
-variable itself.</p>
+<span class="sig-name descname"><span class="pre">do</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Hashable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Hashable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../factors/pgmpy.factors.discrete.TabularCPD.html#pgmpy.factors.discrete.TabularCPD" title="pgmpy.factors.discrete.CPD.TabularCPD"><span class="pre">TabularCPD</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#pgmpy.models.DiscreteBayesianNetwork" title="pgmpy.models.DiscreteBayesianNetwork.DiscreteBayesianNetwork"><span class="pre">DiscreteBayesianNetwork</span></a></span></span><a class="reference internal" href="../../../_modules/pgmpy/models/DiscreteBayesianNetwork.html#DiscreteBayesianNetwork.do"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.models.DiscreteBayesianNetwork.do" title="Link to this definition">#</a></dt>
+<dd><p>Applies the do-operator: removes all incoming edges of the intervened
+variables and replaces their CPDs with the intervention distribution.</p>
+<p>Three kinds of interventions are supported, and can be mixed in one call:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">do(&quot;X&quot;)</span></code> / <code class="docutils literal notranslate"><span class="pre">do([&quot;X&quot;,</span> <span class="pre">&quot;Y&quot;])</span></code> / <code class="docutils literal notranslate"><span class="pre">do({&quot;X&quot;:</span> <span class="pre">None})</span></code>: the intervention
+distribution is left unspecified and the CPD of <code class="docutils literal notranslate"><span class="pre">X</span></code> is set to the uniform
+distribution over its states.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">do({&quot;X&quot;:</span> <span class="pre">x})</span></code>: atomic (hard) intervention do(X = x). The CPD of <code class="docutils literal notranslate"><span class="pre">X</span></code>
+becomes a point mass at state <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">do({&quot;X&quot;:</span> <span class="pre">cpd})</span></code> with a <code class="docutils literal notranslate"><span class="pre">TabularCPD</span></code> defined on <code class="docutils literal notranslate"><span class="pre">X</span></code> alone: soft
+(stochastic) intervention. The CPD of <code class="docutils literal notranslate"><span class="pre">X</span></code> is replaced by <code class="docutils literal notranslate"><span class="pre">cpd</span></code>.</p></li>
+</ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>nodes</strong><span class="classifier">list, array-like</span></dt><dd><p>The names of the nodes to apply the do-operator for.</p>
+<dt><strong>nodes</strong><span class="classifier">Hashable, iterable of Hashable, or dict</span></dt><dd><p>The variable(s) to intervene on; all must be present in the model. A <code class="docutils literal notranslate"><span class="pre">str</span></code>, <code class="docutils literal notranslate"><span class="pre">int</span></code>
+or <code class="docutils literal notranslate"><span class="pre">tuple</span></code> is one node; a list, set or frozenset is a collection. A dict maps each
+variable to its intervention: a state, a <code class="docutils literal notranslate"><span class="pre">TabularCPD</span></code> over the variable alone (using
+the model’s state names), or None.</p>
 </dd>
 <dt><strong>inplace: boolean (default: False)</strong></dt><dd><p>If inplace=True, makes the changes to the current object,
 otherwise returns a new instance.</p>
@@ -1170,19 +1182,40 @@ otherwise returns a new instance.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><dl class="simple">
-<dt>Modified network: pgmpy.models.DiscreteBayesianNetwork or None</dt><dd><p>If inplace=True, modifies the object itself else returns an instance of
-DiscreteBayesianNetwork modified by the do operation.</p>
+<dt>Modified network: pgmpy.models.DiscreteBayesianNetwork</dt><dd><p>The post-intervention model: <cite>self</cite> if <cite>inplace=True</cite>, otherwise a modified copy.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt>ValueError</dt><dd><p>If a variable is not present in the model, has no CPD to intervene on, the state is not
+a state of the variable, or the intervention CPD is not over the variable alone with the
+model’s state names.</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<p class="rubric">References</p>
+<ol class="arabic simple" id="id1" start="1">
+<li id="id38"><p>Judea Pearl. <em>Causality: Models, Reasoning, and Inference</em>. Cambridge University Press, 2nd edition, 2009. ISBN 978-0521895606. <a class="reference external" href="https://doi.org/10.1017/CBO9780511803161">doi:10.1017/CBO9780511803161</a>.</p></li>
+</ol>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.example_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">asia</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="s2">"bnlearn/asia"</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">asia</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>
 <span class="go">OutEdgeView([('asia', 'tub'), ('tub', 'either'), ('smoke', 'lung'), ('smoke', 'bronc'),</span>
 <span class="go">             ('lung', 'either'), ('bronc', 'dysp'), ('either', 'xray'), ('either', 'dysp')])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">do_bronc</span> <span class="o">=</span> <span class="n">asia</span><span class="o">.</span><span class="n">do</span><span class="p">([</span><span class="s2">"bronc"</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">do_bronc</span> <span class="o">=</span> <span class="n">asia</span><span class="o">.</span><span class="n">do</span><span class="p">({</span><span class="s2">"bronc"</span><span class="p">:</span> <span class="s2">"yes"</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">do_bronc</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="s2">"bronc"</span><span class="p">)</span>
+<span class="go">[]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">do_bronc</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="s2">"bronc"</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+<span class="go">array([1., 0.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">soft</span> <span class="o">=</span> <span class="n">asia</span><span class="o">.</span><span class="n">do</span><span class="p">({</span><span class="s2">"bronc"</span><span class="p">:</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s2">"bronc"</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">]],</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="s2">"bronc"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"yes"</span><span class="p">,</span> <span class="s2">"no"</span><span class="p">]})})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">soft</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="s2">"bronc"</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+<span class="go">array([0.3, 0.7])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">asia</span><span class="o">.</span><span class="n">do</span><span class="p">([</span><span class="s2">"bronc"</span><span class="p">,</span> <span class="s2">"smoke"</span><span class="p">])</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="s2">"bronc"</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+<span class="go">array([0.5, 0.5])</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1974,7 +2007,7 @@ p(MINVOLSET=NORMAL) = 0:</p>
 <span class="gp">... </span>    <span class="p">)</span>
 <span class="gp">... </span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">virtual_intervention</span><span class="o">=</span><span class="n">virt_intervention</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
-<span class="go">(10, 38)</span>
+<span class="go">(10, 37)</span>
 </pre></div>
 </div>
 <p>Simulation with missing values:

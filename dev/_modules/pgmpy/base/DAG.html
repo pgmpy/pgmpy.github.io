@@ -2080,11 +2080,7 @@
 
 <div class="viewcode-block" id="DAG.do">
 <a class="viewcode-back" href="../../../api/generated/base/pgmpy.base.DAG.html#pgmpy.base.DAG.do">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">do</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">nodes</span><span class="p">:</span> <span class="n">Hashable</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">],</span>
-        <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="n">Hashable</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">],</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Applies the do operator to the graph and returns a new DAG with the</span>
 <span class="sd">        transformed graph.</span>
@@ -2094,8 +2090,9 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        nodes : list, array-like</span>
-<span class="sd">            The names of the nodes to apply the do-operator for.</span>
+<span class="sd">        nodes : Hashable or iterable of Hashable</span>
+<span class="sd">            The variable(s) to intervene on; all must be present in the graph. A ``str``, ``int``</span>
+<span class="sd">            or ``tuple`` is one node; a list, set or frozenset is a collection.</span>
 
 <span class="sd">        inplace: boolean (default: False)</span>
 <span class="sd">            If inplace=True, makes the changes to the current object,</span>
@@ -2104,7 +2101,12 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Modified DAG: pgmpy.base.DAG</span>
-<span class="sd">            A new instance of DAG modified by the do-operator</span>
+<span class="sd">            The post-intervention graph: `self` if `inplace=True`, otherwise a modified copy.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If any node is not present in the graph.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -2122,19 +2124,13 @@
 <span class="sd">        ----------</span>
 <span class="sd">        - :footcite:t:`pearl_2009` (page 70).</span>
 <span class="sd">        """</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">))</span> <span class="k">else</span> <span class="p">[</span><span class="n">nodes</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">missing</span> <span class="o">:=</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nodes not found in the model: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
         <span class="n">dag</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">inplace</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
-            <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodes</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nodes not found in the model: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
-            <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
-            <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">parents</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">dag</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">)):</span>
                 <span class="n">dag</span><span class="o">.</span><span class="n">remove_edge</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">dag</span></div>
 

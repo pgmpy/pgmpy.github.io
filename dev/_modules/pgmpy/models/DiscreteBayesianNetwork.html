@@ -2205,16 +2205,32 @@
 
 <div class="viewcode-block" id="DiscreteBayesianNetwork.do">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.DiscreteBayesianNetwork.html#pgmpy.models.DiscreteBayesianNetwork.do">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">do</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">:</span> <span class="n">Hashable</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">],</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiscreteBayesianNetwork</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">do</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">nodes</span><span class="p">:</span> <span class="n">Hashable</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span> <span class="o">|</span> <span class="n">TabularCPD</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span>
+        <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Applies the do operation. The do operation removes all incoming edges</span>
-<span class="sd">        to variables in `nodes` and marginalizes their CPDs to only contain the</span>
-<span class="sd">        variable itself.</span>
+<span class="sd">        Applies the do-operator: removes all incoming edges of the intervened</span>
+<span class="sd">        variables and replaces their CPDs with the intervention distribution.</span>
+
+<span class="sd">        Three kinds of interventions are supported, and can be mixed in one call:</span>
+
+<span class="sd">        - ``do("X")`` / ``do(["X", "Y"])`` / ``do({"X": None})``: the intervention</span>
+<span class="sd">          distribution is left unspecified and the CPD of ``X`` is set to the uniform</span>
+<span class="sd">          distribution over its states.</span>
+<span class="sd">        - ``do({"X": x})``: atomic (hard) intervention do(X = x). The CPD of ``X``</span>
+<span class="sd">          becomes a point mass at state ``x``.</span>
+<span class="sd">        - ``do({"X": cpd})`` with a ``TabularCPD`` defined on ``X`` alone: soft</span>
+<span class="sd">          (stochastic) intervention. The CPD of ``X`` is replaced by ``cpd``.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        nodes : list, array-like</span>
-<span class="sd">            The names of the nodes to apply the do-operator for.</span>
+<span class="sd">        nodes : Hashable, iterable of Hashable, or dict</span>
+<span class="sd">            The variable(s) to intervene on; all must be present in the model. A ``str``, ``int``</span>
+<span class="sd">            or ``tuple`` is one node; a list, set or frozenset is a collection. A dict maps each</span>
+<span class="sd">            variable to its intervention: a state, a ``TabularCPD`` over the variable alone (using</span>
+<span class="sd">            the model's state names), or None.</span>
 
 <span class="sd">        inplace: boolean (default: False)</span>
 <span class="sd">            If inplace=True, makes the changes to the current object,</span>
@@ -2222,34 +2238,80 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        Modified network: pgmpy.models.DiscreteBayesianNetwork or None</span>
-<span class="sd">            If inplace=True, modifies the object itself else returns an instance of</span>
-<span class="sd">            DiscreteBayesianNetwork modified by the do operation.</span>
+<span class="sd">        Modified network: pgmpy.models.DiscreteBayesianNetwork</span>
+<span class="sd">            The post-intervention model: `self` if `inplace=True`, otherwise a modified copy.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If a variable is not present in the model, has no CPD to intervene on, the state is not</span>
+<span class="sd">            a state of the variable, or the intervention CPD is not over the variable alone with the</span>
+<span class="sd">            model's state names.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.factors.discrete import TabularCPD</span>
 <span class="sd">        &gt;&gt;&gt; asia = load_model("bnlearn/asia")</span>
 <span class="sd">        &gt;&gt;&gt; asia.edges()  # doctest: +NORMALIZE_WHITESPACE</span>
 <span class="sd">        OutEdgeView([('asia', 'tub'), ('tub', 'either'), ('smoke', 'lung'), ('smoke', 'bronc'),</span>
 <span class="sd">                     ('lung', 'either'), ('bronc', 'dysp'), ('either', 'xray'), ('either', 'dysp')])</span>
-<span class="sd">        &gt;&gt;&gt; do_bronc = asia.do(["bronc"])</span>
+<span class="sd">        &gt;&gt;&gt; do_bronc = asia.do({"bronc": "yes"})</span>
+<span class="sd">        &gt;&gt;&gt; do_bronc.get_parents("bronc")</span>
+<span class="sd">        []</span>
+<span class="sd">        &gt;&gt;&gt; do_bronc.get_cpds("bronc").values</span>
+<span class="sd">        array([1., 0.])</span>
+<span class="sd">        &gt;&gt;&gt; soft = asia.do({"bronc": TabularCPD("bronc", 2, [[0.3], [0.7]], state_names={"bronc": ["yes", "no"]})})</span>
+<span class="sd">        &gt;&gt;&gt; soft.get_cpds("bronc").values</span>
+<span class="sd">        array([0.3, 0.7])</span>
+<span class="sd">        &gt;&gt;&gt; asia.do(["bronc", "smoke"]).get_cpds("bronc").values</span>
+<span class="sd">        array([0.5, 0.5])</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        - :footcite:t:`pearl_2009` (page 70).</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
-            <span class="n">nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodes</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">interventions</span> <span class="o">=</span> <span class="n">nodes</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+            <span class="n">interventions</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">nodes</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">))</span> <span class="k">else</span> <span class="p">[</span><span class="n">nodes</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nodes not found in the model: </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">adj_model</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">do</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">interventions</span><span class="p">),</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span>
 
-        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span> <span class="k">if</span> <span class="n">inplace</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">adj_model</span> <span class="o">=</span> <span class="n">DAG</span><span class="o">.</span><span class="n">do</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">intervention</span> <span class="ow">in</span> <span class="n">interventions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">old_cpd</span> <span class="o">=</span> <span class="n">adj_model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">old_cpd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">intervention</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No CPD associated with </span><span class="si">{</span><span class="n">node</span><span class="si">!r}</span><span class="s2">; add one before intervening on it."</span><span class="p">)</span>
+            <span class="n">states</span> <span class="o">=</span> <span class="n">old_cpd</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">adj_model</span><span class="o">.</span><span class="n">cpds</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
-                <span class="n">cpd</span> <span class="o">=</span> <span class="n">adj_model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="n">node</span><span class="o">=</span><span class="n">node</span><span class="p">)</span>
-                <span class="n">cpd</span><span class="o">.</span><span class="n">marginalize</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">intervention</span><span class="p">,</span> <span class="n">TabularCPD</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">intervention</span><span class="o">.</span><span class="n">variables</span> <span class="o">!=</span> <span class="p">[</span><span class="n">node</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"The intervention CPD for </span><span class="si">{</span><span class="n">node</span><span class="si">!r}</span><span class="s2"> must be defined on </span><span class="si">{</span><span class="n">node</span><span class="si">!r}</span><span class="s2"> alone; "</span>
+                        <span class="sa">f</span><span class="s2">"got scope </span><span class="si">{</span><span class="n">intervention</span><span class="o">.</span><span class="n">variables</span><span class="si">}</span><span class="s2">."</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">intervention</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">!=</span> <span class="n">states</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"The intervention CPD for </span><span class="si">{</span><span class="n">node</span><span class="si">!r}</span><span class="s2"> has states </span><span class="si">{</span><span class="n">intervention</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">node</span><span class="p">]</span><span class="si">}</span><span class="s2">, "</span>
+                        <span class="sa">f</span><span class="s2">"but the model has states </span><span class="si">{</span><span class="n">states</span><span class="si">}</span><span class="s2">."</span>
+                    <span class="p">)</span>
+                <span class="n">new_cpd</span> <span class="o">=</span> <span class="n">intervention</span>
+            <span class="k">elif</span> <span class="n">intervention</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">new_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">),</span> <span class="p">[[</span><span class="mi">1</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">)]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">),</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">states</span><span class="p">})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">intervention</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">states</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"State </span><span class="si">{</span><span class="n">intervention</span><span class="si">!r}</span><span class="s2"> is not a state of </span><span class="si">{</span><span class="n">node</span><span class="si">!r}</span><span class="s2">; valid states: </span><span class="si">{</span><span class="n">states</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+                <span class="n">new_cpd</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span>
+                    <span class="n">node</span><span class="p">,</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">),</span>
+                    <span class="p">[[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">intervention</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">]</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">states</span><span class="p">],</span>
+                    <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="n">states</span><span class="p">},</span>
+                <span class="p">)</span>
+
+            <span class="n">adj_model</span><span class="o">.</span><span class="n">remove_cpds</span><span class="p">(</span><span class="n">old_cpd</span><span class="p">)</span>
+            <span class="n">adj_model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">new_cpd</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">adj_model</span></div>
 
 
@@ -2380,7 +2442,7 @@
 <span class="sd">        ...     )</span>
 <span class="sd">        ... ]</span>
 <span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=10, virtual_intervention=virt_intervention).shape</span>
-<span class="sd">        (10, 38)</span>
+<span class="sd">        (10, 37)</span>
 
 
 <span class="sd">        Simulation with missing values:</span>
@@ -2432,15 +2494,15 @@
         <span class="n">virtual_intervention</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">virtual_intervention</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">virtual_intervention</span>
         <span class="n">virtual_evidence</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">virtual_evidence</span>
 
+        <span class="n">virt_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_intervention</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">do</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Variable can't be in both do and evidence"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">do</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">virt_nodes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Variable can't be in both do and virtual_intervention"</span><span class="p">)</span>
 
-        <span class="c1"># Step 1: If do or virtual_intervention is specified, modify the network structure.</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">do</span> <span class="o">!=</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">(</span><span class="n">virtual_intervention</span> <span class="o">!=</span> <span class="p">[]):</span>
-            <span class="n">virt_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_intervention</span><span class="p">]</span>
-            <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">do</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">do</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="n">virt_nodes</span><span class="p">)</span>
-            <span class="n">evidence</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">evidence</span><span class="p">,</span> <span class="o">**</span><span class="n">do</span><span class="p">}</span>
-            <span class="n">virtual_evidence</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">virtual_evidence</span><span class="p">,</span> <span class="o">*</span><span class="n">virtual_intervention</span><span class="p">]</span>
+        <span class="c1"># Step 1: If do or virtual_intervention is specified, apply the interventions to the model.</span>
+        <span class="k">if</span> <span class="n">do</span> <span class="ow">or</span> <span class="n">virtual_intervention</span><span class="p">:</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">do</span><span class="p">({</span><span class="o">**</span><span class="n">do</span><span class="p">,</span> <span class="o">**</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">virt_nodes</span><span class="p">,</span> <span class="n">virtual_intervention</span><span class="p">))},</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1"># Step 2: If virtual_evidence; modify the network structure</span>
         <span class="k">if</span> <span class="n">virtual_evidence</span> <span class="o">!=</span> <span class="p">[]:</span>
