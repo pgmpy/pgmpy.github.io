@@ -865,9 +865,9 @@
                 <article class="bd-article">
                   
   <h1>Source code for pgmpy.prediction.NaiveAdjustmentRegressor</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Naive Adjustment Regressor in sklearn Compatible Design.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseEstimator</span><span class="p">,</span> <span class="n">clone</span>
@@ -883,13 +883,13 @@
 <div class="viewcode-block" id="NaiveAdjustmentRegressor">
 <a class="viewcode-back" href="../../../api/generated/causal_inference/pgmpy.prediction.NaiveAdjustmentRegressor.NaiveAdjustmentRegressor.html#pgmpy.prediction.NaiveAdjustmentRegressor.NaiveAdjustmentRegressor">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">NaiveAdjustmentRegressor</span><span class="p">(</span><span class="n">BaseCausalPrediction</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Naive adjustment regressor using causal graph roles for feature selection.</span>
 
 <span class="sd">    This estimator concatenates exposure, adjustment, and pretreatment variables</span>
 <span class="sd">    as features to predict the outcome variable using standard ML algorithms.</span>
-<span class="sd">    It&#39;s &quot;naive&quot; because it uses a simple prediction model with the adjustment</span>
-<span class="sd">    set and doesn&#39;t employ sophisticated causal inference methods like double ML,</span>
+<span class="sd">    It's "naive" because it uses a simple prediction model with the adjustment</span>
+<span class="sd">    set and doesn't employ sophisticated causal inference methods like double ML,</span>
 <span class="sd">    inverse propensity weighting, or other advanced causal estimation techniques.</span>
 
 <span class="sd">    Parameters</span>
@@ -935,8 +935,8 @@
 <span class="sd">    &gt;&gt;&gt; # Create a simple causal DAG: Z -&gt; X, Z -&gt; Y, X -&gt; Y</span>
 <span class="sd">    &gt;&gt;&gt; # where Z is a confounder, X is exposure, Y is outcome</span>
 <span class="sd">    &gt;&gt;&gt; dag = DAG(</span>
-<span class="sd">    ...     ebunch=[(&quot;Z&quot;, &quot;X&quot;), (&quot;Z&quot;, &quot;Y&quot;), (&quot;X&quot;, &quot;Y&quot;)],</span>
-<span class="sd">    ...     roles={&quot;exposures&quot;: &quot;X&quot;, &quot;outcomes&quot;: &quot;Y&quot;, &quot;adjustment&quot;: [&quot;Z&quot;]},</span>
+<span class="sd">    ...     ebunch=[("Z", "X"), ("Z", "Y"), ("X", "Y")],</span>
+<span class="sd">    ...     roles={"exposures": "X", "outcomes": "Y", "adjustment": ["Z"]},</span>
 <span class="sd">    ... )</span>
 <span class="sd">    &gt;&gt;&gt;</span>
 <span class="sd">    &gt;&gt;&gt; # Generate some synthetic data</span>
@@ -946,15 +946,15 @@
 <span class="sd">    &gt;&gt;&gt; X = 0.5 * Z + np.random.normal(0, 0.5, n)</span>
 <span class="sd">    &gt;&gt;&gt; Y = 2.0 * X + 1.5 * Z + np.random.normal(0, 0.3, n)</span>
 <span class="sd">    &gt;&gt;&gt;</span>
-<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame({&quot;X&quot;: X, &quot;Y&quot;: Y, &quot;Z&quot;: Z})</span>
+<span class="sd">    &gt;&gt;&gt; data = pd.DataFrame({"X": X, "Y": Y, "Z": Z})</span>
 <span class="sd">    &gt;&gt;&gt;</span>
 <span class="sd">    &gt;&gt;&gt; # Fit the regressor</span>
 <span class="sd">    &gt;&gt;&gt; regressor = NaiveAdjustmentRegressor(causal_graph=dag)</span>
-<span class="sd">    &gt;&gt;&gt; _ = regressor.fit(data[[&quot;X&quot;, &quot;Z&quot;]], data[&quot;Y&quot;])</span>
+<span class="sd">    &gt;&gt;&gt; _ = regressor.fit(data[["X", "Z"]], data["Y"])</span>
 <span class="sd">    &gt;&gt;&gt;</span>
 <span class="sd">    &gt;&gt;&gt; # Make predictions</span>
-<span class="sd">    &gt;&gt;&gt; predictions = regressor.predict(data[[&quot;X&quot;, &quot;Z&quot;]])</span>
-<span class="sd">    &gt;&gt;&gt; print(f&quot;Predictions shape: {predictions.shape}&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; predictions = regressor.predict(data[["X", "Z"]])</span>
+<span class="sd">    &gt;&gt;&gt; print(f"Predictions shape: {predictions.shape}")</span>
 <span class="sd">    Predictions shape: (100,)</span>
 
 <span class="sd">    Using a custom estimator:</span>
@@ -966,30 +966,30 @@
 <span class="sd">    ...     causal_graph=dag,</span>
 <span class="sd">    ...     estimator=RandomForestRegressor(n_estimators=10, random_state=42),</span>
 <span class="sd">    ... )</span>
-<span class="sd">    &gt;&gt;&gt; _ = rf_regressor.fit(data[[&quot;X&quot;, &quot;Z&quot;]], data[&quot;Y&quot;])</span>
+<span class="sd">    &gt;&gt;&gt; _ = rf_regressor.fit(data[["X", "Z"]], data["Y"])</span>
 
 <span class="sd">    Example with pretreatment variables:</span>
 
 <span class="sd">    &gt;&gt;&gt; # Create DAG with pretreatment variable P -&gt; Y</span>
 <span class="sd">    &gt;&gt;&gt; dag_with_pretreatment = DAG(</span>
-<span class="sd">    ...     ebunch=[(&quot;P&quot;, &quot;Y&quot;), (&quot;Z&quot;, &quot;X&quot;), (&quot;Z&quot;, &quot;Y&quot;), (&quot;X&quot;, &quot;Y&quot;)],</span>
+<span class="sd">    ...     ebunch=[("P", "Y"), ("Z", "X"), ("Z", "Y"), ("X", "Y")],</span>
 <span class="sd">    ...     roles={</span>
-<span class="sd">    ...         &quot;exposures&quot;: &quot;X&quot;,</span>
-<span class="sd">    ...         &quot;outcomes&quot;: &quot;Y&quot;,</span>
-<span class="sd">    ...         &quot;adjustment&quot;: [&quot;Z&quot;],</span>
-<span class="sd">    ...         &quot;pretreatment&quot;: [&quot;P&quot;],</span>
+<span class="sd">    ...         "exposures": "X",</span>
+<span class="sd">    ...         "outcomes": "Y",</span>
+<span class="sd">    ...         "adjustment": ["Z"],</span>
+<span class="sd">    ...         "pretreatment": ["P"],</span>
 <span class="sd">    ...     },</span>
 <span class="sd">    ... )</span>
 <span class="sd">    &gt;&gt;&gt;</span>
 <span class="sd">    &gt;&gt;&gt; # Generate data with proper relationships using simulate</span>
 <span class="sd">    &gt;&gt;&gt; lgbn_with_P = DAG.from_dagitty(</span>
-<span class="sd">    ...     &quot;dag { P -&gt; Y [beta=0.8] Z -&gt; X [beta=0.5] X -&gt; Y [beta=2.0] Z -&gt; Y [beta=1.5] }&quot;</span>
+<span class="sd">    ...     "dag { P -&gt; Y [beta=0.8] Z -&gt; X [beta=0.5] X -&gt; Y [beta=2.0] Z -&gt; Y [beta=1.5] }"</span>
 <span class="sd">    ... )</span>
 <span class="sd">    &gt;&gt;&gt; data_with_P = lgbn_with_P.simulate(100, seed=42)</span>
 <span class="sd">    &gt;&gt;&gt;</span>
 <span class="sd">    &gt;&gt;&gt; regressor_with_P = NaiveAdjustmentRegressor(causal_graph=dag_with_pretreatment)</span>
-<span class="sd">    &gt;&gt;&gt; _ = regressor_with_P.fit(data_with_P[[&quot;X&quot;, &quot;Z&quot;, &quot;P&quot;]], data_with_P[&quot;Y&quot;])</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    &gt;&gt;&gt; _ = regressor_with_P.fit(data_with_P[["X", "Z", "P"]], data_with_P["Y"])</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1007,7 +1007,7 @@
         <span class="n">y</span><span class="p">,</span>
         <span class="n">sample_weight</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Fit the Naive Adjustment Regressor.</span>
 
 <span class="sd">        Parameters</span>
@@ -1026,25 +1026,25 @@
 <span class="sd">        -------</span>
 <span class="sd">        self : object</span>
 <span class="sd">            Returns self for method chaining.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Step 1: Validate input data</span>
-        <span class="n">validate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">accept_sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ensure_2d</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;numeric&quot;</span><span class="p">)</span>
+        <span class="n">validate_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">accept_sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ensure_2d</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"numeric"</span><span class="p">)</span>
 
         <span class="c1"># Step 2: Extract and validate causal graph roles</span>
-        <span class="n">exposure_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_graph</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">&quot;exposures&quot;</span><span class="p">)</span>
-        <span class="n">outcome_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_graph</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">&quot;outcomes&quot;</span><span class="p">)</span>
-        <span class="n">adjustment_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_graph</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">&quot;adjustment&quot;</span><span class="p">)</span>
-        <span class="n">pretreatment_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_graph</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">&quot;pretreatment&quot;</span><span class="p">)</span>
+        <span class="n">exposure_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_graph</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">"exposures"</span><span class="p">)</span>
+        <span class="n">outcome_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_graph</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">"outcomes"</span><span class="p">)</span>
+        <span class="n">adjustment_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_graph</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">"adjustment"</span><span class="p">)</span>
+        <span class="n">pretreatment_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_graph</span><span class="o">.</span><span class="n">get_role</span><span class="p">(</span><span class="s2">"pretreatment"</span><span class="p">)</span>
 
         <span class="c1"># Validate exactly one exposure and one outcome variable</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exposure_vars</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Exactly one exposure variable must be defined. Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exposure_vars</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exposure_vars</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Exactly one exposure variable must be defined. Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exposure_vars</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exposure_vars</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">outcome_vars</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Exactly one outcome variable must be defined. Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">outcome_vars</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">outcome_vars</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Exactly one outcome variable must be defined. Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">outcome_vars</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">outcome_vars</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Step 3: Store role variables as instance attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exposure_var_</span> <span class="o">=</span> <span class="n">exposure_vars</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -1063,12 +1063,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">estimator_</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_features</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">sample_weight</span><span class="p">)</span>
 
         <span class="c1"># Step 7: Create explanation</span>
-        <span class="n">adj_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">adjustment_vars</span><span class="p">))</span> <span class="k">if</span> <span class="n">adjustment_vars</span> <span class="k">else</span> <span class="s2">&quot;none&quot;</span>
-        <span class="n">pre_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">pretreatment_vars</span><span class="p">))</span> <span class="k">if</span> <span class="n">pretreatment_vars</span> <span class="k">else</span> <span class="s2">&quot;none&quot;</span>
+        <span class="n">adj_str</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">adjustment_vars</span><span class="p">))</span> <span class="k">if</span> <span class="n">adjustment_vars</span> <span class="k">else</span> <span class="s2">"none"</span>
+        <span class="n">pre_str</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">pretreatment_vars</span><span class="p">))</span> <span class="k">if</span> <span class="n">pretreatment_vars</span> <span class="k">else</span> <span class="s2">"none"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">explanation_</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;NaiveAdjustmentRegressor(exposure=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">exposure_var_</span><span class="si">}</span><span class="s2">, outcome=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">outcome_var_</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;adjustment=[</span><span class="si">{</span><span class="n">adj_str</span><span class="si">}</span><span class="s2">], pretreatment=[</span><span class="si">{</span><span class="n">pre_str</span><span class="si">}</span><span class="s2">], &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;estimator=</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator_</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="sa">f</span><span class="s2">"NaiveAdjustmentRegressor(exposure=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">exposure_var_</span><span class="si">}</span><span class="s2">, outcome=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">outcome_var_</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"adjustment=[</span><span class="si">{</span><span class="n">adj_str</span><span class="si">}</span><span class="s2">], pretreatment=[</span><span class="si">{</span><span class="n">pre_str</span><span class="si">}</span><span class="s2">], "</span>
+            <span class="sa">f</span><span class="s2">"estimator=</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">estimator_</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span></div>
@@ -1077,7 +1077,7 @@
 <div class="viewcode-block" id="NaiveAdjustmentRegressor.predict">
 <a class="viewcode-back" href="../../../api/generated/causal_inference/pgmpy.prediction.NaiveAdjustmentRegressor.NaiveAdjustmentRegressor.html#pgmpy.prediction.NaiveAdjustmentRegressor.NaiveAdjustmentRegressor.predict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Make predictions using the fitted regressor.</span>
+<span class="w">        </span><span class="sd">"""Make predictions using the fitted regressor.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1091,16 +1091,16 @@
 <span class="sd">        -------</span>
 <span class="sd">        predictions : ndarray of shape (n_samples,)</span>
 <span class="sd">            Predicted values.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Step 1: Validate that estimator is fitted</span>
-        <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;estimator_&quot;</span><span class="p">)</span>
+        <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"estimator_"</span><span class="p">)</span>
 
         <span class="n">validate_data</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">X</span><span class="p">,</span>
             <span class="n">accept_sparse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">ensure_2d</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;numeric&quot;</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="s2">"numeric"</span><span class="p">,</span>
             <span class="n">reset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">X_filtered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_feature_df</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">required_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_columns_fit_</span><span class="p">)</span>
@@ -1113,8 +1113,8 @@
 <div class="viewcode-block" id="NaiveAdjustmentRegressor.get_feature_names_out">
 <a class="viewcode-back" href="../../../api/generated/causal_inference/pgmpy.prediction.NaiveAdjustmentRegressor.NaiveAdjustmentRegressor.html#pgmpy.prediction.NaiveAdjustmentRegressor.NaiveAdjustmentRegressor.get_feature_names_out">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_feature_names_out</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_features</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get output feature names for transformation.&quot;&quot;&quot;</span>
-        <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;estimator_&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">"""Get output feature names for transformation."""</span>
+        <span class="n">check_is_fitted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"estimator_"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_columns_fit_</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span></div>
 </div>
 
