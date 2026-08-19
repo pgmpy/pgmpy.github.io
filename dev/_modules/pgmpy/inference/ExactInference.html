@@ -880,12 +880,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors</span><span class="w"> </span><span class="kn">import</span> <span class="n">factor_product</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteFactor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">Inference</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.inference.EliminationOrder</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">MinFill</span><span class="p">,</span>
-    <span class="n">MinNeighbors</span><span class="p">,</span>
-    <span class="n">MinWeight</span><span class="p">,</span>
-    <span class="n">WeightedMinFill</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.inference.EliminationOrder</span><span class="w"> </span><span class="kn">import</span> <span class="n">ELIMINATION_HEURISTICS</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DiscreteBayesianNetwork</span><span class="p">,</span>
     <span class="n">DynamicBayesianNetwork</span><span class="p">,</span>
@@ -968,13 +963,7 @@
 
         <span class="c1"># Step 3: If elimination order is a str, compute the order using the specified heuristic.</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elimination_order</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">):</span>
-            <span class="n">heuristic_dict</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">"weightedminfill"</span><span class="p">:</span> <span class="n">WeightedMinFill</span><span class="p">,</span>
-                <span class="s2">"minneighbors"</span><span class="p">:</span> <span class="n">MinNeighbors</span><span class="p">,</span>
-                <span class="s2">"minweight"</span><span class="p">:</span> <span class="n">MinWeight</span><span class="p">,</span>
-                <span class="s2">"minfill"</span><span class="p">:</span> <span class="n">MinFill</span><span class="p">,</span>
-            <span class="p">}</span>
-            <span class="n">elimination_order</span> <span class="o">=</span> <span class="n">heuristic_dict</span><span class="p">[</span><span class="n">elimination_order</span><span class="o">.</span><span class="n">lower</span><span class="p">()](</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_elimination_order</span><span class="p">(</span>
+            <span class="n">elimination_order</span> <span class="o">=</span> <span class="n">ELIMINATION_HEURISTICS</span><span class="p">[</span><span class="n">elimination_order</span><span class="o">.</span><span class="n">lower</span><span class="p">()](</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_elimination_order</span><span class="p">(</span>
                 <span class="n">nodes</span><span class="o">=</span><span class="n">to_eliminate</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">elimination_order</span>
@@ -1110,8 +1099,8 @@
 <span class="sd">        elimination_order: str or list (default='greedy')</span>
 <span class="sd">            Order in which to eliminate the variables in the algorithm. If list is provided,</span>
 <span class="sd">            should contain all variables in the model except the ones in `variables`. str options</span>
-<span class="sd">            are: `greedy`, `WeightedMinFill`, `MinNeighbors`, `MinWeight`, `MinFill`. Please</span>
-<span class="sd">            refer https://pgmpy.org/exact_infer/ve.html#module-pgmpy.inference.EliminationOrder</span>
+<span class="sd">            are: `greedy`, `WeightedMinFill`, `MinNeighbors`, `MinWeight`, `MinFill`, `H1`-`H6`.</span>
+<span class="sd">            Please refer https://pgmpy.org/exact_infer/ve.html#module-pgmpy.inference.EliminationOrder</span>
 <span class="sd">            for details.</span>
 
 <span class="sd">        joint: boolean (default: True)</span>
@@ -1540,10 +1529,16 @@
 <span class="sd">    probabilistic graphical model and performs calibration of the junction tree</span>
 <span class="sd">    so formed using belief propagation.</span>
 
+<span class="sd">    The junction tree is calibrated when the object is created and the calibrated</span>
+<span class="sd">    beliefs are reused by all queries; queries do not modify `model` or</span>
+<span class="sd">    `junction_tree`, so an instance can be shared between threads. If the factors</span>
+<span class="sd">    of `junction_tree` are modified, call `calibrate` again.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    model: DiscreteBayesianNetwork, DiscreteMarkovNetwork, FactorGraph, JunctionTree</span>
-<span class="sd">        model for which inference is to performed</span>
+<span class="sd">        model for which inference is to performed. Use `model.to_junction_tree(heuristic=...)`</span>
+<span class="sd">        to control the triangulation heuristic.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
@@ -1554,8 +1549,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calibrate</span><span class="p">()</span>
 
 <div class="viewcode-block" id="BeliefPropagation.get_cliques">
 <a class="viewcode-back" href="../../../api/generated/inference/pgmpy.inference.BeliefPropagation.html#pgmpy.inference.BeliefPropagation.get_cliques">[docs]</a>
@@ -1607,18 +1602,19 @@
         <span class="n">sepset</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">sending_clique</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">receiving_clique</span><span class="p">))</span>
         <span class="n">sepset_key</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">((</span><span class="n">sending_clique</span><span class="p">,</span> <span class="n">receiving_clique</span><span class="p">))</span>
 
-        <span class="c1"># \sigma_{i \rightarrow j} = \sum_{C_i - S_{i, j}} \beta_i</span>
-        <span class="c1"># marginalize the clique over the sepset</span>
+        <span class="c1"># Step 1: Compute the message: project the sending clique's belief onto the sepset,</span>
+        <span class="c1">#         \sigma_{i \rightarrow j} = \sum_{C_i - S_{i, j}} \beta_i</span>
         <span class="n">sigma</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">sending_clique</span><span class="p">],</span> <span class="n">operation</span><span class="p">)(</span>
             <span class="nb">list</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">sending_clique</span><span class="p">)</span> <span class="o">-</span> <span class="n">sepset</span><span class="p">),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span>
         <span class="p">)</span>
 
-        <span class="c1"># \beta_j = \beta_j * \frac{\sigma_{i \rightarrow j}}{\mu_{i, j}}</span>
+        <span class="c1"># Step 2: Absorb it into the receiving clique, dividing out the previous message on this sepset:</span>
+        <span class="c1">#         \beta_j = \beta_j * \frac{\sigma_{i \rightarrow j}}{\mu_{i, j}}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">receiving_clique</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span>
-            <span class="n">sigma</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span> <span class="k">else</span> <span class="n">sigma</span>
+            <span class="n">sigma</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">sigma</span>
         <span class="p">)</span>
 
-        <span class="c1"># \mu_{i, j} = \sigma_{i \rightarrow j}</span>
+        <span class="c1"># Step 3: Store the message as the new sepset belief, \mu_{i, j} = \sigma_{i \rightarrow j}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="n">sepset_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigma</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_is_converged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operation</span><span class="p">):</span>
@@ -1641,10 +1637,12 @@
 
 <span class="sd">        .. math:: \max_{C_i - S_{i, j}} \beta_i = \max_{C_j - S_{i, j}} \beta_j = \mu_{i, j}</span>
 <span class="sd">        """</span>
-        <span class="c1"># If no clique belief, then the clique tree is not calibrated</span>
+        <span class="c1"># Step 1: Without clique beliefs the tree is not calibrated.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
 
+        <span class="c1"># Step 2: For every edge, both cliques must project onto the sepset to the same</span>
+        <span class="c1">#         distribution, and it must equal the sepset belief.</span>
         <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
             <span class="n">sepset</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
             <span class="n">sepset_key</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
@@ -1669,7 +1667,8 @@
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Generalized calibration of junction tree or clique using belief propagation. This method can be used for both</span>
 <span class="sd">        calibrating as well as max-calibrating.</span>
-<span class="sd">        Uses Lauritzen-Spiegelhalter algorithm or belief-update message passing.</span>
+<span class="sd">        Uses Lauritzen-Spiegelhalter algorithm or belief-update message passing: one collect pass (leaves to</span>
+<span class="sd">        an arbitrary root) followed by one distribute pass (root to leaves) calibrates a clique tree.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1680,24 +1679,22 @@
 <span class="sd">        ----------</span>
 <span class="sd">        - :footcite:t:`koller_friedman_2009` (Algorithm 10.3, calibration via belief propagation in clique trees).</span>
 <span class="sd">        """</span>
-        <span class="c1"># Initialize clique beliefs as well as sepset beliefs</span>
+        <span class="c1"># Step 1: Initialize the clique beliefs with the clique potentials and the sepset beliefs with 1.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span> <span class="o">=</span> <span class="p">{</span><span class="n">clique</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">get_factors</span><span class="p">(</span><span class="n">clique</span><span class="p">)</span> <span class="k">for</span> <span class="n">clique</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span> <span class="o">=</span> <span class="p">{</span><span class="nb">frozenset</span><span class="p">(</span><span class="n">edge</span><span class="p">):</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">edges</span><span class="p">()}</span>
 
-        <span class="k">for</span> <span class="n">clique</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_converged</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="n">operation</span><span class="p">):</span>
-                <span class="n">neighbors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">clique</span><span class="p">)</span>
-                <span class="c1"># update root's belief using neighbor clique's beliefs</span>
-                <span class="c1"># upward pass</span>
-                <span class="k">for</span> <span class="n">neighbor_clique</span> <span class="ow">in</span> <span class="n">neighbors</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_update_beliefs</span><span class="p">(</span><span class="n">neighbor_clique</span><span class="p">,</span> <span class="n">clique</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="n">operation</span><span class="p">)</span>
-                <span class="n">bfs_edges</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">algorithms</span><span class="o">.</span><span class="n">breadth_first_search</span><span class="o">.</span><span class="n">bfs_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="p">,</span> <span class="n">clique</span><span class="p">)</span>
-                <span class="c1"># update the beliefs of all the nodes starting from the root to leaves using root's belief</span>
-                <span class="c1"># downward pass</span>
-                <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">bfs_edges</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_update_beliefs</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">operation</span><span class="o">=</span><span class="n">operation</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">break</span>
+        <span class="c1"># Step 2: Pick a root and order the edges by BFS from it.</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
+        <span class="n">bfs_edges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">bfs_edges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="p">,</span> <span class="n">root</span><span class="p">))</span>
+
+        <span class="c1"># Step 3: Collect pass, leaves to root (reversed BFS sends every child's message before its parent's).</span>
+        <span class="k">for</span> <span class="n">parent</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">bfs_edges</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_beliefs</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="n">operation</span><span class="p">)</span>
+
+        <span class="c1"># Step 4: Distribute pass, root to leaves.</span>
+        <span class="k">for</span> <span class="n">parent</span><span class="p">,</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">bfs_edges</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_beliefs</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">child</span><span class="p">,</span> <span class="n">operation</span><span class="o">=</span><span class="n">operation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_calibrated</span> <span class="o">=</span> <span class="n">operation</span>
 
 <div class="viewcode-block" id="BeliefPropagation.calibrate">
 <a class="viewcode-back" href="../../../api/generated/inference/pgmpy.inference.BeliefPropagation.html#pgmpy.inference.BeliefPropagation.calibrate">[docs]</a>
@@ -1805,7 +1802,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate_junction_tree</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="s2">"maximize"</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This is a generalized query method that can be used for both query and map query.</span>
 
@@ -1818,6 +1815,11 @@
 <span class="sd">        evidence: dict</span>
 <span class="sd">            a dict key, value pair as {var: state_of_var_observed}</span>
 <span class="sd">            None if no evidence</span>
+<span class="sd">        virtual_evidence: list (default: None)</span>
+<span class="sd">            A list of single-variable TabularCPDs (or DiscreteFactors) giving the likelihood</span>
+<span class="sd">            of the virtual evidence for their variable. Each one is multiplied into a clique</span>
+<span class="sd">            potential of the subtree used for the query, which is equivalent to observing an</span>
+<span class="sd">            auxiliary child of the variable with that likelihood.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1842,70 +1844,85 @@
 <span class="sd">        Algorithm 10.4 Out-of-clique inference in clique tree</span>
 <span class="sd">        Probabilistic Graphical Models: Principles and Techniques Daphne Koller and Nir Friedman.</span>
 <span class="sd">        """</span>
-
-        <span class="n">is_calibrated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_converged</span><span class="p">(</span><span class="n">operation</span><span class="o">=</span><span class="n">operation</span><span class="p">)</span>
-        <span class="c1"># Calibrate the junction tree if not calibrated</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_calibrated</span><span class="p">:</span>
+        <span class="c1"># Step 1: Make sure the tree is sum-calibrated for a sum query (it is calibrated at construction, but</span>
+        <span class="c1">#         may have been max-calibrated in between). A max query on a sum-calibrated tree keeps the sum beliefs.</span>
+        <span class="k">if</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">"marginalize"</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calibrated</span> <span class="o">!=</span> <span class="s2">"marginalize"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">calibrate</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
-            <span class="n">query_variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">variables</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">query_variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+        <span class="c1"># Step 2: Collect the variables that must be covered by the subtree: query, evidence and virtual</span>
+        <span class="c1">#         evidence variables. Each virtual evidence becomes a likelihood factor over its variable.</span>
+        <span class="n">query_variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
         <span class="n">query_variables</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">evidence</span> <span class="k">else</span> <span class="p">[])</span>
 
-        <span class="c1"># Find a tree T' such that query_variables are a subset of scope(T')</span>
-        <span class="n">nodes_with_query_variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">query_variables</span><span class="p">:</span>
-            <span class="n">nodes_with_query_variables</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))</span>
-        <span class="n">subtree_nodes</span> <span class="o">=</span> <span class="n">nodes_with_query_variables</span>
-
-        <span class="c1"># Conversion of set to tuple just for indexing</span>
-        <span class="n">nodes_with_query_variables</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">nodes_with_query_variables</span><span class="p">)</span>
-        <span class="c1"># As junction tree is a tree, that means that there would be only path between any two nodes in the tree</span>
-        <span class="c1"># thus we can just take the path between any two nodes; no matter there order is</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes_with_query_variables</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">subtree_nodes</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                <span class="n">nx</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="p">,</span>
-                    <span class="n">nodes_with_query_variables</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                    <span class="n">nodes_with_query_variables</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="n">likelihoods</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span> <span class="ow">or</span> <span class="p">[]:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cpd</span><span class="p">,</span> <span class="n">DiscreteFactor</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">"Virtual evidence must be TabularCPDs or DiscreteFactors defined on a single variable of the "</span>
+                    <span class="sa">f</span><span class="s2">"model; got </span><span class="si">{</span><span class="n">cpd</span><span class="si">}</span><span class="s2">."</span>
                 <span class="p">)</span>
-            <span class="p">)</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">states</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">list</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">(</span><span class="n">states</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"The virtual evidence for </span><span class="si">{</span><span class="n">var</span><span class="si">!r}</span><span class="s2"> has states </span><span class="si">{</span><span class="n">cpd</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="si">}</span><span class="s2">, but the model has </span><span class="si">{</span><span class="n">states</span><span class="si">}</span><span class="s2">."</span>
+                <span class="p">)</span>
+            <span class="n">likelihoods</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DiscreteFactor</span><span class="p">([</span><span class="n">var</span><span class="p">],</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">)],</span> <span class="n">cpd</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">states</span><span class="p">}))</span>
+            <span class="n">query_variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+
+        <span class="c1"># Step 3: Find a small subtree T' of the junction tree whose scope covers query_variables: for every</span>
+        <span class="c1">#         variable not covered yet the smallest clique containing it, plus the (unique) paths between</span>
+        <span class="c1">#         consecutive chosen cliques.</span>
+        <span class="n">chosen_cliques</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">query_variables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">var</span> <span class="ow">in</span> <span class="n">clique</span> <span class="k">for</span> <span class="n">clique</span> <span class="ow">in</span> <span class="n">chosen_cliques</span><span class="p">):</span>
+                <span class="n">chosen_cliques</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="nb">min</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">clique</span> <span class="k">for</span> <span class="n">clique</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">clique</span><span class="p">),</span>
+                        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">clique</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">clique</span><span class="p">]</span><span class="o">.</span><span class="n">cardinality</span><span class="p">),</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+        <span class="n">subtree_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">chosen_cliques</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">chosen_cliques</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">subtree_nodes</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">shortest_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="p">,</span> <span class="n">chosen_cliques</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">chosen_cliques</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]))</span>
         <span class="n">subtree_undirected_graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">junction_tree</span><span class="o">.</span><span class="n">subgraph</span><span class="p">(</span><span class="n">subtree_nodes</span><span class="p">)</span>
-        <span class="c1"># Converting subtree into a junction tree</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">subtree_nodes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">subtree</span> <span class="o">=</span> <span class="n">JunctionTree</span><span class="p">()</span>
             <span class="n">subtree</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">subtree_nodes</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">subtree</span> <span class="o">=</span> <span class="n">JunctionTree</span><span class="p">(</span><span class="n">subtree_undirected_graph</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
 
-        <span class="c1"># Selecting a node is root node. Root node would be having only one neighbor</span>
+        <span class="c1"># Step 4: Turn the calibrated beliefs into potentials of T' whose product is the marginal over its</span>
+        <span class="c1">#         scope: the belief of a leaf chosen as root, and belief / sepset belief for every other clique</span>
+        <span class="c1">#         (traversed from the root; `{root_node}` keeps the clique tuple as one set element).</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">subtree</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">root_node</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">subtree</span><span class="o">.</span><span class="n">nodes</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">root_node</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">subtree</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">subtree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">subtree_cliques</span> <span class="o">=</span> <span class="p">[</span><span class="n">root_node</span><span class="p">]</span>
         <span class="n">clique_potential_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">root_node</span><span class="p">]]</span>
 
-        <span class="c1"># For other nodes in the subtree compute the clique potentials as follows</span>
-        <span class="c1"># As all the nodes are nothing but tuples so simple set(root_node) won't work at it would update the set with</span>
-        <span class="c1"># all the elements of the tuple; instead use set([root_node]) as it would include only the tuple not the</span>
-        <span class="c1"># internal elements within it.</span>
         <span class="n">parent_nodes</span> <span class="o">=</span> <span class="p">{</span><span class="n">root_node</span><span class="p">}</span>
         <span class="n">nodes_traversed</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">while</span> <span class="n">parent_nodes</span><span class="p">:</span>
             <span class="n">parent_node</span> <span class="o">=</span> <span class="n">parent_nodes</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">child_node</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">subtree</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">parent_node</span><span class="p">))</span> <span class="o">-</span> <span class="n">nodes_traversed</span><span class="p">:</span>
+                <span class="n">subtree_cliques</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child_node</span><span class="p">)</span>
                 <span class="n">clique_potential_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">clique_beliefs</span><span class="p">[</span><span class="n">child_node</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sepset_beliefs</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">([</span><span class="n">parent_node</span><span class="p">,</span> <span class="n">child_node</span><span class="p">])]</span>
                 <span class="p">)</span>
                 <span class="n">parent_nodes</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="n">child_node</span><span class="p">])</span>
             <span class="n">nodes_traversed</span><span class="o">.</span><span class="n">update</span><span class="p">([</span><span class="n">parent_node</span><span class="p">])</span>
 
-        <span class="c1"># Add factors to the corresponding junction tree</span>
+        <span class="c1"># Step 5: Multiply each virtual-evidence likelihood into a potential of T' containing its variable</span>
+        <span class="c1">#         (not in place: the root potential is the shared calibrated belief).</span>
+        <span class="k">for</span> <span class="n">likelihood</span> <span class="ow">in</span> <span class="n">likelihoods</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">clique</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">subtree_cliques</span><span class="p">)</span> <span class="k">if</span> <span class="n">likelihood</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">clique</span><span class="p">)</span>
+            <span class="n">clique_potential_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">clique_potential_list</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">*</span> <span class="n">likelihood</span>
         <span class="n">subtree</span><span class="o">.</span><span class="n">add_factors</span><span class="p">(</span><span class="o">*</span><span class="n">clique_potential_list</span><span class="p">)</span>
 
-        <span class="c1"># Sum product variable elimination on the subtree</span>
+        <span class="c1"># Step 6: Answer the query by variable elimination on T', applying the hard evidence; the MAP is the</span>
+        <span class="c1">#         most probable assignment of the joint marginal over `variables`.</span>
         <span class="n">variable_elimination</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">subtree</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">"marginalize"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">variable_elimination</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
@@ -1915,7 +1932,11 @@
                 <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">elif</span> <span class="n">operation</span> <span class="o">==</span> <span class="s2">"maximize"</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">variable_elimination</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">)</span>
+            <span class="n">joint_marginal</span> <span class="o">=</span> <span class="n">variable_elimination</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span>
+            <span class="p">)</span>
+            <span class="n">assignment</span> <span class="o">=</span> <span class="n">joint_marginal</span><span class="o">.</span><span class="n">assignment</span><span class="p">([</span><span class="n">compat_fns</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">joint_marginal</span><span class="o">.</span><span class="n">values</span><span class="p">)])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">assignment</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BeliefPropagation.query">
 <a class="viewcode-back" href="../../../api/generated/inference/pgmpy.inference.BeliefPropagation.html#pgmpy.inference.BeliefPropagation.query">[docs]</a>
@@ -1941,7 +1962,8 @@
 
 <span class="sd">        virtual_evidence: list (default:None)</span>
 <span class="sd">            A list of pgmpy.factors.discrete.TabularCPD representing the virtual</span>
-<span class="sd">            evidences.</span>
+<span class="sd">            evidences. Each CPD must be defined on a single variable of the model</span>
+<span class="sd">            and use the model's state names.</span>
 
 <span class="sd">        joint: boolean</span>
 <span class="sd">            If True, returns a Joint Distribution over `variables`.</span>
@@ -1979,43 +2001,28 @@
 <span class="sd">        ... )  # doctest: +ELLIPSIS</span>
 <span class="sd">        &lt;DiscreteFactor representing phi(J:2, Q:2) at 0x...&gt;</span>
 <span class="sd">        """</span>
+        <span class="c1"># Step 1: Parameter checks.</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">variables</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
         <span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-
-        <span class="c1"># Step 1: Parameter Checks</span>
-        <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">))</span>
+        <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">common_vars</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"Can't have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
+        <span class="k">if</span> <span class="n">unknown</span> <span class="o">:=</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="p">))</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Variables not found in the model: </span><span class="si">{</span><span class="n">unknown</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="c1"># Step 2: If virtual_evidence is provided, modify model and evidence.</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_virtual_evidence</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
-            <span class="n">virt_evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"__"</span> <span class="o">+</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">}</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
-                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
-                <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">evidence</span><span class="p">,</span> <span class="o">**</span><span class="n">virt_evidence</span><span class="p">},</span>
-                <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
-                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="c1"># Step 3: Do network pruning.</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
-
-        <span class="c1"># Step 4: Run inference.</span>
+        <span class="c1"># Step 2: Sum-product inference on the calibrated tree.</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">operation</span><span class="o">=</span><span class="s2">"marginalize"</span><span class="p">,</span>
             <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+            <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">virtual_evidence</span><span class="p">,</span>
             <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">orig_model</span><span class="p">)</span>
 
+        <span class="c1"># Step 3: Normalize the joint (the per-variable results are already normalized).</span>
         <span class="k">if</span> <span class="n">joint</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -2073,47 +2080,30 @@
 <span class="sd">        ...     variables=["J", "Q"], evidence={"A": 0, "R": 0, "G": 0, "L": 1}</span>
 <span class="sd">        ... )  # doctest: +SKIP</span>
 <span class="sd">        """</span>
-        <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">variables</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">variables</span>
+        <span class="c1"># Step 1: Parameter checks; without `variables` the MAP is over all non-evidence variables.</span>
         <span class="n">evidence</span> <span class="o">=</span> <span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span> <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">variables</span><span class="p">:</span>
+            <span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">evidence</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">variables</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
 
+        <span class="n">common_vars</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">common_vars</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"Can't have the same variables in both `variables` and `evidence`. Found in both: </span><span class="si">{</span><span class="n">common_vars</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
+        <span class="k">if</span> <span class="n">unknown</span> <span class="o">:=</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">evidence</span><span class="p">))</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Variables not found in the model: </span><span class="si">{</span><span class="n">unknown</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="c1"># TODO:Check the note in docstring. Change that behavior to return the joint MAP</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">variables</span><span class="p">:</span>
-            <span class="n">variables</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
-
-        <span class="c1"># Make a copy of the original model and then replace self.model with it later.</span>
-        <span class="n">orig_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">virtual_evidence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_virtual_evidence</span><span class="p">(</span><span class="n">virtual_evidence</span><span class="p">)</span>
-            <span class="n">virt_evidence</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"__"</span> <span class="o">+</span> <span class="n">cpd</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">virtual_evidence</span><span class="p">}</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span>
-                <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
-                <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">evidence</span><span class="p">,</span> <span class="o">**</span><span class="n">virt_evidence</span><span class="p">},</span>
-                <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
-            <span class="p">)</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">evidence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prune_bayesian_model</span><span class="p">(</span><span class="n">variables</span><span class="p">,</span> <span class="n">evidence</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_structures</span><span class="p">()</span>
-
-        <span class="n">final_distribution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span>
+        <span class="c1"># Step 2: MAP inference on the calibrated tree.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span>
             <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span>
             <span class="n">operation</span><span class="o">=</span><span class="s2">"maximize"</span><span class="p">,</span>
             <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
+            <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">virtual_evidence</span><span class="p">,</span>
             <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">orig_model</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">final_distribution</span></div>
+        <span class="p">)</span></div>
 </div>
 
 

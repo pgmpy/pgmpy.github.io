@@ -1354,12 +1354,23 @@ scope is the set of variables that are its neighbors.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.models.DiscreteMarkovNetwork.to_junction_tree">
-<span class="sig-name descname"><span class="pre">to_junction_tree</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/models/DiscreteMarkovNetwork.html#DiscreteMarkovNetwork.to_junction_tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.models.DiscreteMarkovNetwork.to_junction_tree" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">to_junction_tree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">heuristic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'MinFill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/models/DiscreteMarkovNetwork.html#DiscreteMarkovNetwork.to_junction_tree"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.models.DiscreteMarkovNetwork.to_junction_tree" title="Link to this definition">#</a></dt>
 <dd><p>Creates a junction tree (or clique tree) for a given markov model.</p>
 <p>For a given markov model (H) a junction tree (G) is a graph
 1. where each node in G corresponds to a maximal clique in H
 2. each sepset in G separates the variables strictly on one side of the
 edge to other.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>heuristic: str (default: “MinFill”)</strong></dt><dd><p>The heuristic used to triangulate the model; see <cite>triangulate</cite>.</p>
+</dd>
+<dt><strong>order: list, tuple (array-like) (default: None)</strong></dt><dd><p>The elimination order used to triangulate the model; if given the
+heuristic is not used. See <cite>triangulate</cite>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteMarkovNetwork</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteFactor</span>
@@ -1388,23 +1399,32 @@ edge to other.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.models.DiscreteMarkovNetwork.triangulate">
-<span class="sig-name descname"><span class="pre">triangulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">heuristic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'H6'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/models/DiscreteMarkovNetwork.html#DiscreteMarkovNetwork.triangulate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.models.DiscreteMarkovNetwork.triangulate" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">triangulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">heuristic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'MinFill'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inplace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/models/DiscreteMarkovNetwork.html#DiscreteMarkovNetwork.triangulate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.models.DiscreteMarkovNetwork.triangulate" title="Link to this definition">#</a></dt>
 <dd><p>Triangulate the graph.</p>
 <p>If order of deletion is given heuristic algorithm will not be used.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl>
-<dt><strong>heuristic: H1 | H2 | H3 | H4 | H5 | H6</strong></dt><dd><p>The heuristic algorithm to use to decide the deletion order of
-the variables to compute the triangulated graph.
-Let X be the set of variables and X(i) denotes the i-th variable.</p>
+<dt><strong>heuristic: str (default: “MinFill”)</strong></dt><dd><p>The greedy heuristic used to decide the deletion (elimination) order of the
+variables: at every step the variable with the smallest cost in the current,
+partially eliminated graph is deleted, its neighbours are connected (fill-in
+edges) and the costs are recomputed. Let X(i) denote a variable and, in the
+current graph,</p>
 <ul class="simple">
-<li><p>S(i) - The size of the clique created by deleting the variable.</p></li>
+<li><p>S(i) - The size (product of the cardinalities) of the clique created by
+deleting X(i), i.e. of its neighbours.</p></li>
 <li><p>E(i) - Cardinality of variable X(i).</p></li>
-<li><p>M(i) - Maximum size of cliques given by X(i) and its adjacent nodes.</p></li>
-<li><p>C(i) - Sum of size of cliques given by X(i) and its adjacent nodes.</p></li>
+<li><p>M(i) - Maximum size of the cliques containing X(i).</p></li>
+<li><p>C(i) - Sum of the sizes of the cliques containing X(i).</p></li>
 </ul>
-<p>The heuristic algorithm decide the deletion order if this way:</p>
+<p>The available heuristics are:</p>
 <ul class="simple">
+<li><p>MinFill (default) - Delete the variable adding the fewest fill-in edges.</p></li>
+<li><p>WeightedMinFill - Delete the variable whose fill-in edges have the smallest
+total weight, the weight of an edge being the product of the cardinalities
+of its endpoints.</p></li>
+<li><p>MinNeighbors - Delete the variable with the fewest neighbours.</p></li>
+<li><p>MinWeight - Delete the variable with minimal S(i).</p></li>
 <li><p>H1 - Delete the variable with minimal S(i).</p></li>
 <li><p>H2 - Delete the variable with minimal S(i)/E(i).</p></li>
 <li><p>H3 - Delete the variable with minimal S(i) - M(i).</p></li>
@@ -1412,6 +1432,7 @@ Let X be the set of variables and X(i) denotes the i-th variable.</p>
 <li><p>H5 - Delete the variable with minimal S(i)/M(i).</p></li>
 <li><p>H6 - Delete the variable with minimal S(i)/C(i).</p></li>
 </ul>
+<p>Ties are broken by the order of the nodes in the graph.</p>
 </dd>
 <dt><strong>order: list, tuple (array-like)</strong></dt><dd><p>The order of deletion of the variables to compute the triagulated
 graph. If order is given heuristic algorithm will not be used.</p>

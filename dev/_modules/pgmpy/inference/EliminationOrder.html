@@ -867,31 +867,43 @@
   <h1>Source code for pgmpy.inference.EliminationOrder</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">combinations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">prod</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm.auto</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">,</span> <span class="n">DiscreteMarkovNetwork</span>
 
 
 <div class="viewcode-block" id="BaseEliminationOrder">
 <a class="viewcode-back" href="../../../api/generated/inference/pgmpy.inference.EliminationOrder.BaseEliminationOrder.html#pgmpy.inference.EliminationOrder.BaseEliminationOrder">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseEliminationOrder</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Init method for the base class of Elimination Orders.</span>
+<span class="sd">    Base class of the greedy elimination-order heuristics. Subclasses implement</span>
+<span class="sd">    `cost`, the cost of eliminating a node from the current graph; the node with</span>
+<span class="sd">    the smallest cost is eliminated first, its neighbours are connected (fill-in</span>
+<span class="sd">    edges) and the costs are recomputed on the reduced graph.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    model: DiscreteBayesianNetwork instance</span>
-<span class="sd">        The model on which we want to compute the elimination orders.</span>
+<span class="sd">    model: DiscreteBayesianNetwork or DiscreteMarkovNetwork instance</span>
+<span class="sd">        The model on which we want to compute the elimination orders. The costs are</span>
+<span class="sd">        computed on the moral graph of a Bayesian network, or on the Markov network</span>
+<span class="sd">        itself; the model is not modified.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Model should be a DiscreteBayesianNetwork instance"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">moralize</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">moralize</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteMarkovNetwork</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Model should be a DiscreteBayesianNetwork or a DiscreteMarkovNetwork instance"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">()</span>
 
 <div class="viewcode-block" id="BaseEliminationOrder.cost">
 <a class="viewcode-back" href="../../../api/generated/inference/pgmpy.inference.EliminationOrder.BaseEliminationOrder.html#pgmpy.inference.EliminationOrder.BaseEliminationOrder.cost">[docs]</a>
@@ -914,13 +926,20 @@
 <a class="viewcode-back" href="../../../api/generated/inference/pgmpy.inference.EliminationOrder.BaseEliminationOrder.html#pgmpy.inference.EliminationOrder.BaseEliminationOrder.get_elimination_order">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_elimination_order</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Returns the optimal elimination order based on the cost function.</span>
-<span class="sd">        The node having the least cost is removed first.</span>
+<span class="sd">        Returns the greedy elimination order based on the cost function: the node</span>
+<span class="sd">        having the least cost in the current graph is eliminated first (ties are</span>
+<span class="sd">        broken by the order of the nodes in the graph), its fill-in edges are added,</span>
+<span class="sd">        and the costs are recomputed. `self.moralized_model` is modified in the</span>
+<span class="sd">        process.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        nodes: list, tuple, set (array-like)</span>
-<span class="sd">            The variables which are to be eliminated.</span>
+<span class="sd">            The variables which are to be eliminated. If None, all the variables</span>
+<span class="sd">            of the model are eliminated.</span>
+
+<span class="sd">        show_progress: boolean (default: True)</span>
+<span class="sd">            Whether to show a progress bar.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -952,31 +971,32 @@
 <span class="sd">        &gt;&gt;&gt; cpd_h = TabularCPD("h", 2, rng.random((2, 6)), ["g", "j"], [3, 2])</span>
 <span class="sd">        &gt;&gt;&gt; model.add_cpds(cpd_c, cpd_d, cpd_g, cpd_i, cpd_s, cpd_j, cpd_l, cpd_h)</span>
 <span class="sd">        &gt;&gt;&gt; WeightedMinFill(model).get_elimination_order(["c", "d", "g", "l", "s"])</span>
-<span class="sd">        ['c', 'd', 's', 'l', 'g']</span>
-<span class="sd">        &gt;&gt;&gt; WeightedMinFill(model).get_elimination_order(["c", "d", "g", "l", "s"])</span>
-<span class="sd">        ['c', 'd', 's', 'l', 'g']</span>
-<span class="sd">        &gt;&gt;&gt; WeightedMinFill(model).get_elimination_order(["c", "d", "g", "l", "s"])</span>
-<span class="sd">        ['c', 'd', 's', 'l', 'g']</span>
+<span class="sd">        ['c', 'd', 'l', 's', 'g']</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
-        <span class="n">nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+            <span class="n">remaining</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing</span> <span class="o">:=</span> <span class="n">nodes</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nodes not found in the model: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">remaining</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span> <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">]</span>
 
-        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span><span class="p">:</span>
-            <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">))</span>
+            <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">remaining</span><span class="p">))</span>
             <span class="n">pbar</span><span class="o">.</span><span class="n">set_description</span><span class="p">(</span><span class="s2">"Finding Elimination Order: "</span><span class="p">)</span>
 
-        <span class="k">while</span> <span class="n">nodes</span><span class="p">:</span>
-            <span class="n">scores</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">cost</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">}</span>
-            <span class="n">min_score_node</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">scores</span><span class="o">.</span><span class="n">get</span><span class="p">)</span>
-            <span class="n">ordering</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">min_score_node</span><span class="p">)</span>
-            <span class="n">nodes</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">min_score_node</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">min_score_node</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">min_score_node</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">SHOW_PROGRESS</span><span class="p">:</span>
+        <span class="n">ordering</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="n">remaining</span><span class="p">:</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">remaining</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cost</span><span class="p">)</span>
+            <span class="n">ordering</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="n">remaining</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fill_in_edges</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">remove_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pbar</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">pbar</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">ordering</span></div>
 
 
@@ -984,15 +1004,21 @@
 <a class="viewcode-back" href="../../../api/generated/inference/pgmpy.inference.EliminationOrder.BaseEliminationOrder.html#pgmpy.inference.EliminationOrder.BaseEliminationOrder.fill_in_edges">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fill_in_edges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Return edges needed to be added to the graph if a node is removed.</span>
+<span class="sd">        Return edges needed to be added to the graph if a node is removed: the pairs</span>
+<span class="sd">        of its neighbours which are not adjacent yet.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        node: string (any hashable python object)</span>
 <span class="sd">            Node to be removed from the graph.</span>
 <span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">combinations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span></div>
-</div>
+        <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">graph</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">)]</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Product of the cardinalities of `nodes`; a node without a known cardinality counts as 1."""</span>
+        <span class="k">return</span> <span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">)</span></div>
 
 
 
@@ -1008,13 +1034,7 @@
 <span class="sd">        be added to the graph due to its elimination, where a weight of an edge is the</span>
 <span class="sd">        product of the weights, domain cardinality, of its constituent vertices.</span>
 <span class="sd">        """</span>
-        <span class="n">edges</span> <span class="o">=</span> <span class="n">combinations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="n">edge</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-                <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span>
-            <span class="p">]</span>
-        <span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill_in_edges</span><span class="p">(</span><span class="n">node</span><span class="p">))</span></div>
 </div>
 
 
@@ -1029,7 +1049,7 @@
 <span class="sd">        The cost of eliminating a node is the number of neighbors it has in the</span>
 <span class="sd">        current graph.</span>
 <span class="sd">        """</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">)))</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
 </div>
 
 
@@ -1044,9 +1064,7 @@
 <span class="sd">        The cost of eliminating a node is the product of weights, domain cardinality,</span>
 <span class="sd">        of its neighbors.</span>
 <span class="sd">        """</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span>
-            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bayesian_model</span><span class="o">.</span><span class="n">get_cardinality</span><span class="p">(</span><span class="n">neig_node</span><span class="p">)</span> <span class="k">for</span> <span class="n">neig_node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">)]</span>
-        <span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span></div>
 </div>
 
 
@@ -1061,9 +1079,89 @@
 <span class="sd">        The cost of eliminating a node is the number of edges that need to be added</span>
 <span class="sd">        (fill in edges) to the graph due to its elimination</span>
 <span class="sd">        """</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fill_in_edges</span><span class="p">(</span><span class="n">node</span><span class="p">)))</span></div>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fill_in_edges</span><span class="p">(</span><span class="n">node</span><span class="p">))</span></div>
 </div>
 
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_Kjaerulff</span><span class="p">(</span><span class="n">BaseEliminationOrder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Base class of Kjaerulff's triangulation heuristics H1-H6, defined for a node X(i)</span>
+<span class="sd">    of the current graph in terms of</span>
+
+<span class="sd">    * S(i) - the size (product of the cardinalities) of the clique created by deleting X(i),</span>
+<span class="sd">      i.e. of its neighbours,</span>
+<span class="sd">    * E(i) - the cardinality of X(i),</span>
+<span class="sd">    * M(i) - the maximum size of the cliques containing X(i),</span>
+<span class="sd">    * C(i) - the sum of the sizes of the cliques containing X(i).</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Kjaerulff, U. (1990). Triangulation of graphs - algorithms giving small total state space.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">moralized_model</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">(</span><span class="n">graph</span><span class="o">.</span><span class="n">neighbors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cardinality</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">clique_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">(</span><span class="n">clique</span><span class="p">)</span> <span class="k">for</span> <span class="n">clique</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">find_cliques</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="p">[</span><span class="n">node</span><span class="p">])]</span>
+        <span class="k">return</span> <span class="n">S</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">clique_sizes</span><span class="p">),</span> <span class="nb">sum</span><span class="p">(</span><span class="n">clique_sizes</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">H1</span><span class="p">(</span><span class="n">_Kjaerulff</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Kjaerulff H1: S(i)."""</span>
+        <span class="n">S</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">S</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">H2</span><span class="p">(</span><span class="n">_Kjaerulff</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Kjaerulff H2: S(i) / E(i)."""</span>
+        <span class="n">S</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">S</span> <span class="o">/</span> <span class="n">E</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">H3</span><span class="p">(</span><span class="n">_Kjaerulff</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Kjaerulff H3: S(i) - M(i)."""</span>
+        <span class="n">S</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">S</span> <span class="o">-</span> <span class="n">M</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">H4</span><span class="p">(</span><span class="n">_Kjaerulff</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Kjaerulff H4: S(i) - C(i)."""</span>
+        <span class="n">S</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">S</span> <span class="o">-</span> <span class="n">C</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">H5</span><span class="p">(</span><span class="n">_Kjaerulff</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Kjaerulff H5: S(i) / M(i)."""</span>
+        <span class="n">S</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">S</span> <span class="o">/</span> <span class="n">M</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">H6</span><span class="p">(</span><span class="n">_Kjaerulff</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Kjaerulff H6: S(i) / C(i)."""</span>
+        <span class="n">S</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terms</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">S</span> <span class="o">/</span> <span class="n">C</span>
+
+
+<span class="n">ELIMINATION_HEURISTICS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"minfill"</span><span class="p">:</span> <span class="n">MinFill</span><span class="p">,</span>
+    <span class="s2">"weightedminfill"</span><span class="p">:</span> <span class="n">WeightedMinFill</span><span class="p">,</span>
+    <span class="s2">"minneighbors"</span><span class="p">:</span> <span class="n">MinNeighbors</span><span class="p">,</span>
+    <span class="s2">"minweight"</span><span class="p">:</span> <span class="n">MinWeight</span><span class="p">,</span>
+    <span class="s2">"h1"</span><span class="p">:</span> <span class="n">H1</span><span class="p">,</span>
+    <span class="s2">"h2"</span><span class="p">:</span> <span class="n">H2</span><span class="p">,</span>
+    <span class="s2">"h3"</span><span class="p">:</span> <span class="n">H3</span><span class="p">,</span>
+    <span class="s2">"h4"</span><span class="p">:</span> <span class="n">H4</span><span class="p">,</span>
+    <span class="s2">"h5"</span><span class="p">:</span> <span class="n">H5</span><span class="p">,</span>
+    <span class="s2">"h6"</span><span class="p">:</span> <span class="n">H6</span><span class="p">,</span>
+<span class="p">}</span>
 </pre></div>
 
                 </article>

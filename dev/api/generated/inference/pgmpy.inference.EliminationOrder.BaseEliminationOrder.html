@@ -926,11 +926,16 @@
 <dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.BaseEliminationOrder">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pgmpy.inference.EliminationOrder.</span></span><span class="sig-name descname"><span class="pre">BaseEliminationOrder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/inference/EliminationOrder.html#BaseEliminationOrder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.BaseEliminationOrder" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Init method for the base class of Elimination Orders.</p>
+<p>Base class of the greedy elimination-order heuristics. Subclasses implement
+<cite>cost</cite>, the cost of eliminating a node from the current graph; the node with
+the smallest cost is eliminated first, its neighbours are connected (fill-in
+edges) and the costs are recomputed on the reduced graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>model: DiscreteBayesianNetwork instance</strong></dt><dd><p>The model on which we want to compute the elimination orders.</p>
+<dt><strong>model: DiscreteBayesianNetwork or DiscreteMarkovNetwork instance</strong></dt><dd><p>The model on which we want to compute the elimination orders. The costs are
+computed on the moral graph of a Bayesian network, or on the Markov network
+itself; the model is not modified.</p>
 </dd>
 </dl>
 </dd>
@@ -954,7 +959,8 @@ are implemented in the classes inheriting BaseEliminationOrder.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.BaseEliminationOrder.fill_in_edges">
 <span class="sig-name descname"><span class="pre">fill_in_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/inference/EliminationOrder.html#BaseEliminationOrder.fill_in_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.BaseEliminationOrder.fill_in_edges" title="Link to this definition">#</a></dt>
-<dd><p>Return edges needed to be added to the graph if a node is removed.</p>
+<dd><p>Return edges needed to be added to the graph if a node is removed: the pairs
+of its neighbours which are not adjacent yet.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
@@ -968,12 +974,18 @@ are implemented in the classes inheriting BaseEliminationOrder.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.inference.EliminationOrder.BaseEliminationOrder.get_elimination_order">
 <span class="sig-name descname"><span class="pre">get_elimination_order</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_progress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/inference/EliminationOrder.html#BaseEliminationOrder.get_elimination_order"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.inference.EliminationOrder.BaseEliminationOrder.get_elimination_order" title="Link to this definition">#</a></dt>
-<dd><p>Returns the optimal elimination order based on the cost function.
-The node having the least cost is removed first.</p>
+<dd><p>Returns the greedy elimination order based on the cost function: the node
+having the least cost in the current graph is eliminated first (ties are
+broken by the order of the nodes in the graph), its fill-in edges are added,
+and the costs are recomputed. <cite>self.moralized_model</cite> is modified in the
+process.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>nodes: list, tuple, set (array-like)</strong></dt><dd><p>The variables which are to be eliminated.</p>
+<dt><strong>nodes: list, tuple, set (array-like)</strong></dt><dd><p>The variables which are to be eliminated. If None, all the variables
+of the model are eliminated.</p>
+</dd>
+<dt><strong>show_progress: boolean (default: True)</strong></dt><dd><p>Whether to show a progress bar.</p>
 </dd>
 </dl>
 </dd>
@@ -1007,11 +1019,7 @@ The node having the least cost is removed first.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cpd_h</span> <span class="o">=</span> <span class="n">TabularCPD</span><span class="p">(</span><span class="s2">"h"</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">)),</span> <span class="p">[</span><span class="s2">"g"</span><span class="p">,</span> <span class="s2">"j"</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="n">cpd_c</span><span class="p">,</span> <span class="n">cpd_d</span><span class="p">,</span> <span class="n">cpd_g</span><span class="p">,</span> <span class="n">cpd_i</span><span class="p">,</span> <span class="n">cpd_s</span><span class="p">,</span> <span class="n">cpd_j</span><span class="p">,</span> <span class="n">cpd_l</span><span class="p">,</span> <span class="n">cpd_h</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">WeightedMinFill</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_elimination_order</span><span class="p">([</span><span class="s2">"c"</span><span class="p">,</span> <span class="s2">"d"</span><span class="p">,</span> <span class="s2">"g"</span><span class="p">,</span> <span class="s2">"l"</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">])</span>
-<span class="go">['c', 'd', 's', 'l', 'g']</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">WeightedMinFill</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_elimination_order</span><span class="p">([</span><span class="s2">"c"</span><span class="p">,</span> <span class="s2">"d"</span><span class="p">,</span> <span class="s2">"g"</span><span class="p">,</span> <span class="s2">"l"</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">])</span>
-<span class="go">['c', 'd', 's', 'l', 'g']</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">WeightedMinFill</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">get_elimination_order</span><span class="p">([</span><span class="s2">"c"</span><span class="p">,</span> <span class="s2">"d"</span><span class="p">,</span> <span class="s2">"g"</span><span class="p">,</span> <span class="s2">"l"</span><span class="p">,</span> <span class="s2">"s"</span><span class="p">])</span>
-<span class="go">['c', 'd', 's', 'l', 'g']</span>
+<span class="go">['c', 'd', 'l', 's', 'g']</span>
 </pre></div>
 </div>
 </dd></dl>
