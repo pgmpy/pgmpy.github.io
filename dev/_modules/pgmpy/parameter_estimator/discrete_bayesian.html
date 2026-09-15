@@ -868,15 +868,20 @@
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Iterable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">chain</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">joblib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArrayLike</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_state_counts</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteParameterEstimator</span>
 
@@ -959,6 +964,22 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_has_ignored_pseudo_counts</span><span class="p">(</span>
+        <span class="n">nodes</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Hashable</span><span class="p">],</span>
+        <span class="n">prior_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">pseudo_counts</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">ArrayLike</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Check whether pseudo-counts for any requested node will be ignored."""</span>
+        <span class="k">if</span> <span class="n">prior_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"dirichlet"</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes</span><span class="p">:</span>
+            <span class="n">node_pseudo_counts</span> <span class="o">=</span> <span class="n">pseudo_counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">pseudo_counts</span>
+            <span class="k">if</span> <span class="n">node_pseudo_counts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">node_pseudo_counts</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_pseudo_counts</span><span class="p">(</span>
         <span class="n">model</span><span class="p">,</span>
         <span class="n">state_names</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
@@ -976,12 +997,6 @@
         <span class="n">node_pseudo_counts</span> <span class="o">=</span> <span class="n">pseudo_counts</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pseudo_counts</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
             <span class="n">node_pseudo_counts</span> <span class="o">=</span> <span class="n">pseudo_counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">node_pseudo_counts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">node_pseudo_counts</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="n">prior_type</span> <span class="o">!=</span> <span class="s2">"dirichlet"</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"pseudo count specified with </span><span class="si">{</span><span class="n">prior_type</span><span class="si">}</span><span class="s2"> prior. It will be ignored, "</span>
-                <span class="s2">"use dirichlet prior for specifying pseudo_counts"</span>
-            <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">prior_type</span> <span class="o">==</span> <span class="s2">"k2"</span><span class="p">:</span>
             <span class="n">resolved_pseudo_counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">cpd_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
@@ -1054,7 +1069,12 @@
 
 <div class="viewcode-block" id="DiscreteBayesianEstimator.fit">
 <a class="viewcode-back" href="../../../api/generated/parameter_estimation/pgmpy.parameter_estimator.DiscreteBayesianEstimator.html#pgmpy.parameter_estimator.DiscreteBayesianEstimator.fit">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">DAG</span> <span class="o">|</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">sample_weight</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiscreteBayesianEstimator</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Estimate model parameters using Bayesian Parameter Estimation.</span>
 
@@ -1074,6 +1094,11 @@
 <span class="sd">        self: DiscreteBayesianEstimator</span>
 <span class="sd">            Fitted estimator with learned CPDs stored in `parameters_`.</span>
 
+<span class="sd">        Warns</span>
+<span class="sd">        -----</span>
+<span class="sd">        UserWarning</span>
+<span class="sd">            If nonempty `pseudo_counts` for a model node are ignored because the prior is not Dirichlet.</span>
+
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.datasets import load_dataset</span>
@@ -1092,6 +1117,13 @@
 <span class="sd">         &lt;TabularCPD representing P(cp:2 | iq:4, pe:2) at 0x...&gt;]</span>
 <span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sample_weight</span><span class="o">=</span><span class="n">sample_weight</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_ignored_pseudo_counts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pseudo_counts</span><span class="p">):</span>
+            <span class="n">_warn_external</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"pseudo_counts is ignored with prior_type=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">!r}</span><span class="s2">. "</span>
+                <span class="s2">"Use prior_type='dirichlet' to specify pseudo_counts."</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="n">parameters</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">)(</span>
             <span class="n">delayed</span><span class="p">(</span><span class="n">DiscreteBayesianEstimator</span><span class="o">.</span><span class="n">_estimate_cpd</span><span class="p">)(</span>

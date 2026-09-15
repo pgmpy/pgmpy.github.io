@@ -867,14 +867,15 @@
   <h1>Source code for pgmpy.models.MarkovChain</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hashable</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataFrame</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">eig</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">State</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_discrete</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 
 <div class="viewcode-block" id="MarkovChain">
@@ -1000,7 +1001,7 @@
 
 <div class="viewcode-block" id="MarkovChain.add_variable">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.MarkovChain.html#pgmpy.models.MarkovChain.add_variable">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">,</span> <span class="n">card</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variable</span><span class="p">:</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">card</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add a variable to the model.</span>
 
@@ -1011,6 +1012,11 @@
 <span class="sd">        card: int</span>
 <span class="sd">            Representing the cardinality of the variable to be added.</span>
 
+<span class="sd">        Warns</span>
+<span class="sd">        -----</span>
+<span class="sd">        UserWarning</span>
+<span class="sd">            If the variable already exists. Its cardinality is set to card and its transition model is cleared.</span>
+
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import MarkovChain as MC</span>
@@ -1020,7 +1026,11 @@
         <span class="k">if</span> <span class="n">variable</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">variable</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Variable </span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2"> already exists."</span><span class="p">)</span>
+            <span class="n">_warn_external</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Variable </span><span class="si">{</span><span class="n">variable</span><span class="si">!r}</span><span class="s2"> already exists. Its cardinality will be set to </span><span class="si">{</span><span class="n">card</span><span class="si">}</span><span class="s2">, "</span>
+                <span class="s2">"and its transition model will be cleared."</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cardinalities</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">card</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transition_models</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span></div>
 

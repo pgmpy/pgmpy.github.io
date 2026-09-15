@@ -869,8 +869,9 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseEstimator</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDAG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.ci_tests</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_ci_test</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 
 <div class="viewcode-block" id="ExpertKnowledge">
@@ -1185,7 +1186,7 @@
 
 <div class="viewcode-block" id="ExpertKnowledge.apply_to">
 <a class="viewcode-back" href="../../../api/generated/structure_learning/pgmpy.causal_discovery.ExpertKnowledge.html#pgmpy.causal_discovery.ExpertKnowledge.apply_to">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">apply_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="p">:</span> <span class="n">PDAG</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PDAG</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Orient the edges of ``graph`` according to the fitted expert knowledge.</span>
 
@@ -1193,7 +1194,7 @@
 <span class="sd">        :meth:`fit`) to orient still-undirected edges of ``graph`` in place.</span>
 <span class="sd">        Required edges ``(u, v)`` are oriented ``u -&gt; v``; forbidden edges ``(u, v)`` are</span>
 <span class="sd">        oriented away from the forbidden direction (``v -&gt; u``). Edges that already</span>
-<span class="sd">        conflict with the learned structure are left unchanged and a warning is logged.</span>
+<span class="sd">        conflict with the learned structure are left unchanged and a warning is reported.</span>
 
 <span class="sd">        This method does not mutate the expert knowledge object; temporal constraints are</span>
 <span class="sd">        already resolved into ``forbidden_edges_`` by :meth:`fit`.</span>
@@ -1208,6 +1209,13 @@
 <span class="sd">        graph : pgmpy.base.PDAG</span>
 <span class="sd">            The same graph instance, after edge orientation.</span>
 
+<span class="sd">        Warns</span>
+<span class="sd">        -----</span>
+<span class="sd">        UserWarning</span>
+<span class="sd">            If a forbidden directed edge is already present, or a required edge</span>
+<span class="sd">            is absent or oppositely oriented. The conflicting constraint is not</span>
+<span class="sd">            enforced; the graph is not modified for that constraint.</span>
+
 <span class="sd">        References</span>
 <span class="sd">        ----------</span>
 <span class="sd">        - :footcite:t:`ankan_textor_2023`</span>
@@ -1216,18 +1224,21 @@
             <span class="k">if</span> <span class="n">graph</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="s2">"--"</span><span class="p">):</span>
                 <span class="n">graph</span><span class="o">.</span><span class="n">orient_undirected_edge</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">graph</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">):</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"Specified expert knowledge conflicts with learned structure. "</span>
-                    <span class="sa">f</span><span class="s2">"Ignoring edge </span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s2">-&gt;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> from forbidden edges."</span>
+                <span class="n">_warn_external</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Forbidden edge </span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s2">-&gt;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> is present in the learned structure. "</span>
+                    <span class="s2">"The forbidden-edge constraint is not enforced; the edge is left unchanged."</span><span class="p">,</span>
+                    <span class="ne">UserWarning</span><span class="p">,</span>
                 <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_edges_</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">graph</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="s2">"--"</span><span class="p">):</span>
                 <span class="n">graph</span><span class="o">.</span><span class="n">orient_undirected_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">graph</span><span class="o">.</span><span class="n">has_edge</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"Specified expert knowledge conflicts with learned structure. "</span>
-                    <span class="sa">f</span><span class="s2">"Ignoring edge </span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s2">-&gt;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> from required edges"</span>
+                <span class="n">_warn_external</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Required edge </span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s2">-&gt;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2"> is absent or oppositely oriented in the learned structure. "</span>
+                    <span class="s2">"The required-edge constraint is not enforced; "</span>
+                    <span class="s2">"no edge is added or reoriented for this constraint."</span><span class="p">,</span>
+                    <span class="ne">UserWarning</span><span class="p">,</span>
                 <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">graph</span></div>

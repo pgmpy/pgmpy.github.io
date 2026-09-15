@@ -877,8 +877,9 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base._mixin_roles</span><span class="w"> </span><span class="kn">import</span> <span class="n">_GraphRolesMixin</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.ci_tests</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_ci_test</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.ci_tests</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCITest</span><span class="p">,</span> <span class="n">get_ci_test</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.independencies</span><span class="w"> </span><span class="kn">import</span> <span class="n">Independencies</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_dagitty</span><span class="p">,</span> <span class="n">parse_lavaan</span>
 
 
@@ -1097,6 +1098,11 @@
 <span class="sd">        filename: str (default: None)</span>
 <span class="sd">            The filename of the file containing the model in lavaan syntax.</span>
 
+<span class="sd">        Warns</span>
+<span class="sd">        -----</span>
+<span class="sd">        UserWarning</span>
+<span class="sd">            If residual correlations are ignored when constructing the DAG.</span>
+
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        """</span>
@@ -1109,7 +1115,10 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Either `filename` or `string` need to be specified"</span><span class="p">)</span>
         <span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="p">,</span> <span class="n">err_corr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">parse_lavaan</span><span class="p">(</span><span class="n">lavaan_str</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">err_corr</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Residual correlations </span><span class="si">{</span><span class="n">err_corr</span><span class="si">}</span><span class="s2"> are ignored in DAG. Use the SEM class to keep them."</span><span class="p">)</span>
+            <span class="n">_warn_external</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Residual correlations </span><span class="si">{</span><span class="n">err_corr</span><span class="si">}</span><span class="s2"> are ignored in DAG. Use the SEM class to keep them."</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">ebunch</span><span class="o">=</span><span class="n">ebunch</span><span class="p">,</span> <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">)</span></div>
 
 
@@ -2404,7 +2413,7 @@
 
         <span class="k">if</span> <span class="n">n_edges</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">edge_prob</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">edge_prob</span> <span class="o">=</span> <span class="mf">0.5</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Using default edge_prob=0.5 since neither n_edges nor edge_prob were specified."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Using default edge_prob=0.5 since neither n_edges nor edge_prob were specified."</span><span class="p">)</span>
 
         <span class="n">shuffled_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">node_names</span><span class="p">)</span>
         <span class="n">gen</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">shuffled_names</span><span class="p">)</span>
@@ -2666,7 +2675,12 @@
 
 <div class="viewcode-block" id="DAG.edge_strength">
 <a class="viewcode-back" href="../../../api/generated/base/pgmpy.base.DAG.html#pgmpy.base.DAG.edge_strength">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">edge_strength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ci_test</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">edge_strength</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+        <span class="n">edges</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ci_test</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">BaseCITest</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">],</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Computes the strength of each edge in `edges`. The strength is bounded</span>
 <span class="sd">        between 0 and 1, with 1 signifying strong effect.</span>
@@ -2702,6 +2716,13 @@
 <span class="sd">        -------</span>
 <span class="sd">        dict</span>
 <span class="sd">            Dictionary mapping edges to their strength values.</span>
+
+<span class="sd">        Warns</span>
+<span class="sd">        -----</span>
+<span class="sd">        UserWarning</span>
+<span class="sd">            If requested edges are skipped because an endpoint or a parent of</span>
+<span class="sd">            the target is latent. Only strengths for the remaining requested</span>
+<span class="sd">            edges are returned.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -2779,9 +2800,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">edges</span><span class="p">[</span><span class="n">edge</span><span class="p">][</span><span class="s2">"strength"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ci_test</span><span class="o">.</span><span class="n">effect_size_</span>
 
         <span class="k">if</span> <span class="n">skipped_edges</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Skipped computing strengths for edges involving latent variables: </span><span class="si">{</span><span class="n">skipped_edges</span><span class="si">}</span><span class="s2">. "</span>
-                <span class="s2">"Use CausalInference class for advanced causal effect estimation."</span>
+            <span class="n">_warn_external</span><span class="p">(</span>
+                <span class="s2">"Skipped computing strengths for edges with a latent endpoint "</span>
+                <span class="sa">f</span><span class="s2">"or a latent parent of the target: </span><span class="si">{</span><span class="n">skipped_edges</span><span class="si">}</span><span class="s2">. "</span>
+                <span class="s2">"Returning strengths only for the remaining requested edges."</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">strengths</span></div>

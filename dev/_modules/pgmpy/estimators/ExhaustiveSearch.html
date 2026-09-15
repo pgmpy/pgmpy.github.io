@@ -871,10 +871,10 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.estimators</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructureEstimator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.structure_score</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_scoring_method</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils.mathext</span><span class="w"> </span><span class="kn">import</span> <span class="n">powerset</span>
 
 
@@ -918,14 +918,19 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">all_dags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Computes all possible directed acyclic graphs with a given set of nodes,</span>
-<span class="sd">        sparse ones first. `2**(n*(n-1))` graphs need to be searched, given `n` nodes,</span>
-<span class="sd">        so this is likely not feasible for n&gt;6. This is a generator.</span>
+<span class="sd">        sparse ones first. `2**(n*(n-1))` candidate directed graphs need to be searched,</span>
+<span class="sd">        given `n` nodes, so this is likely not feasible for n&gt;6. This is a generator.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        nodes: list of nodes for the DAGs (optional)</span>
 <span class="sd">            A list of the node names that the generated DAGs should have.</span>
 <span class="sd">            If not provided, nodes are taken from data.</span>
+
+<span class="sd">        Warns</span>
+<span class="sd">        -----</span>
+<span class="sd">        UserWarning</span>
+<span class="sd">            If more than six nodes would make exhaustive enumeration impractical.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -978,8 +983,12 @@
         <span class="k">if</span> <span class="n">nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">nodes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_names</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">6</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Generating all DAGs of n nodes likely not feasible for n&gt;6!"</span><span class="p">)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Attempting to search through </span><span class="si">{</span><span class="mi">2</span><span class="w"> </span><span class="o">**</span><span class="w"> </span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span><span class="si">}</span><span class="s2"> graphs"</span><span class="p">)</span>
+            <span class="n">candidate_count</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">_warn_external</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Exhaustive search over </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2"> nodes examines </span><span class="si">{</span><span class="n">candidate_count</span><span class="si">:</span><span class="s2">,</span><span class="si">}</span><span class="s2"> candidate directed graphs. "</span>
+                <span class="s2">"Reduce the node set or use a non-exhaustive estimator."</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="n">edges</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">combinations</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>  <span class="c1"># n*(n-1) possible directed edges</span>
         <span class="n">edges</span><span class="o">.</span><span class="n">extend</span><span class="p">([(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">])</span>

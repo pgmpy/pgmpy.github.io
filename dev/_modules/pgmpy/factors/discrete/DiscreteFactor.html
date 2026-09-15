@@ -866,6 +866,7 @@
                   
   <h1>Source code for pgmpy.factors.discrete.DiscreteFactor</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Sequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">product</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -875,6 +876,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.extern</span><span class="w"> </span><span class="kn">import</span> <span class="n">tabulate</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseFactor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateNameMixin</span><span class="p">,</span> <span class="n">compat_fns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 <span class="n">State</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">"State"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"var"</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">])</span>
 
@@ -1084,7 +1086,7 @@
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name_to_no</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">]])</span>
                 <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> state as number instead of name."</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> state as number instead of name."</span><span class="p">)</span>
                     <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span></div>
 
@@ -1131,7 +1133,7 @@
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name_to_no</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">]])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> state as number instead of name."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using </span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2"> state as number instead of name."</span><span class="p">)</span>
                 <span class="n">index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">index</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span></div>
@@ -1416,7 +1418,12 @@
 
 <div class="viewcode-block" id="DiscreteFactor.reduce">
 <a class="viewcode-back" href="../../../../api/generated/factors/pgmpy.factors.discrete.DiscreteFactor.html#pgmpy.factors.discrete.DiscreteFactor.reduce">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">reduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">show_warnings</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">reduce</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">values</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">]],</span>
+        <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">show_warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"DiscreteFactor | None"</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Reduces the factor to the context of given variable values. The variables which</span>
 <span class="sd">        are reduced would be removed from the factor.</span>
@@ -1431,12 +1438,18 @@
 <span class="sd">            a new factor.</span>
 
 <span class="sd">        show_warnings: boolean</span>
-<span class="sd">            Whether to show warning when state name not found.</span>
+<span class="sd">            Whether to emit a UserWarning when a state name is not found.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Reduced factor: pgmpy.factors.discrete.DiscreteFactor or None</span>
 <span class="sd">            If inplace=True (default) returns None else returns a new `DiscreteFactor` instance.</span>
+
+<span class="sd">        Warns</span>
+<span class="sd">        -----</span>
+<span class="sd">        UserWarning</span>
+<span class="sd">            If a state name is not found and ``show_warnings=True``. All supplied</span>
+<span class="sd">            state values are then used as positional indices.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1472,7 +1485,11 @@
             <span class="n">values</span> <span class="o">=</span> <span class="p">[(</span><span class="n">var</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_state_no</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">state_name</span><span class="p">))</span> <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">state_name</span> <span class="ow">in</span> <span class="n">values</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">show_warnings</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Found unknown state name. Trying to switch to using all state names as state numbers"</span><span class="p">)</span>
+                <span class="n">_warn_external</span><span class="p">(</span>
+                    <span class="s2">"At least one state name was not found. "</span>
+                    <span class="s2">"Attempting to interpret all supplied state values as positional indices."</span><span class="p">,</span>
+                    <span class="ne">UserWarning</span><span class="p">,</span>
+                <span class="p">)</span>
 
         <span class="n">var_index_to_del</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">slice_</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>

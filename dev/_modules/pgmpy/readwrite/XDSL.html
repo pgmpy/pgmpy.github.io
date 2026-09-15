@@ -866,17 +866,17 @@
                   
   <h1>Source code for pgmpy.readwrite.XDSL</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xml.dom.minidom</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">md</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xml.etree.ElementTree</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">etree</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hashable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">chain</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">networkx</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nx</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compat_fns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 
 <div class="viewcode-block" id="XDSLReader">
@@ -1170,13 +1170,19 @@
 
 <div class="viewcode-block" id="XDSLWriter.get_variables">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XDSLWriter.html#pgmpy.readwrite.XDSLWriter.get_variables">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add variables and their XML elements/representation to XDSL</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        dict: dict of type {variable: variable tags}</span>
+
+<span class="sd">        Warns</span>
+<span class="sd">        -----</span>
+<span class="sd">        UserWarning</span>
+<span class="sd">            If a node name contains a literal space, which is not supported by</span>
+<span class="sd">            pgmpy's XDSLReader or in GeNIe/SMILE node IDs.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1191,7 +1197,12 @@
 
         <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">" "</span> <span class="ow">in</span> <span class="n">var</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">" Node '</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">' contains whitespaces. This can create issues when loading the model. "</span><span class="p">)</span>
+                <span class="n">_warn_external</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Node name </span><span class="si">{</span><span class="n">var</span><span class="si">!r}</span><span class="s2"> contains a space. pgmpy's XDSLReader "</span>
+                    <span class="s2">"cannot read the resulting model, and GeNIe/SMILE node IDs do not "</span>
+                    <span class="s2">"support spaces. Rename the node before exporting for these readers."</span><span class="p">,</span>
+                    <span class="ne">UserWarning</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="n">variable_tag</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">nodes_elem</span><span class="p">,</span> <span class="s2">"cpt"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="n">var</span><span class="p">})</span>
 
         <span class="k">return</span> <span class="n">variable_tag</span></div>
@@ -1199,13 +1210,20 @@
 
 <div class="viewcode-block" id="XDSLWriter.get_cpds">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XDSLWriter.html#pgmpy.readwrite.XDSLWriter.get_cpds">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_cpds</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">TabularCPD</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add the complete CPT element (with states and probabilities) to XDSL.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        dict: dict of type {variable: table tag}</span>
+<span class="sd">        dict</span>
+<span class="sd">            Mapping of variables to their TabularCPD objects.</span>
+
+<span class="sd">        Warns</span>
+<span class="sd">        -----</span>
+<span class="sd">        UserWarning</span>
+<span class="sd">            If a state name contains a comma, which is not supported in GeNIe</span>
+<span class="sd">            state IDs. pgmpy's XDSLReader can still read these state names back.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1229,9 +1247,11 @@
             <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="n">states</span><span class="p">:</span>
                 <span class="n">st_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">st</span><span class="p">)</span>
                 <span class="k">if</span> <span class="s2">","</span> <span class="ow">in</span> <span class="n">st_str</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"State name '</span><span class="si">{</span><span class="n">st_str</span><span class="si">}</span><span class="s2">' for variable '</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">' contains commas. "</span>
-                        <span class="s2">"This may cause issues when loading the file. Consider removing any special characters."</span>
+                    <span class="n">_warn_external</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"State name </span><span class="si">{</span><span class="n">st_str</span><span class="si">!r}</span><span class="s2"> for variable </span><span class="si">{</span><span class="n">var</span><span class="si">!r}</span><span class="s2"> contains a comma "</span>
+                        <span class="s2">"and is serialized as an XDSL state ID. GeNIe state IDs do not "</span>
+                        <span class="s2">"support commas. Rename the state if GeNIe interoperability is required."</span><span class="p">,</span>
+                        <span class="ne">UserWarning</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="n">etree</span><span class="o">.</span><span class="n">SubElement</span><span class="p">(</span><span class="n">cpt_elem</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="n">st_str</span><span class="p">})</span>
 
@@ -1327,11 +1347,10 @@
 <div class="viewcode-block" id="XDSLWriter.write_xdsl">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XDSLWriter.html#pgmpy.readwrite.XDSLWriter.write_xdsl">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">write_xdsl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-<span class="w">            </span><span class="sd">"""`XDSLWriter.write_xdsl` is deprecated and will be removed in v2.0. Please use `XDSLWriter.write`</span>
-<span class="sd">            instead."""</span><span class="p">,</span>
+        <span class="n">_warn_external</span><span class="p">(</span>
+            <span class="s2">"`XDSLWriter.write_xdsl` is deprecated since v1.1.0 and will be removed in v2.0. "</span>
+            <span class="s2">"Use `XDSLWriter.write` instead."</span><span class="p">,</span>
             <span class="ne">FutureWarning</span><span class="p">,</span>
-            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
 </div>

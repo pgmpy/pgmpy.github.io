@@ -866,13 +866,11 @@
                   
   <h1>Source code for pgmpy.readwrite.NET</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Hashable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">prod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">string</span><span class="w"> </span><span class="kn">import</span> <span class="n">Template</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">pyparsing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -897,6 +895,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete.CPD</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compat_fns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 
 <div class="viewcode-block" id="NETWriter">
@@ -1112,7 +1111,7 @@
 
 <div class="viewcode-block" id="NETWriter.get_states">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.NETWriter.html#pgmpy.readwrite.NETWriter.get_states">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_states</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_states</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add states to variable of NET</span>
 
@@ -1120,6 +1119,11 @@
 <span class="sd">        -------</span>
 <span class="sd">        dict: dict of type {variable: a list of states}</span>
 
+<span class="sd">        Warns</span>
+<span class="sd">        -----</span>
+<span class="sd">        UserWarning</span>
+<span class="sd">            If a state name contains a comma and cannot be read back correctly</span>
+<span class="sd">            by pgmpy's NETReader.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1141,9 +1145,11 @@
             <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">cpd</span><span class="o">.</span><span class="n">state_names</span><span class="p">[</span><span class="n">variable</span><span class="p">]:</span>
                 <span class="n">state_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
                 <span class="k">if</span> <span class="s2">","</span> <span class="ow">in</span> <span class="n">state_str</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">"State name '</span><span class="si">{</span><span class="n">state_str</span><span class="si">}</span><span class="s2">' for variable '</span><span class="si">{</span><span class="n">variable</span><span class="si">}</span><span class="s2">' contains commas. "</span>
-                        <span class="s2">"This may cause issues when loading the file. Consider removing any special characters."</span>
+                    <span class="n">_warn_external</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"State name </span><span class="si">{</span><span class="n">state_str</span><span class="si">!r}</span><span class="s2"> for variable </span><span class="si">{</span><span class="n">variable</span><span class="si">!r}</span><span class="s2"> contains a comma "</span>
+                        <span class="s2">"and cannot be read back correctly by pgmpy's NETReader. "</span>
+                        <span class="s2">"Rename the state if pgmpy round-trip compatibility is required."</span><span class="p">,</span>
+                        <span class="ne">UserWarning</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="n">variable_states</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state_str</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">variable_states</span></div>
@@ -1203,10 +1209,10 @@
 <div class="viewcode-block" id="NETWriter.write_net">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.NETWriter.html#pgmpy.readwrite.NETWriter.write_net">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">write_net</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">"`NETWriter.write_net` is deprecated and will be removed in v2.0. Please use `NETWriter.write` instead."</span><span class="p">,</span>
+        <span class="n">_warn_external</span><span class="p">(</span>
+            <span class="s2">"`NETWriter.write_net` is deprecated since v1.1.0 and will be removed in v2.0. "</span>
+            <span class="s2">"Use `NETWriter.write` instead."</span><span class="p">,</span>
             <span class="ne">FutureWarning</span><span class="p">,</span>
-            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
 </div>

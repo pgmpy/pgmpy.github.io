@@ -867,17 +867,16 @@
   <h1>Source code for pgmpy.readwrite.XMLBIF</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">xml.etree.ElementTree</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">etree</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">BytesIO</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="kn">import</span> <span class="n">chain</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compat_fns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">pyparsing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pp</span>
@@ -1332,29 +1331,24 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_make_valid_state_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_name</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""Transform the input state_name into a valid state in XMLBIF.</span>
-<span class="sd">        XMLBIF states must start with a letter and only contain letters,</span>
-<span class="sd">        numbers and underscores.</span>
+<span class="w">        </span><span class="sd">"""Convert state_name to a string and replace special-character runs.</span>
+
+<span class="sd">        Runs of characters other than ASCII letters, digits, and underscores</span>
+<span class="sd">        are replaced with a single underscore.</span>
 <span class="sd">        """</span>
         <span class="n">s</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">state_name</span><span class="p">)</span>
-
-        <span class="c1"># Warn about commas in state names as they can cause issues when loading</span>
-        <span class="k">if</span> <span class="s2">","</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
-            <span class="n">var_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_name</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"variable_name"</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"unknown"</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"State name '</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">' for variable '</span><span class="si">{</span><span class="n">var_name</span><span class="si">}</span><span class="s2">' contains commas. "</span>
-                <span class="s2">"This may cause issues when loading the file. Consider removing any special characters."</span>
-            <span class="p">)</span>
-
-        <span class="c1"># Keep existing transformation logic</span>
         <span class="n">s_fixed</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">CharsNotIn</span><span class="p">(</span><span class="n">pp</span><span class="o">.</span><span class="n">alphanums</span> <span class="o">+</span> <span class="s2">"_"</span><span class="p">)</span><span class="o">.</span><span class="n">set_parse_action</span><span class="p">(</span><span class="n">pp</span><span class="o">.</span><span class="n">replace_with</span><span class="p">(</span><span class="s2">"_"</span><span class="p">))</span><span class="o">.</span><span class="n">transform_string</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">s_fixed</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">isalpha</span><span class="p">():</span>
             <span class="n">s_fixed</span> <span class="o">=</span> <span class="n">s_fixed</span>
 
         <span class="k">if</span> <span class="n">s</span> <span class="o">!=</span> <span class="n">s_fixed</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"State name '</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">' has been modified to '</span><span class="si">{</span><span class="n">s_fixed</span><span class="si">}</span><span class="s2">' to comply with XMLBIF format requirements. "</span>
-                <span class="s2">"XMLBIF states must start with a letter and only contain letters, numbers, and underscores."</span>  <span class="c1"># noqa: E501</span>
+            <span class="n">var_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"variable_name"</span><span class="p">,</span> <span class="s2">"unknown"</span><span class="p">)</span>
+            <span class="n">_warn_external</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"State name </span><span class="si">{</span><span class="n">s</span><span class="si">!r}</span><span class="s2"> for variable </span><span class="si">{</span><span class="n">var_name</span><span class="si">!r}</span><span class="s2"> was changed "</span>
+                <span class="sa">f</span><span class="s2">"to </span><span class="si">{</span><span class="n">s_fixed</span><span class="si">!r}</span><span class="s2"> for XMLBIF serialization. "</span>
+                <span class="s2">"pgmpy replaces characters other than ASCII letters, digits, "</span>
+                <span class="s2">"and underscores with underscores."</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">s_fixed</span>
 
@@ -1495,11 +1489,10 @@
 <div class="viewcode-block" id="XMLBIFWriter.write_xmlbif">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XMLBIFWriter.html#pgmpy.readwrite.XMLBIFWriter.write_xmlbif">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">write_xmlbif</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-<span class="w">            </span><span class="sd">"""`XMLBIFWriter.write_xmlbif` is deprecated and will be removed in v2.0. Please use `XMLBIFWriter.write`</span>
-<span class="sd">            instead."""</span><span class="p">,</span>
+        <span class="n">_warn_external</span><span class="p">(</span>
+            <span class="s2">"`XMLBIFWriter.write_xmlbif` is deprecated since v1.1.0 and will be removed in v2.0. "</span>
+            <span class="s2">"Use `XMLBIFWriter.write` instead."</span><span class="p">,</span>
             <span class="ne">FutureWarning</span><span class="p">,</span>
-            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
 </div>
