@@ -929,6 +929,9 @@
 <span class="sd">        Direction score for the second-column -&gt; first-column direction. The edge is oriented toward whichever</span>
 <span class="sd">        direction has the smaller score.</span>
 
+<span class="sd">    scoring_method_ : BaseBivariateScore or callable</span>
+<span class="sd">        The direction score used for learning, resolved from ``scoring_method``.</span>
+
 <span class="sd">    n_features_in_ : int</span>
 <span class="sd">        The number of features in the data used to learn the causal graph.</span>
 
@@ -969,6 +972,23 @@
 
 <span class="sd">    """</span>
 
+    <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"anm"</span><span class="p">,</span>
+        <span class="s2">"data_types"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"continuous"</span><span class="p">],</span>
+        <span class="s2">"identifiable_graph"</span><span class="p">:</span> <span class="s2">"dag"</span><span class="p">,</span>
+        <span class="s2">"requires_target"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"capability:multivariate"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"capability:expert_knowledge"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"assumption:causal_sufficiency"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"assumption:acyclicity"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"assumption:faithfulness"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:linearity"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:additive_noise"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"assumption:gaussian_noise"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:non_gaussian_noise"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:low_noise"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">}</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">regressor</span><span class="p">:</span> <span class="n">BaseEstimator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1008,9 +1028,9 @@
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">feature_names_in_</span>
 
         <span class="c1"># Step 1: Fit models in both directions and compute the residual-dependence scores.</span>
-        <span class="n">score_fn</span> <span class="o">=</span> <span class="n">get_bivariate_score</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s2">"anm"</span><span class="p">)</span>
-        <span class="n">forward_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_direction_score</span><span class="p">(</span><span class="n">cause</span><span class="o">=</span><span class="n">X</span><span class="p">[[</span><span class="n">x</span><span class="p">]],</span> <span class="n">effect</span><span class="o">=</span><span class="n">X</span><span class="p">[</span><span class="n">y</span><span class="p">],</span> <span class="n">score_fn</span><span class="o">=</span><span class="n">score_fn</span><span class="p">)</span>
-        <span class="n">backward_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_direction_score</span><span class="p">(</span><span class="n">cause</span><span class="o">=</span><span class="n">X</span><span class="p">[[</span><span class="n">y</span><span class="p">]],</span> <span class="n">effect</span><span class="o">=</span><span class="n">X</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">score_fn</span><span class="o">=</span><span class="n">score_fn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method_</span> <span class="o">=</span> <span class="n">get_bivariate_score</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">input_type</span><span class="o">=</span><span class="s2">"cause_residual"</span><span class="p">)</span>
+        <span class="n">forward_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_direction_score</span><span class="p">(</span><span class="n">cause</span><span class="o">=</span><span class="n">X</span><span class="p">[[</span><span class="n">x</span><span class="p">]],</span> <span class="n">effect</span><span class="o">=</span><span class="n">X</span><span class="p">[</span><span class="n">y</span><span class="p">],</span> <span class="n">score_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scoring_method_</span><span class="p">)</span>
+        <span class="n">backward_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_direction_score</span><span class="p">(</span><span class="n">cause</span><span class="o">=</span><span class="n">X</span><span class="p">[[</span><span class="n">y</span><span class="p">]],</span> <span class="n">effect</span><span class="o">=</span><span class="n">X</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">score_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scoring_method_</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">forward_score</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">backward_score</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"ANM scoring_method returned NaN; cannot determine a causal direction."</span><span class="p">)</span>

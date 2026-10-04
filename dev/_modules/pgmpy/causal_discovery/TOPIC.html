@@ -923,6 +923,9 @@
 <span class="sd">        The discovered topological order of the variables. The first element is the inferred root; for each edge</span>
 <span class="sd">        ``u -&gt; v`` in the learned graph, ``u`` appears before ``v`` in this list.</span>
 
+<span class="sd">    scoring_method_ : BaseStructureScore</span>
+<span class="sd">        The structure score used for learning, resolved from ``scoring_method``.</span>
+
 <span class="sd">    n_features_in_ : int</span>
 <span class="sd">        The number of features in the data used to learn the causal graph.</span>
 
@@ -952,6 +955,23 @@
 
 <span class="sd">    """</span>
 
+    <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"topic"</span><span class="p">,</span>
+        <span class="s2">"data_types"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"discrete"</span><span class="p">,</span> <span class="s2">"continuous"</span><span class="p">,</span> <span class="s2">"mixed"</span><span class="p">],</span>
+        <span class="s2">"identifiable_graph"</span><span class="p">:</span> <span class="s2">"cpdag"</span><span class="p">,</span>
+        <span class="s2">"requires_target"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"capability:multivariate"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"capability:expert_knowledge"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"assumption:causal_sufficiency"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"assumption:acyclicity"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"assumption:faithfulness"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"assumption:linearity"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:additive_noise"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:gaussian_noise"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:non_gaussian_noise"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:low_noise"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">}</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">scoring_method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">BaseStructureScore</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -973,7 +993,7 @@
 <span class="sd">            The input dataset.</span>
 <span class="sd">        """</span>
         <span class="c1"># Step 0: Initialize scoring method and data structures</span>
-        <span class="n">score</span> <span class="o">=</span> <span class="n">get_scoring_method</span><span class="p">(</span><span class="n">scoring_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method_</span> <span class="o">=</span> <span class="n">get_scoring_method</span><span class="p">(</span><span class="n">scoring_method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scoring_method</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
 
         <span class="n">dag_current</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">()</span>
         <span class="n">dag_current</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">columns</span><span class="p">))</span>
@@ -997,11 +1017,13 @@
             <span class="n">score_improvement</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">effect</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">candidates</span><span class="p">):</span>
                 <span class="n">base_parents</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dag_current</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">effect</span><span class="p">))</span>
-                <span class="n">old_score</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span><span class="n">effect</span><span class="p">,</span> <span class="n">base_parents</span><span class="p">)</span>
+                <span class="n">old_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method_</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span><span class="n">effect</span><span class="p">,</span> <span class="n">base_parents</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">cause</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">candidates</span><span class="p">):</span>
                     <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">j</span><span class="p">:</span>
                         <span class="k">continue</span>
-                    <span class="n">score_improvement</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span><span class="n">effect</span><span class="p">,</span> <span class="n">base_parents</span> <span class="o">+</span> <span class="p">(</span><span class="n">cause</span><span class="p">,))</span> <span class="o">-</span> <span class="n">old_score</span>
+                    <span class="n">score_improvement</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method_</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span><span class="n">effect</span><span class="p">,</span> <span class="n">base_parents</span> <span class="o">+</span> <span class="p">(</span><span class="n">cause</span><span class="p">,))</span> <span class="o">-</span> <span class="n">old_score</span>
+                    <span class="p">)</span>
 
             <span class="c1"># Step 1.1.2: Source is the candidate with the smallest maximum incoming improvement (i.e. the least</span>
             <span class="c1"># preferred sink).</span>
@@ -1017,7 +1039,9 @@
             <span class="c1"># Step 1.2: Add edges from the source to remaining candidates if they improve the score sufficiently.</span>
             <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
                 <span class="n">current_parents</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dag_current</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
-                <span class="n">gain</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">current_parents</span> <span class="o">+</span> <span class="p">(</span><span class="n">source</span><span class="p">,))</span> <span class="o">-</span> <span class="n">score</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">current_parents</span><span class="p">)</span>
+                <span class="n">gain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method_</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span>
+                    <span class="n">node</span><span class="p">,</span> <span class="n">current_parents</span> <span class="o">+</span> <span class="p">(</span><span class="n">source</span><span class="p">,)</span>
+                <span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method_</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">current_parents</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">gain</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_improvement</span><span class="p">:</span>
                     <span class="n">dag_current</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
 
@@ -1025,12 +1049,12 @@
             <span class="c1"># score, using min_improvement as the tolerance (symmetric with the edge-addition threshold above).</span>
             <span class="n">current_parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dag_current</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">source</span><span class="p">))</span>
             <span class="k">while</span> <span class="n">current_parents</span><span class="p">:</span>
-                <span class="n">old_score</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">current_parents</span><span class="p">))</span>
+                <span class="n">old_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method_</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">current_parents</span><span class="p">))</span>
                 <span class="n">best_parent</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="n">best_harm</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"-inf"</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="n">current_parents</span><span class="p">:</span>
                     <span class="n">new_parents</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">current_parents</span> <span class="k">if</span> <span class="n">p</span> <span class="o">!=</span> <span class="n">parent</span><span class="p">)</span>
-                    <span class="n">harm</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">new_parents</span><span class="p">)</span> <span class="o">-</span> <span class="n">old_score</span>
+                    <span class="n">harm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scoring_method_</span><span class="o">.</span><span class="n">local_score</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">new_parents</span><span class="p">)</span> <span class="o">-</span> <span class="n">old_score</span>
                     <span class="k">if</span> <span class="n">harm</span> <span class="o">&gt;=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">min_improvement</span> <span class="ow">and</span> <span class="n">harm</span> <span class="o">&gt;</span> <span class="n">best_harm</span><span class="p">:</span>
                         <span class="n">best_harm</span> <span class="o">=</span> <span class="n">harm</span>
                         <span class="n">best_parent</span> <span class="o">=</span> <span class="n">parent</span>

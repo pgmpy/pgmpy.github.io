@@ -873,7 +873,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDAG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExpertKnowledge</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.causal_discovery._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCausalDiscovery</span><span class="p">,</span> <span class="n">_ConstraintMixin</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.ci_tests</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_ci_test</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.ci_tests</span><span class="w"> </span><span class="kn">import</span> <span class="n">IndependenceMatch</span><span class="p">,</span> <span class="n">get_ci_test</span>
 
 
 <div class="viewcode-block" id="PC">
@@ -972,6 +972,10 @@
 <span class="sd">            separating set ("witnessing set") of variables that makes them</span>
 <span class="sd">            conditionally independent. (needed for edge orientation procedures)</span>
 
+<span class="sd">    ci_test_ : BaseCITest or callable</span>
+<span class="sd">        The CI test used for learning, resolved from ``ci_test``. If ``independencies`` are passed to ``fit``, an</span>
+<span class="sd">        :class:`~pgmpy.ci_tests.IndependenceMatch` over them instead.</span>
+
 <span class="sd">    n_features_in_ : int</span>
 <span class="sd">        The number of features in the data used to learn the causal graph.</span>
 
@@ -1008,6 +1012,23 @@
 <span class="sd">    - :footcite:t:`meek_1995`</span>
 <span class="sd">    - :footcite:t:`ramsey_2016`</span>
 <span class="sd">    """</span>
+
+    <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"pc"</span><span class="p">,</span>
+        <span class="s2">"data_types"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"discrete"</span><span class="p">,</span> <span class="s2">"continuous"</span><span class="p">,</span> <span class="s2">"mixed"</span><span class="p">],</span>
+        <span class="s2">"identifiable_graph"</span><span class="p">:</span> <span class="s2">"cpdag"</span><span class="p">,</span>
+        <span class="s2">"requires_target"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"capability:multivariate"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"capability:expert_knowledge"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"forbidden_edges"</span><span class="p">,</span> <span class="s2">"required_edges"</span><span class="p">,</span> <span class="s2">"search_space"</span><span class="p">,</span> <span class="s2">"temporal_order"</span><span class="p">],</span>
+        <span class="s2">"assumption:causal_sufficiency"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"assumption:acyclicity"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"assumption:faithfulness"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"assumption:linearity"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:additive_noise"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:gaussian_noise"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:non_gaussian_noise"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"assumption:low_noise"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1048,7 +1069,10 @@
 <span class="sd">        """</span>
 
         <span class="c1"># CI test</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ci_test_</span> <span class="o">=</span> <span class="n">get_ci_test</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ci_test</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">independencies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ci_test_</span> <span class="o">=</span> <span class="n">IndependenceMatch</span><span class="p">(</span><span class="n">independencies</span><span class="o">=</span><span class="n">independencies</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ci_test_</span> <span class="o">=</span> <span class="n">get_ci_test</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ci_test</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
 
         <span class="c1"># Check if expert knowledge was specified</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">expert_knowledge</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1063,7 +1087,6 @@
         <span class="c1"># Step 1: Build the skeleton</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">skeleton_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">separating_sets_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_skeleton</span><span class="p">(</span>
             <span class="n">data</span><span class="o">=</span><span class="n">X</span><span class="p">,</span>
-            <span class="n">independencies</span><span class="o">=</span><span class="n">independencies</span><span class="p">,</span>
             <span class="n">variant</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">variant</span><span class="p">,</span>
             <span class="n">ci_test</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ci_test_</span><span class="p">,</span>
             <span class="n">significance_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">significance_level</span><span class="p">,</span>
@@ -1165,7 +1188,6 @@
                     <span class="k">if</span> <span class="n">Z</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sepset</span><span class="p">:</span>
                         <span class="n">colliders</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">ci_test</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ci_test_</span>
             <span class="n">significance_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">significance_level</span>
             <span class="n">max_cond_vars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_cond_vars</span>
 
@@ -1188,8 +1210,8 @@
                 <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">potential</span><span class="p">),</span> <span class="n">max_cond_vars</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
                     <span class="k">for</span> <span class="n">subset</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">potential</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
-                        <span class="n">ci_test</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">subset</span><span class="p">),</span> <span class="n">significance_level</span><span class="o">=</span><span class="n">significance_level</span><span class="p">)</span>
-                        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">subset</span><span class="p">,</span> <span class="n">ci_test</span><span class="o">.</span><span class="n">p_value_</span><span class="p">,</span> <span class="n">ci_test</span><span class="o">.</span><span class="n">effect_size_</span><span class="p">))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">ci_test_</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">subset</span><span class="p">),</span> <span class="n">significance_level</span><span class="o">=</span><span class="n">significance_level</span><span class="p">)</span>
+                        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">subset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ci_test_</span><span class="o">.</span><span class="n">p_value_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ci_test_</span><span class="o">.</span><span class="n">effect_size_</span><span class="p">))</span>
 
                 <span class="k">for</span> <span class="n">Z</span> <span class="ow">in</span> <span class="n">common_neighbors</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">orient_rule</span> <span class="o">==</span> <span class="s2">"pvalue"</span><span class="p">:</span>

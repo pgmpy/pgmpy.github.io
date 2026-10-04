@@ -872,7 +872,22 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseSupervisedMetric</span><span class="p">(</span><span class="n">BaseObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Base class for all metric classes in pgmpy that require ground truth causal graph.</span>
+
+<span class="sd">    Every supervised metric sets all of the tags listed by ``pgmpy.registry.all_tags("supervised_metric")``. See</span>
+<span class="sd">    :doc:`/api/tags` for what each tag means.</span>
 <span class="sd">    """</span>
+
+    <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"object_type"</span><span class="p">:</span> <span class="s2">"supervised_metric"</span><span class="p">,</span>
+        <span class="s2">"name"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"default_for"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"requires_data"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"is_symmetric"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"requires_true_graph"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"supported_graph_types"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"output_type"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"lower_is_better"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">true_causal_graph</span><span class="p">,</span> <span class="n">est_causal_graph</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -886,17 +901,16 @@
 <span class="sd">        est_causal_graph: Instance of type pgmpy.base</span>
 <span class="sd">            The estimated causal graph.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_causal_graph</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tags</span><span class="p">[</span><span class="s2">"supported_graph_types"</span><span class="p">]):</span>
+        <span class="n">supported_graph_types</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_tag</span><span class="p">(</span><span class="s2">"supported_graph_types"</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">true_causal_graph</span><span class="p">,</span> <span class="n">supported_graph_types</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"The true_causal_graph must be one of the following types: "</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tags</span><span class="p">[</span><span class="s1">'supported_graph_types'</span><span class="p">]</span><span class="si">}</span><span class="s2">, "</span>
+                <span class="sa">f</span><span class="s2">"The true_causal_graph must be one of the following types: </span><span class="si">{</span><span class="n">supported_graph_types</span><span class="si">}</span><span class="s2">, "</span>
                 <span class="sa">f</span><span class="s2">"but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">true_causal_graph</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead."</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">est_causal_graph</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tags</span><span class="p">[</span><span class="s2">"supported_graph_types"</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">est_causal_graph</span><span class="p">,</span> <span class="n">supported_graph_types</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"The est_causal_graph must be one of the following types: "</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tags</span><span class="p">[</span><span class="s1">'supported_graph_types'</span><span class="p">]</span><span class="si">}</span><span class="s2">, "</span>
+                <span class="sa">f</span><span class="s2">"The est_causal_graph must be one of the following types: </span><span class="si">{</span><span class="n">supported_graph_types</span><span class="si">}</span><span class="s2">, "</span>
                 <span class="sa">f</span><span class="s2">"but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">est_causal_graph</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead."</span>
             <span class="p">)</span>
 
@@ -920,7 +934,21 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseUnsupervisedMetric</span><span class="p">(</span><span class="n">BaseObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Base class for all metric classes in pgmpy that do not require ground truth causal graph.</span>
+
+<span class="sd">    Every unsupervised metric sets all of the tags listed by ``pgmpy.registry.all_tags("unsupervised_metric")``. See</span>
+<span class="sd">    :doc:`/api/tags` for what each tag means.</span>
 <span class="sd">    """</span>
+
+    <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"object_type"</span><span class="p">:</span> <span class="s2">"unsupervised_metric"</span><span class="p">,</span>
+        <span class="s2">"name"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"default_for"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"requires_data"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"requires_true_graph"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"supported_graph_types"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"output_type"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"lower_is_better"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">causal_graph</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -934,10 +962,10 @@
 <span class="sd">        causal_graph: Instance of type pgmpy.base</span>
 <span class="sd">            The causal graph to be evaluated.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">causal_graph</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tags</span><span class="p">[</span><span class="s2">"supported_graph_types"</span><span class="p">]):</span>
+        <span class="n">supported_graph_types</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_tag</span><span class="p">(</span><span class="s2">"supported_graph_types"</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">causal_graph</span><span class="p">,</span> <span class="n">supported_graph_types</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"The causal_graph must be one of the following types: "</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tags</span><span class="p">[</span><span class="s1">'supported_graph_types'</span><span class="p">]</span><span class="si">}</span><span class="s2">, "</span>
+                <span class="sa">f</span><span class="s2">"The causal_graph must be one of the following types: </span><span class="si">{</span><span class="n">supported_graph_types</span><span class="si">}</span><span class="s2">, "</span>
                 <span class="sa">f</span><span class="s2">"but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">causal_graph</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead."</span>
             <span class="p">)</span>
 
@@ -955,34 +983,73 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">causal_graph</span><span class="o">=</span><span class="n">causal_graph</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="get_metrics">
-<a class="viewcode-back" href="../../../api/generated/metrics/pgmpy.metrics.get_metrics.html#pgmpy.metrics.get_metrics">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_metrics</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="get_metric">
+<a class="viewcode-back" href="../../../api/generated/metrics/pgmpy.metrics.get_metric.html#pgmpy.metrics.get_metric">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_metric</span><span class="p">(</span>
+    <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">BaseSupervisedMetric</span> <span class="o">|</span> <span class="n">BaseUnsupervisedMetric</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">requires_true_graph</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseSupervisedMetric</span> <span class="o">|</span> <span class="n">BaseUnsupervisedMetric</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Get metric classes matching the given tag filters.</span>
+<span class="sd">    Return a metric instance given a metric name, instance, or the kind of metric needed.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    **kwargs</span>
-<span class="sd">        Keyword arguments specifying tag filters to be passed to</span>
-<span class="sd">        :func:`skbase.lookup.all_objects` via its ``filter_tags`` parameter.</span>
+<span class="sd">    metric : str, BaseSupervisedMetric, BaseUnsupervisedMetric, or None, default=None</span>
+<span class="sd">        The metric to return. A string selects the metric whose ``name`` tag matches (case-insensitive), instantiated</span>
+<span class="sd">        with default parameters. A metric instance is returned unchanged. If ``None``, the default metric for</span>
+<span class="sd">        ``requires_true_graph`` is returned.</span>
+
+<span class="sd">    requires_true_graph : bool or None, default=None</span>
+<span class="sd">        Whether the metric must compare against a true graph (``True``) or against data (``False``). Used to select</span>
+<span class="sd">        the default metric when ``metric`` is ``None``, and to check the kind of the returned metric otherwise. If</span>
+<span class="sd">        ``None``, the kind isn't checked.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    Type[BaseObject] or list[Type[BaseObject]]</span>
-<span class="sd">        Metric class(es) corresponding to the given tag filters.</span>
+<span class="sd">    BaseSupervisedMetric or BaseUnsupervisedMetric</span>
+<span class="sd">        A metric instance ready to call.</span>
 
 <span class="sd">    Raises</span>
 <span class="sd">    ------</span>
 <span class="sd">    ValueError</span>
-<span class="sd">        If no metric class matching the given tag filters is found.</span>
+<span class="sd">        If ``metric`` is an unknown name or not a string, metric instance, or ``None``; if both ``metric`` and</span>
+<span class="sd">        ``requires_true_graph`` are ``None``; or if the metric's kind doesn't match ``requires_true_graph``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from pgmpy.metrics import get_metric</span>
+<span class="sd">    &gt;&gt;&gt; get_metric("SHD")</span>
+<span class="sd">    SHD()</span>
+<span class="sd">    &gt;&gt;&gt; get_metric(requires_true_graph=False)</span>
+<span class="sd">    CorrelationScore()</span>
 <span class="sd">    """</span>
-    <span class="k">return</span> <span class="n">all_objects</span><span class="p">(</span>
-        <span class="n">object_types</span><span class="o">=</span><span class="p">[</span><span class="n">BaseSupervisedMetric</span><span class="p">,</span> <span class="n">BaseUnsupervisedMetric</span><span class="p">],</span>
-        <span class="n">package_name</span><span class="o">=</span><span class="s2">"pgmpy.metrics"</span><span class="p">,</span>
-        <span class="n">return_names</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">filter_tags</span><span class="o">=</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span></div>
+    <span class="k">if</span> <span class="n">metric</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">metric</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">requires_true_graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot select a default metric: both `metric` and `requires_true_graph` are None."</span><span class="p">)</span>
+            <span class="n">filter_tags</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"default_for"</span><span class="p">:</span> <span class="s2">"supervised"</span> <span class="k">if</span> <span class="n">requires_true_graph</span> <span class="k">else</span> <span class="s2">"unsupervised"</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filter_tags</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">metric</span><span class="o">.</span><span class="n">lower</span><span class="p">()}</span>
+
+        <span class="n">metric_classes</span> <span class="o">=</span> <span class="n">all_objects</span><span class="p">(</span>
+            <span class="n">object_types</span><span class="o">=</span><span class="p">[</span><span class="n">BaseSupervisedMetric</span><span class="p">,</span> <span class="n">BaseUnsupervisedMetric</span><span class="p">],</span>
+            <span class="n">package_name</span><span class="o">=</span><span class="s2">"pgmpy.metrics"</span><span class="p">,</span>
+            <span class="n">return_names</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">filter_tags</span><span class="o">=</span><span class="n">filter_tags</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">metric_classes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown metric: </span><span class="si">{</span><span class="n">metric</span><span class="si">!r}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="n">metric</span> <span class="o">=</span> <span class="n">metric_classes</span><span class="p">[</span><span class="mi">0</span><span class="p">]()</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="p">(</span><span class="n">BaseSupervisedMetric</span><span class="p">,</span> <span class="n">BaseUnsupervisedMetric</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid `metric` argument: </span><span class="si">{</span><span class="n">metric</span><span class="si">!r}</span><span class="s2">. Pass a metric name, a metric instance, or None."</span><span class="p">)</span>
+
+    <span class="n">compares_against</span> <span class="o">=</span> <span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s2">"a true graph"</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s2">"data"</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">requires_true_graph</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">metric</span><span class="o">.</span><span class="n">get_tag</span><span class="p">(</span><span class="s2">"requires_true_graph"</span><span class="p">)</span> <span class="o">!=</span> <span class="n">requires_true_graph</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Metric </span><span class="si">{</span><span class="n">metric</span><span class="o">.</span><span class="n">get_tag</span><span class="p">(</span><span class="s1">'name'</span><span class="p">)</span><span class="si">!r}</span><span class="s2"> compares against </span><span class="si">{</span><span class="n">compares_against</span><span class="p">[</span><span class="ow">not</span><span class="w"> </span><span class="n">requires_true_graph</span><span class="p">]</span><span class="si">}</span><span class="s2">, but a "</span>
+            <span class="sa">f</span><span class="s2">"metric that compares against </span><span class="si">{</span><span class="n">compares_against</span><span class="p">[</span><span class="n">requires_true_graph</span><span class="p">]</span><span class="si">}</span><span class="s2"> is required."</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">metric</span></div>
 
 </pre></div>
 
