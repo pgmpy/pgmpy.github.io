@@ -874,13 +874,14 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.readwrite._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseReader</span><span class="p">,</span> <span class="n">BaseWriter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compat_fns</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 
 <div class="viewcode-block" id="XDSLReader">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XDSLReader.html#pgmpy.readwrite.XDSLReader">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">XDSLReader</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">XDSLReader</span><span class="p">(</span><span class="n">BaseReader</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initializes the reader object for XDSL file formats[1] created through GeNIe[2].</span>
 <span class="sd">    Note that XDSLReader only supports cpt blocks from the XDSL file format; elements like</span>
@@ -894,6 +895,9 @@
 <span class="sd">    string : str</span>
 <span class="sd">        A string containing the XDSL file content.</span>
 
+<span class="sd">    state_name_type: int, str or bool (default: str)</span>
+<span class="sd">        The data type to which to convert the state names of the variables.</span>
+
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.readwrite import XDSLReader, XDSLWriter</span>
@@ -901,7 +905,7 @@
 <span class="sd">    &gt;&gt;&gt; asia = load_model("bnlearn/asia")</span>
 <span class="sd">    &gt;&gt;&gt; XDSLWriter(asia).write("asia_test.xdsl")</span>
 <span class="sd">    &gt;&gt;&gt; reader = XDSLReader("asia_test.xdsl")</span>
-<span class="sd">    &gt;&gt;&gt; model = reader.get_model()</span>
+<span class="sd">    &gt;&gt;&gt; model = reader.read()</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -909,13 +913,16 @@
 <span class="sd">    - :footcite:t:`bayesfusion_genie`</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+    <span class="n">format_name</span> <span class="o">=</span> <span class="s2">"xdsl"</span>
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"xdsl"</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_name_type</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="n">string</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">ElementTree</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="n">string</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Must specify either path or string"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_name_type</span> <span class="o">=</span> <span class="n">state_name_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">network_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cpt_elements</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"nodes"</span><span class="p">)</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">"cpt"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_variables</span><span class="p">()</span>
@@ -1052,16 +1059,11 @@
         <span class="k">return</span> <span class="n">variable_CPD</span></div>
 
 
-<div class="viewcode-block" id="XDSLReader.get_model">
-<a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XDSLReader.html#pgmpy.readwrite.XDSLReader.get_model">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_name_type</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+<div class="viewcode-block" id="XDSLReader.read">
+<a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XDSLReader.html#pgmpy.readwrite.XDSLReader.read">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns a Bayesian Network instance from the file/string.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        state_name_type: int, str, or bool (default: str)</span>
-<span class="sd">            The data type to which to convert the state names of the variables.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1073,8 +1075,9 @@
 <span class="sd">        &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
 <span class="sd">        &gt;&gt;&gt; XDSLWriter(load_model("bnlearn/asia")).write("asia_test.xdsl")</span>
 <span class="sd">        &gt;&gt;&gt; reader = XDSLReader("asia_test.xdsl")</span>
-<span class="sd">        &gt;&gt;&gt; model = reader.get_model()</span>
+<span class="sd">        &gt;&gt;&gt; model = reader.read()</span>
 <span class="sd">        """</span>
+        <span class="n">state_name_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_name_type</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">()</span>
         <span class="n">model</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">)</span>
         <span class="n">model</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edge_list</span><span class="p">)</span>
@@ -1105,7 +1108,7 @@
 
 <div class="viewcode-block" id="XDSLWriter">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XDSLWriter.html#pgmpy.readwrite.XDSLWriter">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">XDSLWriter</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">XDSLWriter</span><span class="p">(</span><span class="n">BaseWriter</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initialise a XDSL writer object to export pgmpy models to XDSL file format[1] used by GeNIe[2].</span>
 
@@ -1140,6 +1143,10 @@
 <span class="sd">    - :footcite:t:`bayesfusion_genie`</span>
 <span class="sd">    """</span>
 
+    <span class="n">format_name</span> <span class="o">=</span> <span class="s2">"xdsl"</span>
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"xdsl"</span><span class="p">]</span>
+    <span class="n">supported_models</span> <span class="o">=</span> <span class="p">(</span><span class="n">DiscreteBayesianNetwork</span><span class="p">,)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">model</span><span class="p">,</span>
@@ -1148,9 +1155,7 @@
         <span class="n">disc_samples</span><span class="o">=</span><span class="s2">"0"</span><span class="p">,</span>
         <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">,</span>
     <span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"model must an instance of DiscreteBayesianNetwork"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">encoding</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">network_id</span> <span class="o">=</span> <span class="n">network_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">Element</span><span class="p">(</span>
@@ -1316,9 +1321,20 @@
                 <span class="p">{</span><span class="s2">"active"</span><span class="p">:</span> <span class="s2">"true"</span><span class="p">,</span> <span class="s2">"width"</span><span class="p">:</span> <span class="s2">"128"</span><span class="p">,</span> <span class="s2">"height"</span><span class="p">:</span> <span class="s2">"128"</span><span class="p">},</span>
             <span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_to_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">xml_str</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="n">parseString</span><span class="p">(</span><span class="n">xml_str</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parsed</span><span class="o">.</span><span class="n">toprettyxml</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="s2">"    "</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Return the XDSL as string.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_bytes</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+
 <div class="viewcode-block" id="XDSLWriter.write">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XDSLWriter.html#pgmpy.readwrite.XDSLWriter.write">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Write the xdsl data into the file.</span>
 
@@ -1334,13 +1350,8 @@
 <span class="sd">        &gt;&gt;&gt; writer = XDSLWriter(model)</span>
 <span class="sd">        &gt;&gt;&gt; writer.write("asia.xdsl")</span>
 <span class="sd">        """</span>
-        <span class="n">xml_str</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
-        <span class="n">parsed</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="n">parseString</span><span class="p">(</span><span class="n">xml_str</span><span class="p">)</span>
-        <span class="n">pretty_xml_str</span> <span class="o">=</span> <span class="n">parsed</span><span class="o">.</span><span class="n">toprettyxml</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="s2">"    "</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pretty_xml_str</span><span class="p">)</span></div>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_bytes</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="XDSLWriter.write_xdsl">

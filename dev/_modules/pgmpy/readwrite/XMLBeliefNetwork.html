@@ -871,12 +871,13 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.readwrite._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseReader</span><span class="p">,</span> <span class="n">BaseWriter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 
 <div class="viewcode-block" id="XBNReader">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XBNReader.html#pgmpy.readwrite.XBNReader">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">XBNReader</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">XBNReader</span><span class="p">(</span><span class="n">BaseReader</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initializer for XBNReader class.</span>
 
@@ -902,13 +903,15 @@
 <span class="sd">    - :footcite:t:`msr_xmlbn`</span>
 <span class="sd">    """</span>
 
+    <span class="n">format_name</span> <span class="o">=</span> <span class="s2">"xbn"</span>
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"xbn"</span><span class="p">]</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="n">string</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="n">string</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Must specify either path or string"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">bnmodel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"BNMODEL"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">analysisnotebook</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_analysisnotebook_values</span><span class="p">()</span>
@@ -1105,9 +1108,9 @@
         <span class="k">return</span> <span class="n">distribution</span></div>
 
 
-<div class="viewcode-block" id="XBNReader.get_model">
-<a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XBNReader.html#pgmpy.readwrite.XBNReader.get_model">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="XBNReader.read">
+<a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XBNReader.html#pgmpy.readwrite.XBNReader.read">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns an instance of Bayesian Model.</span>
 <span class="sd">        """</span>
@@ -1136,7 +1139,7 @@
 
 <div class="viewcode-block" id="XBNWriter">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.XBNWriter.html#pgmpy.readwrite.XBNWriter">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">XBNWriter</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">XBNWriter</span><span class="p">(</span><span class="n">BaseWriter</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initializer for XBNWriter class</span>
 
@@ -1161,10 +1164,12 @@
 <span class="sd">    &gt;&gt;&gt; writer = XBNWriter(asia)</span>
 <span class="sd">    """</span>
 
+    <span class="n">format_name</span> <span class="o">=</span> <span class="s2">"xbn"</span>
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"xbn"</span><span class="p">]</span>
+    <span class="n">supported_models</span> <span class="o">=</span> <span class="p">(</span><span class="n">DiscreteBayesianNetwork</span><span class="p">,)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="n">prettyprint</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Model must be an instance of Bayesian Model."</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">encoding</span> <span class="o">=</span> <span class="n">encoding</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prettyprint</span> <span class="o">=</span> <span class="n">prettyprint</span>
@@ -1182,6 +1187,9 @@
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return the XML as string.</span>
 <span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_bytes</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_to_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prettyprint</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">indent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">etree</span><span class="o">.</span><span class="n">tostring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">encoding</span><span class="p">)</span>
@@ -1423,9 +1431,8 @@
 <span class="sd">        &gt;&gt;&gt; writer = XBNWriter(asia)</span>
 <span class="sd">        &gt;&gt;&gt; writer.write(filename="asia.xbn")</span>
 <span class="sd">        """</span>
-        <span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
-            <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span></div>
+            <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_to_bytes</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="XBNWriter.write_xbn">

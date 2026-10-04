@@ -891,13 +891,14 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.readwrite._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseReader</span><span class="p">,</span> <span class="n">BaseWriter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compat_fns</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 
 <div class="viewcode-block" id="BIFReader">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.BIFReader.html#pgmpy.readwrite.BIFReader">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">BIFReader</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BIFReader</span><span class="p">(</span><span class="n">BaseReader</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initializes a BIFReader object.</span>
 
@@ -911,6 +912,9 @@
 
 <span class="sd">    include_properties: boolean</span>
 <span class="sd">        If True, gets the properties tag from the file and stores in graph properties.</span>
+
+<span class="sd">    state_name_type: int, str or bool (default: str)</span>
+<span class="sd">        The data type to which to convert the state names of the variables.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
@@ -928,18 +932,19 @@
 <span class="sd">    - :footcite:t:`hulten_domingos_bif`</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_properties</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+    <span class="n">format_name</span> <span class="o">=</span> <span class="s2">"bif"</span>
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"bif"</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_properties</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">state_name_type</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="n">string</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">network</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-
-        <span class="k">elif</span> <span class="n">string</span><span class="p">:</span>
+        <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">string</span>
 
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Must specify either path or string"</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">include_properties</span> <span class="o">=</span> <span class="n">include_properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_name_type</span> <span class="o">=</span> <span class="n">state_name_type</span>
 
         <span class="k">if</span> <span class="s2">"/*"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="ow">or</span> <span class="s2">"//"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="p">:</span>
             <span class="c1"># removing comments from the file</span>
@@ -1124,16 +1129,11 @@
         <span class="k">return</span> <span class="n">probability_expr</span><span class="p">,</span> <span class="n">cpd_expr</span></div>
 
 
-<div class="viewcode-block" id="BIFReader.get_model">
-<a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.BIFReader.html#pgmpy.readwrite.BIFReader.get_model">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_name_type</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+<div class="viewcode-block" id="BIFReader.read">
+<a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.BIFReader.html#pgmpy.readwrite.BIFReader.read">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns the Bayesian Model read from the file/str.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        state_name_type: int, str or bool (default: str)</span>
-<span class="sd">            The data type to which to convert the state names of the variables.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1143,9 +1143,10 @@
 <span class="sd">        &gt;&gt;&gt; writer = BIFWriter(asia)</span>
 <span class="sd">        &gt;&gt;&gt; bif_str = str(writer)</span>
 <span class="sd">        &gt;&gt;&gt; reader = BIFReader(string=bif_str)</span>
-<span class="sd">        &gt;&gt;&gt; reader.get_model() # doctest: +ELLIPSIS</span>
+<span class="sd">        &gt;&gt;&gt; reader.read() # doctest: +ELLIPSIS</span>
 <span class="sd">        &lt;pgmpy.models.DiscreteBayesianNetwork.DiscreteBayesianNetwork object at 0x...&gt;</span>
 <span class="sd">        """</span>
+        <span class="n">state_name_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_name_type</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">()</span>
         <span class="n">model</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_names</span><span class="p">)</span>
         <span class="n">model</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_edges</span><span class="p">)</span>
@@ -1183,7 +1184,7 @@
 
 <div class="viewcode-block" id="BIFWriter">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.BIFWriter.html#pgmpy.readwrite.BIFWriter">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">BIFWriter</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BIFWriter</span><span class="p">(</span><span class="n">BaseWriter</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initialise a BIFWriter Object</span>
 
@@ -1205,10 +1206,12 @@
 <span class="sd">    &gt;&gt;&gt; writer.write("asia.bif")</span>
 <span class="sd">    """</span>
 
+    <span class="n">format_name</span> <span class="o">=</span> <span class="s2">"bif"</span>
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"bif"</span><span class="p">]</span>
+    <span class="n">supported_models</span> <span class="o">=</span> <span class="p">(</span><span class="n">DiscreteBayesianNetwork</span><span class="p">,)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">round_values</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"model must be an instance of DiscreteBayesianNetwork"</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">round_values</span> <span class="o">=</span> <span class="n">round_values</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">network_name</span> <span class="o">=</span> <span class="s2">"unknown"</span>
@@ -1491,29 +1494,6 @@
         <span class="k">for</span> <span class="n">cpd</span> <span class="ow">in</span> <span class="n">cpds</span><span class="p">:</span>
             <span class="n">tables</span><span class="p">[</span><span class="n">cpd</span><span class="o">.</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">cpd</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">decimals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">round_values</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">tables</span></div>
-
-
-<div class="viewcode-block" id="BIFWriter.write">
-<a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.BIFWriter.html#pgmpy.readwrite.BIFWriter.write">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Writes the BIF data into a file</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        filename : Name of the file</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.readwrite import BIFReader, BIFWriter</span>
-<span class="sd">        &gt;&gt;&gt; asia = load_model("bnlearn/asia")</span>
-<span class="sd">        &gt;&gt;&gt; writer = BIFWriter(asia)</span>
-<span class="sd">        &gt;&gt;&gt; writer.write(filename="asia.bif")</span>
-<span class="sd">        """</span>
-        <span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
-            <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BIFWriter.write_bif">

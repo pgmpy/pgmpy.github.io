@@ -893,13 +893,14 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete.CPD</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.readwrite._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseReader</span><span class="p">,</span> <span class="n">BaseWriter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compat_fns</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 
 <div class="viewcode-block" id="NETWriter">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.NETWriter.html#pgmpy.readwrite.NETWriter">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">NETWriter</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NETWriter</span><span class="p">(</span><span class="n">BaseWriter</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Base class for writing network file in net format</span>
 
@@ -922,11 +923,12 @@
 <span class="sd">    - :footcite:t:`hugin_format`</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"model must be an instance of DiscreteBayesianNetwork"</span><span class="p">)</span>
+    <span class="n">format_name</span> <span class="o">=</span> <span class="s2">"net"</span>
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"net"</span><span class="p">]</span>
+    <span class="n">supported_models</span> <span class="o">=</span> <span class="p">(</span><span class="n">DiscreteBayesianNetwork</span><span class="p">,)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">network_name</span> <span class="o">=</span> <span class="s2">"unknown"</span>
@@ -1182,29 +1184,6 @@
         <span class="k">return</span> <span class="n">variable_parents</span></div>
 
 
-<div class="viewcode-block" id="NETWriter.write">
-<a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.NETWriter.html#pgmpy.readwrite.NETWriter.write">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Writes the NET data into a file</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        filename : Name of the file</span>
-
-<span class="sd">        Examples</span>
-<span class="sd">        --------</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
-<span class="sd">        &gt;&gt;&gt; from pgmpy.readwrite import NETWriter</span>
-<span class="sd">        &gt;&gt;&gt; asia = load_model("bnlearn/asia")</span>
-<span class="sd">        &gt;&gt;&gt; writer = NETWriter(asia)</span>
-<span class="sd">        &gt;&gt;&gt; writer.write(filename="asia.net")</span>
-<span class="sd">        """</span>
-        <span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fout</span><span class="p">:</span>
-            <span class="n">fout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span></div>
-
-
 <div class="viewcode-block" id="NETWriter.write_net">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.NETWriter.html#pgmpy.readwrite.NETWriter.write_net">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">write_net</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
@@ -1220,7 +1199,7 @@
 
 <div class="viewcode-block" id="NETReader">
 <a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.NETReader.html#pgmpy.readwrite.NETReader">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">NETReader</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NETReader</span><span class="p">(</span><span class="n">BaseReader</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initializes a NETReader object.</span>
 
@@ -1238,6 +1217,9 @@
 <span class="sd">    defaultname: int (default: "bn_model")</span>
 <span class="sd">        Default name for the network if a network name is not available in the net file.</span>
 
+<span class="sd">    state_name_type: int, str or bool (default: str)</span>
+<span class="sd">        The data type to which to convert the state names of the variables.</span>
+
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    # asia.net file is present at</span>
@@ -1250,21 +1232,22 @@
 <span class="sd">    &gt;&gt;&gt; reader = NETReader("asia.net")</span>
 <span class="sd">    &gt;&gt;&gt; reader # doctest: +ELLIPSIS</span>
 <span class="sd">    &lt;pgmpy.readwrite.NET.NETReader object at 0x...&gt;</span>
-<span class="sd">    &gt;&gt;&gt; model = reader.get_model()</span>
+<span class="sd">    &gt;&gt;&gt; model = reader.read()</span>
 <span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_properties</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">defaultName</span><span class="o">=</span><span class="s2">"bn_model"</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+    <span class="n">format_name</span> <span class="o">=</span> <span class="s2">"net"</span>
+    <span class="n">file_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"net"</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_properties</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">defaultName</span><span class="o">=</span><span class="s2">"bn_model"</span><span class="p">,</span> <span class="n">state_name_type</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="n">string</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">network</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-
-        <span class="k">elif</span> <span class="n">string</span><span class="p">:</span>
+        <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">string</span>
 
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Must specify either path or string"</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">include_properties</span> <span class="o">=</span> <span class="n">include_properties</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_name_type</span> <span class="o">=</span> <span class="n">state_name_type</span>
 
         <span class="k">if</span> <span class="s2">"/*"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="ow">or</span> <span class="s2">"//"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">cppStyleComment</span><span class="o">.</span><span class="n">suppress</span><span class="p">()</span><span class="o">.</span><span class="n">transform_string</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">network</span><span class="p">)</span>  <span class="c1"># removing comments from the file</span>
@@ -1582,16 +1565,11 @@
         <span class="k">return</span> <span class="n">edges</span></div>
 
 
-<div class="viewcode-block" id="NETReader.get_model">
-<a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.NETReader.html#pgmpy.readwrite.NETReader.get_model">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_name_type</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+<div class="viewcode-block" id="NETReader.read">
+<a class="viewcode-back" href="../../../api/generated/readwrite/pgmpy.readwrite.NETReader.html#pgmpy.readwrite.NETReader.read">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns the Bayesian Model read from the file/str.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        state_name_type: int, str or bool (default: str)</span>
-<span class="sd">            The data type to which to convert the state names of the variables.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1603,9 +1581,10 @@
 <span class="sd">        &gt;&gt;&gt; writer = NETWriter(asia)</span>
 <span class="sd">        &gt;&gt;&gt; writer.write("asia.net")</span>
 <span class="sd">        &gt;&gt;&gt; reader = NETReader("asia.net")</span>
-<span class="sd">        &gt;&gt;&gt; reader.get_model() # doctest: +ELLIPSIS</span>
+<span class="sd">        &gt;&gt;&gt; reader.read() # doctest: +ELLIPSIS</span>
 <span class="sd">        &lt;pgmpy.models.DiscreteBayesianNetwork.DiscreteBayesianNetwork object at 0x...&gt;</span>
 <span class="sd">        """</span>
+        <span class="n">state_name_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_name_type</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">()</span>
             <span class="n">model</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variable_names</span><span class="p">)</span>

@@ -918,29 +918,57 @@ as persisting fitted models to disk for later use.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 
 <span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="s2">"bnlearn/alarm"</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"alarm.bif"</span><span class="p">,</span> <span class="n">filetype</span><span class="o">=</span><span class="s2">"bif"</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"alarm.bif"</span><span class="p">)</span>
 
-<span class="n">loaded</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"alarm.bif"</span><span class="p">,</span> <span class="n">filetype</span><span class="o">=</span><span class="s2">"bif"</span><span class="p">)</span>
+<span class="n">loaded</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"alarm.bif"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">loaded</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="supported-formats">
 <h2>Supported Formats<a class="headerlink" href="#supported-formats" title="Link to this heading">#</a></h2>
-<p>pgmpy supports several Bayesian network interchange formats including BIF, NET, XMLBIF,
-XDSL, XBN, UAI, and PomdpX. The model-level <code class="docutils literal notranslate"><span class="pre">save</span></code>/<code class="docutils literal notranslate"><span class="pre">load</span></code> methods handle format
-detection automatically.</p>
+<p>The model-level <code class="docutils literal notranslate"><span class="pre">save</span></code>/<code class="docutils literal notranslate"><span class="pre">load</span></code> methods support the following formats (listed in
+<code class="docutils literal notranslate"><span class="pre">pgmpy.readwrite.FORMATS</span></code>):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DiscreteBayesianNetwork</span></code>: BIF (default), NET, XMLBIF, XDSL, XBN, and UAI.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LinearGaussianBayesianNetwork</span></code>: bnlearn-compatible JSON (default).</p></li>
+</ul>
+<p>The format is taken from <code class="docutils literal notranslate"><span class="pre">filetype</span></code> if given, otherwise from the file extension, and otherwise
+falls back to the model’s default format. Any other keyword arguments are passed to the reader or
+writer class of the format:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"alarm.bif"</span><span class="p">,</span> <span class="n">round_values</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">loaded</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"alarm.bif"</span><span class="p">,</span> <span class="n">state_name_type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">load</span></code> also accepts a file-like object (text or binary) instead of a path. Since there is no file
+extension to infer the format from, pass <code class="docutils literal notranslate"><span class="pre">filetype</span></code> unless the file is in the model’s default format:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">"alarm.bif"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">loaded</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">filetype</span><span class="o">=</span><span class="s2">"bif"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>PomdpX is available only through the <code class="docutils literal notranslate"><span class="pre">PomdpXReader</span></code> and <code class="docutils literal notranslate"><span class="pre">PomdpXWriter</span></code> classes.</p>
 </section>
 <section id="reader-writer-classes">
 <h2>Reader/Writer Classes<a class="headerlink" href="#reader-writer-classes" title="Link to this heading">#</a></h2>
 <p>For fine-grained control, each format has dedicated reader and writer classes in
-<code class="docutils literal notranslate"><span class="pre">pgmpy.readwrite</span></code> that expose format-specific options:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.readwrite</span><span class="w"> </span><span class="kn">import</span> <span class="n">BIFReader</span>
+<code class="docutils literal notranslate"><span class="pre">pgmpy.readwrite</span></code>, and all of them share the same interface:</p>
+<ul class="simple">
+<li><p>Readers take either <code class="docutils literal notranslate"><span class="pre">path</span></code> or <code class="docutils literal notranslate"><span class="pre">string</span></code>, plus format-specific options, and <code class="docutils literal notranslate"><span class="pre">read()</span></code> returns the
+model.</p></li>
+<li><p>Writers take the model, plus format-specific options. <code class="docutils literal notranslate"><span class="pre">write(filename)</span></code> writes the file, and
+<code class="docutils literal notranslate"><span class="pre">str(writer)</span></code> returns the file contents as a string.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.readwrite</span><span class="w"> </span><span class="kn">import</span> <span class="n">BIFReader</span><span class="p">,</span> <span class="n">BIFWriter</span>
 
-<span class="n">reader</span> <span class="o">=</span> <span class="n">BIFReader</span><span class="p">(</span><span class="s2">"alarm.bif"</span><span class="p">)</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">get_model</span><span class="p">()</span>
+<span class="n">writer</span> <span class="o">=</span> <span class="n">BIFWriter</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">round_values</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"alarm.bif"</span><span class="p">)</span>
+<span class="n">bif_string</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">writer</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">BIFReader</span><span class="p">(</span><span class="s2">"alarm.bif"</span><span class="p">,</span> <span class="n">state_name_type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">BIFReader</span><span class="p">(</span><span class="n">string</span><span class="o">=</span><span class="n">bif_string</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>See the <a class="reference internal" href="../api/readwrite.html"><span class="doc">Reading/Writing API</span></a> for the options of each class.</p>
 </section>
 <section id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
