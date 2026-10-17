@@ -1054,6 +1054,11 @@ initialization or by assigning the “latents” role to nodes. The
 <span class="go">['U', 'Z']</span>
 </pre></div>
 </div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pgmpy.base.DAG.SUPPORTS_LATENTS">
+<span class="sig-name descname"><span class="pre">SUPPORTS_LATENTS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#pgmpy.base.DAG.SUPPORTS_LATENTS" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.base.DAG.active_trail_nodes">
 <span class="sig-name descname"><span class="pre">active_trail_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Hashable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Hashable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Hashable</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_latents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/DAG.html#DAG.active_trail_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.DAG.active_trail_nodes" title="Link to this definition">#</a></dt>
@@ -1989,6 +1994,50 @@ inherits <code class="docutils literal notranslate"><span class="pre">_CoreGraph
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="pgmpy.base.DAG.to_admg">
+<span class="sig-name descname"><span class="pre">to_admg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="pgmpy.base.ADMG.html#pgmpy.base.ADMG" title="pgmpy.base.ADMG"><span class="pre">ADMG</span></a></span></span><a class="reference internal" href="../../../_modules/pgmpy/base/DAG.html#DAG.to_admg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.DAG.to_admg" title="Link to this definition">#</a></dt>
+<dd><p>Returns the latent projection of the DAG onto its observed variables, as an ADMG.</p>
+<p>Every vertex of an ADMG is observed, so the latent variables of the DAG are marginalized out and their
+effects are carried by the edges between the observed variables. For observed variables <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code>,
+the projection has:</p>
+<ul class="simple">
+<li><p>a directed edge <code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">-&gt;</span> <span class="pre">Y</span></code> if the DAG has a directed path from <code class="docutils literal notranslate"><span class="pre">X</span></code> to <code class="docutils literal notranslate"><span class="pre">Y</span></code> whose intermediate nodes
+are all latent, and</p></li>
+<li><p>a bidirected edge <code class="docutils literal notranslate"><span class="pre">X</span> <span class="pre">&lt;&gt;</span> <span class="pre">Y</span></code> if some latent variable has directed paths to both <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code> whose
+intermediate nodes are all latent, i.e. <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code> share a latent common cause.</p></li>
+</ul>
+<p>The projection preserves the d-separation relations among the observed variables, which the ADMG represents as
+m-separation. The roles of the observed variables are kept.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl class="simple">
+<dt>pgmpy.base.ADMG</dt><dd><p>The latent projection over the observed variables.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="pgmpy.base.ADMG.html#pgmpy.base.ADMG.to_dag" title="pgmpy.base.ADMG.to_dag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pgmpy.base.ADMG.to_dag</span></code></a></dt><dd><p>The reverse conversion, replacing each bidirected edge with a latent parent.</p>
+</dd>
+</dl>
+</div>
+<p class="rubric">References</p>
+<ol class="arabic simple" id="id533" start="1">
+<li id="id539"><p>Thomas Richardson. Markov properties for acyclic directed mixed graphs. <em>Scandinavian Journal of Statistics</em>, 30(1):145–157, 2003. <a class="reference external" href="https://doi.org/10.1111/1467-9469.00323">doi:10.1111/1467-9469.00323</a>.</p></li>
+</ol>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">([(</span><span class="s2">"U"</span><span class="p">,</span> <span class="s2">"X"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"U"</span><span class="p">,</span> <span class="s2">"Y"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"X"</span><span class="p">,</span> <span class="s2">"M"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"M"</span><span class="p">,</span> <span class="s2">"Y"</span><span class="p">)],</span> <span class="n">latents</span><span class="o">=</span><span class="p">{</span><span class="s2">"U"</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">admg</span> <span class="o">=</span> <span class="n">dag</span><span class="o">.</span><span class="n">to_admg</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">admg</span><span class="o">.</span><span class="n">get_edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="go">[('M', 'Y', '-&gt;'), ('X', 'M', '-&gt;'), ('X', 'Y', '&lt;&gt;')]</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pgmpy.base.DAG.to_daft">
 <span class="sig-name descname"><span class="pre">to_daft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'circular'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pgm_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_edge_strength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/DAG.html#DAG.to_daft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.DAG.to_daft" title="Link to this definition">#</a></dt>
 <dd><p>Returns a daft (<a class="reference external" href="https://docs.daft-pgm.org/en/latest/">https://docs.daft-pgm.org/en/latest/</a>) object which can be rendered for
@@ -2200,8 +2249,8 @@ that the given DAG belongs to.</p>
 </dd>
 </dl>
 <p class="rubric">References</p>
-<ol class="arabic simple" id="id533" start="1">
-<li id="id535"><p>David Maxwell Chickering. Learning equivalence classes of Bayesian-network structures. <em>Journal of Machine Learning Research</em>, 2:445–498, 2002. <a class="reference external" href="https://doi.org/10.1162/153244302760200696">doi:10.1162/153244302760200696</a>.</p></li>
+<ol class="arabic simple" id="id666" start="1">
+<li id="id668"><p>David Maxwell Chickering. Learning equivalence classes of Bayesian-network structures. <em>Journal of Machine Learning Research</em>, 2:445–498, 2002. <a class="reference external" href="https://doi.org/10.1162/153244302760200696">doi:10.1162/153244302760200696</a>.</p></li>
 </ol>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
@@ -2267,6 +2316,7 @@ that the given DAG belongs to.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG"><code class="docutils literal notranslate"><span class="pre">DAG</span></code></a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG.SUPPORTS_LATENTS"><code class="docutils literal notranslate"><span class="pre">DAG.SUPPORTS_LATENTS</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG.active_trail_nodes"><code class="docutils literal notranslate"><span class="pre">DAG.active_trail_nodes()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG.add_edge"><code class="docutils literal notranslate"><span class="pre">DAG.add_edge()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG.add_edges_from"><code class="docutils literal notranslate"><span class="pre">DAG.add_edges_from()</span></code></a></li>
@@ -2295,6 +2345,7 @@ that the given DAG belongs to.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG.moralize"><code class="docutils literal notranslate"><span class="pre">DAG.moralize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG.out_degree_iter"><code class="docutils literal notranslate"><span class="pre">DAG.out_degree_iter()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG.to_adjacency"><code class="docutils literal notranslate"><span class="pre">DAG.to_adjacency()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG.to_admg"><code class="docutils literal notranslate"><span class="pre">DAG.to_admg()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG.to_daft"><code class="docutils literal notranslate"><span class="pre">DAG.to_daft()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG.to_dagitty"><code class="docutils literal notranslate"><span class="pre">DAG.to_dagitty()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.DAG.to_graphviz"><code class="docutils literal notranslate"><span class="pre">DAG.to_graphviz()</span></code></a></li>

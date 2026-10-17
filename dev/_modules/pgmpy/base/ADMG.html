@@ -865,7 +865,12 @@
                 <article class="bd-article">
                   
   <h1>Source code for pgmpy.base.ADMG</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_CoreGraph</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_CoreGraph</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
 
 
 <div class="viewcode-block" id="ADMG">
@@ -874,20 +879,18 @@
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A class representing an Acyclic Directed Mixed Graph (ADMG).</span>
 
-<span class="sd">    An ADMG allows directed (``"-&gt;"``) and bidirected (``"&lt;&gt;"``) edges, where a bidirected edge</span>
-<span class="sd">    ``X &lt;&gt; Y`` encodes a latent (unobserved) common cause of ``X`` and ``Y``. The directed part is</span>
-<span class="sd">    acyclic.</span>
+<span class="sd">    An ADMG allows directed (``"-&gt;"``) and bidirected (``"&lt;&gt;"``) edges, where a bidirected edge ``X &lt;&gt; Y`` encodes a</span>
+<span class="sd">    latent (unobserved) common cause of ``X`` and ``Y``. The directed part is acyclic. Every vertex of an ADMG is</span>
+<span class="sd">    observed: latent variables are represented only through bidirected edges, so the ``latents`` role cannot be</span>
+<span class="sd">    assigned.</span>
 
-<span class="sd">    Built on :class:`~pgmpy.base._base._CoreGraph`, restricted to the directed/bidirected edge types</span>
-<span class="sd">    via ``SUPPORTED_EDGE_TYPES`` (no undirected or circle endpoints).</span>
+<span class="sd">    Built on :class:`~pgmpy.base._base._CoreGraph`, restricted to the directed/bidirected edge types via</span>
+<span class="sd">    ``SUPPORTED_EDGE_TYPES`` (no undirected or circle endpoints) and ``SUPPORTS_LATENTS=False``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    edge_list : iterable of tuples, optional</span>
 <span class="sd">        Edges of the form ``(u, v, edge_type)`` with ``edge_type`` one of ``"-&gt;"``, ``"&lt;-"``, ``"&lt;&gt;"``.</span>
-
-<span class="sd">    latents : set, default=set()</span>
-<span class="sd">        Set of latent (unobserved) variables.</span>
 
 <span class="sd">    exposures, outcomes : set, default=set()</span>
 <span class="sd">        Treatment / response variables (causal-analysis roles).</span>
@@ -903,9 +906,75 @@
 <span class="sd">    ['X', 'Y', 'Z']</span>
 <span class="sd">    &gt;&gt;&gt; sorted(admg.get_edges(data=True))</span>
 <span class="sd">    [('X', 'Y', '-&gt;'), ('X', 'Z', '&lt;&gt;'), ('Z', 'Y', '-&gt;')]</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    - :footcite:t:`richardson_2003`</span>
 <span class="sd">    """</span>
 
-    <span class="n">SUPPORTED_EDGE_TYPES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span><span class="s2">"-&gt;"</span><span class="p">,</span> <span class="s2">"&lt;-"</span><span class="p">,</span> <span class="s2">"&lt;&gt;"</span><span class="p">])</span></div>
+    <span class="n">SUPPORTED_EDGE_TYPES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span><span class="s2">"-&gt;"</span><span class="p">,</span> <span class="s2">"&lt;-"</span><span class="p">,</span> <span class="s2">"&lt;&gt;"</span><span class="p">])</span>
+    <span class="n">SUPPORTS_LATENTS</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="ADMG.to_dag">
+<a class="viewcode-back" href="../../../api/generated/base/pgmpy.base.ADMG.html#pgmpy.base.ADMG.to_dag">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latent_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"U"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"DAG"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Returns the canonical DAG of the ADMG, with an explicit latent variable for each bidirected edge.</span>
+
+<span class="sd">        Each bidirected edge ``X &lt;&gt; Y`` is replaced by a new latent node ``{latent_prefix}_X_Y`` with the edges</span>
+<span class="sd">        ``{latent_prefix}_X_Y -&gt; X`` and ``{latent_prefix}_X_Y -&gt; Y``. The endpoints in the name are ordered by</span>
+<span class="sd">        their string representation, so the name does not depend on how the edge was added. Directed edges and</span>
+<span class="sd">        roles are kept, and the latent projection of the result (:meth:`pgmpy.base.DAG.to_admg`) recovers the ADMG.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        latent_prefix : str (default: "U")</span>
+<span class="sd">            Prefix of the names of the new latent nodes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pgmpy.base.DAG</span>
+<span class="sd">            The canonical DAG, with the new nodes as its ``latents``.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the name of a new latent node is already a node of the graph.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        pgmpy.base.DAG.to_admg : The reverse conversion, projecting latent variables into bidirected edges.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; from pgmpy.base import ADMG</span>
+<span class="sd">        &gt;&gt;&gt; admg = ADMG(edge_list=[("X", "M", "-&gt;"), ("M", "Y", "-&gt;"), ("X", "Y", "&lt;&gt;")])</span>
+<span class="sd">        &gt;&gt;&gt; dag = admg.to_dag()</span>
+<span class="sd">        &gt;&gt;&gt; sorted(dag.edges())</span>
+<span class="sd">        [('M', 'Y'), ('U_X_Y', 'X'), ('U_X_Y', 'Y'), ('X', 'M')]</span>
+<span class="sd">        &gt;&gt;&gt; dag.latents</span>
+<span class="sd">        {'U_X_Y'}</span>
+
+<span class="sd">        References</span>
+<span class="sd">        ----------</span>
+<span class="sd">        - :footcite:t:`richardson_2003`</span>
+<span class="sd">        """</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
+
+        <span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_directed_graph</span><span class="p">()</span><span class="o">.</span><span class="n">edges</span><span class="p">())</span>
+        <span class="n">dag</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">edge_types</span><span class="o">=</span><span class="p">{</span><span class="s2">"&lt;&gt;"</span><span class="p">}):</span>
+            <span class="n">u</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">u</span><span class="p">,</span> <span class="n">v</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+            <span class="n">latent</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">latent_prefix</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">if</span> <span class="n">latent</span> <span class="ow">in</span> <span class="n">dag</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Node '</span><span class="si">{</span><span class="n">latent</span><span class="si">}</span><span class="s2">' already exists. Use a different `latent_prefix`."</span><span class="p">)</span>
+            <span class="n">dag</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">([(</span><span class="n">latent</span><span class="p">,</span> <span class="n">u</span><span class="p">),</span> <span class="p">(</span><span class="n">latent</span><span class="p">,</span> <span class="n">v</span><span class="p">)])</span>
+            <span class="n">dag</span><span class="o">.</span><span class="n">with_role</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="s2">"latents"</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">latent</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="n">variables</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_role_dict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">dag</span><span class="o">.</span><span class="n">with_role</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="n">variables</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dag</span></div>
+</div>
 
 </pre></div>
 

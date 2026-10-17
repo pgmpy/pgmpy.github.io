@@ -876,23 +876,15 @@
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Class for representing Maximal Ancestral Graphs (MAGs).</span>
 
-<span class="sd">    A MAG is a graph used in causal inference to represent conditional independence relations when</span>
-<span class="sd">    some variables are latent (unobserved) or selection is present. MAGs allow directed (``"-&gt;"``),</span>
-<span class="sd">    bidirected (``"&lt;&gt;"``), and undirected (``"--"``) edges -- bidirected edges encode latent</span>
-<span class="sd">    confounding and undirected edges encode selection bias. A MAG is *maximal*: no edge can be added</span>
-<span class="sd">    without changing the implied conditional-independence relations.</span>
-
-<span class="sd">    Built on :class:`~pgmpy.base._base._CoreGraph`, restricted to the directed/bidirected/undirected</span>
-<span class="sd">    edge types via ``SUPPORTED_EDGE_TYPES`` (no circle endpoints -- those are for PAGs).</span>
+<span class="sd">    A MAG has directed (``"-&gt;"``), bidirected (``"&lt;&gt;"``) and undirected (``"--"``) edges: bidirected edges encode</span>
+<span class="sd">    latent confounding and undirected edges encode selection bias. It is *maximal*: no edge can be added without</span>
+<span class="sd">    changing the implied conditional independencies. Every vertex is observed, so the ``latents`` role cannot be</span>
+<span class="sd">    assigned.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    edge_list : iterable of tuples, optional</span>
-<span class="sd">        Edges of the form ``(u, v, edge_type)`` with ``edge_type`` one of ``"-&gt;"``, ``"&lt;-"``,</span>
-<span class="sd">        ``"&lt;&gt;"``, ``"--"``.</span>
-
-<span class="sd">    latents : set, default=set()</span>
-<span class="sd">        Set of latent (unobserved) variables.</span>
+<span class="sd">        Edges of the form ``(u, v, edge_type)`` with ``edge_type`` one of ``"-&gt;"``, ``"&lt;-"``, ``"&lt;&gt;"``, ``"--"``.</span>
 
 <span class="sd">    exposures, outcomes : set, default=set()</span>
 <span class="sd">        Treatment / response variables (causal-analysis roles).</span>
@@ -903,11 +895,9 @@
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.base import MAG</span>
-<span class="sd">    &gt;&gt;&gt; mag = MAG(edge_list=[("L", "A", "-&gt;"), ("A", "B", "&lt;&gt;")], latents={"L"})</span>
+<span class="sd">    &gt;&gt;&gt; mag = MAG(edge_list=[("L", "A", "-&gt;"), ("A", "B", "&lt;&gt;")])</span>
 <span class="sd">    &gt;&gt;&gt; sorted(mag.get_edges(data=True))</span>
 <span class="sd">    [('A', 'B', '&lt;&gt;'), ('L', 'A', '-&gt;')]</span>
-<span class="sd">    &gt;&gt;&gt; mag.latents</span>
-<span class="sd">    {'L'}</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
@@ -915,6 +905,7 @@
 <span class="sd">    """</span>
 
     <span class="n">SUPPORTED_EDGE_TYPES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span><span class="s2">"-&gt;"</span><span class="p">,</span> <span class="s2">"&lt;-"</span><span class="p">,</span> <span class="s2">"&lt;&gt;"</span><span class="p">,</span> <span class="s2">"--"</span><span class="p">])</span>
+    <span class="n">SUPPORTS_LATENTS</span> <span class="o">=</span> <span class="kc">False</span>
 
 <div class="viewcode-block" id="MAG.is_maximal">
 <a class="viewcode-back" href="../../../api/generated/base/pgmpy.base.MAG.html#pgmpy.base.MAG.is_maximal">[docs]</a>
@@ -927,8 +918,7 @@
 <span class="sd">        can be m-separated by some subset of the remaining nodes. By the characterization of</span>
 <span class="sd">        :footcite:t:`zhang_2008` this holds exactly when no *primitive* inducing path (an inducing</span>
 <span class="sd">        path relative to the full vertex set: every intermediate node is a collider and an</span>
-<span class="sd">        ancestor of an endpoint) joins a non-adjacent pair. The ``latents`` role is ignored:</span>
-<span class="sd">        maximality is a property of the graph itself.</span>
+<span class="sd">        ancestor of an endpoint) joins a non-adjacent pair.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>

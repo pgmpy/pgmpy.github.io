@@ -919,20 +919,14 @@
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">pgmpy.base.</span></span><span class="sig-name descname"><span class="pre">MAG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/pgmpy/base/MAG.html#MAG"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pgmpy.base.MAG" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_CoreGraph</span></code></p>
 <p>Class for representing Maximal Ancestral Graphs (MAGs).</p>
-<p>A MAG is a graph used in causal inference to represent conditional independence relations when
-some variables are latent (unobserved) or selection is present. MAGs allow directed (<code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code>),
-bidirected (<code class="docutils literal notranslate"><span class="pre">&quot;&lt;&gt;&quot;</span></code>), and undirected (<code class="docutils literal notranslate"><span class="pre">&quot;--&quot;</span></code>) edges – bidirected edges encode latent
-confounding and undirected edges encode selection bias. A MAG is <em>maximal</em>: no edge can be added
-without changing the implied conditional-independence relations.</p>
-<p>Built on <code class="xref py py-class docutils literal notranslate"><span class="pre">_CoreGraph</span></code>, restricted to the directed/bidirected/undirected
-edge types via <code class="docutils literal notranslate"><span class="pre">SUPPORTED_EDGE_TYPES</span></code> (no circle endpoints – those are for PAGs).</p>
+<p>A MAG has directed (<code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code>), bidirected (<code class="docutils literal notranslate"><span class="pre">&quot;&lt;&gt;&quot;</span></code>) and undirected (<code class="docutils literal notranslate"><span class="pre">&quot;--&quot;</span></code>) edges: bidirected edges encode
+latent confounding and undirected edges encode selection bias. It is <em>maximal</em>: no edge can be added without
+changing the implied conditional independencies. Every vertex is observed, so the <code class="docutils literal notranslate"><span class="pre">latents</span></code> role cannot be
+assigned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>edge_list</strong><span class="classifier">iterable of tuples, optional</span></dt><dd><p>Edges of the form <code class="docutils literal notranslate"><span class="pre">(u,</span> <span class="pre">v,</span> <span class="pre">edge_type)</span></code> with <code class="docutils literal notranslate"><span class="pre">edge_type</span></code> one of <code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;&lt;-&quot;</span></code>,
-<code class="docutils literal notranslate"><span class="pre">&quot;&lt;&gt;&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;--&quot;</span></code>.</p>
-</dd>
-<dt><strong>latents</strong><span class="classifier">set, default=set()</span></dt><dd><p>Set of latent (unobserved) variables.</p>
+<dt><strong>edge_list</strong><span class="classifier">iterable of tuples, optional</span></dt><dd><p>Edges of the form <code class="docutils literal notranslate"><span class="pre">(u,</span> <span class="pre">v,</span> <span class="pre">edge_type)</span></code> with <code class="docutils literal notranslate"><span class="pre">edge_type</span></code> one of <code class="docutils literal notranslate"><span class="pre">&quot;-&gt;&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;&lt;-&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;&lt;&gt;&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;--&quot;</span></code>.</p>
 </dd>
 <dt><strong>exposures, outcomes</strong><span class="classifier">set, default=set()</span></dt><dd><p>Treatment / response variables (causal-analysis roles).</p>
 </dd>
@@ -947,16 +941,19 @@ edge types via <code class="docutils literal notranslate"><span class="pre">SUPP
 </ol>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAG</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="p">[(</span><span class="s2">"L"</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"A"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">,</span> <span class="s2">"&lt;&gt;"</span><span class="p">)],</span> <span class="n">latents</span><span class="o">=</span><span class="p">{</span><span class="s2">"L"</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span> <span class="o">=</span> <span class="n">MAG</span><span class="p">(</span><span class="n">edge_list</span><span class="o">=</span><span class="p">[(</span><span class="s2">"L"</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">),</span> <span class="p">(</span><span class="s2">"A"</span><span class="p">,</span> <span class="s2">"B"</span><span class="p">,</span> <span class="s2">"&lt;&gt;"</span><span class="p">)])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">mag</span><span class="o">.</span><span class="n">get_edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="go">[('A', 'B', '&lt;&gt;'), ('L', 'A', '-&gt;')]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">mag</span><span class="o">.</span><span class="n">latents</span>
-<span class="go">{'L'}</span>
 </pre></div>
 </div>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="pgmpy.base.MAG.SUPPORTED_EDGE_TYPES">
 <span class="sig-name descname"><span class="pre">SUPPORTED_EDGE_TYPES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'--',</span> <span class="pre">'-&gt;',</span> <span class="pre">'&lt;-',</span> <span class="pre">'&lt;&gt;'})</span></span><a class="headerlink" href="#pgmpy.base.MAG.SUPPORTED_EDGE_TYPES" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pgmpy.base.MAG.SUPPORTS_LATENTS">
+<span class="sig-name descname"><span class="pre">SUPPORTS_LATENTS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#pgmpy.base.MAG.SUPPORTS_LATENTS" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -968,8 +965,7 @@ conditional-independence relations – equivalently, when every pair of non-adja
 can be m-separated by some subset of the remaining nodes. By the characterization of
 Zhang<a class="footnote-reference brackets" href="#footcite-zhang-2008" id="id134" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a> this holds exactly when no <em>primitive</em> inducing path (an inducing
 path relative to the full vertex set: every intermediate node is a collider and an
-ancestor of an endpoint) joins a non-adjacent pair. The <code class="docutils literal notranslate"><span class="pre">latents</span></code> role is ignored:
-maximality is a property of the graph itself.</p>
+ancestor of an endpoint) joins a non-adjacent pair.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><dl class="simple">
@@ -1156,6 +1152,7 @@ edge <code class="docutils literal notranslate"><span class="pre">*</span> <span
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG"><code class="docutils literal notranslate"><span class="pre">MAG</span></code></a><ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG.SUPPORTED_EDGE_TYPES"><code class="docutils literal notranslate"><span class="pre">MAG.SUPPORTED_EDGE_TYPES</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG.SUPPORTS_LATENTS"><code class="docutils literal notranslate"><span class="pre">MAG.SUPPORTS_LATENTS</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG.is_maximal"><code class="docutils literal notranslate"><span class="pre">MAG.is_maximal()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG.is_visible_edge"><code class="docutils literal notranslate"><span class="pre">MAG.is_visible_edge()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pgmpy.base.MAG.lower_manipulation"><code class="docutils literal notranslate"><span class="pre">MAG.lower_manipulation()</span></code></a></li>
