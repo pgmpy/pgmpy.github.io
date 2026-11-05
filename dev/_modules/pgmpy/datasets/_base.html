@@ -869,6 +869,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
@@ -887,15 +888,17 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">Dataset</span><span class="p">:</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">interventions</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">expert_knowledge</span><span class="p">:</span> <span class="n">ExpertKnowledge</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">ground_truth</span><span class="p">:</span> <span class="n">DAG</span> <span class="o">|</span> <span class="n">PDAG</span> <span class="o">|</span> <span class="n">ADMG</span> <span class="o">|</span> <span class="n">MAG</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-
     <span class="n">tags</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">interventions</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interventions</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"DataFrame of size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">interventions</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">"Dataset(name=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, </span><span class="se">\n</span><span class="s2"> data=DataFrame of size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, </span><span class="se">\n</span><span class="s2"> "</span>
-            <span class="sa">f</span><span class="s2">"expert_knowledge=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">expert_knowledge</span><span class="si">}</span><span class="s2">, </span><span class="se">\n</span><span class="s2"> ground_truth=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ground_truth</span><span class="si">}</span><span class="s2">, </span><span class="se">\n</span><span class="s2"> tags=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="si">}</span><span class="s2">)"</span>
+            <span class="sa">f</span><span class="s2">"interventions=</span><span class="si">{</span><span class="n">interventions</span><span class="si">}</span><span class="s2">, </span><span class="se">\n</span><span class="s2"> expert_knowledge=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">expert_knowledge</span><span class="si">}</span><span class="s2">, </span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"ground_truth=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ground_truth</span><span class="si">}</span><span class="s2">, </span><span class="se">\n</span><span class="s2"> tags=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -905,10 +908,10 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseDataset</span><span class="p">(</span><span class="n">BaseObject</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Base class for all datasets in pgmpy.</span>
+
 <span class="sd">    Inherits from skbase.base.BaseObject to utilize its tag and lookup functionality.</span>
 <span class="sd">    """</span>
 
-    <span class="c1"># define tags</span>
     <span class="n">_tags</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">"name"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="s2">"n_variables"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
@@ -926,9 +929,7 @@
     <span class="p">}</span>
 
     <span class="n">base_url</span> <span class="o">=</span> <span class="s2">""</span>
-    <span class="n">repo_id</span> <span class="o">=</span> <span class="s2">"pgmpy/example_datasets"</span>
-    <span class="n">repo_type</span> <span class="o">=</span> <span class="s2">"dataset"</span>
-    <span class="n">revision</span> <span class="o">=</span> <span class="s2">"main"</span>
+    <span class="n">intervention_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_parse_expert_knowledge</span><span class="p">(</span><span class="n">raw_expert_knowledge</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ExpertKnowledge</span><span class="p">:</span>
@@ -991,47 +992,114 @@
 <span class="sd">        Fetches a dataset file from the Hugging Face Hub cache.</span>
 <span class="sd">        """</span>
         <span class="k">return</span> <span class="n">read_hf_file</span><span class="p">(</span>
-            <span class="n">repo_id</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">repo_id</span><span class="p">,</span>
+            <span class="n">repo_id</span><span class="o">=</span><span class="s2">"pgmpy/example_datasets"</span><span class="p">,</span>
             <span class="n">filename</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
-            <span class="n">repo_type</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">repo_type</span><span class="p">,</span>
-            <span class="n">revision</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">revision</span><span class="p">,</span>
+            <span class="n">repo_type</span><span class="o">=</span><span class="s2">"dataset"</span><span class="p">,</span>
+            <span class="n">revision</span><span class="o">=</span><span class="s2">"main"</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_dataframe</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_read_table</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">usecols</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Reads the selected columns of the data file and applies the missing-value marker and column dtypes.</span>
+<span class="sd">        """</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
+            <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_get_raw_data</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">data_url</span><span class="p">)),</span>
+            <span class="n">sep</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">"sep"</span><span class="p">,</span> <span class="s2">"</span><span class="se">\t</span><span class="s2">"</span><span class="p">),</span>
+            <span class="n">compression</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">"compression"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">usecols</span><span class="o">=</span><span class="n">usecols</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">"has_missing_data"</span><span class="p">):</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">missing_values_marker</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">NA</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">categorical_variables</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"category"</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">order</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ordinal_variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">df</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_subsample</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Returns a random subsample of ``n_samples`` rows, or all rows with a warning if the dataset is smaller.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">n_samples</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">df</span>
+
+        <span class="k">if</span> <span class="n">n_samples</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+            <span class="n">_warn_external</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Requested </span><span class="si">{</span><span class="n">n_samples</span><span class="si">}</span><span class="s2"> samples but dataset only has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2">. Returning all </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows."</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">df</span>
+
+        <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_dataframe</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Fetches/reads from cache the data associated with the dataset.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        n_samples : int, optional</span>
-<span class="sd">            If provided, return a random subsample of this size. Capped at the</span>
-<span class="sd">            dataset size.</span>
+<span class="sd">            If provided, return a random subsample of this size. Capped at the dataset size.</span>
 <span class="sd">        seed : int, optional</span>
 <span class="sd">            Random seed for reproducible subsampling.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pandas.DataFrame</span>
+<span class="sd">            The data columns of the dataset.</span>
 <span class="sd">        """</span>
-        <span class="n">raw_data</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_get_raw_data</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">data_url</span><span class="p">)</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">raw_data</span><span class="p">),</span> <span class="n">sep</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">"sep"</span><span class="p">,</span> <span class="s2">"</span><span class="se">\t</span><span class="s2">"</span><span class="p">))</span>
-        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">"has_missing_data"</span><span class="p">):</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">missing_values_marker</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">NA</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">usecols</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">"is_interventional"</span><span class="p">):</span>
+            <span class="n">usecols</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">col</span><span class="p">:</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">intervention_columns</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_read_table</span><span class="p">(</span><span class="n">usecols</span><span class="o">=</span><span class="n">usecols</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">"has_index_col"</span><span class="p">):</span>
             <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">categorical_variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">categorical_variables</span><span class="p">:</span>
-                <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"category"</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">ordinal_variables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">order</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">ordinal_variables</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">cat_type</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">cat_type</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">n_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">n_samples</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-                <span class="n">_warn_external</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"Requested </span><span class="si">{</span><span class="n">n_samples</span><span class="si">}</span><span class="s2"> samples but dataset only has </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2">. Returning all </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows."</span><span class="p">,</span>
-                    <span class="ne">UserWarning</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">df</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_subsample</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_interventions</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Fetches/reads from cache the intervention columns associated with the dataset.</span>
+
+<span class="sd">        Only the columns listed in ``intervention_columns`` are read. Calling ``load_dataframe`` and</span>
+<span class="sd">        ``load_interventions`` with the same ``n_samples`` and ``seed`` selects the same rows.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_samples : int, optional</span>
+<span class="sd">            If provided, return a random subsample of this size. Capped at the dataset size.</span>
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            Random seed for reproducible subsampling.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pandas.DataFrame or None</span>
+<span class="sd">            The intervention columns, or ``None`` if the dataset is not interventional.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">"is_interventional"</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_read_table</span><span class="p">(</span><span class="n">usecols</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">intervention_columns</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_subsample</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_expert_knowledge</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ExpertKnowledge</span><span class="p">:</span>
@@ -1257,12 +1325,17 @@
             <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">,</span>
         <span class="p">)</span>
 
+    <span class="k">if</span> <span class="n">n_samples</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">seed</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">target_cls</span><span class="o">.</span><span class="n">get_class_tag</span><span class="p">(</span><span class="s2">"is_interventional"</span><span class="p">):</span>
+        <span class="c1"># Data and interventions are subsampled separately; a shared seed makes both select the same rows.</span>
+        <span class="n">seed</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">))</span>
+
     <span class="k">return</span> <span class="n">Dataset</span><span class="p">(</span>
         <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
         <span class="n">data</span><span class="o">=</span><span class="n">target_cls</span><span class="o">.</span><span class="n">load_dataframe</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">),</span>
         <span class="n">expert_knowledge</span><span class="o">=</span><span class="n">target_cls</span><span class="o">.</span><span class="n">load_expert_knowledge</span><span class="p">(),</span>
         <span class="n">ground_truth</span><span class="o">=</span><span class="n">target_cls</span><span class="o">.</span><span class="n">load_ground_truth</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">sim_kwargs</span><span class="p">),</span>
         <span class="n">tags</span><span class="o">=</span><span class="n">target_cls</span><span class="o">.</span><span class="n">get_class_tags</span><span class="p">(),</span>
+        <span class="n">interventions</span><span class="o">=</span><span class="n">target_cls</span><span class="o">.</span><span class="n">load_interventions</span><span class="p">(</span><span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">),</span>
     <span class="p">)</span></div>
 
 
