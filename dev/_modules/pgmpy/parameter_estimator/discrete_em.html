@@ -879,6 +879,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy</span><span class="w"> </span><span class="kn">import</span> <span class="n">config</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabularCPD</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._random</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rename_param_to_rng</span><span class="p">,</span> <span class="n">_rename_to_rng</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteParameterEstimator</span>
@@ -922,8 +923,12 @@
 <span class="sd">    batch_size: int, default=1000</span>
 <span class="sd">        Number of data points used to compute weights in a batch.</span>
 
-<span class="sd">    seed: int, optional</span>
-<span class="sd">        Random seed to use for generating initial CPDs.</span>
+<span class="sd">    rng: int, np.random.Generator, optional</span>
+<span class="sd">        Source of randomness for the initial CPDs, passed to ``numpy.random.default_rng``. If None, fresh entropy is</span>
+<span class="sd">        drawn from the operating system, so results are not reproducible.</span>
+
+<span class="sd">        .. versionchanged:: 1.2.0</span>
+<span class="sd">            Replaces ``seed``, which is deprecated and will be removed in v2.0.</span>
 
 <span class="sd">    init_cpds: dict or {"uniform", "random"}, optional</span>
 <span class="sd">        Initial CPDs for the optimizer. If not specified, CPDs involving latent variables are initialized randomly and</span>
@@ -970,6 +975,7 @@
         <span class="s2">"supports_weighted_data"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">}</span>
 
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">state_names</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -979,7 +985,7 @@
         <span class="n">atol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-08</span><span class="p">,</span>
         <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">init_cpds</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TabularCPD</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -989,10 +995,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">atol</span> <span class="o">=</span> <span class="n">atol</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">rng</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init_cpds</span> <span class="o">=</span> <span class="n">init_cpds</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">show_progress</span> <span class="o">=</span> <span class="n">show_progress</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DiscreteEM.set_params">
+<a class="viewcode-back" href="../../../api/generated/parameter_estimation/pgmpy.parameter_estimator.DiscreteEM.html#pgmpy.parameter_estimator.DiscreteEM.set_params">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Set the parameters of this estimator; the deprecated ``seed`` is accepted as an alias of ``rng``."""</span>
+        <span class="n">_rename_param_to_rng</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">"seed"</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__qualname__</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span></div>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_log_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datapoint</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="n">likelihood</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -1154,6 +1168,7 @@
         <span class="n">init_cpds</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_cpds</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_cpds</span>
 
         <span class="c1"># Step 3: Initialize CPDs.</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
         <span class="c1"># Step 3.0: If `init_cpds` is a string, expand it into a dict of random or uniform CPDs for every node.</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">init_cpds</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">parents_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
@@ -1164,7 +1179,7 @@
                         <span class="n">evidence</span><span class="o">=</span><span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">],</span>
                         <span class="n">cardinality</span><span class="o">=</span><span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">n_states_dict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">([</span><span class="n">var</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">])},</span>
                         <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names_</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">([</span><span class="n">var</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">])},</span>
-                        <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+                        <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
                 <span class="p">}</span>
@@ -1175,7 +1190,6 @@
                         <span class="n">evidence</span><span class="o">=</span><span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">],</span>
                         <span class="n">cardinality</span><span class="o">=</span><span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">n_states_dict</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">([</span><span class="n">var</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">])},</span>
                         <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names_</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">([</span><span class="n">var</span><span class="p">]</span> <span class="o">+</span> <span class="n">parents_dict</span><span class="p">[</span><span class="n">var</span><span class="p">])},</span>
-                        <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
                     <span class="p">)</span>
                     <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
                 <span class="p">}</span>
@@ -1214,7 +1228,7 @@
                     <span class="n">evidence</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span>
                     <span class="n">cardinality</span><span class="o">=</span><span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">n_states_dict</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">([</span><span class="n">node</span><span class="p">],</span> <span class="n">parents</span><span class="p">)},</span>
                     <span class="n">state_names</span><span class="o">=</span><span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_names_</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">([</span><span class="n">node</span><span class="p">],</span> <span class="n">parents</span><span class="p">)},</span>
-                    <span class="n">seed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span>
+                    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
 

@@ -880,6 +880,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base._mixin_roles</span><span class="w"> </span><span class="kn">import</span> <span class="n">_GraphRolesMixin</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.ci_tests</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCITest</span><span class="p">,</span> <span class="n">get_ci_test</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.independencies</span><span class="w"> </span><span class="kn">import</span> <span class="n">Independencies</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._random</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rename_to_rng</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_dagitty</span><span class="p">,</span> <span class="n">parse_lavaan</span>
 
@@ -1191,13 +1192,12 @@
             <span class="n">std</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="n">intercept</span> <span class="o">=</span> <span class="mi">0</span>
 
+            <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
             <span class="n">cpds</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">lgbn</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
                 <span class="n">parents</span> <span class="o">=</span> <span class="n">lgbn</span><span class="o">.</span><span class="n">get_parents</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">coefs</span><span class="p">:</span>
                     <span class="n">coefs</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-
-                <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
 
                 <span class="n">beta</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">parents</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
                 <span class="n">beta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">intercept</span>
@@ -2410,13 +2410,14 @@
 <div class="viewcode-block" id="DAG.get_random">
 <a class="viewcode-back" href="../../../api/generated/base/pgmpy.base.DAG.html#pgmpy.base.DAG.get_random">[docs]</a>
     <span class="nd">@staticmethod</span>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_random</span><span class="p">(</span>
         <span class="n">n_nodes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
         <span class="n">n_edges</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">edge_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">node_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">latents</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DAG</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns a randomly generated DAG with `n_nodes` number of nodes.</span>
@@ -2444,8 +2445,12 @@
 <span class="sd">        latents: bool (default: False)</span>
 <span class="sd">            If True, includes latent variables in the generated DAG.</span>
 
-<span class="sd">        seed: int (default: None)</span>
-<span class="sd">            The seed for the random number generator.</span>
+<span class="sd">        rng: int, numpy.random.Generator or None (default: None)</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -2462,7 +2467,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.base import DAG</span>
-<span class="sd">        &gt;&gt;&gt; random_dag = DAG.get_random(n_nodes=10, edge_prob=0.3, seed=42)</span>
+<span class="sd">        &gt;&gt;&gt; random_dag = DAG.get_random(n_nodes=10, edge_prob=0.3, rng=42)</span>
 <span class="sd">        &gt;&gt;&gt; sorted(random_dag.nodes())</span>
 <span class="sd">        ['X_0', 'X_1', 'X_2', 'X_3', 'X_4', 'X_5', 'X_6', 'X_7', 'X_8', 'X_9']</span>
 <span class="sd">        &gt;&gt;&gt; sorted(random_dag.edges())  # doctest: +NORMALIZE_WHITESPACE</span>
@@ -2472,11 +2477,11 @@
 <span class="sd">         ('X_6', 'X_4'), ('X_6', 'X_9'), ('X_7', 'X_1'), ('X_7', 'X_2'),</span>
 <span class="sd">         ('X_7', 'X_4'), ('X_7', 'X_8')]</span>
 
-<span class="sd">        &gt;&gt;&gt; dag = DAG.get_random(n_nodes=5, n_edges=6, seed=42)</span>
+<span class="sd">        &gt;&gt;&gt; dag = DAG.get_random(n_nodes=5, n_edges=6, rng=42)</span>
 <span class="sd">        &gt;&gt;&gt; dag.number_of_edges()</span>
 <span class="sd">        6</span>
 <span class="sd">        """</span>
-        <span class="n">gen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">gen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">node_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">node_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"X_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)]</span>
@@ -2815,9 +2820,7 @@
 <span class="sd">        &gt;&gt;&gt; # Add CPDs to the model</span>
 <span class="sd">        &gt;&gt;&gt; linear_model.add_cpds(x_cpd, y_cpd, z_cpd)</span>
 <span class="sd">        &gt;&gt;&gt; # Simulate data from the model</span>
-<span class="sd">        &gt;&gt;&gt; import numpy as np</span>
-<span class="sd">        &gt;&gt;&gt; np.random.seed(42)</span>
-<span class="sd">        &gt;&gt;&gt; data = linear_model.simulate(n_samples=int(1e4))</span>
+<span class="sd">        &gt;&gt;&gt; data = linear_model.simulate(n_samples=int(1e4), rng=42)</span>
 <span class="sd">        &gt;&gt;&gt; # Create DAG and compute edge strengths</span>
 <span class="sd">        &gt;&gt;&gt; dag = DAG([("X", "Y"), ("Z", "Y")])</span>
 <span class="sd">        &gt;&gt;&gt; strengths = dag.edge_strength(data)  # doctest: +SKIP</span>

@@ -875,6 +875,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">State</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">sample_discrete</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._random</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rename_to_rng</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 
@@ -1142,7 +1143,8 @@
 
 <div class="viewcode-block" id="MarkovChain.sample">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.MarkovChain.html#pgmpy.models.MarkovChain.sample">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Sample from the Markov Chain.</span>
 
@@ -1152,6 +1154,13 @@
 <span class="sd">            Representing the starting states of the variables. If None is passed, a random start_state is chosen.</span>
 <span class="sd">        size: int</span>
 <span class="sd">            Number of samples to be generated.</span>
+<span class="sd">        rng: int | np.random.Generator | None</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0. None no longer follows</span>
+<span class="sd">                ``np.random.seed``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1177,9 +1186,10 @@
 <span class="sd">        &gt;&gt;&gt; list(df.columns)</span>
 <span class="sd">        ['intel', 'diff']</span>
 <span class="sd">        """</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">start_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_random_state</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
             <span class="c1"># else use previously-set state</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_start_state</span><span class="p">(</span><span class="n">start_state</span><span class="p">)</span>
@@ -1194,7 +1204,7 @@
             <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_models</span><span class="p">[</span><span class="n">var</span><span class="p">]:</span>
                 <span class="n">var_states</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_models</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
                 <span class="n">var_values</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_models</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-                <span class="n">samples</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span><span class="n">var_states</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">],</span> <span class="n">var_values</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+                <span class="n">samples</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span><span class="n">var_states</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">],</span> <span class="n">var_values</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">st</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">):</span>
@@ -1252,9 +1262,24 @@
 
 <div class="viewcode-block" id="MarkovChain.generate_sample">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.MarkovChain.html#pgmpy.models.MarkovChain.generate_sample">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">generate_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Generator version of self.sample</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        start_state: dict or array-like iterable</span>
+<span class="sd">            Representing the starting states of the variables. If None is passed, a random start_state is chosen.</span>
+<span class="sd">        size: int</span>
+<span class="sd">            Number of samples to be generated.</span>
+<span class="sd">        rng: int | np.random.Generator | None</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0. None no longer follows</span>
+<span class="sd">                ``np.random.seed``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1279,9 +1304,10 @@
 <span class="sd">        [[State(var='intel', state=2), State(var='diff', state=1)],</span>
 <span class="sd">         [State(var='intel', state=2), State(var='diff', state=0)]]</span>
 <span class="sd">        """</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">start_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_random_state</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
             <span class="c1"># else use previously-set state</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_start_state</span><span class="p">(</span><span class="n">start_state</span><span class="p">)</span>
@@ -1292,7 +1318,7 @@
                 <span class="n">next_st</span> <span class="o">=</span> <span class="n">sample_discrete</span><span class="p">(</span>
                     <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_models</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span>
                     <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transition_models</span><span class="p">[</span><span class="n">var</span><span class="p">][</span><span class="n">st</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
-                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
                 <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">next_st</span><span class="p">)</span>
             <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[:]</span></div>
@@ -1376,8 +1402,12 @@
 <span class="sd">        &gt;&gt;&gt; model.random_state() # doctest: +SKIP</span>
 <span class="sd">        [State(var='diff', state=2), State(var='intel', state=1)]</span>
 <span class="sd">        """</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">State</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinalities</span><span class="p">[</span><span class="n">var</span><span class="p">]))</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_random_state</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">())</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_random_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">State</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Draws a random state of the Markov Chain from ``rng``."""</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">State</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cardinalities</span><span class="p">[</span><span class="n">var</span><span class="p">])))</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">variables</span><span class="p">]</span>
 
 <div class="viewcode-block" id="MarkovChain.copy">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.MarkovChain.html#pgmpy.models.MarkovChain.copy">[docs]</a>

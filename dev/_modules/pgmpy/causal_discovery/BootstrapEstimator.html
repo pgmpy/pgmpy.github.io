@@ -933,8 +933,11 @@
 <span class="sd">        If True, displays a progress bar during fitting. Set `show_progress` on the wrapped estimator to control its</span>
 <span class="sd">        own progress bars.</span>
 
-<span class="sd">    seed : int or None, default=None</span>
-<span class="sd">        Seed for the random number generator to ensure reproducibility.</span>
+<span class="sd">    rng : int, numpy.random.Generator or None, default=None</span>
+<span class="sd">        Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the operating</span>
+<span class="sd">        system, so results are not reproducible. The inner ``estimator`` keeps its own ``rng``: an ``int`` gives it the</span>
+<span class="sd">        same randomness on every bootstrap sample, a ``Generator`` is copied into each clone and does not advance, and</span>
+<span class="sd">        ``None`` is not reproducible.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -971,10 +974,10 @@
 <span class="sd">    # Simulate a dataset and fit BootstrapEstimator with PC, which returns a CPDAG for each bootstrap sample:</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.causal_discovery import PC, BootstrapEstimator</span>
 <span class="sd">    &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
-<span class="sd">    &gt;&gt;&gt; data = load_model("bnlearn/cancer").simulate(n_samples=1000, seed=42)</span>
+<span class="sd">    &gt;&gt;&gt; data = load_model("bnlearn/cancer").simulate(n_samples=1000, rng=0)</span>
 <span class="sd">    &gt;&gt;&gt; data = data[sorted(data.columns)]</span>
 <span class="sd">    &gt;&gt;&gt; pc = PC(return_type="pdag")</span>
-<span class="sd">    &gt;&gt;&gt; est = BootstrapEstimator(pc, n_bootstraps=10, seed=42, show_progress=False)</span>
+<span class="sd">    &gt;&gt;&gt; est = BootstrapEstimator(pc, n_bootstraps=10, rng=42, show_progress=False)</span>
 <span class="sd">    &gt;&gt;&gt; est = est.fit(data)</span>
 
 <span class="sd">    # Show the edge between each pair of variables (rows) in each bootstrap graph (columns):</span>
@@ -983,28 +986,28 @@
 <span class="sd">    ...     print(est.bootstrap_edges_)</span>
 <span class="sd">                           0    1    2    3    4    5    6    7    8    9</span>
 <span class="sd">    u         v</span>
-<span class="sd">    Cancer    Dyspnoea    &lt;-  NaN  NaN   &lt;-  NaN  NaN  NaN  NaN  NaN  NaN</span>
-<span class="sd">              Pollution  NaN  NaN   &lt;-  NaN  NaN  NaN  NaN   &lt;-  NaN  NaN</span>
-<span class="sd">              Smoker      &lt;-  NaN  NaN   &lt;-   &lt;-   --   &lt;-   &lt;-   &lt;-   &lt;-</span>
-<span class="sd">              Xray        &lt;-   --   &lt;-   &lt;-   &lt;-   --   &lt;-   &lt;-   &lt;-   &lt;-</span>
-<span class="sd">    Dyspnoea  Pollution  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN</span>
+<span class="sd">    Cancer    Dyspnoea   NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN</span>
+<span class="sd">              Pollution  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN</span>
+<span class="sd">              Smoker     NaN  NaN   -&gt;  NaN   &lt;-   &lt;-  NaN  NaN  NaN   &lt;-</span>
+<span class="sd">              Xray        --   --   --   --   &lt;-   &lt;-   --   --   --   &lt;-</span>
+<span class="sd">    Dyspnoea  Pollution  NaN   --  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN</span>
 <span class="sd">              Smoker     NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN</span>
 <span class="sd">              Xray       NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN</span>
-<span class="sd">    Pollution Smoker     NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN</span>
+<span class="sd">    Pollution Smoker     NaN  NaN   -&gt;  NaN  NaN  NaN  NaN  NaN  NaN  NaN</span>
 <span class="sd">              Xray       NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN</span>
 <span class="sd">    Smoker    Xray       NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN</span>
 
 <span class="sd">    # Fraction of the bootstrap graphs in which each pair of variables is adjacent:</span>
 <span class="sd">    &gt;&gt;&gt; est.bootstrap_edges_.notna().mean(axis=1)  # doctest: +NORMALIZE_WHITESPACE</span>
 <span class="sd">    u          v</span>
-<span class="sd">    Cancer     Dyspnoea     0.2</span>
-<span class="sd">               Pollution    0.2</span>
-<span class="sd">               Smoker       0.8</span>
+<span class="sd">    Cancer     Dyspnoea     0.0</span>
+<span class="sd">               Pollution    0.0</span>
+<span class="sd">               Smoker       0.4</span>
 <span class="sd">               Xray         1.0</span>
-<span class="sd">    Dyspnoea   Pollution    0.0</span>
+<span class="sd">    Dyspnoea   Pollution    0.1</span>
 <span class="sd">               Smoker       0.0</span>
 <span class="sd">               Xray         0.0</span>
-<span class="sd">    Pollution  Smoker       0.0</span>
+<span class="sd">    Pollution  Smoker       0.1</span>
 <span class="sd">               Xray         0.0</span>
 <span class="sd">    Smoker     Xray         0.0</span>
 <span class="sd">    dtype: float64</span>
@@ -1012,26 +1015,26 @@
 <span class="sd">    # Frequency of each edge type among the bootstrap graphs in which the pair is adjacent:</span>
 <span class="sd">    &gt;&gt;&gt; orientations = est.bootstrap_edges_.apply(lambda row: row.value_counts(normalize=True), axis=1)</span>
 <span class="sd">    &gt;&gt;&gt; orientations.round(2)  # doctest: +NORMALIZE_WHITESPACE</span>
-<span class="sd">                           --    &lt;-</span>
+<span class="sd">                           --    -&gt;    &lt;-</span>
 <span class="sd">    u         v</span>
-<span class="sd">    Cancer    Dyspnoea   0.00  1.00</span>
-<span class="sd">              Pollution  0.00  1.00</span>
-<span class="sd">              Smoker     0.12  0.88</span>
-<span class="sd">              Xray       0.20  0.80</span>
-<span class="sd">    Dyspnoea  Pollution   NaN   NaN</span>
-<span class="sd">              Smoker      NaN   NaN</span>
-<span class="sd">              Xray        NaN   NaN</span>
-<span class="sd">    Pollution Smoker      NaN   NaN</span>
-<span class="sd">              Xray        NaN   NaN</span>
-<span class="sd">    Smoker    Xray        NaN   NaN</span>
+<span class="sd">    Cancer    Dyspnoea   NaN   NaN   NaN</span>
+<span class="sd">              Pollution  NaN   NaN   NaN</span>
+<span class="sd">              Smoker     0.0  0.25  0.75</span>
+<span class="sd">              Xray       0.7  0.00  0.30</span>
+<span class="sd">    Dyspnoea  Pollution  1.0  0.00  0.00</span>
+<span class="sd">              Smoker     NaN   NaN   NaN</span>
+<span class="sd">              Xray       NaN   NaN   NaN</span>
+<span class="sd">    Pollution Smoker     0.0  1.00  0.00</span>
+<span class="sd">              Xray       NaN   NaN   NaN</span>
+<span class="sd">    Smoker    Xray       NaN   NaN   NaN</span>
 
 <span class="sd">    # Show the adjacency matrix of the consensus graph:</span>
 <span class="sd">    &gt;&gt;&gt; est.adjacency_matrix_</span>
 <span class="sd">               Cancer  Dyspnoea  Pollution  Smoker  Xray</span>
-<span class="sd">    Cancer          0         0          0       0     0</span>
+<span class="sd">    Cancer          0         0          0       0     1</span>
 <span class="sd">    Dyspnoea        0         0          0       0     0</span>
 <span class="sd">    Pollution       0         0          0       0     0</span>
-<span class="sd">    Smoker          1         0          0       0     0</span>
+<span class="sd">    Smoker          0         0          0       0     0</span>
 <span class="sd">    Xray            1         0          0       0     0</span>
 
 <span class="sd">    # Show the shapes of the bootstrap samples and bootstrap edges:</span>
@@ -1068,7 +1071,8 @@
         <span class="n">warm_start</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span> <span class="o">=</span> <span class="n">estimator</span>
@@ -1079,7 +1083,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">warm_start</span> <span class="o">=</span> <span class="n">warm_start</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">show_progress</span> <span class="o">=</span> <span class="n">show_progress</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">rng</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__sklearn_tags__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">tags</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__sklearn_tags__</span><span class="p">()</span>
@@ -1162,7 +1166,7 @@
 
         <span class="c1"># Step 2: Fit the estimator on the bootstrap samples</span>
         <span class="c1"># Step 2.1: Draw the bootstrap samples</span>
-        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
         <span class="n">all_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
             <span class="p">[</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">bootstrap_sample_size</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_bootstraps</span><span class="p">)]</span>
         <span class="p">)</span>
@@ -1246,16 +1250,16 @@
 <span class="sd">        # Fit BootstrapEstimator on dataset:</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.causal_discovery import PC, BootstrapEstimator</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
-<span class="sd">        &gt;&gt;&gt; data = load_model("bnlearn/cancer").simulate(n_samples=1000, seed=42)</span>
+<span class="sd">        &gt;&gt;&gt; data = load_model("bnlearn/cancer").simulate(n_samples=1000, rng=0)</span>
 <span class="sd">        &gt;&gt;&gt; data = data[sorted(data.columns)]</span>
 <span class="sd">        &gt;&gt;&gt; pc = PC(return_type="pdag")</span>
-<span class="sd">        &gt;&gt;&gt; est = BootstrapEstimator(pc, n_bootstraps=10, seed=42, show_progress=False)</span>
+<span class="sd">        &gt;&gt;&gt; est = BootstrapEstimator(pc, n_bootstraps=10, rng=42, show_progress=False)</span>
 <span class="sd">        &gt;&gt;&gt; est = est.fit(data)</span>
 
 <span class="sd">        # Extract consensus graph with threshold 0.2:</span>
 <span class="sd">        &gt;&gt;&gt; consensus_graph = est.get_consensus_graph(threshold=0.2)</span>
 <span class="sd">        &gt;&gt;&gt; sorted(consensus_graph.directed_edges)</span>
-<span class="sd">        [('Dyspnoea', 'Cancer'), ('Pollution', 'Cancer'), ('Smoker', 'Cancer'), ('Xray', 'Cancer')]</span>
+<span class="sd">        [('Smoker', 'Cancer')]</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">threshold</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Threshold must be between 0.0 and 1.0. Got </span><span class="si">{</span><span class="n">threshold</span><span class="si">}</span><span class="s2"> instead."</span><span class="p">)</span>
@@ -1329,19 +1333,19 @@
 <span class="sd">        # Fit BootstrapEstimator on dataset:</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.causal_discovery import PC, BootstrapEstimator</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
-<span class="sd">        &gt;&gt;&gt; data = load_model("bnlearn/cancer").simulate(n_samples=1000, seed=42)</span>
+<span class="sd">        &gt;&gt;&gt; data = load_model("bnlearn/cancer").simulate(n_samples=1000, rng=0)</span>
 <span class="sd">        &gt;&gt;&gt; data = data[sorted(data.columns)]</span>
 <span class="sd">        &gt;&gt;&gt; pc = PC(return_type="pdag")</span>
-<span class="sd">        &gt;&gt;&gt; est = BootstrapEstimator(pc, n_bootstraps=10, seed=42, show_progress=False)</span>
+<span class="sd">        &gt;&gt;&gt; est = BootstrapEstimator(pc, n_bootstraps=10, rng=42, show_progress=False)</span>
 <span class="sd">        &gt;&gt;&gt; est = est.fit(data)</span>
 
 <span class="sd">        # Extract adjacency matrix with threshold 0.2:</span>
 <span class="sd">        &gt;&gt;&gt; adj_matrix = est.get_adjacency_matrix(threshold=0.2)</span>
 <span class="sd">        &gt;&gt;&gt; adj_matrix</span>
 <span class="sd">                   Cancer  Dyspnoea  Pollution  Smoker  Xray</span>
-<span class="sd">        Cancer          0         0          0       0     0</span>
-<span class="sd">        Dyspnoea        1         0          0       0     0</span>
-<span class="sd">        Pollution       1         0          0       0     0</span>
+<span class="sd">        Cancer          0         0          0       0     1</span>
+<span class="sd">        Dyspnoea        0         0          0       0     0</span>
+<span class="sd">        Pollution       0         0          0       0     0</span>
 <span class="sd">        Smoker          1         0          0       0     0</span>
 <span class="sd">        Xray            1         0          0       0     0</span>
 <span class="sd">        """</span>

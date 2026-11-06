@@ -893,6 +893,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models._file_io</span><span class="w"> </span><span class="kn">import</span> <span class="n">_FileIOMixin</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models.DiscreteMarkovNetwork</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteMarkovNetwork</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compat_fns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._random</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rename_to_rng</span>
 
 
 <div class="viewcode-block" id="DiscreteBayesianNetwork">
@@ -1628,13 +1629,14 @@
 
 <div class="viewcode-block" id="DiscreteBayesianNetwork.predict">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.DiscreteBayesianNetwork.html#pgmpy.models.DiscreteBayesianNetwork.predict">[docs]</a>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">algo</span><span class="p">:</span> <span class="nb">type</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">stochastic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">n_jobs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -1656,8 +1658,14 @@
 <span class="sd">        n_jobs : int, default=-1</span>
 <span class="sd">            The number of CPU cores to use. If -1, uses all available cores.</span>
 
-<span class="sd">        seed : int, optional</span>
-<span class="sd">            When ``stochastic=True``, the seed value to use for random number generators.</span>
+<span class="sd">        rng : int, numpy.random.Generator or None, default=None</span>
+<span class="sd">            Source of randomness for stochastic prediction and for ``ApproxInference``, passed to</span>
+<span class="sd">            ``numpy.random.default_rng``. If None, fresh entropy is drawn from the operating system, so results are not</span>
+<span class="sd">            reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0. None no longer follows</span>
+<span class="sd">                ``np.random.seed``.</span>
 
 <span class="sd">        **kwargs : dict</span>
 <span class="sd">            Optional keyword arguments for the selected inference algorithm.</span>
@@ -1675,8 +1683,6 @@
 <span class="sd">            - ``state_names`` (dict, default ``None``): Possible states for each</span>
 <span class="sd">              variable. When inferred from samples, unobserved states can be</span>
 <span class="sd">              absent from the resulting distribution.</span>
-<span class="sd">            - ``seed`` (int, default ``None``): Random seed used by approximate</span>
-<span class="sd">              inference.</span>
 <span class="sd">            - ``joint`` (bool): Used only for stochastic prediction. If true,</span>
 <span class="sd">              return a joint distribution; otherwise, return one distribution</span>
 <span class="sd">              per variable. This option is supported by variable elimination,</span>
@@ -1708,7 +1714,7 @@
 <span class="sd">        &lt;pgmpy.models.DiscreteBayesianNetwork.DiscreteBayesianNetwork object at 0x...&gt;</span>
 <span class="sd">        &gt;&gt;&gt; predict_data = predict_data.copy()</span>
 <span class="sd">        &gt;&gt;&gt; predict_data.drop("E", axis=1, inplace=True)</span>
-<span class="sd">        &gt;&gt;&gt; approx_inf_parameters = {"n_samples": int(1e3), "seed": 42}</span>
+<span class="sd">        &gt;&gt;&gt; approx_inf_parameters = {"n_samples": int(1e3), "rng": 42}</span>
 <span class="sd">        &gt;&gt;&gt; y_pred = model.predict(</span>
 <span class="sd">        ...     predict_data, algo=ApproxInference, **approx_inf_parameters</span>
 <span class="sd">        ... )</span>
@@ -1738,14 +1744,21 @@
         <span class="n">model_inference</span> <span class="o">=</span> <span class="n">algo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">data_unique_indexes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">),</span> <span class="n">dropna</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
         <span class="n">data_unique</span> <span class="o">=</span> <span class="n">data_unique_indexes</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">algo</span><span class="p">,</span> <span class="n">ApproxInference</span><span class="p">):</span>
+            <span class="n">inference_kwargs</span> <span class="o">=</span> <span class="p">[{</span><span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"rng"</span><span class="p">:</span> <span class="n">child</span><span class="p">}</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">rng</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="n">data_unique</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">inference_kwargs</span> <span class="o">=</span> <span class="p">[</span><span class="n">kwargs</span><span class="p">]</span> <span class="o">*</span> <span class="n">data_unique</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">pred_values</span> <span class="o">=</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">require</span><span class="o">=</span><span class="s2">"sharedmem"</span><span class="p">)(</span>
             <span class="n">delayed</span><span class="p">(</span><span class="n">model_inference</span><span class="o">.</span><span class="n">query</span> <span class="k">if</span> <span class="n">stochastic</span> <span class="k">else</span> <span class="n">model_inference</span><span class="o">.</span><span class="n">map_query</span><span class="p">)(</span>
                 <span class="n">variables</span><span class="o">=</span><span class="n">missing_variables</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">data_point</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">data_point</span><span class="o">.</span><span class="n">isna</span><span class="p">()])),</span>
                 <span class="n">evidence</span><span class="o">=</span><span class="n">data_point</span><span class="p">[</span><span class="o">~</span><span class="n">data_point</span><span class="o">.</span><span class="n">isna</span><span class="p">()]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
                 <span class="n">show_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">point_kwargs</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">data_point</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">data_unique</span><span class="o">.</span><span class="n">iterrows</span><span class="p">(),</span> <span class="n">total</span><span class="o">=</span><span class="n">data_unique</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">data_point</span><span class="p">),</span> <span class="n">point_kwargs</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">tqdm</span><span class="p">(</span><span class="n">data_unique</span><span class="o">.</span><span class="n">iterrows</span><span class="p">(),</span> <span class="n">total</span><span class="o">=</span><span class="n">data_unique</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">inference_kwargs</span>
+            <span class="p">)</span>
         <span class="p">)</span>
 
         <span class="n">all_columns</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">missing_variables</span><span class="p">]</span>
@@ -1753,7 +1766,7 @@
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data_unique_indexes</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">stochastic</span><span class="p">:</span>
-                <span class="n">predicted_df</span> <span class="o">=</span> <span class="n">pred_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">),</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">predicted_df</span> <span class="o">=</span> <span class="n">pred_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">),</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">predicted</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">pred_values</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                 <span class="n">predicted_df</span> <span class="o">=</span> <span class="n">predicted</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">predicted</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">row</span><span class="p">))]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -2063,6 +2076,7 @@
 <div class="viewcode-block" id="DiscreteBayesianNetwork.get_random">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.DiscreteBayesianNetwork.html#pgmpy.models.DiscreteBayesianNetwork.get_random">[docs]</a>
     <span class="nd">@staticmethod</span>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_random</span><span class="p">(</span>
         <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
         <span class="n">n_edges</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2070,7 +2084,7 @@
         <span class="n">node_names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hashable</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">n_states</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">latents</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns a randomly generated Bayesian Network on `n_nodes` variables</span>
@@ -2101,8 +2115,12 @@
 <span class="sd">        latents: bool (default: False)</span>
 <span class="sd">            If True, also creates latent variables.</span>
 
-<span class="sd">        seed: int (default: None)</span>
-<span class="sd">            The seed value for random number generators.</span>
+<span class="sd">        rng: int, numpy.random.Generator or None (default: None)</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -2121,12 +2139,13 @@
 <span class="sd">        5</span>
 
 <span class="sd">        """</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">node_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">node_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"X_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)]</span>
 
         <span class="k">if</span> <span class="n">n_states</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">gen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
-            <span class="n">n_states</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">)</span>
+            <span class="n">n_states</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">)</span>
             <span class="n">n_states_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">node_names</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">n_states</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)}</span>
 
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_states</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
@@ -2142,7 +2161,7 @@
             <span class="n">edge_prob</span><span class="o">=</span><span class="n">edge_prob</span><span class="p">,</span>
             <span class="n">node_names</span><span class="o">=</span><span class="n">node_names</span><span class="p">,</span>
             <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">,</span>
-            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="c1"># Initialize with full DAG to preserve isolated nodes</span>
         <span class="n">bn_model</span> <span class="o">=</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">(</span><span class="n">dag</span><span class="p">)</span>
@@ -2156,7 +2175,7 @@
                     <span class="n">variable</span><span class="o">=</span><span class="n">node</span><span class="p">,</span>
                     <span class="n">evidence</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span>
                     <span class="n">cardinality</span><span class="o">=</span><span class="n">n_states_dict</span><span class="p">,</span>
-                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
 
@@ -2166,11 +2185,12 @@
 
 <div class="viewcode-block" id="DiscreteBayesianNetwork.get_random_cpds">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.DiscreteBayesianNetwork.html#pgmpy.models.DiscreteBayesianNetwork.get_random_cpds">[docs]</a>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_random_cpds</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">n_states</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">TabularCPD</span><span class="p">]</span> <span class="o">|</span> <span class="n">DiscreteBayesianNetwork</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Given a `model`, generates and adds random `TabularCPD`</span>
@@ -2186,23 +2206,28 @@
 <span class="sd">            If inplace=True, adds the generated TabularCPDs to `model` itself, else creates</span>
 <span class="sd">            a copy of the model.</span>
 
-<span class="sd">        seed: int (default: None)</span>
-<span class="sd">            The seed value for random number generators.</span>
+<span class="sd">        rng: int, numpy.random.Generator or None (default: None)</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0.</span>
 
 <span class="sd">        """</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_states</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="n">n_states</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">(),</span> <span class="n">n_states</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_states</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">n_states</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Number of states not specified for each variable"</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">n_states</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">gen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
-            <span class="n">n_states</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">gen</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
+            <span class="n">n_states</span> <span class="o">=</span> <span class="p">{</span><span class="n">var</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">()}</span>
 
         <span class="n">cpds</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
             <span class="n">parents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predecessors</span><span class="p">(</span><span class="n">node</span><span class="p">))</span>
-            <span class="n">cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TabularCPD</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">node</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span> <span class="n">cardinality</span><span class="o">=</span><span class="n">n_states</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">))</span>
+            <span class="n">cpds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">TabularCPD</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span><span class="n">variable</span><span class="o">=</span><span class="n">node</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span> <span class="n">cardinality</span><span class="o">=</span><span class="n">n_states</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds</span><span class="p">)</span>
@@ -2324,6 +2349,7 @@
 
 <div class="viewcode-block" id="DiscreteBayesianNetwork.simulate">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.DiscreteBayesianNetwork.html#pgmpy.models.DiscreteBayesianNetwork.simulate">[docs]</a>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">simulate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
@@ -2334,7 +2360,7 @@
         <span class="n">missing_prob</span><span class="p">:</span> <span class="n">TabularCPD</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">TabularCPD</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">include_latents</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">partial_samples</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">return_full</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
@@ -2386,8 +2412,13 @@
 <span class="sd">            specified, the sampling procedure uses these sample values, instead of generating them.</span>
 <span class="sd">            partial_samples.shape[0] must be equal to `n_samples`.</span>
 
-<span class="sd">        seed: int (default: None)</span>
-<span class="sd">            If a value is provided, sets the seed for numpy.random.</span>
+<span class="sd">        rng: int | numpy.random.Generator | None (default: None)</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0. None no longer follows</span>
+<span class="sd">                ``np.random.seed``.</span>
 
 <span class="sd">        show_progress: bool</span>
 <span class="sd">            If True, shows a progress bar when generating samples.</span>
@@ -2591,7 +2622,7 @@
             <span class="n">samples</span> <span class="o">=</span> <span class="n">BayesianModelSampling</span><span class="p">(</span><span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">forward_sample</span><span class="p">(</span>
                 <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
                 <span class="n">include_latents</span><span class="o">=</span><span class="n">include_latents</span><span class="p">,</span>
-                <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
                 <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
                 <span class="n">partial_samples</span><span class="o">=</span><span class="n">partial_samples</span><span class="p">,</span>
             <span class="p">)</span>
@@ -2602,7 +2633,7 @@
                 <span class="n">size</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
                 <span class="n">evidence</span><span class="o">=</span><span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">evidence</span><span class="o">.</span><span class="n">items</span><span class="p">()],</span>
                 <span class="n">include_latents</span><span class="o">=</span><span class="n">include_latents</span><span class="p">,</span>
-                <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
                 <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
                 <span class="n">partial_samples</span><span class="o">=</span><span class="n">partial_samples</span><span class="p">,</span>
             <span class="p">)</span>

@@ -875,6 +875,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.utils.validation</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_is_fitted</span><span class="p">,</span> <span class="n">validate_data</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.prediction._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCausalPrediction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._random</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rename_param_to_rng</span><span class="p">,</span> <span class="n">_rename_to_rng</span>
 
 
 <div class="viewcode-block" id="DoubleMLRegressor">
@@ -937,8 +938,13 @@
 <span class="sd">        Number of folds to use for cross-fitting. If 1, doesn't perform</span>
 <span class="sd">        cross-fitting and computes in-sample residuals.</span>
 
-<span class="sd">    seed : int or None</span>
-<span class="sd">        Random seed for cross-fitting splits.</span>
+<span class="sd">    rng : int, numpy.random.Generator or None</span>
+<span class="sd">        Source of randomness for the cross-fitting splits, passed to ``numpy.random.default_rng``. If None, fresh</span>
+<span class="sd">        entropy is drawn from the operating system, so results are not reproducible.</span>
+
+<span class="sd">        .. versionchanged:: 1.2.0</span>
+<span class="sd">            Replaces ``seed``, which is deprecated and will be removed in v2.0. None no longer follows</span>
+<span class="sd">            ``np.random.seed``.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -988,7 +994,7 @@
 <span class="sd">    &gt;&gt;&gt; lgbn = DAG.from_dagitty(</span>
 <span class="sd">    ...     "dag { X -&gt; T [beta=0.2] X -&gt; Y [beta=0.3] T -&gt; Y [beta=0.4] }"</span>
 <span class="sd">    ... )</span>
-<span class="sd">    &gt;&gt;&gt; data = lgbn.simulate(n_samples=10000, seed=42)</span>
+<span class="sd">    &gt;&gt;&gt; data = lgbn.simulate(n_samples=10000, rng=42)</span>
 <span class="sd">    &gt;&gt;&gt; X = data.loc[:, ["X", "T"]]</span>
 <span class="sd">    &gt;&gt;&gt; y = data["Y"]</span>
 
@@ -1030,20 +1036,29 @@
 
 <span class="sd">    """</span>
 
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">causal_graph</span><span class="p">,</span>
         <span class="n">nuisance_estimators</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">effect_estimator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">n_folds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">causal_graph</span> <span class="o">=</span> <span class="n">causal_graph</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nuisance_estimators</span> <span class="o">=</span> <span class="n">nuisance_estimators</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">effect_estimator</span> <span class="o">=</span> <span class="n">effect_estimator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_folds</span> <span class="o">=</span> <span class="n">n_folds</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">rng</span>
+
+<div class="viewcode-block" id="DoubleMLRegressor.set_params">
+<a class="viewcode-back" href="../../../api/generated/causal_inference/pgmpy.prediction.DoubleMLRegressor.DoubleMLRegressor.html#pgmpy.prediction.DoubleMLRegressor.DoubleMLRegressor.set_params">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Set the parameters of this estimator; the deprecated ``seed`` is accepted as an alias of ``rng``."""</span>
+        <span class="n">_rename_param_to_rng</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">"seed"</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__qualname__</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="DoubleMLRegressor.fit">
 <a class="viewcode-back" href="../../../api/generated/causal_inference/pgmpy.prediction.DoubleMLRegressor.DoubleMLRegressor.html#pgmpy.prediction.DoubleMLRegressor.DoubleMLRegressor.fit">[docs]</a>
@@ -1161,7 +1176,9 @@
 
         <span class="c1"># Step 3.2: If n_folds &gt; 1, perform cross-fitting and compute out-of-sample predictions.</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">splitter</span> <span class="o">=</span> <span class="n">KFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_folds</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+            <span class="n">splitter</span> <span class="o">=</span> <span class="n">KFold</span><span class="p">(</span>
+                <span class="n">n_splits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_folds</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">32</span><span class="p">))</span>
+            <span class="p">)</span>
 
             <span class="n">outcome_pred</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
             <span class="n">treatment_pred</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>

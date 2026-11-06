@@ -882,6 +882,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.extern</span><span class="w"> </span><span class="kn">import</span> <span class="n">tabulate</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteFactor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compat_fns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._random</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rename_to_rng</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 
 <div class="viewcode-block" id="TabularCPD">
@@ -1603,7 +1605,10 @@
 <div class="viewcode-block" id="TabularCPD.get_random">
 <a class="viewcode-back" href="../../../../api/generated/factors/pgmpy.factors.discrete.TabularCPD.html#pgmpy.factors.discrete.TabularCPD.get_random">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_random</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cardinality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{},</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_random</span><span class="p">(</span>
+        <span class="n">variable</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cardinality</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">state_names</span><span class="o">=</span><span class="p">{},</span> <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Generates a TabularCPD instance with random values on `variable` with</span>
 <span class="sd">        parents/evidence `evidence` with cardinality/number of states as given</span>
@@ -1627,6 +1632,13 @@
 <span class="sd">            for the variables in the CPD. If state_names=None, integral state names</span>
 <span class="sd">            starting from 0 is assigned.</span>
 
+<span class="sd">        rng: int, np.random.Generator or None (default: None)</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0.</span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Random CPD: pgmpy.factors.discrete.TabularCPD</span>
@@ -1647,7 +1659,7 @@
 <span class="sd">        ... ) # doctest: +ELLIPSIS</span>
 <span class="sd">        &lt;TabularCPD representing P(A:2 | B:2, C:2) at 0x...&gt;</span>
 <span class="sd">        """</span>
-        <span class="n">generator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">evidence</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1711,6 +1723,12 @@
 <span class="sd">            for the variables in the CPD. If state_names=None, integral state names</span>
 <span class="sd">            starting from 0 is assigned.</span>
 
+<span class="sd">        seed: None</span>
+<span class="sd">            Deprecated and has no effect, as the CPD is deterministic.</span>
+
+<span class="sd">            .. deprecated:: 1.2.0</span>
+<span class="sd">                Will be removed in v2.0.</span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Uniform CPD: pgmpy.factors.discrete.TabularCPD</span>
@@ -1732,6 +1750,11 @@
 <span class="sd">        ... ) # doctest: +ELLIPSIS</span>
 <span class="sd">        &lt;TabularCPD representing P(A:2 | B:2, C:2) at 0x...&gt;</span>
 <span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_warn_external</span><span class="p">(</span>
+                <span class="s2">"`seed` is deprecated since v1.2.0 and will be removed in v2.0. It has no effect."</span><span class="p">,</span> <span class="ne">DeprecationWarning</span>
+            <span class="p">)</span>
+
         <span class="k">if</span> <span class="n">evidence</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">evidence</span> <span class="o">=</span> <span class="p">[]</span>
 

@@ -879,6 +879,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.continuous</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinearGaussianCPD</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models._file_io</span><span class="w"> </span><span class="kn">import</span> <span class="n">_FileIOMixin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._random</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rename_to_rng</span>
 
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork">
@@ -944,7 +945,7 @@
 
 <span class="sd">    # Simulating data from the model.</span>
 
-<span class="sd">    &gt;&gt;&gt; df = model.simulate(n_samples=100, seed=42)</span>
+<span class="sd">    &gt;&gt;&gt; df = model.simulate(n_samples=100, rng=42)</span>
 <span class="sd">    &gt;&gt;&gt; print(df.columns) # doctest: +ELLIPSIS</span>
 <span class="sd">    Index(['x1', 'x2', 'x3'], dtype='...')</span>
 
@@ -1114,12 +1115,13 @@
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.get_random_cpds">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.LinearGaussianBayesianNetwork.html#pgmpy.models.LinearGaussianBayesianNetwork.get_random_cpds">[docs]</a>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_random_cpds</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">loc</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="n">LinearGaussianCPD</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Generates random Linear Gaussian CPDs for the model. The coefficients</span>
@@ -1135,19 +1137,23 @@
 <span class="sd">        inplace: bool (default: False)</span>
 <span class="sd">            If True, adds the generated LinearGaussianCPDs to the model;</span>
 <span class="sd">            otherwise returns them.</span>
-<span class="sd">        seed: int (optional)</span>
-<span class="sd">            Seed for the random number generator.</span>
+<span class="sd">        rng: int, numpy.random.Generator or None (default: None)</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import LinearGaussianBayesianNetwork</span>
 <span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork([("x1", "x2"), ("x2", "x3")])</span>
-<span class="sd">        &gt;&gt;&gt; model.get_random_cpds(loc=0, scale=1, seed=42) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE</span>
+<span class="sd">        &gt;&gt;&gt; model.get_random_cpds(loc=0, scale=1, rng=42) # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE</span>
 <span class="sd">        [&lt;LinearGaussianCPD: P(x1) = N(...; ...) at 0x...,</span>
 <span class="sd">        &lt;LinearGaussianCPD: P(x2 | x1) = N(...; ...) at 0x...,</span>
 <span class="sd">        &lt;LinearGaussianCPD: P(x3 | x2) = N(...; ...) at 0x...]</span>
 <span class="sd">        """</span>
-        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
 
         <span class="n">cpds</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
@@ -1158,7 +1164,7 @@
                     <span class="n">evidence</span><span class="o">=</span><span class="n">parents</span><span class="p">,</span>
                     <span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span>
                     <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span>
-                    <span class="n">seed</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="mi">31</span><span class="p">)),</span>
+                    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
@@ -1312,6 +1318,7 @@
 
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.simulate">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.LinearGaussianBayesianNetwork.html#pgmpy.models.LinearGaussianBayesianNetwork.simulate">[docs]</a>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">simulate</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">n_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
@@ -1319,7 +1326,7 @@
         <span class="n">evidence</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">virtual_intervention</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">LinearGaussianCPD</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">include_latents</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">missing_prob</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -1347,8 +1354,12 @@
 <span class="sd">        include_latents: boolean</span>
 <span class="sd">            Whether to include the latent variable values in the generated samples.</span>
 
-<span class="sd">        seed: int (default: None)</span>
-<span class="sd">            Seed for the random number generator.</span>
+<span class="sd">        rng: int, numpy.random.Generator or None (default: None)</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0.</span>
 
 <span class="sd">        missing_prob: dict (default: None)</span>
 <span class="sd">            A dictionary specifying the probability of missingness for each variable.</span>
@@ -1374,7 +1385,7 @@
 
 <span class="sd">        Simple forward sampling</span>
 
-<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, seed=42) # doctest: +NORMALIZE_WHITESPACE</span>
+<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, rng=42) # doctest: +NORMALIZE_WHITESPACE</span>
 <span class="sd">                 x1         x2         x3</span>
 <span class="sd">        0  2.218868  -8.050502  14.301856</span>
 <span class="sd">        1  4.762259 -10.423011  10.516473</span>
@@ -1382,7 +1393,7 @@
 
 <span class="sd">        Sampling with intervention (do)</span>
 
-<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, seed=42, do={"x2": 0.0}) # doctest: +NORMALIZE_WHITESPACE</span>
+<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, rng=42, do={"x2": 0.0}) # doctest: +NORMALIZE_WHITESPACE</span>
 <span class="sd">                 x1        x3   x2</span>
 <span class="sd">        0  2.218868  0.880048  0.0</span>
 <span class="sd">        1  4.001805  6.821694  0.0</span>
@@ -1390,7 +1401,7 @@
 
 <span class="sd">        Sampling with evidence</span>
 
-<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, seed=42, evidence={"x1": 2.0}) # doctest: +NORMALIZE_WHITESPACE</span>
+<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, rng=42, evidence={"x1": 2.0}) # doctest: +NORMALIZE_WHITESPACE</span>
 <span class="sd">            x1         x2         x3</span>
 <span class="sd">        0  2.0  -2.781132   3.661179</span>
 <span class="sd">        1  2.0  -0.998195   7.819889</span>
@@ -1398,7 +1409,7 @@
 
 <span class="sd">        Sampling with both intervention and evidence</span>
 
-<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, seed=42, do={"x2": 1.0}, evidence={"x1": 0.0}) # doctest: +NORMALIZE_WHITESPACE</span>
+<span class="sd">        &gt;&gt;&gt; model.simulate(n_samples=3, rng=42, do={"x2": 1.0}, evidence={"x1": 0.0}) # doctest: +NORMALIZE_WHITESPACE</span>
 <span class="sd">            x1        x3   x2</span>
 <span class="sd">        0  0.0  3.914151  1.0</span>
 <span class="sd">        1  0.0 -0.119952  1.0</span>
@@ -1413,7 +1424,7 @@
 
         <span class="n">do_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">do</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="n">evidence_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">evidence</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
 
         <span class="n">invalid_nodes</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">do_nodes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">do_nodes</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">())):</span>
@@ -1677,7 +1688,7 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
 <span class="sd">        &gt;&gt;&gt; model = load_model("bnlearn/ecoli70")</span>
-<span class="sd">        &gt;&gt;&gt; df = model.simulate(n_samples=5, seed=42)</span>
+<span class="sd">        &gt;&gt;&gt; df = model.simulate(n_samples=5, rng=42)</span>
 <span class="sd">        &gt;&gt;&gt; df = df.drop(columns=["folK"])</span>
 <span class="sd">        &gt;&gt;&gt; model.predict(df) # doctest: +NORMALIZE_WHITESPACE</span>
 <span class="sd">               folK</span>
@@ -1740,7 +1751,7 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
 <span class="sd">        &gt;&gt;&gt; model = load_model("bnlearn/ecoli70")</span>
-<span class="sd">        &gt;&gt;&gt; df = model.simulate(n_samples=5, seed=42)</span>
+<span class="sd">        &gt;&gt;&gt; df = model.simulate(n_samples=5, rng=42)</span>
 <span class="sd">        &gt;&gt;&gt; df = df.drop(columns=["folK"])</span>
 <span class="sd">        &gt;&gt;&gt; model.predict(df) # doctest: +NORMALIZE_WHITESPACE</span>
 <span class="sd">               folK</span>
@@ -1775,6 +1786,7 @@
 <div class="viewcode-block" id="LinearGaussianBayesianNetwork.get_random">
 <a class="viewcode-back" href="../../../api/generated/models/pgmpy.models.LinearGaussianBayesianNetwork.html#pgmpy.models.LinearGaussianBayesianNetwork.get_random">[docs]</a>
     <span class="nd">@staticmethod</span>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_random</span><span class="p">(</span>
         <span class="n">n_nodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
         <span class="n">n_edges</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1783,7 +1795,7 @@
         <span class="n">latents</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">loc</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LinearGaussianBayesianNetwork</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns a randomly generated Linear Gaussian Bayesian Network on</span>
@@ -1821,8 +1833,12 @@
 <span class="sd">            The standard deviation of the normal distribution from which the</span>
 <span class="sd">            coefficients are sampled.</span>
 
-<span class="sd">        seed : int</span>
-<span class="sd">            The seed for the random number generator.</span>
+<span class="sd">        rng : int, numpy.random.Generator or None, default=None</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1832,7 +1848,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; from pgmpy.models import LinearGaussianBayesianNetwork</span>
-<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork.get_random(n_nodes=5, seed=42)</span>
+<span class="sd">        &gt;&gt;&gt; model = LinearGaussianBayesianNetwork.get_random(n_nodes=5, rng=42)</span>
 <span class="sd">        &gt;&gt;&gt; sorted(model.nodes())</span>
 <span class="sd">        ['X_0', 'X_1', 'X_2', 'X_3', 'X_4']</span>
 <span class="sd">        &gt;&gt;&gt; sorted(model.edges())</span>
@@ -1844,19 +1860,21 @@
 <span class="sd">        &lt;LinearGaussianCPD: P(X_3) = N(...; ...) at 0x...,</span>
 <span class="sd">        &lt;LinearGaussianCPD: P(X_4) = N(...; ...) at 0x...]</span>
 <span class="sd">        """</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
+
         <span class="n">dag</span> <span class="o">=</span> <span class="n">DAG</span><span class="o">.</span><span class="n">get_random</span><span class="p">(</span>
             <span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span>
             <span class="n">n_edges</span><span class="o">=</span><span class="n">n_edges</span><span class="p">,</span>
             <span class="n">edge_prob</span><span class="o">=</span><span class="n">edge_prob</span><span class="p">,</span>
             <span class="n">node_names</span><span class="o">=</span><span class="n">node_names</span><span class="p">,</span>
             <span class="n">latents</span><span class="o">=</span><span class="n">latents</span><span class="p">,</span>
-            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="c1"># Initialize with full DAG to preserve isolated nodes</span>
         <span class="n">lgbn_model</span> <span class="o">=</span> <span class="n">LinearGaussianBayesianNetwork</span><span class="p">(</span><span class="n">dag</span><span class="p">)</span>
         <span class="n">lgbn_model</span><span class="o">.</span><span class="n">latents</span> <span class="o">=</span> <span class="n">dag</span><span class="o">.</span><span class="n">latents</span>
 
-        <span class="n">cpds</span> <span class="o">=</span> <span class="n">lgbn_model</span><span class="o">.</span><span class="n">get_random_cpds</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">cpds</span> <span class="o">=</span> <span class="n">lgbn_model</span><span class="o">.</span><span class="n">get_random_cpds</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
 
         <span class="n">lgbn_model</span><span class="o">.</span><span class="n">add_cpds</span><span class="p">(</span><span class="o">*</span><span class="n">cpds</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">lgbn_model</span></div>

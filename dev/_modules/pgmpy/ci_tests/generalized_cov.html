@@ -869,6 +869,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">preprocess_data</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._random</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rename_param_to_rng</span><span class="p">,</span> <span class="n">_rename_to_rng</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCITest</span><span class="p">,</span> <span class="n">_CITestResult</span><span class="p">,</span> <span class="n">_ResidualMixin</span>
 
@@ -918,9 +919,12 @@
 <span class="sd">    n_permutations : int, default 1000</span>
 <span class="sd">        Number of permutations used to estimate the null distribution of :math:`T`.</span>
 
-<span class="sd">    random_state : int, RandomState instance, or None, optional</span>
-<span class="sd">        Seed or random state for the permutation sampling. Pass an integer for</span>
-<span class="sd">        reproducible results.</span>
+<span class="sd">    rng : int, numpy.random.Generator or None, optional</span>
+<span class="sd">        Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the operating</span>
+<span class="sd">        system, so results are not reproducible. When tests run in parallel, only an ``int`` gives reproducible results.</span>
+
+<span class="sd">        .. versionchanged:: 1.2.0</span>
+<span class="sd">            Replaces ``random_state``, which is deprecated and will be removed in v2.0.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -948,19 +952,28 @@
         <span class="s2">"capability:conditioning"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">}</span>
 
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"random_state"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">estimator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">n_permutations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-        <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">use_cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtypes</span> <span class="o">=</span> <span class="n">preprocess_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">estimator</span> <span class="o">=</span> <span class="n">estimator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_permutations</span> <span class="o">=</span> <span class="n">n_permutations</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">random_state</span> <span class="o">=</span> <span class="n">random_state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">rng</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">use_cache</span><span class="o">=</span><span class="n">use_cache</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GeneralizedCov.set_params">
+<a class="viewcode-back" href="../../../api/generated/ci_test/pgmpy.ci_tests.GeneralizedCov.html#pgmpy.ci_tests.GeneralizedCov.set_params">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Set the parameters of this estimator; the deprecated ``random_state`` is accepted as an alias of ``rng``."""</span>
+        <span class="n">_rename_param_to_rng</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="s2">"random_state"</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__qualname__</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span></div>
+
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_cross_covariance_statistic</span><span class="p">(</span><span class="n">res_x</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">res_y</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
@@ -1016,7 +1029,7 @@
         <span class="n">statistic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cross_covariance_statistic</span><span class="p">(</span><span class="n">res_x</span><span class="p">,</span> <span class="n">res_y</span><span class="p">)</span>
 
         <span class="c1"># Step 3: Permutation test to obtain the null distribution of T.</span>
-        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">random_state</span><span class="p">)</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
         <span class="n">perm_stats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_permutations</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_permutations</span><span class="p">):</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>

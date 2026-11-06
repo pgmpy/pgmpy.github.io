@@ -876,6 +876,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.extern</span><span class="w"> </span><span class="kn">import</span> <span class="n">tabulate</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseFactor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateNameMixin</span><span class="p">,</span> <span class="n">compat_fns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._random</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rename_to_rng</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">_warn_external</span>
 
 <span class="n">State</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">"State"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"var"</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">])</span>
@@ -1766,7 +1767,8 @@
 
 <div class="viewcode-block" id="DiscreteFactor.sample">
 <a class="viewcode-back" href="../../../../api/generated/factors/pgmpy.factors.discrete.DiscreteFactor.html#pgmpy.factors.discrete.DiscreteFactor.sample">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Normalizes the factor and samples state combinations from it.</span>
 
@@ -1775,8 +1777,12 @@
 <span class="sd">        n: int</span>
 <span class="sd">            Number of samples to generate.</span>
 
-<span class="sd">        seed: int (default: None)</span>
-<span class="sd">            The seed value for the random number generator.</span>
+<span class="sd">        rng: int, np.random.Generator or None (default: None)</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1798,7 +1804,7 @@
         <span class="c1"># TODO: Fix this to make it work natively in torch.</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
 
-        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
         <span class="n">indexes</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)),</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">index_to_state</span> <span class="o">=</span> <span class="p">{}</span>

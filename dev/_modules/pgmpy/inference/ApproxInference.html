@@ -867,9 +867,12 @@
   <h1>Source code for pgmpy.inference.ApproxInference</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.factors.discrete</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteFactor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span><span class="p">,</span> <span class="n">DynamicBayesianNetwork</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">compat_fns</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils._random</span><span class="w"> </span><span class="kn">import</span> <span class="n">_rename_to_rng</span>
 
 
 <div class="viewcode-block" id="ApproxInference">
@@ -959,6 +962,7 @@
 
 <div class="viewcode-block" id="ApproxInference.query">
 <a class="viewcode-back" href="../../../api/generated/inference/pgmpy.inference.ApproxInference.html#pgmpy.inference.ApproxInference.query">[docs]</a>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">,</span>
@@ -969,7 +973,7 @@
         <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">state_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Method for doing approximate inference based on sampling in Bayesian</span>
@@ -1003,8 +1007,13 @@
 <span class="sd">        show_progress: boolean (default: True)</span>
 <span class="sd">            If True, shows a progress bar when generating samples.</span>
 
-<span class="sd">        seed: int (default: None)</span>
-<span class="sd">            Sets the seed for the random generators.</span>
+<span class="sd">        rng: int | numpy.random.Generator | None (default: None)</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0. None no longer follows</span>
+<span class="sd">                ``np.random.seed``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1034,7 +1043,7 @@
                     <span class="n">n_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">,</span>
                     <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
                     <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">virtual_evidence</span><span class="p">,</span>
-                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
                     <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">DynamicBayesianNetwork</span><span class="p">):</span>
@@ -1059,7 +1068,7 @@
                     <span class="n">evidence</span><span class="o">=</span><span class="n">evidence</span><span class="p">,</span>
                     <span class="n">virtual_evidence</span><span class="o">=</span><span class="n">virtual_evidence</span><span class="p">,</span>
                     <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
-                    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+                    <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
                 <span class="p">)</span>
 
         <span class="c1"># Step 2: If state_names is None, infer it from samples.</span>
@@ -1075,6 +1084,7 @@
 
 <div class="viewcode-block" id="ApproxInference.map_query">
 <a class="viewcode-back" href="../../../api/generated/inference/pgmpy.inference.ApproxInference.html#pgmpy.inference.ApproxInference.map_query">[docs]</a>
+    <span class="nd">@_rename_to_rng</span><span class="p">(</span><span class="s2">"seed"</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">map_query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">variables</span><span class="p">,</span>
@@ -1084,7 +1094,7 @@
         <span class="n">virtual_evidence</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">state_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Finds the most probable state in the joint distribution of variables. Calculates the</span>
@@ -1118,8 +1128,13 @@
 <span class="sd">        show_progress: boolean (default: True)</span>
 <span class="sd">            If True, shows a progress bar when generating samples.</span>
 
-<span class="sd">        seed: int (default: None)</span>
-<span class="sd">            Sets the seed for the random generators.</span>
+<span class="sd">        rng: int | numpy.random.Generator | None (default: None)</span>
+<span class="sd">            Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the</span>
+<span class="sd">            operating system, so results are not reproducible.</span>
+
+<span class="sd">            .. versionchanged:: 1.2.0</span>
+<span class="sd">                Replaces ``seed``, which is deprecated and will be removed in v2.0. None no longer follows</span>
+<span class="sd">                ``np.random.seed``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1160,7 +1175,7 @@
             <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">state_names</span><span class="o">=</span><span class="n">state_names</span><span class="p">,</span>
             <span class="n">show_progress</span><span class="o">=</span><span class="n">show_progress</span><span class="p">,</span>
-            <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
+            <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="n">argmax</span> <span class="o">=</span> <span class="n">compat_fns</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">final_distribution</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>

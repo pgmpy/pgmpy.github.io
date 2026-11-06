@@ -913,8 +913,9 @@
 <span class="sd">    show_progress : bool, default=True</span>
 <span class="sd">        If True, shows a progress bar while learning the causal structure.</span>
 
-<span class="sd">    seed : int or None, default=None</span>
-<span class="sd">        Seed for the random number generator used to shuffle the variables before searching over permutations.</span>
+<span class="sd">    rng : int, numpy.random.Generator or None, default=None</span>
+<span class="sd">        Source of randomness, passed to ``numpy.random.default_rng``. If None, fresh entropy is drawn from the operating</span>
+<span class="sd">        system, so results are not reproducible. It shuffles the variables before searching over permutations.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -942,7 +943,7 @@
 
 <span class="sd">    &gt;&gt;&gt; from pgmpy.example_models import load_model</span>
 <span class="sd">    &gt;&gt;&gt; model = load_model("bnlearn/cancer")</span>
-<span class="sd">    &gt;&gt;&gt; df = model.simulate(n_samples=1000, seed=42)</span>
+<span class="sd">    &gt;&gt;&gt; df = model.simulate(n_samples=1000, rng=42)</span>
 
 <span class="sd">    Use the SP algorithm to learn the causal structure from data:</span>
 
@@ -984,14 +985,15 @@
         <span class="n">max_iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">return_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"dag"</span><span class="p">,</span>
         <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">rng</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ci_test</span> <span class="o">=</span> <span class="n">ci_test</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">significance_level</span> <span class="o">=</span> <span class="n">significance_level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span> <span class="o">=</span> <span class="n">return_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">show_progress</span> <span class="o">=</span> <span class="n">show_progress</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">rng</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_imap_edges</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -1064,7 +1066,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ci_test_</span> <span class="o">=</span> <span class="n">get_ci_test</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ci_test</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
         <span class="n">nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_names_in_</span><span class="p">)</span>
 
-        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
         <span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
 
         <span class="c1"># Step 2: Run the iterations.</span>
