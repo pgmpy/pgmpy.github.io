@@ -905,6 +905,12 @@
 <span class="sd">    permuted statistics that meet or exceed the observed value (with a +1 continuity</span>
 <span class="sd">    correction following Phipson &amp; Smyth [2]).</span>
 
+<span class="sd">    The effect size is the root mean square of the canonical correlations</span>
+<span class="sd">    :math:`\rho_1, \ldots, \rho_s` between :math:`R_X` and :math:`R_Y`, where :math:`s = \min(p, q)`:</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        \sqrt{\frac{1}{s} \sum_{i=1}^{s} \rho_i^2}.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    data : pandas.DataFrame</span>
@@ -933,6 +939,8 @@
 <span class="sd">        calling the test.</span>
 <span class="sd">    p_value_ : float</span>
 <span class="sd">        Permutation-based p-value. Set after calling the test.</span>
+<span class="sd">    effect_size_ : float</span>
+<span class="sd">        The root mean square canonical correlation between the residuals. Set after calling the test.</span>
 <span class="sd">    estimator_x_ : sklearn-compatible estimator</span>
 <span class="sd">        The fitted estimator used for predicting X.</span>
 <span class="sd">    estimator_y_ : sklearn-compatible estimator</span>
@@ -996,9 +1004,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_compute_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Z</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Compute the determinant-style cross-covariance statistic and its permutation p-value.</span>
-
-<span class="sd">        Returns the determinant-style cross-covariance statistic and p-value.</span>
+<span class="sd">        Compute the determinant-style cross-covariance statistic, its permutation p-value and the effect size.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1015,6 +1021,8 @@
 <span class="sd">            The determinant-style residual cross-covariance statistic.</span>
 <span class="sd">        p_value : float</span>
 <span class="sd">            Permutation-based p-value.</span>
+<span class="sd">        effect_size : float</span>
+<span class="sd">            The root mean square of the canonical correlations between the residuals.</span>
 <span class="sd">        """</span>
         <span class="c1"># Step 1: Compute residuals of X and Y given Z.</span>
         <span class="n">res_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimator_x_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_residuals</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
@@ -1039,7 +1047,17 @@
         <span class="c1"># Phipson-Smyth +1 correction so that p-value is never exactly zero.</span>
         <span class="n">p_value</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">perm_stats</span> <span class="o">&gt;=</span> <span class="n">statistic</span><span class="p">))</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_permutations</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span><span class="n">statistic</span><span class="o">=</span><span class="n">statistic</span><span class="p">,</span> <span class="n">p_value</span><span class="o">=</span><span class="n">p_value</span><span class="p">)</span></div>
+        <span class="c1"># Step 4: Compute the effect size, the root mean square of the canonical correlations between the residuals.</span>
+        <span class="n">bases</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">residuals</span> <span class="ow">in</span> <span class="p">(</span><span class="n">res_x</span><span class="p">,</span> <span class="n">res_y</span><span class="p">):</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">residuals</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="n">left_vectors</span><span class="p">,</span> <span class="n">singular_values</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">values</span> <span class="o">-</span> <span class="n">values</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">tolerance</span> <span class="o">=</span> <span class="n">singular_values</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+            <span class="n">bases</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">left_vectors</span><span class="p">[:,</span> <span class="n">singular_values</span> <span class="o">&gt;</span> <span class="n">tolerance</span><span class="p">])</span>
+        <span class="n">canonical_correlations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">bases</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">bases</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">compute_uv</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">effect_size</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">canonical_correlations</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="nb">min</span><span class="p">(</span><span class="n">res_x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">res_y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
+
+        <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span><span class="n">statistic</span><span class="o">=</span><span class="n">statistic</span><span class="p">,</span> <span class="n">p_value</span><span class="o">=</span><span class="n">p_value</span><span class="p">,</span> <span class="n">effect_size</span><span class="o">=</span><span class="n">effect_size</span><span class="p">)</span></div>
 
 </pre></div>
 
