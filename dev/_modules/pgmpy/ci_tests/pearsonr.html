@@ -867,7 +867,9 @@
   <h1>Source code for pgmpy.ci_tests.pearsonr</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">special</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">CovarianceRegression</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCITest</span><span class="p">,</span> <span class="n">_CITestResult</span>
 
@@ -896,7 +898,8 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    data : pandas.DataFrame</span>
-<span class="sd">        The dataset in which to test the independence condition.</span>
+<span class="sd">        The dataset in which to test the independence condition. All columns must be numeric and without missing</span>
+<span class="sd">        values.</span>
 
 <span class="sd">    Examples</span>
 <span class="sd">    --------</span>
@@ -944,6 +947,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">use_cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_regression</span> <span class="o">=</span> <span class="n">CovarianceRegression</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">use_cache</span><span class="o">=</span><span class="n">use_cache</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_compute_result</span><span class="p">(</span>
@@ -955,30 +959,18 @@
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compute Pearson correlation coefficient and p-value.</span>
 
-<span class="sd">        Returns Pearson's r, p-value, and optional degrees of freedom metadata.</span>
+<span class="sd">        Returns Pearson's r, p-value, and optional degrees of freedom metadata. Without residual degrees of freedom</span>
+<span class="sd">        (``n_samples &lt;= len(Z) + 2``) the data carry no evidence against independence and the p-value is 1, as in</span>
+<span class="sd">        :func:`scipy.stats.pearsonr` for two samples.</span>
 <span class="sd">        """</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
-        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">coef</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regression</span><span class="o">.</span><span class="n">partial_correlation</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">])[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">dof</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span>
+        <span class="n">attributes</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"dof_"</span><span class="p">:</span> <span class="n">dof</span><span class="p">}</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">dof</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span><span class="n">statistic</span><span class="o">=</span><span class="n">coef</span><span class="p">,</span> <span class="n">p_value</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">effect_size</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">coef</span><span class="p">),</span> <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">)</span>
 
-        <span class="c1"># Step 1: If Z is empty compute a non-conditional test.</span>
-        <span class="n">attributes</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">coef</span><span class="p">,</span> <span class="n">p_value</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">pearsonr</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">],</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">])</span>
-
-        <span class="c1"># Step 2: If Z is non-empty, use linear regression to compute residuals and test independence on it.</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">design_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_samples</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Z</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()])</span>
-            <span class="n">X_coef</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">design_matrix</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">],</span> <span class="n">rcond</span><span class="o">=</span><span class="kc">None</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">Y_coef</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">design_matrix</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">],</span> <span class="n">rcond</span><span class="o">=</span><span class="kc">None</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
-            <span class="n">residual_X</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">X</span><span class="p">]</span> <span class="o">-</span> <span class="n">design_matrix</span> <span class="o">@</span> <span class="n">X_coef</span>
-            <span class="n">residual_Y</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">Y</span><span class="p">]</span> <span class="o">-</span> <span class="n">design_matrix</span> <span class="o">@</span> <span class="n">Y_coef</span>
-
-            <span class="n">coef</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">corrcoef</span><span class="p">(</span><span class="n">residual_X</span><span class="p">,</span> <span class="n">residual_Y</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
-            <span class="n">dof</span> <span class="o">=</span> <span class="n">n_samples</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">-</span> <span class="mi">2</span>
-            <span class="n">t_statistic</span> <span class="o">=</span> <span class="n">coef</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dof</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">coef</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
-            <span class="n">p_value</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">stats</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">t_statistic</span><span class="p">),</span> <span class="n">df</span><span class="o">=</span><span class="n">dof</span><span class="p">)</span>
-            <span class="n">attributes</span><span class="p">[</span><span class="s2">"dof_"</span><span class="p">]</span> <span class="o">=</span> <span class="n">dof</span>
+        <span class="n">t_statistic</span> <span class="o">=</span> <span class="n">coef</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dof</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">coef</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">p_value</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">special</span><span class="o">.</span><span class="n">stdtr</span><span class="p">(</span><span class="n">dof</span><span class="p">,</span> <span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">t_statistic</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span><span class="n">statistic</span><span class="o">=</span><span class="n">coef</span><span class="p">,</span> <span class="n">p_value</span><span class="o">=</span><span class="n">p_value</span><span class="p">,</span> <span class="n">effect_size</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">coef</span><span class="p">),</span> <span class="n">attributes</span><span class="o">=</span><span class="n">attributes</span><span class="p">)</span></div>
 

@@ -867,7 +867,7 @@
   <h1>Source code for pgmpy.ci_tests.pearsonr_equivalence</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">special</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_CITestResult</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.pearsonr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pearsonr</span>
@@ -925,7 +925,8 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    data : pandas.DataFrame</span>
-<span class="sd">        The dataset in which to test the independence condition.</span>
+<span class="sd">        The dataset in which to test the independence condition. All columns must be numeric and without missing</span>
+<span class="sd">        values.</span>
 
 <span class="sd">    delta_threshold : float</span>
 <span class="sd">        The equivalence bound (threshold for practical independence).</span>
@@ -993,9 +994,9 @@
 
 <span class="sd">        Returns the Fisher z-transformed partial correlation statistic and p-value.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Step 2: Compute Partial Pearson Correlation via parent and clip to avoid infinities</span>
-        <span class="n">pearsonr_result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_compute_result</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="p">)</span>
-        <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">pearsonr_result</span><span class="o">.</span><span class="n">statistic</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.999999</span><span class="p">,</span> <span class="mf">0.999999</span><span class="p">)</span>
+        <span class="c1"># Step 2: Compute the partial correlation and clip it to avoid infinities</span>
+        <span class="n">partial_corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regression</span><span class="o">.</span><span class="n">partial_correlation</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">])[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">partial_corr</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.999999</span><span class="p">,</span> <span class="mf">0.999999</span><span class="p">)</span>
 
         <span class="c1"># Step 3: Fisher Z-Transformation</span>
         <span class="n">coeff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctanh</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span>
@@ -1009,17 +1010,17 @@
         <span class="c1"># Step 4: TOST (Two One-Sided Tests)</span>
         <span class="c1"># Step 4.1: H0: rho &lt;= -delta  vs  H1: rho &gt; -delta</span>
         <span class="n">z_score_lower</span> <span class="o">=</span> <span class="n">std_error_factor</span> <span class="o">*</span> <span class="p">(</span><span class="n">coeff</span> <span class="o">+</span> <span class="n">z_delta</span><span class="p">)</span>
-        <span class="n">p_value_lower</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">z_score_lower</span><span class="p">)</span>
+        <span class="n">p_value_lower</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">special</span><span class="o">.</span><span class="n">ndtr</span><span class="p">(</span><span class="n">z_score_lower</span><span class="p">)</span>
 
         <span class="c1"># Step 4.2: H0: rho &gt;= delta   vs  H1: rho &lt; delta</span>
         <span class="n">z_score_upper</span> <span class="o">=</span> <span class="n">std_error_factor</span> <span class="o">*</span> <span class="p">(</span><span class="n">coeff</span> <span class="o">-</span> <span class="n">z_delta</span><span class="p">)</span>
-        <span class="n">p_value_upper</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">z_score_upper</span><span class="p">)</span>
+        <span class="n">p_value_upper</span> <span class="o">=</span> <span class="n">special</span><span class="o">.</span><span class="n">ndtr</span><span class="p">(</span><span class="n">z_score_upper</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span>
             <span class="n">statistic</span><span class="o">=</span><span class="n">coeff</span><span class="p">,</span>
             <span class="n">p_value</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">p_value_lower</span><span class="p">,</span> <span class="n">p_value_upper</span><span class="p">),</span>
-            <span class="n">effect_size</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">pearsonr_result</span><span class="o">.</span><span class="n">statistic</span><span class="p">),</span>
-            <span class="n">attributes</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">pearsonr_result</span><span class="o">.</span><span class="n">attributes</span><span class="p">),</span>
+            <span class="n">effect_size</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">partial_corr</span><span class="p">),</span>
+            <span class="n">attributes</span><span class="o">=</span><span class="p">{</span><span class="s2">"dof_"</span><span class="p">:</span> <span class="n">n</span> <span class="o">-</span> <span class="n">s</span> <span class="o">-</span> <span class="mi">2</span><span class="p">}</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">{},</span>
         <span class="p">)</span></div>
 
 </pre></div>

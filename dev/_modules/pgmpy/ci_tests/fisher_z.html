@@ -867,7 +867,7 @@
   <h1>Source code for pgmpy.ci_tests.fisher_z</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">stats</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">special</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">._base</span><span class="w"> </span><span class="kn">import</span> <span class="n">_CITestResult</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.pearsonr</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pearsonr</span>
@@ -893,7 +893,8 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    data : pandas.DataFrame</span>
-<span class="sd">        The dataset in which to test the independence condition.</span>
+<span class="sd">        The dataset in which to test the independence condition. All columns must be numeric and without missing</span>
+<span class="sd">        values.</span>
 
 <span class="sd">    Attributes</span>
 <span class="sd">    ----------</span>
@@ -942,12 +943,11 @@
 
 <span class="sd">        Returns the Fisher Z statistic and p-value.</span>
 <span class="sd">        """</span>
-        <span class="n">pearsonr_result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_compute_result</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">Z</span><span class="p">)</span>
-        <span class="n">partial_corr</span> <span class="o">=</span> <span class="n">pearsonr_result</span><span class="o">.</span><span class="n">statistic</span>
+        <span class="n">partial_corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regression</span><span class="o">.</span><span class="n">partial_correlation</span><span class="p">(</span><span class="n">X</span><span class="o">=</span><span class="n">Z</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">])[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
 
         <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">partial_corr</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.999999</span><span class="p">,</span> <span class="mf">0.999999</span><span class="p">)</span>
         <span class="n">statistic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arctanh</span><span class="p">(</span><span class="n">rho</span><span class="p">)</span>
-        <span class="n">p_value</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">stats</span><span class="o">.</span><span class="n">norm</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">statistic</span><span class="p">))</span>
+        <span class="n">p_value</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">special</span><span class="o">.</span><span class="n">ndtr</span><span class="p">(</span><span class="o">-</span><span class="nb">abs</span><span class="p">(</span><span class="n">statistic</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">_CITestResult</span><span class="p">(</span><span class="n">statistic</span><span class="o">=</span><span class="n">statistic</span><span class="p">,</span> <span class="n">p_value</span><span class="o">=</span><span class="n">p_value</span><span class="p">,</span> <span class="n">effect_size</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">partial_corr</span><span class="p">))</span></div>
 
