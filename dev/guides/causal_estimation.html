@@ -6,17 +6,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta content="Estimate causal effects from graphs and data using pgmpy's causal inference and prediction APIs." name="description" />
+<meta content="Estimate causal effects from a graph and data with pgmpy." name="description" />
 <meta property="og:title" content="Causal Estimation" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://pgmpy.org/dev/guides/causal_estimation.html" />
 <meta property="og:site_name" content="pgmpy" />
-<meta property="og:description" content="Causal estimation turns an identified causal query into a numerical effect. Once you know that a causal effect is identifiable (see Causal Identification), this step combines the graph and observed..." />
+<meta property="og:description" content="Causal estimation calculates the numerical value of an identified causal effect. It uses the graph and the observed data. Examples are the average treatment effect and an interventional distributio..." />
 <meta property="og:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
 <meta property="og:image:alt" content="pgmpy" />
 <meta name="twitter:card" content="summary_large_image" />
 
-<meta name="twitter:description" content="Estimate causal effects from graphs and data using pgmpy's causal inference and prediction APIs." />
+<meta name="twitter:description" content="Estimate causal effects from a graph and data with pgmpy." />
 <meta name="twitter:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
 <meta name="robots" content="noindex,nofollow,noarchive" />
 <link rel="canonical" href="https://pgmpy.org/dev/guides/causal_estimation.html" />
@@ -45,7 +45,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=6a604523" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=18a852c8" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=1119da72" />
   
   <!-- So that users can add custom icons -->
   <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
@@ -218,6 +218,13 @@
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../citation.html">
     Citation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../supported_by.html">
+    Supported By
   </a>
 </li>
 
@@ -564,6 +571,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../supported_by.html">
+    Supported By
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../development.html">
     Getting Involved
   </a>
@@ -901,35 +915,69 @@
                   
   <section id="causal-estimation">
 <h1>Causal Estimation<a class="headerlink" href="#causal-estimation" title="Link to this heading">#</a></h1>
-<p>Causal estimation turns an identified causal query into a numerical effect. Once you know
-that a causal effect is identifiable (see <a class="reference internal" href="causal_identification.html"><span class="doc">Causal Identification</span></a>),
-this step combines the graph and observed data to compute quantities like the average
-treatment effect or an interventional distribution.</p>
+<p>Causal estimation calculates the numerical value of an identified causal effect. It uses
+the graph and the observed data. Examples are the average treatment effect and an
+interventional distribution.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><strong>Prerequisite:</strong> This guide assumes a causal effect has been identified. See
-<a class="reference internal" href="causal_identification.html"><span class="doc">Causal Identification</span></a> to determine identifiability first.</p>
+<p><strong>Prerequisite:</strong> The causal effect must be identifiable. Use
+<a class="reference internal" href="causal_identification.html"><span class="doc">Causal Identification</span></a> to check this first.</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p><strong>When to use this vs. Probabilistic Inference:</strong> Use <em>Causal Estimation</em> when you need
-interventional answers (do-calculus, “what if I set X to x?”). Use
-<a class="reference internal" href="probabilistic_inference.html"><span class="doc">Probabilistic Inference</span></a> for observational queries
-(conditioning on evidence, “what is P(Y | X=x)?”).</p>
+<p><strong>When to use this vs. Probabilistic Inference:</strong> Use <em>Causal Estimation</em> for
+interventional questions (do-calculus, “what if I set X to x?”). Use
+<a class="reference internal" href="probabilistic_inference.html"><span class="doc">Probabilistic Inference</span></a> for observational questions that
+condition on evidence (“what is P(Y | X=x)?”).</p>
 </div>
 <section id="at-a-glance">
 <h2>At a Glance<a class="headerlink" href="#at-a-glance" title="Link to this heading">#</a></h2>
-<ul class="simple">
-<li><p><strong><a class="reference internal" href="#api"><span class="std std-ref">Unified API</span></a></strong>: Two entry points — <code class="docutils literal notranslate"><span class="pre">CausalInference</span></code> for graph-based queries, and <code class="docutils literal notranslate"><span class="pre">pgmpy.prediction</span></code> for sklearn-style regression.</p></li>
-<li><p><strong><a class="reference internal" href="#interventional-queries"><span class="std std-ref">Interventional Queries</span></a></strong>: Compute distributions under do-interventions on fitted discrete models.</p></li>
-<li><p><strong><a class="reference internal" href="#average-treatment-effect"><span class="std std-ref">Average Treatment Effect</span></a></strong>: Estimate ATE from data using identified adjustment sets.</p></li>
-<li><p><strong><a class="reference internal" href="#regression-based-estimators"><span class="std std-ref">Regression-Based Estimators</span></a></strong>: Sklearn-compatible regressors for adjustment, instrumental variable, and double ML workflows.</p></li>
-</ul>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 pgmpy-card-grid pgmpy-glance-grid docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 sd-g-3 sd-g-xs-3 sd-g-sm-3 sd-g-md-3 sd-g-lg-3 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Unified API</div>
+<p class="sd-card-text">Use <code class="docutils literal notranslate"><span class="pre">CausalInference</span></code> for graph-based queries and <code class="docutils literal notranslate"><span class="pre">pgmpy.prediction</span></code> for scikit-learn
+regression.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#api"><span class="std std-ref">#api</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Interventional Queries</div>
+<p class="sd-card-text">Calculate distributions under do-interventions for fitted discrete models.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#interventional-queries"><span class="std std-ref">#interventional-queries</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Average Treatment Effect</div>
+<p class="sd-card-text">Estimate the average treatment effect from data with an identified adjustment set.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#average-treatment-effect"><span class="std std-ref">#average-treatment-effect</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Regression-Based Estimators</div>
+<p class="sd-card-text">Scikit-learn regressors for adjustment, instrumental variables, and double machine learning.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#regression-based-estimators"><span class="std std-ref">#regression-based-estimators</span></a></div>
+</div>
+</div>
+</div>
 </section>
 <section id="api">
 <h2>API<a class="headerlink" href="#api" title="Link to this heading">#</a></h2>
-<p>pgmpy provides two consistent entry points:</p>
-<p><strong>Graph-based queries</strong> using <code class="docutils literal notranslate"><span class="pre">CausalInference</span></code>:</p>
+<p>pgmpy has two entry points:</p>
+<p><strong>Graph-based queries</strong> with <code class="docutils literal notranslate"><span class="pre">CausalInference</span></code>:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
@@ -951,14 +999,14 @@ interventional answers (do-calculus, “what if I set X to x?”). Use
 <span class="nb">print</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">ate</span><span class="p">),</span> <span class="mi">4</span><span class="p">))</span>
 </pre></div>
 </div>
-<p><strong>Sklearn-style regressors</strong> using <code class="docutils literal notranslate"><span class="pre">pgmpy.prediction</span></code> estimators that use causal graph
-role annotations (exposures, outcomes, adjustment sets) to drive the estimation.</p>
+<p><strong>Scikit-learn regressors</strong> in <code class="docutils literal notranslate"><span class="pre">pgmpy.prediction</span></code>. These estimators use the roles in the
+causal graph (exposures, outcomes, adjustment sets) for the estimation.</p>
 </section>
 <section id="interventional-queries">
 <h2>Interventional Queries<a class="headerlink" href="#interventional-queries" title="Link to this heading">#</a></h2>
-<p>For fitted discrete models, <code class="docutils literal notranslate"><span class="pre">CausalInference.query(...,</span> <span class="pre">do=...,</span> <span class="pre">evidence=...)</span></code> computes
-interventional distributions such as P(Y | do(X), Z), letting you answer “what if”
-questions directly from the model:</p>
+<p>For fitted discrete models, <code class="docutils literal notranslate"><span class="pre">CausalInference.query(...,</span> <span class="pre">do=...,</span> <span class="pre">evidence=...)</span></code> calculates
+interventional distributions such as P(Y | do(X), Z). Use it to answer “what if” questions
+from the model:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.example_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">CausalInference</span>
 
@@ -978,14 +1026,19 @@ questions directly from the model:</p>
 <section id="average-treatment-effect">
 <h2>Average Treatment Effect<a class="headerlink" href="#average-treatment-effect" title="Link to this heading">#</a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">CausalInference.estimate_ate(...)</span></code> estimates the average treatment effect of an exposure
-on an outcome, automatically using identified adjustment sets from the causal graph.</p>
+on an outcome. It finds an adjustment set in the causal graph automatically.</p>
 </section>
 <section id="regression-based-estimators">
 <h2>Regression-Based Estimators<a class="headerlink" href="#regression-based-estimators" title="Link to this heading">#</a></h2>
-<p>pgmpy provides sklearn-compatible regressors that use causal graph roles to determine
-which variables play which role in the estimation. These include adjustment-based
-regression, instrumental variable regression, and cross-fitted double machine learning
-for flexible nuisance models:</p>
+<p>The regressors in <code class="docutils literal notranslate"><span class="pre">pgmpy.prediction</span></code> are compatible with scikit-learn. They use the roles in
+the causal graph to find the exposure, the outcome, and the other variables. The regressors
+include:</p>
+<ul class="simple">
+<li><p>adjustment-based regression.</p></li>
+<li><p>instrumental variable regression.</p></li>
+<li><p>cross-fitted double machine learning.</p></li>
+</ul>
+<p>This example uses adjustment-based regression:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
@@ -1013,13 +1066,13 @@ for flexible nuisance models:</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="causal_identification.html"><span class="doc">Causal Identification</span></a> — Verify identifiability before estimation.</p></li>
+<li><p><a class="reference internal" href="causal_identification.html"><span class="doc">Causal Identification</span></a> — Make sure that the effect is identifiable before the estimation.</p></li>
 </ul>
 </div>
 </section>
 <section id="api-reference">
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">#</a></h2>
-<p>For the full list of estimation methods:</p>
+<p>These pages list all estimation methods:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="../api/causal_inference.html"><span class="doc">Causal Inference API</span></a></p></li>
 <li><p><a class="reference internal" href="../api/base.html"><span class="doc">Graph Classes API</span></a></p></li>

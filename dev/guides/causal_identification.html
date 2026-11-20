@@ -6,17 +6,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta content="Identify adjustment and frontdoor strategies from causal graphs using pgmpy's identification APIs." name="description" />
+<meta content="Find adjustment sets and frontdoor sets in causal graphs with pgmpy." name="description" />
 <meta property="og:title" content="Causal Identification" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://pgmpy.org/dev/guides/causal_identification.html" />
 <meta property="og:site_name" content="pgmpy" />
-<meta property="og:description" content="Before estimating a causal effect from data, you need to determine whether the effect is even identifiable from observational data given the causal graph. Causal identification answers: “Can the ca..." />
+<meta property="og:description" content="Before you estimate a causal effect from data, make sure that the effect is identifiable. Causal identification answers this question: is it possible to calculate the causal effect of X on Y from t..." />
 <meta property="og:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
 <meta property="og:image:alt" content="pgmpy" />
 <meta name="twitter:card" content="summary_large_image" />
 
-<meta name="twitter:description" content="Identify adjustment and frontdoor strategies from causal graphs using pgmpy's identification APIs." />
+<meta name="twitter:description" content="Find adjustment sets and frontdoor sets in causal graphs with pgmpy." />
 <meta name="twitter:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
 <meta name="robots" content="noindex,nofollow,noarchive" />
 <link rel="canonical" href="https://pgmpy.org/dev/guides/causal_identification.html" />
@@ -45,7 +45,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=6a604523" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=18a852c8" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=1119da72" />
   
   <!-- So that users can add custom icons -->
   <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
@@ -218,6 +218,13 @@
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../citation.html">
     Citation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../supported_by.html">
+    Supported By
   </a>
 </li>
 
@@ -564,6 +571,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../supported_by.html">
+    Supported By
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../development.html">
     Getting Involved
   </a>
@@ -901,24 +915,57 @@
                   
   <section id="causal-identification">
 <h1>Causal Identification<a class="headerlink" href="#causal-identification" title="Link to this heading">#</a></h1>
-<p>Before estimating a causal effect from data, you need to determine whether the effect
-is even identifiable from observational data given the causal graph. Causal identification
-answers: “Can the causal effect of X on Y be expressed purely in terms of the observed
-data distribution?” The answer depends on the graph structure — if there are unobserved
-confounders, certain effects may not be identifiable.</p>
+<p>Before you estimate a causal effect from data, make sure that the effect is identifiable.
+Causal identification answers this question: is it possible to calculate the causal effect
+of X on Y from the distribution of the observed data only? The answer depends on the graph
+structure. Unobserved confounders can make an effect not identifiable.</p>
 <section id="at-a-glance">
 <h2>At a Glance<a class="headerlink" href="#at-a-glance" title="Link to this heading">#</a></h2>
-<ul class="simple">
-<li><p><strong><a class="reference internal" href="#api"><span class="std std-ref">Unified API</span></a></strong>: All identification methods share an <code class="docutils literal notranslate"><span class="pre">identify(graph)</span></code> / <code class="docutils literal notranslate"><span class="pre">validate(graph)</span></code> interface.</p></li>
-<li><p><strong><a class="reference internal" href="#backdoor-adjustment"><span class="std std-ref">Backdoor Adjustment</span></a></strong>: Find minimal, variance-optimal, or all valid adjustment sets.</p></li>
-<li><p><strong><a class="reference internal" href="#frontdoor-identification"><span class="std std-ref">Frontdoor Identification</span></a></strong>: Identify effects when backdoor adjustment is blocked by unobserved confounders.</p></li>
-<li><p><strong><a class="reference internal" href="#validation"><span class="std std-ref">Validation</span></a></strong>: Verify whether a candidate adjustment or frontdoor set is valid.</p></li>
-</ul>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 pgmpy-card-grid pgmpy-glance-grid docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 sd-g-3 sd-g-xs-3 sd-g-sm-3 sd-g-md-3 sd-g-lg-3 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Unified API</div>
+<p class="sd-card-text">All identification methods use the same <code class="docutils literal notranslate"><span class="pre">identify(graph)</span></code> and <code class="docutils literal notranslate"><span class="pre">validate(graph)</span></code> methods.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#api"><span class="std std-ref">#api</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Backdoor Adjustment</div>
+<p class="sd-card-text">Find minimal, variance-optimal, or all valid adjustment sets.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#backdoor-adjustment"><span class="std std-ref">#backdoor-adjustment</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Frontdoor Identification</div>
+<p class="sd-card-text">Identify effects when unobserved confounders prevent backdoor adjustment.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#frontdoor-identification"><span class="std std-ref">#frontdoor-identification</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Validation</div>
+<p class="sd-card-text">Check if a candidate adjustment set or frontdoor set is valid.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#validation"><span class="std std-ref">#validation</span></a></div>
+</div>
+</div>
+</div>
 </section>
 <section id="api">
 <h2>API<a class="headerlink" href="#api" title="Link to this heading">#</a></h2>
-<p>Identification methods follow a consistent pattern — create the identifier, call
-<code class="docutils literal notranslate"><span class="pre">identify(...)</span></code>, and inspect the result:</p>
+<p>All identification methods use the same steps: create the identifier, call
+<code class="docutils literal notranslate"><span class="pre">identify(...)</span></code>, and examine the result:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.identification</span><span class="w"> </span><span class="kn">import</span> <span class="n">Adjustment</span>  <span class="c1"># swap in any identification method</span>
 
@@ -936,9 +983,9 @@ confounders, certain effects may not be identifiable.</p>
 </section>
 <section id="backdoor-adjustment">
 <h2>Backdoor Adjustment<a class="headerlink" href="#backdoor-adjustment" title="Link to this heading">#</a></h2>
-<p>The backdoor criterion finds sets of variables to condition on that block all spurious
-paths between exposure and outcome. pgmpy supports finding minimal adjustment sets,
-variance-optimal sets, or enumerating all valid sets:</p>
+<p>The backdoor criterion finds sets of variables that block all non-causal paths between the
+exposure and the outcome. You condition on these variables. pgmpy can find a minimal
+adjustment set, a variance-optimal set, or all valid sets:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.identification</span><span class="w"> </span><span class="kn">import</span> <span class="n">Adjustment</span>
 
@@ -959,13 +1006,14 @@ variance-optimal sets, or enumerating all valid sets:</p>
 </section>
 <section id="frontdoor-identification">
 <h2>Frontdoor Identification<a class="headerlink" href="#frontdoor-identification" title="Link to this heading">#</a></h2>
-<p>When unobserved confounders block the backdoor criterion, the frontdoor criterion provides
-an alternative by identifying mediating variables through which the causal effect flows.</p>
+<p>If unobserved confounders prevent backdoor adjustment, use the frontdoor criterion. It
+identifies the effect through mediator variables that carry the effect from the exposure to
+the outcome.</p>
 </section>
 <section id="validation">
 <h2>Validation<a class="headerlink" href="#validation" title="Link to this heading">#</a></h2>
-<p>If you already have a candidate adjustment or frontdoor set, use <code class="docutils literal notranslate"><span class="pre">validate(...)</span></code> to check
-whether it satisfies the graphical criterion before proceeding to estimation:</p>
+<p>If you have a candidate adjustment set or frontdoor set, use <code class="docutils literal notranslate"><span class="pre">validate(...)</span></code>. It checks if
+the set satisfies the graphical criterion. Do this before the estimation:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">DAG</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.identification</span><span class="w"> </span><span class="kn">import</span> <span class="n">Adjustment</span>
 
@@ -990,7 +1038,7 @@ whether it satisfies the graphical criterion before proceeding to estimation:</p
 </section>
 <section id="api-reference">
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">#</a></h2>
-<p>For the full list of identification methods:</p>
+<p>These pages list all identification methods:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="../api/causal_inference.html"><span class="doc">Causal Inference API</span></a></p></li>
 <li><p><a class="reference internal" href="../api/base.html"><span class="doc">Graph Classes API</span></a></p></li>

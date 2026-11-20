@@ -6,17 +6,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta content="Query fitted pgmpy models using the unified probabilistic inference APIs." name="description" />
+<meta content="Query fitted pgmpy models with the probabilistic inference algorithms." name="description" />
 <meta property="og:title" content="Probabilistic Inference" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://pgmpy.org/dev/guides/probabilistic_inference.html" />
 <meta property="og:site_name" content="pgmpy" />
-<meta property="og:description" content="Probabilistic inference computes the distribution over query variables given observed evidence in a graphical model. For example, given a Bayesian network modeling disease diagnosis, inference answ..." />
+<meta property="og:description" content="Probabilistic inference calculates the distribution of query variables given observed evidence in a graphical model. For example, take a Bayesian network for disease diagnosis. Inference can answer..." />
 <meta property="og:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
 <meta property="og:image:alt" content="pgmpy" />
 <meta name="twitter:card" content="summary_large_image" />
 
-<meta name="twitter:description" content="Query fitted pgmpy models using the unified probabilistic inference APIs." />
+<meta name="twitter:description" content="Query fitted pgmpy models with the probabilistic inference algorithms." />
 <meta name="twitter:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
 <meta name="robots" content="noindex,nofollow,noarchive" />
 <link rel="canonical" href="https://pgmpy.org/dev/guides/probabilistic_inference.html" />
@@ -45,7 +45,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=6a604523" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=18a852c8" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=1119da72" />
   
   <!-- So that users can add custom icons -->
   <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
@@ -218,6 +218,13 @@
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../citation.html">
     Citation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../supported_by.html">
+    Supported By
   </a>
 </li>
 
@@ -564,6 +571,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../supported_by.html">
+    Supported By
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../development.html">
     Getting Involved
   </a>
@@ -901,34 +915,69 @@
                   
   <section id="probabilistic-inference">
 <h1>Probabilistic Inference<a class="headerlink" href="#probabilistic-inference" title="Link to this heading">#</a></h1>
-<p>Probabilistic inference computes the distribution over query variables given observed
-evidence in a graphical model. For example, given a Bayesian network modeling disease
-diagnosis, inference answers questions like “What is the probability of disease X given
-symptoms A and B?”.</p>
+<p>Probabilistic inference calculates the distribution of query variables given observed
+evidence in a graphical model. For example, take a Bayesian network for disease diagnosis.
+Inference can answer this question: “What is the probability of disease X if the patient has
+symptoms A and B?”</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><strong>Prerequisite:</strong> This guide assumes you have a fitted model with parameters. Obtain one
-from <a class="reference internal" href="parameter_estimation.html"><span class="doc">Parameter Estimation</span></a> or load a ready-made one from
+<p><strong>Prerequisite:</strong> You need a fitted model with parameters. Fit a model with
+<a class="reference internal" href="parameter_estimation.html"><span class="doc">Parameter Estimation</span></a>, or load a model from
 <a class="reference internal" href="example_models.html"><span class="doc">Example Models</span></a>.</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p><strong>When to use this vs. Causal Estimation:</strong> Use <em>Probabilistic Inference</em> for
-observational queries that condition on evidence. For interventional queries that model
-interventions (do-calculus), see <a class="reference internal" href="causal_estimation.html"><span class="doc">Causal Estimation</span></a>.</p>
+observational queries that condition on evidence. For interventional queries
+(do-calculus), use <a class="reference internal" href="causal_estimation.html"><span class="doc">Causal Estimation</span></a>.</p>
 </div>
 <section id="at-a-glance">
 <h2>At a Glance<a class="headerlink" href="#at-a-glance" title="Link to this heading">#</a></h2>
-<ul class="simple">
-<li><p><strong><a class="reference internal" href="#api"><span class="std std-ref">Unified API</span></a></strong>: All inference engines share a <code class="docutils literal notranslate"><span class="pre">query(...)</span></code> / <code class="docutils literal notranslate"><span class="pre">map_query(...)</span></code> interface.</p></li>
-<li><p><strong><a class="reference internal" href="#exact-inference"><span class="std std-ref">Exact Inference</span></a></strong>: Variable Elimination and Belief Propagation for precise posterior computation.</p></li>
-<li><p><strong><a class="reference internal" href="#map-queries"><span class="std std-ref">MAP Queries</span></a></strong>: Find the most likely assignment for a set of variables.</p></li>
-<li><p><strong><a class="reference internal" href="#approximate-inference"><span class="std std-ref">Approximate Inference</span></a></strong>: Sampling-based and other approximate methods for large models.</p></li>
-</ul>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 pgmpy-card-grid pgmpy-glance-grid docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 sd-g-3 sd-g-xs-3 sd-g-sm-3 sd-g-md-3 sd-g-lg-3 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Unified API</div>
+<p class="sd-card-text">All inference algorithms use the same <code class="docutils literal notranslate"><span class="pre">query(...)</span></code> and <code class="docutils literal notranslate"><span class="pre">map_query(...)</span></code> methods.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#api"><span class="std std-ref">#api</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Exact Inference</div>
+<p class="sd-card-text">Variable Elimination and Belief Propagation calculate the exact posterior.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#exact-inference"><span class="std std-ref">#exact-inference</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+MAP Queries</div>
+<p class="sd-card-text">Find the most likely states of a set of variables.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#map-queries"><span class="std std-ref">#map-queries</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Approximate Inference</div>
+<p class="sd-card-text">Use sampling and other approximate methods for large models.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#approximate-inference"><span class="std std-ref">#approximate-inference</span></a></div>
+</div>
+</div>
+</div>
 </section>
 <section id="api">
 <h2>API<a class="headerlink" href="#api" title="Link to this heading">#</a></h2>
-<p>All inference engines follow the same pattern — instantiate with a model, then query:</p>
+<p>All inference algorithms use the same steps: create the inference object from a model, then
+query it.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.example_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">VariableElimination</span>  <span class="c1"># swap in any inference engine</span>
 
@@ -942,19 +991,22 @@ interventions (do-calculus), see <a class="reference internal" href="causal_esti
 <span class="nb">print</span><span class="p">(</span><span class="n">posterior</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Switching inference engines requires only changing the class.</p>
+<p>To use a different inference algorithm, change only the class.</p>
 </section>
 <section id="exact-inference">
 <h2>Exact Inference<a class="headerlink" href="#exact-inference" title="Link to this heading">#</a></h2>
-<p>Exact inference computes the precise posterior distribution. pgmpy provides Variable
-Elimination (the default choice for most queries) and Belief Propagation (efficient for
-repeated queries through junction-tree reasoning). These are best when the model is small
-enough for exact computation to be tractable.</p>
+<p>Exact inference calculates the exact posterior distribution. pgmpy has two exact
+algorithms:</p>
+<ul class="simple">
+<li><p><strong>Variable Elimination</strong>: the usual choice for most queries.</p></li>
+<li><p><strong>Belief Propagation</strong>: calibrates a junction tree one time. Repeated queries are then fast.</p></li>
+</ul>
+<p>Use exact inference when the model is small enough for an exact calculation.</p>
 </section>
 <section id="map-queries">
 <h2>MAP Queries<a class="headerlink" href="#map-queries" title="Link to this heading">#</a></h2>
-<p>In addition to full posterior distributions, inference engines support Maximum A Posteriori
-queries that return the single most likely assignment:</p>
+<p>The inference algorithms also support Maximum A Posteriori (MAP) queries. A MAP query
+returns the most likely joint state of the query variables:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">map_result</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"HISTORY"</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s2">"CVP"</span><span class="p">:</span> <span class="s2">"LOW"</span><span class="p">})</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">map_result</span><span class="p">)</span>
 </pre></div>
@@ -962,12 +1014,13 @@ queries that return the single most likely assignment:</p>
 </section>
 <section id="approximate-inference">
 <h2>Approximate Inference<a class="headerlink" href="#approximate-inference" title="Link to this heading">#</a></h2>
-<p>When exact inference is too expensive for large networks, pgmpy provides approximate
-methods including sampling-based inference and message-passing optimization. There is
-also specialized support for inference on Dynamic Bayesian Networks.</p>
+<p>For a large network, exact inference can need too much time or memory. Then use an
+approximate method. pgmpy has sampling-based inference and message-passing optimization.
+It also has inference algorithms for Dynamic Bayesian Networks.</p>
 </section>
 <section id="common-recipes">
 <h2>Common Recipes<a class="headerlink" href="#common-recipes" title="Link to this heading">#</a></h2>
+<p>The recipes below query the ALARM network with Variable Elimination:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.example_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">VariableElimination</span>
 
@@ -975,24 +1028,38 @@ also specialized support for inference on Dynamic Bayesian Networks.</p>
 <span class="n">infer</span> <span class="o">=</span> <span class="n">VariableElimination</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>Posterior over a single variable:</strong></p>
+<section id="posterior-over-a-single-variable">
+<h3>Posterior over a single variable<a class="headerlink" href="#posterior-over-a-single-variable" title="Link to this heading">#</a></h3>
+<p>This query calculates the distribution of <code class="docutils literal notranslate"><span class="pre">HISTORY</span></code> given that <code class="docutils literal notranslate"><span class="pre">CVP</span></code> is <code class="docutils literal notranslate"><span class="pre">LOW</span></code>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"HISTORY"</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s2">"CVP"</span><span class="p">:</span> <span class="s2">"LOW"</span><span class="p">})</span>
 </pre></div>
 </div>
-<p><strong>Joint posterior over multiple variables:</strong></p>
+</section>
+<section id="joint-posterior-over-multiple-variables">
+<h3>Joint posterior over multiple variables<a class="headerlink" href="#joint-posterior-over-multiple-variables" title="Link to this heading">#</a></h3>
+<p>With <code class="docutils literal notranslate"><span class="pre">joint=True</span></code> (the default), the result is a single distribution over all query variables.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"HISTORY"</span><span class="p">,</span> <span class="s2">"CO"</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s2">"CVP"</span><span class="p">:</span> <span class="s2">"LOW"</span><span class="p">},</span> <span class="n">joint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
-<p><strong>Separate marginals instead of joint:</strong></p>
+</section>
+<section id="separate-marginals-instead-of-a-joint">
+<h3>Separate marginals instead of a joint<a class="headerlink" href="#separate-marginals-instead-of-a-joint" title="Link to this heading">#</a></h3>
+<p>With <code class="docutils literal notranslate"><span class="pre">joint=False</span></code>, the result is a dictionary with one marginal distribution per variable.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">marginals</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"HISTORY"</span><span class="p">,</span> <span class="s2">"CO"</span><span class="p">],</span> <span class="n">joint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">marginals</span><span class="p">[</span><span class="s2">"HISTORY"</span><span class="p">])</span>
 </pre></div>
 </div>
-<p><strong>MAP assignment:</strong></p>
+</section>
+<section id="map-assignment">
+<h3>MAP assignment<a class="headerlink" href="#map-assignment" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">map_query</span></code> returns the most likely joint state of the query variables given the evidence.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">infer</span><span class="o">.</span><span class="n">map_query</span><span class="p">(</span><span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"HISTORY"</span><span class="p">,</span> <span class="s2">"CO"</span><span class="p">],</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s2">"CVP"</span><span class="p">:</span> <span class="s2">"LOW"</span><span class="p">})</span>
 </pre></div>
 </div>
-<p><strong>Switch to Belief Propagation:</strong></p>
+</section>
+<section id="switch-to-belief-propagation">
+<h3>Switch to Belief Propagation<a class="headerlink" href="#switch-to-belief-propagation" title="Link to this heading">#</a></h3>
+<p>Belief Propagation answers the same queries. Only the inference class changes.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeliefPropagation</span>
 
 <span class="n">infer</span> <span class="o">=</span> <span class="n">BeliefPropagation</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
@@ -1000,19 +1067,20 @@ also specialized support for inference on Dynamic Bayesian Networks.</p>
 </pre></div>
 </div>
 </section>
+</section>
 <section id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="simulations.html"><span class="doc">Simulations</span></a> — Generate synthetic datasets from fitted models.</p></li>
-<li><p><a class="reference internal" href="causal_estimation.html"><span class="doc">Causal Estimation</span></a> — Answer interventional “what if” queries using do-calculus.</p></li>
+<li><p><a class="reference internal" href="causal_estimation.html"><span class="doc">Causal Estimation</span></a> — Answer interventional “what if” queries with do-calculus.</p></li>
 </ul>
 </div>
 </section>
 <section id="api-reference">
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">#</a></h2>
-<p>For the full list of inference algorithms and sampling methods:</p>
+<p>These pages list all inference algorithms and sampling methods:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="../api/inference.html"><span class="doc">Inference and Sampling API</span></a></p></li>
 <li><p><a class="reference internal" href="../api/models.html"><span class="doc">Models API</span></a></p></li>
@@ -1074,7 +1142,14 @@ also specialized support for inference on Dynamic Bayesian Networks.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#exact-inference">Exact Inference</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#map-queries">MAP Queries</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#approximate-inference">Approximate Inference</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#common-recipes">Common Recipes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#common-recipes">Common Recipes</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#posterior-over-a-single-variable">Posterior over a single variable</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#joint-posterior-over-multiple-variables">Joint posterior over multiple variables</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#separate-marginals-instead-of-a-joint">Separate marginals instead of a joint</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#map-assignment">MAP assignment</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#switch-to-belief-propagation">Switch to Belief Propagation</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#see-also">See Also</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api-reference">API Reference</a></li>
 </ul>

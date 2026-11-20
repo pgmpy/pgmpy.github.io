@@ -6,17 +6,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta content="Estimate model parameters from data using pgmpy's unified parameter-estimation APIs." name="description" />
+<meta content="Estimate the parameters of a model from data with pgmpy." name="description" />
 <meta property="og:title" content="Parameter Estimation" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://pgmpy.org/dev/guides/parameter_estimation.html" />
 <meta property="og:site_name" content="pgmpy" />
-<meta property="og:description" content="Once the structure of a graphical model is known, the next step is estimating its numerical parameters from data. For a Bayesian network, this means learning the conditional probability distributio..." />
+<meta property="og:description" content="After you have the structure of a graphical model, estimate its parameters from data. For a Bayesian network, the parameters are the conditional probability distribution (CPD) of each node given it..." />
 <meta property="og:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
 <meta property="og:image:alt" content="pgmpy" />
 <meta name="twitter:card" content="summary_large_image" />
 
-<meta name="twitter:description" content="Estimate model parameters from data using pgmpy's unified parameter-estimation APIs." />
+<meta name="twitter:description" content="Estimate the parameters of a model from data with pgmpy." />
 <meta name="twitter:image" content="https://pgmpy.org/dev/_static/images/logo.png" />
 <meta name="robots" content="noindex,nofollow,noarchive" />
 <link rel="canonical" href="https://pgmpy.org/dev/guides/parameter_estimation.html" />
@@ -45,7 +45,7 @@
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=6a604523" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=18a852c8" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=1119da72" />
   
   <!-- So that users can add custom icons -->
   <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
@@ -218,6 +218,13 @@
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="../citation.html">
     Citation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../supported_by.html">
+    Supported By
   </a>
 </li>
 
@@ -564,6 +571,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="../supported_by.html">
+    Supported By
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="../development.html">
     Getting Involved
   </a>
@@ -901,28 +915,62 @@
                   
   <section id="parameter-estimation">
 <h1>Parameter Estimation<a class="headerlink" href="#parameter-estimation" title="Link to this heading">#</a></h1>
-<p>Once the structure of a graphical model is known, the next step is estimating its
-numerical parameters from data. For a Bayesian network, this means learning the
-conditional probability distribution (CPD) for every node given its parents.</p>
+<p>After you have the structure of a graphical model, estimate its parameters from data. For
+a Bayesian network, the parameters are the conditional probability distribution (CPD) of
+each node given its parents.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><strong>Prerequisite:</strong> This guide assumes you already have a graph structure, either from
-<a class="reference internal" href="causal_discovery.html"><span class="doc">Causal Discovery</span></a> or built manually with
+<p><strong>Prerequisite:</strong> You need a graph structure. Learn it with
+<a class="reference internal" href="causal_discovery.html"><span class="doc">Causal Discovery</span></a>, or make it yourself with
 <a class="reference internal" href="custom_model.html"><span class="doc">Defining a Custom Model</span></a>.</p>
 </div>
 <section id="at-a-glance">
 <h2>At a Glance<a class="headerlink" href="#at-a-glance" title="Link to this heading">#</a></h2>
-<ul class="simple">
-<li><p><strong><a class="reference internal" href="#api"><span class="std std-ref">Unified API</span></a></strong>: A single <code class="docutils literal notranslate"><span class="pre">model.fit(data,</span> <span class="pre">estimator=...)</span></code> call handles all estimation methods.</p></li>
-<li><p><strong><a class="reference internal" href="#prior-based-smoothing"><span class="std std-ref">Prior-Based Smoothing</span></a></strong>: Bayesian estimation with Dirichlet priors for sparse data.</p></li>
-<li><p><strong><a class="reference internal" href="#missing-data-and-latent-variables"><span class="std std-ref">Missing Data and Latent Variables</span></a></strong>: Expectation Maximization for incomplete observations.</p></li>
-<li><p><strong><a class="reference internal" href="#parallel-estimation"><span class="std std-ref">Parallel Estimation</span></a></strong>: Speed up fitting for larger models with <code class="docutils literal notranslate"><span class="pre">n_jobs</span></code>.</p></li>
-</ul>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 pgmpy-card-grid pgmpy-glance-grid docutils">
+<div class="sd-row sd-row-cols-1 sd-row-cols-xs-1 sd-row-cols-sm-1 sd-row-cols-md-2 sd-row-cols-lg-2 sd-g-3 sd-g-xs-3 sd-g-sm-3 sd-g-md-3 sd-g-lg-3 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Unified API</div>
+<p class="sd-card-text">One <code class="docutils literal notranslate"><span class="pre">model.fit(data,</span> <span class="pre">estimator=...)</span></code> method does all types of estimation.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#api"><span class="std std-ref">#api</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Prior-Based Smoothing</div>
+<p class="sd-card-text">Use Bayesian estimation with Dirichlet priors for sparse data.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#prior-based-smoothing"><span class="std std-ref">#prior-based-smoothing</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Missing Data and Latent Variables</div>
+<p class="sd-card-text">Use Expectation Maximization for incomplete data.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#missing-data-and-latent-variables"><span class="std std-ref">#missing-data-and-latent-variables</span></a></div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm sd-card-hover docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+Parallel Estimation</div>
+<p class="sd-card-text">Use <code class="docutils literal notranslate"><span class="pre">n_jobs</span></code> to fit large models faster.</p>
+</div>
+<a class="sd-stretched-link sd-hide-link-text reference internal" href="#parallel-estimation"><span class="std std-ref">#parallel-estimation</span></a></div>
+</div>
+</div>
+</div>
 </section>
 <section id="api">
 <h2>API<a class="headerlink" href="#api" title="Link to this heading">#</a></h2>
-<p>The recommended entry point is <code class="docutils literal notranslate"><span class="pre">model.fit(...)</span></code>. Provide the graph, the data, and an
-initialized estimator instance:</p>
+<p>Make a model from the graph. Then call <code class="docutils literal notranslate"><span class="pre">model.fit(...)</span></code> with the data and an estimator
+instance:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.example_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteBayesianNetwork</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pgmpy.parameter_estimator</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscreteMLE</span>
@@ -936,28 +984,28 @@ initialized estimator instance:</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">get_cpds</span><span class="p">(</span><span class="s2">"HISTORY"</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>Switching the estimation method only requires changing the estimator instance.
-For finer control, you can instantiate estimators directly and call their <code class="docutils literal notranslate"><span class="pre">fit(...)</span></code>
-methods before adding the CPDs to the model.</p>
+<p>To use a different estimation method, change only the estimator instance. For more
+control, create an estimator and call its <code class="docutils literal notranslate"><span class="pre">fit(...)</span></code> method yourself. Then add the CPDs to
+the model.</p>
 </section>
 <section id="prior-based-smoothing">
 <h2>Prior-Based Smoothing<a class="headerlink" href="#prior-based-smoothing" title="Link to this heading">#</a></h2>
-<p>When data is sparse, maximum likelihood estimates can be unreliable. The Bayesian
-estimator adds Dirichlet priors (pseudo-counts and equivalent sample size) to smooth
-the estimated distributions and incorporate prior beliefs.</p>
+<p>If the data is sparse, maximum likelihood estimates can be unreliable. The Bayesian
+estimator adds Dirichlet priors, for example pseudo-counts or an equivalent sample size. The
+priors smooth the estimated distributions and add prior beliefs.</p>
 </section>
 <section id="missing-data-and-latent-variables">
 <h2>Missing Data and Latent Variables<a class="headerlink" href="#missing-data-and-latent-variables" title="Link to this heading">#</a></h2>
-<p>When the dataset has missing values or the model contains latent variables, simple
-counting is not enough. The Expectation Maximization estimator handles this through
-iterative estimation, alternating between imputing missing values and updating parameters.</p>
+<p>If the dataset has missing values or the model has latent variables, counts of the data are
+not sufficient. Then use the Expectation Maximization estimator. In each iteration, it
+calculates the expected values of the missing data and then updates the parameters.</p>
 </section>
 <section id="parallel-estimation">
 <h2>Parallel Estimation<a class="headerlink" href="#parallel-estimation" title="Link to this heading">#</a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">n_jobs</span></code> parameter on estimators such as <code class="docutils literal notranslate"><span class="pre">DiscreteMLE(n_jobs=...)</span></code> parallelizes
-parameter estimation across nodes, which can speed up fitting for larger models. The
-<code class="docutils literal notranslate"><span class="pre">state_names</span></code> parameter lets you specify the supported states explicitly when some states
-may not appear in small datasets.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">n_jobs</span></code> argument of estimators such as <code class="docutils literal notranslate"><span class="pre">DiscreteMLE(n_jobs=...)</span></code> estimates the CPDs of
+different nodes in parallel. This makes the fit of large models faster. Use the
+<code class="docutils literal notranslate"><span class="pre">state_names</span></code> argument to give all states of the variables. You need it if a small dataset
+does not contain all states.</p>
 </section>
 <section id="see-also">
 <h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading">#</a></h2>
@@ -965,13 +1013,13 @@ may not appear in small datasets.</p>
 <p class="admonition-title">See also</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="probabilistic_inference.html"><span class="doc">Probabilistic Inference</span></a> — Query the fitted model.</p></li>
-<li><p><a class="reference internal" href="simulations.html"><span class="doc">Simulations</span></a> — Sample synthetic data from the fitted model.</p></li>
+<li><p><a class="reference internal" href="simulations.html"><span class="doc">Simulations</span></a> — Draw synthetic samples from the fitted model.</p></li>
 </ul>
 </div>
 </section>
 <section id="api-reference">
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">#</a></h2>
-<p>For the full list of supported estimators:</p>
+<p>These pages list all estimators:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="../api/parameter_estimation.html"><span class="doc">Parameter Estimation API</span></a></p></li>
 <li><p><a class="reference internal" href="../api/models.html"><span class="doc">Models API</span></a></p></li>
